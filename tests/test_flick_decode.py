@@ -6,8 +6,8 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from funestra_core import flick_decode
-from funestra_core.flick_decode import load_flick_frames
+from funestra import flick_decode
+from funestra.flick_decode import load_flick_frames
 
 WIDTH, HEIGHT = 4, 2
 

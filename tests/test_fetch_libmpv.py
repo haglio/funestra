@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from funestra_core.libmpv_loader import machine_libmpv_dir
+from funestra.libmpv_loader import machine_libmpv_dir
 from tools import fetch_libmpv
 
 _ARCHIVE = b"not really a 7-zip archive"

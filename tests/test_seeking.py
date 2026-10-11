@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from funestra_core.seeking import GIVE_UP_AFTER, OwedSeek, seek_if_taken
+from funestra.seeking import GIVE_UP_AFTER, OwedSeek, seek_if_taken
 
 
 class _Engine:
@@ -80,7 +80,7 @@ class TestASeekOwedToTheFileOnScreen:
         owed = OwedSeek()
         owed.owe(900.0)
 
-        with caplog.at_level(logging.WARNING, logger="funestra_core.seeking"):
+        with caplog.at_level(logging.WARNING, logger="funestra.seeking"):
             self._pay(owed, engine, times=GIVE_UP_AFTER + 5)
 
         assert engine.seeks == []

@@ -6,7 +6,7 @@ one any more.
 """
 from __future__ import annotations
 
-from funestra_core.pointer import Pointer
+from funestra.pointer import Pointer
 
 ON_THE_VIDEO = (300, 200)
 LOWER_EDGE = (300, 476)

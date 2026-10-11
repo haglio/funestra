@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-import funestra_core
-from funestra_core import mpv_engine
-from funestra_core.libmpv_loader import (
+import funestra
+from funestra import mpv_engine
+from funestra.libmpv_loader import (
     add_libmpv_to_path,
     libmpv_dirs,
     machine_libmpv_dir,
@@ -20,7 +20,7 @@ windows_only = pytest.mark.skipif(sys.platform != "win32", reason="the known-fol
 
 def test_a_checkouts_own_vendor_dir_is_looked_in_first():
 
-    assert libmpv_dirs()[0] == Path(funestra_core.__file__).resolve().parent.parent / "vendor"
+    assert libmpv_dirs()[0] == Path(funestra.__file__).resolve().parent.parent / "vendor"
 
 
 def test_the_machine_wide_copy_is_looked_in_after_it():

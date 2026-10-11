@@ -1,7 +1,7 @@
-# player_core — Project-Specific Instructions
+# funestra — Project-Specific Instructions
 
 Shared rules are in the global `~/.claude/CLAUDE.md`. This file contains only
-player_core-specific overrides.
+funestra-specific overrides.
 
 **Keep this file short.** No redundancy with the global CLAUDE.md. One bullet
 per rule. If editing this file, remove or consolidate — never just append.
@@ -63,10 +63,17 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   nothing runs on a Player; he has had to correct both. The near miss that
   still counts: "the satellites run on a Funestra" -- the satellite program is
   the window, so each satellite is a Funestra, and Kino runs on it. The code
-  says so too since 2026-10-10: the package is `funestra_core`, and the mpv
-  object a Funestra plays through is its engine (`MpvEngine`), never a player.
-  `player_core` and the other old names answer only for branches written
-  before then (`player_core/__init__.py`, `funestra_core/renamed.py`).
+  says so too: the repo, its folder and the package are `funestra` (since
+  2026-10-11; `player_core` until 2026-10-10, then `funestra_core` for a day),
+  and the mpv object a Funestra plays through is its engine (`MpvEngine`),
+  never a player. `player_core`, `funestra_core` and the other old names answer
+  only for branches written before then (`player_core/__init__.py`,
+  `funestra_core/__init__.py`, `funestra/renamed.py`).
+- **The distribution was `player-core` and is `funestra`, and pip sees two.** A
+  venv that had `player-core` keeps its record after `funestra` is installed
+  over it, and both list the `player_core/` and `funestra_core/` packages. Never
+  `pip uninstall player-core` from such a venv without reinstalling `funestra`
+  straight after: the uninstall deletes the old-name packages `funestra` ships.
 
 ## Changing this repo changes three apps
 
@@ -74,7 +81,7 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   names a tag of this repo in its `[project.dependencies]`. Landing is two
   commits — this repo's, which tags a version, then the app's, which takes it.
 - **To try a change here inside an app**, install this checkout over the pin in
-  that app's venv (`pip install -e ../player_core --config-settings
+  that app's venv (`pip install -e ../funestra --config-settings
   editable_mode=compat`), and reinstall the app afterwards to put its pin back.
 - **Run all three suites before merging**: this one, genau's unit suite, and
   fun_time's unit *and* hidden-desktop integration suites (the last is what
@@ -132,7 +139,7 @@ it up from scratch, don't lightly edit a real one.
 
 ## Landing — GitHub merge queue, not local ff-merge
 
-This repo is public at `github.com/haglio/player_core` with a merge-queue ruleset on
+This repo is public at `github.com/haglio/funestra` with a merge-queue ruleset on
 `main`, so the global "ff-merge into the primary checkout under
 `.git/agent-merge.lock`" flow does NOT apply here:
 

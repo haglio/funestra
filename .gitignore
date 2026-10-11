@@ -26,7 +26,7 @@ htmlcov/
 # untracked one dirties main and blocks merges. '[' escaped to match literally.
 *\[conflicted*
 
-# --- player_core's own ---
+# --- funestra's own ---
 
 # libmpv binary (fetched locally, not committed — see README)
 vendor/

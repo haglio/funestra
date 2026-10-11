@@ -14,7 +14,7 @@ import logging as _logging
 
 import pytest
 
-from funestra_core.tick_failures import TickFailures
+from funestra.tick_failures import TickFailures
 
 
 @pytest.fixture

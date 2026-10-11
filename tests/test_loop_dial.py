@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from funestra_core.loop_dial import DIAL_SIZE, LoopDialPainter, on_dial, turn_at
+from funestra.loop_dial import DIAL_SIZE, LoopDialPainter, on_dial, turn_at
 
 AT = (30, 1)  # where the row put the dial's top-left corner
 CENTER = (AT[0] + DIAL_SIZE // 2, AT[1] + DIAL_SIZE // 2)

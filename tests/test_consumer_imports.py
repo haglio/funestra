@@ -7,8 +7,8 @@ fail. `CLAUDE.md` says not to add one back, and this is not it.
 
 The answerable question is the one the consumers can answer. Every module
 declares its public API in ``__all__``; this reads the sibling checkouts,
-collects every name they import out of `funestra_core` (or `player_core`,
-its old name), and holds the two
+collects every name they import out of `funestra` (or `funestra_core` or
+`player_core`, its old names), and holds the two
 against each other in both directions: a declared name no consumer reaches is
 a name published for nobody, and a name a consumer reaches that its module does
 not declare is an API the module never meant to have.  A module that declares
@@ -34,8 +34,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
-PACKAGE = ROOT / "funestra_core"
-PACKAGE_NAMES = ("funestra_core", "player_core")
+PACKAGE = ROOT / "funestra"
+PACKAGE_NAMES = ("funestra", "funestra_core", "player_core")
 
 _NOT_SOURCE = {".venv", ".claude", "build", "__pycache__", "node_modules"}
 
@@ -92,14 +92,14 @@ def _declared(module: Path) -> list[str] | None:
 def _names_reached_from(source: str) -> set[str]:
     """The names one consumer module takes out of this package, by either of its names.
 
-    Both spellings count: what a `from funestra_core.x import a` names directly,
-    and what is read off a module bound by `from funestra_core import x` or
-    `import funestra_core.x` -- the second is how most of the geometry and the
+    Both spellings count: what a `from funestra.x import a` names directly,
+    and what is read off a module bound by `from funestra import x` or
+    `import funestra.x` -- the second is how most of the geometry and the
     format helpers are reached.
 
-    A name reached only through a string -- `patch("funestra_core.x.name")` in
+    A name reached only through a string -- `patch("funestra.x.name")` in
     a consumer's test -- is not counted, on purpose. Reading those would mean matching
-    `funestra_core.x.name` anywhere in the text, which is also how these repos
+    `funestra.x.name` anywhere in the text, which is also how these repos
     *write about* each other in docstrings, and counting a mention as a use is
     the silent failure. Missing a genuine one is the loud failure: the name
     lands in the report with the checkouts that were read named beside it.
@@ -238,7 +238,7 @@ def reached_and_consumers():
     reached |= {renamed[name] for name in reached if name in renamed}
     if not consumers:
         pytest.skip(
-            "no sibling checkout beside this one imports funestra_core, so there is "
+            "no sibling checkout beside this one imports funestra, so there is "
             "nothing to compare the declared surface against -- this is what a "
             "public clone with nothing beside it looks like"
         )

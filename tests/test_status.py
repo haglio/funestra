@@ -1,4 +1,4 @@
-"""Tests for funestra_core.status.
+"""Tests for funestra.status.
 
 The *fields* each Funestra publishes are that Funestra's own concern and are covered
 in its repo (fun_time's ``test_main_player_status.py`` and ``test_satellite_status.py``).
@@ -10,7 +10,7 @@ from __future__ import annotations
 import threading
 from pathlib import Path
 
-from funestra_core.status import (
+from funestra.status import (
     FunestraStatus,
     StatusWriter,
     parse_status,
@@ -185,7 +185,7 @@ class TestWhatEveryFunestraPublishes:
         assert parse_status(status_fields(status)).read_at == 1_000.25
 
     def test_the_playhead_is_stamped_with_the_clock_it_was_read_by(self, monkeypatch):
-        monkeypatch.setattr("funestra_core.status.time.time", lambda: 1_000.5)
+        monkeypatch.setattr("funestra.status.time.time", lambda: 1_000.5)
 
         assert stamp_the_playhead(4_000.7) == (4_000, 1_000.5)
 

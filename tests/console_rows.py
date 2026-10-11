@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from shared_ui.spacing import BUTTON_WORD_W
 
-from funestra_core.console import ROW_LABEL_W, VALUE_W
-from funestra_core.hud_button import Button
-from funestra_core.hud_marks import BROKER_ICON, FMODE_ICON, MINIMIZE_ICON, shared_mark
+from funestra.console import ROW_LABEL_W, VALUE_W
+from funestra.hud_button import Button
+from funestra.hud_marks import BROKER_ICON, FMODE_ICON, MINIMIZE_ICON, shared_mark
 
 # Wider than any console is drawn, so a hover over its button has to wrap.
 LONG_TIP = ("Reset the browse: no filter, no lock, no loop, no F-Mode, and the "

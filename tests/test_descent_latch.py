@@ -2,18 +2,18 @@
 
 A descent's top and touch-down are chosen once for the turn they belong to and
 then held.  Holding them means having somewhere to hold them, and this is that
-place: the three modules that used to pass one bare dict around -- :mod:`funestra_core.drive_trace` writing it as it paints,
-:mod:`funestra_core.status` reading it as it publishes, :mod:`funestra_core.drive_gate` voiding it
+place: the three modules that used to pass one bare dict around -- :mod:`funestra.drive_trace` writing it as it paints,
+:mod:`funestra.status` reading it as it publishes, :mod:`funestra.drive_gate` voiding it
 -- now share a type that names its own fields.
 
 What each held choice MEANS, and when it stops being true, is
-:mod:`funestra_core.drive_trace`'s and :mod:`funestra_core.drive_gate`'s to say and is tested
+:mod:`funestra.drive_trace`'s and :mod:`funestra.drive_gate`'s to say and is tested
 there.  Here is only the holding.
 """
 from __future__ import annotations
 
-from funestra_core.descent_latch import DescentChoice, DescentLatch, DriveKey
-from funestra_core.drive_readout import DriveHud
+from funestra.descent_latch import DescentChoice, DescentLatch, DriveKey
+from funestra.drive_readout import DriveHud
 
 TURN_MS = 3_000
 KEY = DriveKey(center=50, amplitude=100, speed=50, let_go=None)

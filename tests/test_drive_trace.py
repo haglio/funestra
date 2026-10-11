@@ -17,9 +17,9 @@ from itertools import pairwise
 import numpy as np
 import pytest
 
-from funestra_core.descent_latch import DescentLatch
-from funestra_core.drive_gate import next_handoff_touch
-from funestra_core.drive_readout import (
+from funestra.descent_latch import DescentLatch
+from funestra.drive_gate import next_handoff_touch
+from funestra.drive_readout import (
     DRIVEN_BY_FUNSCRIPT,
     DRIVEN_BY_NEUTRAL,
     DRIVEN_BY_NOTHING,
@@ -28,9 +28,9 @@ from funestra_core.drive_readout import (
     TRACE_SAMPLES,
     DriveHud,
 )
-from funestra_core.drive_trace import drive_readout
-from funestra_core.funscript import HANDOFF_RAMP_MS, Funscript
-from funestra_core.playback_rate import MAX_RATE
+from funestra.drive_trace import drive_readout
+from funestra.funscript import HANDOFF_RAMP_MS, Funscript
+from funestra.playback_rate import MAX_RATE
 
 # A 7.9-second trace: 79 steps of a round 100ms each, so a whole-step slide in
 # these tests is exact tuple equality rather than a hair of interpolation.

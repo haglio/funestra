@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from funestra_core.flick_advance import (
+from funestra.flick_advance import (
     DEFAULT_INTERVAL_S,
     MAX_INTERVAL_S,
     MIN_INTERVAL_S,

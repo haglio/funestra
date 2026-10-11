@@ -10,15 +10,15 @@ from funestra_fakes import FakeEngine
 from host_blocks import RED_BAND, HostsBlock
 from shared_ui.spacing import BUTTON_SIZE_HUD
 
-from funestra_core.console import ConsoleModel, ModeHud, console_text
-from funestra_core.console_hud import _PAD as PAD
-from funestra_core.console_hud import MARGIN
-from funestra_core.console_overlay import ConsoleOverlay
-from funestra_core.drive_readout import DriveHud, drive_text
-from funestra_core.hud_corners import HudPlace
-from funestra_core.hud_overlay import HUD_OVERLAY_ID
-from funestra_core.hud_placement import HudCorner
-from funestra_core.modes import LengthMode, MainMode, Osr2State
+from funestra.console import ConsoleModel, ModeHud, console_text
+from funestra.console_hud import _PAD as PAD
+from funestra.console_hud import MARGIN
+from funestra.console_overlay import ConsoleOverlay
+from funestra.drive_readout import DriveHud, drive_text
+from funestra.hud_corners import HudPlace
+from funestra.hud_overlay import HUD_OVERLAY_ID
+from funestra.hud_placement import HudCorner
+from funestra.modes import LengthMode, MainMode, Osr2State
 
 WINDOW = (1000, 600)
 GENAU_MODE, KINO_MODE = "genau", "kino"

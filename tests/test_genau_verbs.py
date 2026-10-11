@@ -8,20 +8,20 @@ from pathlib import Path
 
 import pytest
 
-from funestra_core.cruise_control import CruiseControlState
-from funestra_core.flag import Flag
-from funestra_core.flick_advance import MAX_INTERVAL_S, MIN_INTERVAL_S, FlickAdvanceState
-from funestra_core.flick_flip import FlickFlip
-from funestra_core.funestra_verbs import SET_MAX_INTENSITY
-from funestra_core.genau_controls import (
+from funestra.cruise_control import CruiseControlState
+from funestra.flag import Flag
+from funestra.flick_advance import MAX_INTERVAL_S, MIN_INTERVAL_S, FlickAdvanceState
+from funestra.flick_flip import FlickFlip
+from funestra.funestra_verbs import SET_MAX_INTENSITY
+from funestra.genau_controls import (
     QUARTER_CYCLE_OFFSET_COMMAND,
     GenauControls,
     apply_runtime_command,
 )
-from funestra_core.learned_model import LearnedModel
-from funestra_core.learned_motion import LearnedMotionState
-from funestra_core.robot_hand import RobotHandState, WaveformShape
-from funestra_core.robot_hand_beat import BeatEngine
+from funestra.learned_model import LearnedModel
+from funestra.learned_motion import LearnedMotionState
+from funestra.robot_hand import RobotHandState, WaveformShape
+from funestra.robot_hand_beat import BeatEngine
 
 
 @contextmanager
@@ -33,7 +33,7 @@ def _nothing_logged():
         def emit(self, record: logging.LogRecord) -> None:
             records.append(record)
 
-    logger = logging.getLogger("funestra_core.genau_controls")
+    logger = logging.getLogger("funestra.genau_controls")
     handler = _Collect()
     logger.addHandler(handler)
     previous, logger.propagate = logger.propagate, False
@@ -875,7 +875,7 @@ class TestAnUnhandledCommand:
     """
 
     def _run(self, command, caplog, **collaborators):
-        with caplog.at_level("WARNING", logger="funestra_core.genau_controls"):
+        with caplog.at_level("WARNING", logger="funestra.genau_controls"):
             apply_runtime_command(command, GenauControls(
                 engine=BeatEngine(phase=0.0, last_tick=0.0),
                 paused=Flag(),

@@ -4,14 +4,14 @@ import json
 
 import pytest
 
-from funestra_core.funscript import (
+from funestra.funscript import (
     PARK_SETTLE_MS,
     QUIET_LEAD_IN_MS,
     Funscript,
     load,
     snap_loop,
 )
-from funestra_core.max_intensity import depth
+from funestra.max_intensity import depth
 
 
 class TestLoad:

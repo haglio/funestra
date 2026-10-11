@@ -11,8 +11,8 @@ lock file, and falls back to resolving the newest build.  Standard library only,
 so this runs before anything is installed.
 
 It lands in ``%USERPROFILE%\\.haglio\\libmpv``, the one copy every install finds:
-an app pins a version of funestra_core, so its venv holds a copy of the package
-beside no ``vendor/`` of its own.  ``funestra_core.libmpv_loader`` spells the same
+an app pins a version of funestra, so its venv holds a copy of the package
+beside no ``vendor/`` of its own.  ``funestra.libmpv_loader`` spells the same
 path, and ``tests/test_fetch_libmpv.py`` holds the two together.
 """
 from __future__ import annotations
@@ -31,24 +31,24 @@ import urllib.request
 from pathlib import Path
 
 LOCK = Path(__file__).resolve().parent / "libmpv.lock"
-LOADER = Path(__file__).resolve().parent.parent / "funestra_core" / "libmpv_loader.py"
+LOADER = Path(__file__).resolve().parent.parent / "funestra" / "libmpv_loader.py"
 
 _ASSET = re.compile(r"mpv-dev-x86_64-[0-9].*\.7z$")
 _DOWNLOAD_TIMEOUT = 300
 
 
 def _loader():
-    """funestra_core's own loader, read from this checkout by path: it is standard
+    """funestra's own loader, read from this checkout by path: it is standard
     library only, and this script runs before anything is installed."""
     spec = importlib.util.spec_from_file_location(
-        "_funestra_core_libmpv_loader", LOADER)
+        "_funestra_libmpv_loader", LOADER)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
 
 
 def dll_path() -> Path:
-    """Where the DLL goes: the machine-wide copy every install of funestra_core finds."""
+    """Where the DLL goes: the machine-wide copy every install of funestra finds."""
     return _loader().machine_libmpv_dir() / "libmpv-2.dll"
 
 

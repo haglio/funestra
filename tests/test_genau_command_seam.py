@@ -27,16 +27,16 @@ from test_genau_refresh import (
     FakeTCodeSender,
 )
 
-from funestra_core.broker_feed import BrokerFeed
-from funestra_core.cruise_control import CruiseControlState
-from funestra_core.flag import Flag
-from funestra_core.flick_advance import FlickAdvanceState
-from funestra_core.genau_controls import VERBS, GenauControls
-from funestra_core.genau_refresh import GenauRefreshController
-from funestra_core.learned_model import LearnedModel
-from funestra_core.learned_motion import LearnedMotionState
-from funestra_core.robot_hand import RobotHandState, WaveformShape
-from funestra_core.robot_hand_beat import BeatEngine
+from funestra.broker_feed import BrokerFeed
+from funestra.cruise_control import CruiseControlState
+from funestra.flag import Flag
+from funestra.flick_advance import FlickAdvanceState
+from funestra.genau_controls import VERBS, GenauControls
+from funestra.genau_refresh import GenauRefreshController
+from funestra.learned_model import LearnedModel
+from funestra.learned_motion import LearnedMotionState
+from funestra.robot_hand import RobotHandState, WaveformShape
+from funestra.robot_hand_beat import BeatEngine
 
 # One frozen instant for the whole tick, so the engine's phase only moves when a
 # verb moves it.

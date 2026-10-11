@@ -1,13 +1,13 @@
 """The shared scrubber: inset track geometry and the plain progress bar."""
 from __future__ import annotations
 
-from funestra_core.timeline import (
+from funestra.timeline import (
     BAR_INSET_Y,
     HEATMAP_ALPHA,
     bar_track_x,
     progress_bar_bgra,
 )
-from funestra_core.volume import SLOT_W
+from funestra.volume import SLOT_W
 
 
 def _rgba(bar, y, x):

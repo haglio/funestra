@@ -1,7 +1,7 @@
 """The mark a Funestra puts up while its video is opening."""
 from __future__ import annotations
 
-from funestra_core.loading_mark import WORD, LoadingMarkPainter, loading_mark, loading_xy
+from funestra.loading_mark import WORD, LoadingMarkPainter, loading_mark, loading_xy
 
 
 def test_a_video_with_no_length_yet_is_still_opening():

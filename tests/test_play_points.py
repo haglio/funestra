@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from funestra_core.play_points import REMEMBERED, WRITE_EVERY_S, PlayPoints, play_points_filename
+from funestra.play_points import REMEMBERED, WRITE_EVERY_S, PlayPoints, play_points_filename
 
 VIDEO = Path("C:/library/feature.mp4")
 OTHER = Path("C:/library/another.mp4")

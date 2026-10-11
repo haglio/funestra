@@ -1,7 +1,7 @@
 """The one status line every Funestra's HUD leads with."""
 from __future__ import annotations
 
-from funestra_core.hud_status import (
+from funestra.hud_status import (
     ENHANCED_LABEL,
     F_MODE_LABEL,
     LATEST_LABEL,

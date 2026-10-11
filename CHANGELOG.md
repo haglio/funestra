@@ -6,8 +6,19 @@ name, when they move a number the family is measured by, and when they turn up a
 defect that is being left alone rather than fixed.
 
 The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
-`funestra_core/` (until 2026-10-10 `player_core/`) and `tools/`, the measure `audit/findings/player_core.md` set its
+`funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
+
+## 2026-10-11 — the repo, its folder and its package are all funestra
+
+The package `funestra_core` is `funestra`, the repository `haglio/player_core`
+is `haglio/funestra`, and the distribution `player-core` is `funestra`. The
+"core" had meant the part all the players shared, and a Funestra has none.
+`funestra_core` answers as an old package name exactly as `player_core` does,
+and both are kept by one finder in `funestra/renamed.py` (`answer_as`), so a
+module reached through either is the very module `funestra` holds. `timeline`
+no longer declares `bar_track_x`: only this package's own `hud_row` and
+`pointer` reach it now, so the consumer gate called it published for nobody.
 
 ## 2026-10-10 — the console makes room for a block its host paints
 

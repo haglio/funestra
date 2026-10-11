@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from funestra_core import flick_flip
-from funestra_core.flick_flip import FlickFlip
+from funestra import flick_flip
+from funestra.flick_flip import FlickFlip
 
 
 def _metadata_root(tmp_path: Path) -> Path:

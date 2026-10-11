@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from funestra_core.funscript import Funscript
-from funestra_core.playback import Playback
-from funestra_core.robot_hand import FULL_INTENSITY
+from funestra.funscript import Funscript
+from funestra.playback import Playback
+from funestra.robot_hand import FULL_INTENSITY
 
 
 class FakeTCode:

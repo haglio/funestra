@@ -1,9 +1,10 @@
-# player_core
+# funestra
 
 The Funestra, and everything the programs that open one share. The package is
-`funestra_core`; until 2026-10-10 it was `player_core`, as this repo still is,
-and `player_core.<module>` still imports, as the very same module, for every
-branch written before the rename. A Funestra is a window of Fun Time: it plays
+`funestra`, as this repo is; it was `player_core` until 2026-10-10 and
+`funestra_core` until 2026-10-11, and `player_core.<module>` and
+`funestra_core.<module>` still import, as the very same module, for every
+branch written before then. A Funestra is a window of Fun Time: it plays
 what it is handed, draws the HUD, and is driven through files by whatever runs
 on it.
 
@@ -129,7 +130,7 @@ Each consuming project names a tag of this repo in its own
 `[project.dependencies]`, and pip fetches it:
 
 ```toml
-"player-core @ git+https://github.com/haglio/player_core@v0.1.243",
+"funestra @ git+https://github.com/haglio/funestra@v0.1.480",
 ```
 
 Every landing here is tagged (`tag-the-landing`, called from this repo's
@@ -145,7 +146,7 @@ checkout over the pin in that consumer's venv and put it back after:
 
 ```bash
 # from the consumer
-".venv/Scripts/python.exe" -m pip install -e ../player_core --config-settings editable_mode=compat
+".venv/Scripts/python.exe" -m pip install -e ../funestra --config-settings editable_mode=compat
 # ...and back to the tag the consumer names: reinstalling the consumer
 # replaces the checkout with its pin
 ".venv/Scripts/python.exe" -m pip install -e . --config-settings editable_mode=compat
@@ -157,12 +158,12 @@ is untouched -- which is the whole point.
 
 
 **`editable_mode=compat` is required, not cosmetic.** This repo's directory is
-named `player_core`, the same as the package that keeps the old names working,
-and the directory that holds all these repos is itself on `sys.path` in
-fun_time's venv (via its `shared_ui.pth`). Setuptools' *default* editable
-install resolves the top-level name through a meta-path finder that
-`PathFinder` never reaches, so the repo root wins as an implicit namespace
-package: `player_core/__init__.py` never runs, and every old name goes with it.
+named `funestra`, the same as its package, and the directory that holds all
+these repos is itself on `sys.path` in fun_time's venv (via its
+`shared_ui.pth`). Setuptools' *default* editable install resolves the top-level
+name through a meta-path finder that `PathFinder` never reaches, so the repo
+root wins as an implicit namespace package: `funestra/__init__.py` never runs,
+and nothing under it imports.
 `compat` mode puts the repo root on `sys.path` instead, where a real package
 beats a namespace portion. `tests/test_install.py` fails loudly if this is ever
 reinstalled the other way.

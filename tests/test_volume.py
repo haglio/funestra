@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import numpy as np
 
-from funestra_core.timeline import TIMELINE_HEIGHT
-from funestra_core.volume import (
+from funestra.timeline import TIMELINE_HEIGHT
+from funestra.volume import (
     CHIP_H,
     CHIP_W,
     PAD,

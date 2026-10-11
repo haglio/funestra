@@ -9,7 +9,7 @@ must never show one file's picture as another's.
 """
 from __future__ import annotations
 
-from funestra_core.drawn_file import DrawnFile
+from funestra.drawn_file import DrawnFile
 
 WIDE = "C:/videos/wide.mp4"
 FLAT = "C:/videos/flat.mp4"
