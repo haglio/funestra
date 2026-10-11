@@ -357,6 +357,10 @@ class ConsolePainter:
         the panel moves to another corner."""
         self._pointer.take(self.hover_at(mx, my))
 
+    def leave(self) -> None:
+        """The pointer has left the window: no button is under it."""
+        self._pointer.take(None)
+
     # Only Genau's old console panel, in checkouts from before its window went,
     # reads row_rect; it answers until none of them is open.
     @property
