@@ -37,8 +37,9 @@ another application's internals to get it. By what it is:
   (the beat the OSR2 broker publishes when it has the room).
 - **Genau** — wherever it runs. A flick is one of the
   short looping videos Genau scrubs to wherever the OSR2 is; the apps show and
-  hear it under the word their content overlays give it (`genau_flick_words`),
-  which is library vocabulary and so never in source. `flick_folder`,
+  hear it under the word the settings all of Haglio share give it
+  (`genau_flick_words` in `~/.haglio/settings.json`), which is library
+  vocabulary and so never in source. `flick_folder`,
   `flick_decode`, `flick_cache`, `flick_loader`, `flick_sequence`,
   `flick_selection`, `flick_advance`, `flick_flip`, `flick_renderer`,
   `flick_scrub` and `flick_picture` get a flick from a folder to the frame the
