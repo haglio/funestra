@@ -185,3 +185,47 @@ def test_without_a_file_the_points_last_the_session_and_no_longer(tmp_path):
 
     assert points.point_for(VIDEO) == 300_000
     assert list(tmp_path.iterdir()) == []
+
+
+def test_a_place_follows_its_video_into_a_renamed_folder(tmp_path):
+    file = tmp_path / "points.json"
+    _watch(_points(file), tmp_path / "bites" / "scene.mp4", 300_000)
+    moved_to = tmp_path / "clips" / "scene.mp4"
+    moved_to.parent.mkdir()
+    moved_to.touch()
+
+    assert PlayPoints(file).point_for(moved_to) == 300_000
+
+
+def _a_video(path: Path) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.touch()
+    return path
+
+
+def test_a_place_taken_over_is_kept_under_the_video_s_new_path(tmp_path):
+    file = tmp_path / "points.json"
+    was_at = tmp_path / "bites" / "scene.mp4"
+    _watch(_points(file), was_at, 300_000)
+    moved_to = _a_video(tmp_path / "clips" / "scene.mp4")
+
+    PlayPoints(file).point_for(moved_to)
+
+    assert json.loads(file.read_text(encoding="utf-8")) == {str(moved_to).lower(): 300_000}
+
+
+def test_a_video_still_where_it_was_keeps_its_place_from_one_of_its_name(tmp_path):
+    file = tmp_path / "points.json"
+    _watch(_points(file), _a_video(tmp_path / "bites" / "scene.mp4"), 300_000)
+
+    assert PlayPoints(file).point_for(_a_video(tmp_path / "clips" / "scene.mp4")) == 0
+
+
+def test_two_moved_places_of_one_name_are_neither_taken(tmp_path):
+    file = tmp_path / "points.json"
+    points = _points(file)
+    _watch(points, tmp_path / "north" / "scene.mp4", 300_000)
+    _watch(points, tmp_path / "south" / "scene.mp4", 600_000)
+    points.leave()
+
+    assert PlayPoints(file).point_for(_a_video(tmp_path / "clips" / "scene.mp4")) == 0

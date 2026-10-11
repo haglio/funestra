@@ -35,7 +35,18 @@ class PlayPoints:
         self._written_at = float("-inf")
 
     def point_for(self, video: Path | str) -> int:
-        return self._points.get(_key(video), 0)
+        key = _key(video)
+        if key not in self._points:
+            self._take_over_a_moved_place(key)
+        return self._points.get(key, 0)
+
+    def _take_over_a_moved_place(self, key: str) -> None:
+        name = Path(key).name
+        moved = [old for old in self._points
+                 if Path(old).name == name and not Path(old).exists()]
+        if len(moved) == 1:
+            self._points[key] = self._points.pop(moved[0])
+            self._write()
 
     def observe(self, video: Path | str, position_ms: float, duration_ms: float) -> None:
         if duration_ms <= 0:
