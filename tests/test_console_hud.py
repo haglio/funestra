@@ -676,13 +676,23 @@ class TestThePointer:
         assert (self._ground(under_the_pointer, painter, "main_next")
                 > self._ground(at_rest, painter, "main_next"))
 
-    def test_the_pointer_leaving_the_panel_puts_the_button_back(self):
+    def test_the_pointer_moving_off_the_panel_puts_the_button_back(self):
         painter = ConsolePainter()
         at_rest = _rgb(painter.bgra(self._hud()))
         painter.motion(*_over(painter, "main_next"))
         painter.bgra(self._hud())
 
         painter.motion(-1, -1)
+
+        assert (_rgb(painter.bgra(self._hud())) == at_rest).all()
+
+    def test_the_pointer_leaving_the_window_puts_the_button_back(self):
+        painter = ConsolePainter()
+        at_rest = _rgb(painter.bgra(self._hud()))
+        painter.motion(*_over(painter, "main_next"))
+        painter.bgra(self._hud())
+
+        painter.leave()
 
         assert (_rgb(painter.bgra(self._hud())) == at_rest).all()
 
