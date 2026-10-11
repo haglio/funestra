@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 import pytest
+from app_support import flick_folder as shared_layout
 
 from funestra_core.flick_folder import (
     flat_flicks_in,
@@ -170,16 +171,12 @@ class TestLatestOrder:
 
 
 
-def test_weird_dir_sits_beside_the_flicks_folder():
-    assert weird_dir_for_flicks_folder(Path("C:/videos/genau/flicks")) == Path(
-        "C:/videos/genau/weird"
+def test_the_flicks_folders_layout_is_the_one_every_app_reads_from_app_support():
+    assert (flat_flicks_in, vr_flicks_in, weird_dir_for_flicks_folder) == (
+        shared_layout.flat_flicks_in,
+        shared_layout.vr_flicks_in,
+        shared_layout.weird_dir_for_flicks_folder,
     )
-
-
-def test_the_flicks_folder_forks_into_the_2d_flicks_and_the_vr_flicks():
-    flicks = Path("C:/videos/genau/flicks")
-
-    assert (flat_flicks_in(flicks), vr_flicks_in(flicks)) == (flicks / "2D", flicks / "VR")
 
 
 def test_a_flick_goes_to_its_own_place_in_the_weird_pile():

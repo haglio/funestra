@@ -11,6 +11,8 @@ import random
 from collections.abc import Iterable
 from pathlib import Path
 
+from app_support.flick_folder import flat_flicks_in, vr_flicks_in, weird_dir_for_flicks_folder
+
 __all__ = [
     "SUPPORTED_VIDEO_EXTS",
     "flat_flicks_in",
@@ -62,20 +64,8 @@ def scan_flicks(
     return files
 
 
-def flat_flicks_in(flicks_folder: Path) -> Path:
-    return flicks_folder / "2D"
-
-
-def vr_flicks_in(flicks_folder: Path) -> Path:
-    return flicks_folder / "VR"
-
-
 def cache_dir_for_flicks_folder(folder: Path) -> Path:
     return folder.parent / "frames"
-
-
-def weird_dir_for_flicks_folder(folder: Path) -> Path:
-    return folder.parent / "weird"
 
 
 def weird_folder_for(flick: Path, flicks_folder: Path) -> Path:
