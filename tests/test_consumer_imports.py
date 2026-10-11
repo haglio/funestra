@@ -57,6 +57,14 @@ def _primary_checkout(repo: Path) -> Path:
     return (repo / common).resolve().parent
 
 
+def _other_repos_beside(repo: Path):
+    primary = _primary_checkout(repo)
+    for sibling in sorted(primary.parent.iterdir()):
+        if sibling.is_dir() and sibling != primary and not any(
+                (sibling / name / "__init__.py").is_file() for name in PACKAGE_NAMES):
+            yield sibling
+
+
 def is_this_package(module: str | None) -> bool:
     return (module or "").partition(".")[0] in PACKAGE_NAMES
 
@@ -149,12 +157,9 @@ def _what_the_consumers_reach() -> tuple[set[str], list[str]]:
     package is one, and nothing here has to know an application's name to say so
     -- which is the rule the package itself is held to.
     """
-    primary = _primary_checkout(ROOT)
     reached: set[str] = set()
     consumers = []
-    for sibling in sorted(primary.parent.iterdir()):
-        if not sibling.is_dir() or sibling == primary:
-            continue
+    for sibling in _other_repos_beside(ROOT):
         found: set[str] = set()
         for path in _source_files(sibling):
             found |= _names_reached_from(path.read_text(encoding="utf-8", errors="replace"))
@@ -222,6 +227,17 @@ def test_the_walk_never_enters_a_tree_it_would_throw_away(tmp_path, monkeypatch)
     assert [parts for parts in entered
             if not _NOT_SOURCE.isdisjoint(parts)
             or any(part.endswith(".egg-info") for part in parts)] == []
+
+
+def test_a_copy_of_this_repo_beside_the_checkout_is_no_consumer(tmp_path):
+    """The machine keeps an old-named clone of this repo beside the new one, and
+    read as a consumer it made both scans red with this package's own names."""
+    for copy in ("funestra", "player_core"):
+        (tmp_path / copy / "funestra").mkdir(parents=True)
+        (tmp_path / copy / "funestra" / "__init__.py").write_text("", encoding="utf-8")
+    (tmp_path / "an_app").mkdir()
+
+    assert [checkout.name for checkout in _other_repos_beside(tmp_path / "funestra")] == ["an_app"]
 
 
 def test_an_old_name_a_module_still_answers_to_is_read_with_the_name_it_became(tmp_path):
