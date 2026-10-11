@@ -74,7 +74,7 @@ from .hud_panel import (
     text_width,
     to_bgra,
 )
-from .hud_placement import HudCorner, block_x
+from .hud_placement import HudCorner, PointerReading, block_x
 from .hud_row import ROW_H, RowHud, RowLayout, RowSection, row_layout
 from .hud_sections import blocks_height, stack
 from .hud_status import (
@@ -264,6 +264,7 @@ class ConsolePainter:
         self._grip = TrackGrip()
         self._readout = ReadoutResolver()
         self._origin = hud_xy()
+        self._pointer: PointerReading[tuple[int, int] | None] = PointerReading(None)
 
     def bgra(self, hud: ConsoleHud, *, hover: tuple[int, int] | None = None,
              clip_row: RowHud | None = None, heatmap=None, host_block=None) -> np.ndarray:
@@ -305,6 +306,7 @@ class ConsolePainter:
         minute at most — Pillow is too slow to run every frame — so the image is
         kept until it changes.  The row is the one part that moves with playback,
         which is why a Funestra redrawing on its beat gets a fresh panel."""
+        hover = hover if hover is not None else self._pointer.on(hud.console)
         if ((hud, hover, clip_row, host_block) == self._painted[:4]
                 and heatmap is self._painted[4] and self._image is not None):
             return False
@@ -348,6 +350,12 @@ class ConsolePainter:
         """Where to name the button under *window* point ``(mx, my)``, else None."""
         local = self._local(mx, my)
         return local if tooltip_at(self.buttons, *local) else None
+
+    def motion(self, mx: int, my: int) -> None:
+        """Follow the pointer to *window* point ``(mx, my)``: the next painting
+        lights the button under it and names it, until the pointer moves off or
+        the panel moves to another corner."""
+        self._pointer.take(self.hover_at(mx, my))
 
     # Only Genau's old console panel, in checkouts from before its window went,
     # reads row_rect; it answers until none of them is open.
