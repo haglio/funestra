@@ -16,7 +16,7 @@ from test_consumer_imports import (
     PACKAGE,
     PACKAGE_NAMES,
     _names_reached_from,
-    _primary_checkout,
+    _other_repos_beside,
     _source_files,
     is_this_package,
 )
@@ -82,12 +82,9 @@ def _painters_reached(source: str) -> set[str]:
 
 
 def _drawers() -> tuple[dict[tuple[str, str], set[str]], list[str]]:
-    primary = _primary_checkout(ROOT)
     drawers: dict[tuple[str, str], set[str]] = defaultdict(set)
     consumers = []
-    for sibling in sorted(primary.parent.iterdir()):
-        if not sibling.is_dir() or sibling == primary:
-            continue
+    for sibling in _other_repos_beside(ROOT):
         imports_this_package = False
         for path in _source_files(sibling):
             source = path.read_text(encoding="utf-8", errors="replace")
