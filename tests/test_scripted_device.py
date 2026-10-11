@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from funestra_fakes import FakeTCode
 
-from funestra_core.funscript import Funscript
-from funestra_core.robot_hand import FULL_INTENSITY
-from funestra_core.scripted_device import REWIND_MS, ScriptedDevice
+from funestra.funscript import Funscript
+from funestra.robot_hand import FULL_INTENSITY
+from funestra.scripted_device import REWIND_MS, ScriptedDevice
 
 SCRIPT = Funscript(actions=[(0, 0), (1000, 100)])
 

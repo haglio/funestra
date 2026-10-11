@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from funestra_core.hud_row import (
+from funestra.hud_row import (
     DIAL,
     FLICK_TRACK_W,
     GAP,
@@ -27,15 +27,15 @@ from funestra_core.hud_row import (
     turn_to,
     volume_to,
 )
-from funestra_core.loop_dial import DIAL_SIZE
-from funestra_core.playhead import PlayheadHud, framed_playhead, readout_width, video_playhead
-from funestra_core.timeline import (
+from funestra.loop_dial import DIAL_SIZE
+from funestra.playhead import PlayheadHud, framed_playhead, readout_width, video_playhead
+from funestra.timeline import (
     AMBER,
     HEATMAP_ALPHA,
     RED,
     TIMELINE_HEIGHT,
 )
-from funestra_core.volume import (
+from funestra.volume import (
     CHIP_H,
     CHIP_W,
     MAX_VOLUME,

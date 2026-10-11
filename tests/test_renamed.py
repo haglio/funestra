@@ -14,34 +14,34 @@ from pathlib import Path
 import pytest
 from funestra_fakes import FakeEngine
 
-from funestra_core import flick_folder, mpv_engine, playhead, status
-from funestra_core.console import ConsoleModel, console_text, parse_console
-from funestra_core.cruise_control import CruiseControlState
-from funestra_core.flag import Flag
-from funestra_core.flick_cache import FlickCacheStore
-from funestra_core.flick_picture import Picture
-from funestra_core.flick_renderer import FlickRenderController
-from funestra_core.genau_controls import GenauControls, apply_runtime_command
-from funestra_core.genau_notifier import GenauNotifier
-from funestra_core.genau_status import build_status_text
-from funestra_core.hud_overlay import HudOverlay
-from funestra_core.playback import Playback
-from funestra_core.renamed import method_of
-from funestra_core.render_engine import MpvRenderEngine
-from funestra_core.robot_hand import RobotHandState
-from funestra_core.robot_hand_beat import BeatEngine
-from funestra_core.satellite_hud import HudModel, hud_text, parse_hud
+from funestra import flick_folder, mpv_engine, playhead, status
+from funestra.console import ConsoleModel, console_text, parse_console
+from funestra.cruise_control import CruiseControlState
+from funestra.flag import Flag
+from funestra.flick_cache import FlickCacheStore
+from funestra.flick_picture import Picture
+from funestra.flick_renderer import FlickRenderController
+from funestra.genau_controls import GenauControls, apply_runtime_command
+from funestra.genau_notifier import GenauNotifier
+from funestra.genau_status import build_status_text
+from funestra.hud_overlay import HudOverlay
+from funestra.playback import Playback
+from funestra.renamed import method_of
+from funestra.render_engine import MpvRenderEngine
+from funestra.robot_hand import RobotHandState
+from funestra.robot_hand_beat import BeatEngine
+from funestra.satellite_hud import HudModel, hud_text, parse_hud
 
 
 def test_an_old_module_path_gives_the_renamed_function():
-    from funestra_core.clip_folder import flat_clips_in  # noqa: PLC0415
+    from funestra.clip_folder import flat_clips_in  # noqa: PLC0415
 
     assert flat_clips_in is flick_folder.flat_flicks_in
 
 
 def test_an_old_module_path_refuses_a_name_it_never_had():
     with pytest.raises(ImportError):
-        from funestra_core.clip_folder import a_name_funestra_core_never_had  # noqa: F401, PLC0415
+        from funestra.clip_folder import a_name_funestra_never_had  # noqa: F401, PLC0415
 
 
 def test_a_function_renamed_in_place_answers_to_its_old_name():
@@ -78,7 +78,7 @@ def test_genaus_controls_take_the_collaborators_an_old_orchestrator_names():
 
 
 def test_an_old_seconds_verb_still_sets_the_pace():
-    from funestra_core.flick_advance import FlickAdvanceState  # noqa: PLC0415
+    from funestra.flick_advance import FlickAdvanceState  # noqa: PLC0415
 
     controls = GenauControls(engine=BeatEngine(last_tick=0.0), paused=Flag(), step_flick=lambda _step: None,
                              flick_advance_state=FlickAdvanceState())
@@ -121,15 +121,15 @@ def test_the_notifier_answers_to_its_old_method_name():
 
 
 def test_the_engines_old_module_paths_give_the_engines():
-    from funestra_core.mpv_player import MpvPlayer  # noqa: PLC0415
-    from funestra_core.render_player import MpvRenderPlayer  # noqa: PLC0415
+    from funestra.mpv_player import MpvPlayer  # noqa: PLC0415
+    from funestra.render_player import MpvRenderPlayer  # noqa: PLC0415
 
     assert MpvPlayer is mpv_engine.MpvEngine
     assert MpvRenderPlayer is MpvRenderEngine
 
 
 def test_the_check_fun_time_runs_for_the_engine_still_reaches_its_loader():
-    from funestra_core.mpv_player import _import_mpv  # noqa: PLC0415
+    from funestra.mpv_player import _import_mpv  # noqa: PLC0415
 
     assert _import_mpv is mpv_engine._import_mpv
 
@@ -154,8 +154,8 @@ def test_a_hud_overlay_takes_its_engine_under_the_old_keyword(tmp_path):
 
 
 def test_the_verbs_old_module_path_gives_every_verb():
-    from funestra_core import funestra_verbs  # noqa: PLC0415
-    from funestra_core.player_verbs import TOGGLE_LOCK, play_file  # noqa: PLC0415
+    from funestra import funestra_verbs  # noqa: PLC0415
+    from funestra.player_verbs import TOGGLE_LOCK, play_file  # noqa: PLC0415
 
     assert (TOGGLE_LOCK, play_file) == (funestra_verbs.TOGGLE_LOCK, funestra_verbs.play_file)
 

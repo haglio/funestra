@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from app_support import flick_folder as shared_layout
 
-from funestra_core.flick_folder import (
+from funestra.flick_folder import (
     flat_flicks_in,
     move_flick_to_weird,
     scan_flicks,

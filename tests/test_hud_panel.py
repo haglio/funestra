@@ -6,8 +6,8 @@ from PIL import Image, ImageDraw
 from shared_ui import palette
 from shared_ui.palette import BG_PRIMARY, MAGENTA, TEXT_MUTED, WHITE
 
-from funestra_core import hud_panel
-from funestra_core.hud_panel import (
+from funestra import hud_panel
+from funestra.hud_panel import (
     ICON_GRIDS,
     PANEL_ALPHA,
     TOOLTIP_PAD,

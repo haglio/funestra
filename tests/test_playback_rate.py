@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from funestra_core.playback_rate import (
+from funestra.playback_rate import (
     MAX_RATE,
     MIN_RATE,
     RATE_STEP,

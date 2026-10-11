@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-import funestra_core.playlist
-from funestra_core.playlist import (
+import funestra.playlist
+from funestra.playlist import (
     PlaylistItem,
     item_from_line,
     item_line,
@@ -137,7 +137,7 @@ class TestWritePlaylist:
             self, tmp_path, monkeypatch):
         playlist = tmp_path / "portrait_playlist.tsv"
         write_playlist(playlist, [PlaylistItem(Path("C:/vids/before.mp4"))])
-        monkeypatch.setattr(funestra_core.playlist, "READER_HOLD_BUDGET_S", 0.05)
+        monkeypatch.setattr(funestra.playlist, "READER_HOLD_BUDGET_S", 0.05)
 
         with _held_open_for(playlist, 0.5), pytest.raises(OSError, match="portrait_playlist"):
             write_playlist(playlist, [PlaylistItem(Path("C:/vids/after.mp4"))])

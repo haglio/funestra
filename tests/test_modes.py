@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from funestra_core.modes import (
+from funestra.modes import (
     LengthMode,
     LoopState,
     MainMode,

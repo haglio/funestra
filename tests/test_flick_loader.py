@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import MagicMock
 
-from funestra_core.flick_cache import DecodeRequestState, FlickCacheStore
-from funestra_core.flick_loader import FlickLoadController
+from funestra.flick_cache import DecodeRequestState, FlickCacheStore
+from funestra.flick_loader import FlickLoadController
 
 
 class JobStarter:

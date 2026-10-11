@@ -4,8 +4,8 @@ from pathlib import Path
 
 import numpy as np
 
-from funestra_core.flick_cache import FlickCacheStore
-from funestra_core.flick_renderer import FlickRenderController, display_index_for_phase
+from funestra.flick_cache import FlickCacheStore
+from funestra.flick_renderer import FlickRenderController, display_index_for_phase
 
 
 def _make_controller():

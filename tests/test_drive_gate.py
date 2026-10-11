@@ -21,10 +21,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from funestra_core.descent_latch import DescentChoice, DescentLatch, DriveKey
-from funestra_core.drive_gate import DriveGate, next_handoff_touch
-from funestra_core.drive_readout import DRIVEN_BY_FUNSCRIPT, TRACE_SAMPLES, DriveHud
-from funestra_core.funscript import Funscript
+from funestra.descent_latch import DescentChoice, DescentLatch, DriveKey
+from funestra.drive_gate import DriveGate, next_handoff_touch
+from funestra.drive_readout import DRIVEN_BY_FUNSCRIPT, TRACE_SAMPLES, DriveHud
+from funestra.funscript import Funscript
 
 SPAN_S = 7.9
 STEP_MS = 100

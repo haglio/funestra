@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from funestra_core.hud_sections import SECTION_GAP, stack
+from funestra.hud_sections import SECTION_GAP, stack
 
 
 def test_the_line_between_two_sections_has_a_gap_either_side_of_it():

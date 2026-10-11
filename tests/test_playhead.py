@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from funestra_core.playhead import (
+from funestra.playhead import (
     FIGURE_SPACE,
     PlayheadHudPainter,
     flick_playhead,
@@ -11,7 +11,7 @@ from funestra_core.playhead import (
     readout_width,
     video_playhead,
 )
-from funestra_core.volume import CHIP_H
+from funestra.volume import CHIP_H
 
 
 class TestWhatAVideosReadoutSays:

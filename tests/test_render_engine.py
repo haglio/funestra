@@ -9,7 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from funestra_core import render_engine
+from funestra import render_engine
 
 FILE_LOADED = 8
 PLAYBACK_RESTART = 21

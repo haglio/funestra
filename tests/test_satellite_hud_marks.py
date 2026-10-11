@@ -3,7 +3,7 @@
 The HUD is painted into the video frame with Pillow and there is no Qt in a
 satellite process, so every mark here used to be whatever Segoe UI Symbol
 carried -- a loop that was one arc where the family's is a circuit.  The
-panel's own marks come out of shared_ui's geometry now, through funestra_core's
+panel's own marks come out of shared_ui's geometry now, through funestra's
 HUD chrome, and these hold them to it; the faces a source declares for its
 buttons are held to it where they are declared.
 """
@@ -13,13 +13,13 @@ from PIL import Image, ImageDraw
 from shared_ui.icon_geometry import glyph_names
 from shared_ui.palette import TEXT_PRIMARY
 
-from funestra_core.satellite_hud import (
+from funestra.satellite_hud import (
     EXPAND_MARK,
     FAVORITE_MARK,
     LOOP_MARK,
     WRONG_ACTION_MARK,
 )
-from funestra_core.satellite_hud_paint import HudRenderer
+from funestra.satellite_hud_paint import HudRenderer
 
 
 def _named() -> dict[str, str]:

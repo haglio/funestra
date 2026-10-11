@@ -10,7 +10,7 @@ import dataclasses
 
 import pytest
 
-from funestra_core import drive_layout as layout
+from funestra import drive_layout as layout
 
 
 def _by_action(controls):

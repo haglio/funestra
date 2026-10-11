@@ -7,12 +7,12 @@ from satellite_rows import band, funestra_rows
 from shared_ui.icon_geometry import GLYPHS, tooltip_for
 from shared_ui.spacing import BUTTON_GAP, BUTTON_GROUP_GAP
 
-from funestra_core.console import OSR2_PARKED, VALUE_W
-from funestra_core.hud_button import Button
-from funestra_core.hud_marks import shared_mark
-from funestra_core.hud_placement import HudCorner, HudEdge
-from funestra_core.modes import Osr2State
-from funestra_core.satellite_hud import (
+from funestra.console import OSR2_PARKED, VALUE_W
+from funestra.hud_button import Button
+from funestra.hud_marks import shared_mark
+from funestra.hud_placement import HudCorner, HudEdge
+from funestra.modes import Osr2State
+from funestra.satellite_hud import (
     CTRL_BTN,
     DOUBLE_CLICK_S,
     ELLIPSIS,
@@ -379,7 +379,7 @@ def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it():
     The cases below are the rule as this repo owns it.  That it still agrees with
     fun_time's own matcher — the authority it mirrors — is pinned over THERE, in
     fun_time's test_media_metadata, because only the wearer of this HUD can import
-    both sides; this suite runs with funestra_core alone on the path.  The empty query
+    both sides; this suite runs with funestra alone on the path.  The empty query
     is the one deliberate difference: it matches every clip there, and lights no row
     here.
     """

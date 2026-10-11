@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from funestra_core.ken_burns import Move, pan, zoom_in
+from funestra.ken_burns import Move, pan, zoom_in
 
 DRIFT = pan(1.0, -1.0)
 CREEP = zoom_in(0.5, 0.5)

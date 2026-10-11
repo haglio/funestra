@@ -1,7 +1,7 @@
 """The rectangle every HUD hit-tests against."""
 from __future__ import annotations
 
-from funestra_core.geometry import contains
+from funestra.geometry import contains
 
 
 def test_a_press_anywhere_inside_the_rect_is_in_it():

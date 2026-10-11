@@ -7,7 +7,7 @@ harvester's ``index.jsonl`` also has its topics' tags read: only a script whose
 topic wears a tag in ``--keep-tag`` (:data:`KEPT_TAGS` unless said otherwise)
 is taken, and one wearing a tag in ``--skip-tag`` (:data:`SKIPPED_TAGS`) is
 left out.  A folder with no index -- his own scripts -- is taken whole.  What comes out is a
-:class:`funestra_core.learned_model.LearnedModel`: up to ``--kept`` phrases per
+:class:`funestra.learned_model.LearnedModel`: up to ``--kept`` phrases per
 class, drawn evenly from everything seen, and the counts of which class
 followed which.  Nothing named in the corpus reaches the model.
 """
@@ -26,7 +26,7 @@ from typing import NamedTuple
 
 from app_support.funscript import read_actions
 
-from funestra_core.learned_model import (
+from funestra.learned_model import (
     PHRASE_SWINGS,
     LearnedModel,
     Phrase,

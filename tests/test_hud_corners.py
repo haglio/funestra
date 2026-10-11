@@ -3,7 +3,7 @@ from __future__ import annotations
 from funestra_fakes import FakeEngine
 from shared_ui.spacing import BUTTON_GAP
 
-from funestra_core.hud_corners import (
+from funestra.hud_corners import (
     CORNER_PLUS_OVERLAY_ID,
     HudCorners,
     HudPlace,
@@ -11,8 +11,8 @@ from funestra_core.hud_corners import (
     plus_button,
     tooltip_size,
 )
-from funestra_core.hud_minimize import BUTTON
-from funestra_core.hud_placement import HudCorner
+from funestra.hud_minimize import BUTTON
+from funestra.hud_placement import HudCorner
 
 WINDOW = (1200, 800)
 LOWER_RIGHT = (WINDOW[0] - 3, WINDOW[1] - 3)

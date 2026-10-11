@@ -106,7 +106,7 @@ def _drawers() -> tuple[dict[tuple[str, str], set[str]], list[str]]:
 def drawers_and_consumers():
     drawers, consumers = _drawers()
     if not consumers:
-        pytest.skip("no sibling checkout beside this one imports funestra_core, so there is "
+        pytest.skip("no sibling checkout beside this one imports funestra, so there is "
                     "nothing to hold the drawers against")
     return drawers, consumers
 
@@ -139,12 +139,12 @@ def test_every_known_drawer_still_draws(drawers_and_consumers):
 
 
 def test_a_painter_reached_by_module_counts_as_well_as_one_imported_by_name():
-    by_name = _painters_reached("from funestra_core.console_hud import ConsolePainter\n")
+    by_name = _painters_reached("from funestra.console_hud import ConsolePainter\n")
     by_module = _painters_reached(
-        "from funestra_core import console_hud\npainter = console_hud.ConsolePainter()\n")
+        "from funestra import console_hud\npainter = console_hud.ConsolePainter()\n")
     by_dotted = _painters_reached(
-        "import funestra_core.playhead as playhead\npainter = playhead.PlayheadHudPainter()\n")
-    model_only = _painters_reached("from funestra_core.console_hud import ConsoleHud\n")
+        "import funestra.playhead as playhead\npainter = playhead.PlayheadHudPainter()\n")
+    model_only = _painters_reached("from funestra.console_hud import ConsoleHud\n")
 
     assert by_name == by_module == {"console_hud.ConsolePainter"}
     assert by_dotted == {"playhead.PlayheadHudPainter"}

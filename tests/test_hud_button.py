@@ -5,8 +5,8 @@ import json
 
 from shared_ui.icon_geometry import tooltip_for
 
-from funestra_core.hud_button import Button, rows_from_raw, rows_raw
-from funestra_core.hud_marks import shared_mark
+from funestra.hud_button import Button, rows_from_raw, rows_raw
+from funestra.hud_marks import shared_mark
 
 _A_MARK_THIS_VERSION_LACKS = "a_mark_from_another_version"
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from app_support import file_channel as the_familys
 
-from funestra_core import file_channel
+from funestra import file_channel
 
 
 def test_every_name_the_funestras_import_is_app_supports_own():

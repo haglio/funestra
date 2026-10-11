@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import random
 
-from funestra_core import learned_model
-from funestra_core.learned_model import LearnedModel, Phrase
+from funestra import learned_model
+from funestra.learned_model import LearnedModel, Phrase
 
 
 def _phrase(duration_ms: int, low: int, high: int, swings: int = learned_model.PHRASE_SWINGS):

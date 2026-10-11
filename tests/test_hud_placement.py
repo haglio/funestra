@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from funestra_core.hud_placement import HudCorner, HudEdge, hud_origin
+from funestra.hud_placement import HudCorner, HudEdge, hud_origin
 
 
 def test_a_side_key_moves_the_hud_to_that_side_and_leaves_the_other_axis_alone():

@@ -1,15 +1,15 @@
 """A Funestra's own volume chip: what it opens showing, and what the two verbs set.
 
 Where on the chip a press landed is the row's to work out
-(:class:`funestra_core.hud_row.RowPress`, covered in tests/test_hud_row.py); what
+(:class:`funestra.hud_row.RowPress`, covered in tests/test_hud_row.py); what
 reaches a control is the mute or the level it asks for.
 """
 from __future__ import annotations
 
 from funestra_fakes import FakeEngine
 
-from funestra_core.volume import VolumeHud
-from funestra_core.volume_control import RoomVolume, VolumeControl
+from funestra.volume import VolumeHud
+from funestra.volume_control import RoomVolume, VolumeControl
 
 
 def _volume(*, live: bool = True):

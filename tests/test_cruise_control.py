@@ -14,8 +14,8 @@ import random
 
 import pytest
 
-from funestra_core import wave_stack
-from funestra_core.cruise_control import (
+from funestra import wave_stack
+from funestra.cruise_control import (
     _BASE_SWING,
     _TRAVEL_BAND,
     CruiseControlState,
@@ -23,7 +23,7 @@ from funestra_core.cruise_control import (
     enable_cruise_control,
     tick_cruise_control,
 )
-from funestra_core.robot_hand import (
+from funestra.robot_hand import (
     MAX_TICK_SECONDS,
     RobotHandState,
     WaveformShape,

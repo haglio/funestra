@@ -12,24 +12,24 @@ from console_rows import console_rows
 from funestra_fakes import FakeEngine
 from host_blocks import HostsBlock
 
-from funestra_core.console import ConsoleModel, ModeHud, console_text
-from funestra_core.flick_picture import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, Picture
-from funestra_core.funestra import Channels, Funestra, User, _Nobody
-from funestra_core.hud_button import Button
-from funestra_core.hud_corners import CORNER_PLUS_OVERLAY_ID
-from funestra_core.hud_minimize import BUTTON
-from funestra_core.hud_overlay import HUD_OVERLAY_ID
-from funestra_core.hud_placement import HudEdge
-from funestra_core.hud_row import PARTS_Y
-from funestra_core.loop_dial import DIAL_SIZE
-from funestra_core.modes import LengthMode, MainMode, Osr2State
-from funestra_core.playhead import FIGURE_SPACE
-from funestra_core.playlist import read_playlist
-from funestra_core.pointer import OMNIPAUSE_TOGGLE
-from funestra_core.satellite_hud import MARGIN, HudModel
-from funestra_core.session_quit import SESSION_QUIT
-from funestra_core.timeline import TIMELINE_HEIGHT
-from funestra_core.volume import CHIP_H, CHIP_W, chip_xy
+from funestra.console import ConsoleModel, ModeHud, console_text
+from funestra.flick_picture import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, Picture
+from funestra.funestra import Channels, Funestra, User, _Nobody
+from funestra.hud_button import Button
+from funestra.hud_corners import CORNER_PLUS_OVERLAY_ID
+from funestra.hud_minimize import BUTTON
+from funestra.hud_overlay import HUD_OVERLAY_ID
+from funestra.hud_placement import HudEdge
+from funestra.hud_row import PARTS_Y
+from funestra.loop_dial import DIAL_SIZE
+from funestra.modes import LengthMode, MainMode, Osr2State
+from funestra.playhead import FIGURE_SPACE
+from funestra.playlist import read_playlist
+from funestra.pointer import OMNIPAUSE_TOGGLE
+from funestra.satellite_hud import MARGIN, HudModel
+from funestra.session_quit import SESSION_QUIT
+from funestra.timeline import TIMELINE_HEIGHT
+from funestra.volume import CHIP_H, CHIP_W, chip_xy
 
 WINDOW = (640, 480)
 
@@ -382,7 +382,7 @@ def test_on_a_window_the_way_of_playing_is_mpv_opened_on_that_window(tmp_path):
     channels = _channels(tmp_path, [str(clips[0])])
     engine = FakeEngine()
 
-    with patch("funestra_core.funestra.MpvEngine", return_value=engine) as mpv:
+    with patch("funestra.funestra.MpvEngine", return_value=engine) as mpv:
         funestra = Funestra.on_window(4242, channels=channels, playlist=read_playlist(channels.playlist))
 
     mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True)
@@ -597,7 +597,7 @@ class TestWhatRunsOnTheFunestra:
     def test_a_verb_neither_answers_is_named_on_the_log(self, tmp_path, caplog):
         funestra, _engine, _kino = _main(tmp_path, commands="FLOOP\n")
 
-        with caplog.at_level("WARNING", logger="funestra_core.funestra"):
+        with caplog.at_level("WARNING", logger="funestra.funestra"):
             funestra.tick(window=WINDOW)
 
         assert "FLOOP" in caplog.text
@@ -722,7 +722,7 @@ class TestWhoHasTheWindow:
     def test_show_naming_nobody_on_this_window_is_refused_and_named_on_the_log(self, tmp_path, caplog):
         funestra, _engine, _kino = _main(tmp_path, commands="SHOW slideshow\n", genau=True)
 
-        with caplog.at_level("WARNING", logger="funestra_core.funestra"):
+        with caplog.at_level("WARNING", logger="funestra.funestra"):
             funestra.tick(window=WINDOW)
 
         assert funestra.showing == "kino"
@@ -945,7 +945,7 @@ def test_on_a_window_the_way_of_playing_can_be_heard(tmp_path):
     clips = _clips(tmp_path, "v0")
     channels = _channels(tmp_path, [str(clips[0])])
 
-    with patch("funestra_core.funestra.MpvEngine", return_value=FakeEngine()) as mpv:
+    with patch("funestra.funestra.MpvEngine", return_value=FakeEngine()) as mpv:
         Funestra.on_window(4242, channels=channels, playlist=read_playlist(channels.playlist),
                            muted=False)
 
@@ -1203,7 +1203,7 @@ class TestTheWindowsOwnVerbs:
     def test_a_verb_of_the_windows_own_is_answered_and_not_refused(self, tmp_path, caplog):
         funestra, _engine, heard = self._answering(tmp_path, "TILT_UP\n")
 
-        with caplog.at_level("WARNING", logger="funestra_core.funestra"):
+        with caplog.at_level("WARNING", logger="funestra.funestra"):
             funestra.tick(window=WINDOW)
 
         assert heard == ["TILT_UP"]

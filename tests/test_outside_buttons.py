@@ -3,10 +3,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from funestra_core.hud_corners import plus_bgra, plus_button, tooltip_size
-from funestra_core.hud_minimize import BUTTON, MINIMIZE_TOOLTIP, RESTORE_TOOLTIP
-from funestra_core.hud_placement import HudCorner, HudEdge
-from funestra_core.outside_buttons import OutsideButtons
+from funestra.hud_corners import plus_bgra, plus_button, tooltip_size
+from funestra.hud_minimize import BUTTON, MINIMIZE_TOOLTIP, RESTORE_TOOLTIP
+from funestra.hud_placement import HudCorner, HudEdge
+from funestra.outside_buttons import OutsideButtons
 
 OPEN = OutsideButtons("portrait")
 MINIMIZED = OutsideButtons("portrait", minimized=True)

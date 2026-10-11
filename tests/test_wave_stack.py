@@ -13,8 +13,8 @@ import random
 
 import pytest
 
-from funestra_core import wave_stack
-from funestra_core.robot_hand import (
+from funestra import wave_stack
+from funestra.robot_hand import (
     PARK_CENTER,
     WaveformShape,
     bpm_for_speed,
@@ -22,7 +22,7 @@ from funestra_core.robot_hand import (
     travel_cap,
     wave_travel,
 )
-from funestra_core.wave_stack import Ramp, Wave, WaveStack
+from funestra.wave_stack import Ramp, Wave, WaveStack
 
 
 def _stack(rng, count):

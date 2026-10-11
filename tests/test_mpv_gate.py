@@ -15,7 +15,7 @@ from __future__ import annotations
 import threading
 import time
 
-from funestra_core.mpv_gate import CallGate, mpv_call
+from funestra.mpv_gate import CallGate, mpv_call
 
 
 def test_a_gate_with_nothing_inside_closes_at_once():

@@ -14,11 +14,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from funestra_core.flick_cache import DecodeRequestState, FlickCacheStore
-from funestra_core.flick_loader import FlickLoadController
-from funestra_core.flick_renderer import FlickRenderController
-from funestra_core.flick_selection import FlickSelectionController
-from funestra_core.flick_sequence import FlickSequenceController
+from funestra.flick_cache import DecodeRequestState, FlickCacheStore
+from funestra.flick_loader import FlickLoadController
+from funestra.flick_renderer import FlickRenderController
+from funestra.flick_selection import FlickSelectionController
+from funestra.flick_sequence import FlickSequenceController
 
 # What Genau's own config gives it: the flick on screen, and room for one more.
 CACHE_LIMIT = 2

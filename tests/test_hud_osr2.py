@@ -4,9 +4,9 @@ from __future__ import annotations
 import numpy as np
 from shared_ui.palette import BLUE, GREEN, RED, TEXT_MUTED
 
-from funestra_core.drive_readout import DriveHud, track_command
-from funestra_core.hud_button import Button
-from funestra_core.hud_osr2 import (
+from funestra.drive_readout import DriveHud, track_command
+from funestra.hud_button import Button
+from funestra.hud_osr2 import (
     BUFFER,
     HEIGHT,
     LABELS,
@@ -16,8 +16,8 @@ from funestra_core.hud_osr2 import (
     driving_at_the_playhead,
     state_for,
 )
-from funestra_core.hud_panel import HudPanel
-from funestra_core.modes import Osr2State
+from funestra.hud_panel import HudPanel
+from funestra.modes import Osr2State
 
 
 def _drawn(line: Osr2Line) -> tuple[HudPanel, list]:

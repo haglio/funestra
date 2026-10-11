@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from shared_ui.icon_geometry import glyph_names
 
-from funestra_core.console import (
+from funestra.console import (
     BUTTON,
     GAP,
     GROUP_GAP,
@@ -30,11 +30,11 @@ from funestra_core.console import (
     shape_label,
     tooltip_at,
 )
-from funestra_core.hud_button import Button
-from funestra_core.hud_marks import BROKER_ICON, MINIMIZE_ICON, shared_mark, shared_mark_name
-from funestra_core.hud_placement import HudCorner, HudEdge
-from funestra_core.modes import MainMode, Osr2State
-from funestra_core.robot_hand import WaveformShape
+from funestra.hud_button import Button
+from funestra.hud_marks import BROKER_ICON, MINIMIZE_ICON, shared_mark, shared_mark_name
+from funestra.hud_placement import HudCorner, HudEdge
+from funestra.modes import MainMode, Osr2State
+from funestra.robot_hand import WaveformShape
 
 # A source's rows, made up: a mode pair with minimize standing apart, and a
 # named read-out between two arrows.

@@ -10,9 +10,9 @@ from __future__ import annotations
 
 import pytest
 
-from funestra_core.cruise_control import CruiseControlState
-from funestra_core.genau_status import build_status_text
-from funestra_core.robot_hand import (
+from funestra.cruise_control import CruiseControlState
+from funestra.genau_status import build_status_text
+from funestra.robot_hand import (
     MAX_SPEED,
     MIN_SPEED,
     RobotHandState,

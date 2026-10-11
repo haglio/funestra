@@ -2,8 +2,8 @@
 and press them: the shape a source's band takes, every state set here."""
 from __future__ import annotations
 
-from funestra_core.hud_button import FIT_THE_WORD, Button
-from funestra_core.hud_marks import FMODE_ICON, MINIMIZE_ICON, shared_mark
+from funestra.hud_button import FIT_THE_WORD, Button
+from funestra.hud_marks import FMODE_ICON, MINIMIZE_ICON, shared_mark
 
 
 def band(funestra: str = "portrait", *, locked: bool = False, favorites: bool = False,

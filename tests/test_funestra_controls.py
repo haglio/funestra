@@ -6,9 +6,9 @@ from pathlib import Path
 
 from funestra_fakes import FakeTCode, make_playback
 
-from funestra_core import funestra_verbs
-from funestra_core.funestra_controls import VERBS, FunestraControls, apply_command
-from funestra_core.funestra_verbs import (
+from funestra import funestra_verbs
+from funestra.funestra_controls import VERBS, FunestraControls, apply_command
+from funestra.funestra_verbs import (
     CLEAR_FRAME,
     LOCK_OFF,
     LOCK_ON,
@@ -34,7 +34,7 @@ from funestra_core.funestra_verbs import (
     TRASH,
     step_version,
 )
-from funestra_core.volume_control import RoomVolume
+from funestra.volume_control import RoomVolume
 
 
 def _never_reloads() -> None:
@@ -155,7 +155,7 @@ class TestApplyCommand:
 
     def test_an_unknown_verb_is_refused_and_named_on_the_log(self, tmp_path, caplog):
         controls = _controls(tmp_path)
-        with caplog.at_level("WARNING", logger="funestra_core.funestra_controls"):
+        with caplog.at_level("WARNING", logger="funestra.funestra_controls"):
             assert apply_command("FLOOP", controls) is False
             assert apply_command("", controls) is False
         assert "FLOOP" in caplog.text

@@ -14,9 +14,9 @@ from PIL import Image, ImageDraw
 from shared_ui.palette import BG_BUTTON, RED
 from shared_ui.spacing import BUTTON_MARK_INSET
 
-from funestra_core.hud_button import Button
-from funestra_core.hud_marks import shared_mark, shared_mark_name
-from funestra_core.hud_panel import (
+from funestra.hud_button import Button
+from funestra.hud_marks import shared_mark, shared_mark_name
+from funestra.hud_panel import (
     SYMBOL_FONT,
     draw_button,
     draw_mark,

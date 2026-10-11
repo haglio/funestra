@@ -4,9 +4,9 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from funestra_core.funscript import Funscript
-from funestra_core.heatmap import build_heatmap
-from funestra_core.scrubber import (
+from funestra.funscript import Funscript
+from funestra.heatmap import build_heatmap
+from funestra.scrubber import (
     HeatmapStrip,
     LoopThumbCapture,
     ZoomWindow,
@@ -17,7 +17,7 @@ from funestra_core.scrubber import (
     timeline_height,
     timeline_x,
 )
-from funestra_core.timeline import BAR_INSET_Y, TIMELINE_HEIGHT, bar_track_x, progress_bar_bgra
+from funestra.timeline import BAR_INSET_Y, TIMELINE_HEIGHT, bar_track_x, progress_bar_bgra
 
 
 def _funscript():

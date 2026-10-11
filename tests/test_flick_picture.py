@@ -4,15 +4,15 @@ from __future__ import annotations
 import numpy as np
 from funestra_fakes import FakeEngine
 
-import funestra_core.flick_picture as module
-from funestra_core.flick_picture import (
+import funestra.flick_picture as module
+from funestra.flick_picture import (
     BACKDROP_OVERLAY_ID,
     FIRST_TILE_OVERLAY_ID,
     LOADING_OVERLAY_ID,
     FlickPicture,
     Picture,
 )
-from funestra_core.funestra import Funestra
+from funestra.funestra import Funestra
 
 
 def _frame(width: int, height: int, rgb=(10, 20, 30)) -> np.ndarray:

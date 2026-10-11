@@ -7,21 +7,21 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from funestra_core.broker_feed import BrokerFeed
-from funestra_core.cruise_control import CruiseControlState
-from funestra_core.device_walk import BROKER_HOLD_DELAY_MS
-from funestra_core.flag import Flag
-from funestra_core.flick_advance import FlickAdvanceState
-from funestra_core.flick_flip import FlickFlip
-from funestra_core.funscript import PARK_SETTLE_MS
-from funestra_core.genau_controls import GenauControls
-from funestra_core.genau_refresh import GenauRefreshController
-from funestra_core.learned_model import LearnedModel, Phrase, classify
-from funestra_core.learned_motion import LearnedMotionState
-from funestra_core.robot_hand import RobotHandState, position_fraction
-from funestra_core.robot_hand_beat import BeatEngine
-from funestra_core.robot_hand_driver import RobotHandTCodeDriver
-from funestra_core.tcode import HANDOFF_MS
+from funestra.broker_feed import BrokerFeed
+from funestra.cruise_control import CruiseControlState
+from funestra.device_walk import BROKER_HOLD_DELAY_MS
+from funestra.flag import Flag
+from funestra.flick_advance import FlickAdvanceState
+from funestra.flick_flip import FlickFlip
+from funestra.funscript import PARK_SETTLE_MS
+from funestra.genau_controls import GenauControls
+from funestra.genau_refresh import GenauRefreshController
+from funestra.learned_model import LearnedModel, Phrase, classify
+from funestra.learned_motion import LearnedMotionState
+from funestra.robot_hand import RobotHandState, position_fraction
+from funestra.robot_hand_beat import BeatEngine
+from funestra.robot_hand_driver import RobotHandTCodeDriver
+from funestra.tcode import HANDOFF_MS
 
 
 class FakeLoader:
@@ -957,7 +957,7 @@ class TestTheOrderTheTickDoesThingsIn:
         """The calls `_refresh_once` makes, in source order."""
 
         source = (Path(__file__).resolve().parents[1]
-                  / "funestra_core" / "genau_refresh.py").read_text(encoding="utf-8")
+                  / "funestra" / "genau_refresh.py").read_text(encoding="utf-8")
         body = next(n for n in ast.walk(ast.parse(source))
                     if isinstance(n, ast.FunctionDef) and n.name == "_refresh_once")
         calls = [n for n in ast.walk(body) if isinstance(n, ast.Call)]

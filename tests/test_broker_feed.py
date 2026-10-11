@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 import pytest
 from app_support.threading_utils import wait_until
 
-from funestra_core.broker_feed import (
+from funestra.broker_feed import (
     BrokerFeed,
     BrokerSnapshot,
     apply_udp_line,
