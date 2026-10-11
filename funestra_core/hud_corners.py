@@ -13,7 +13,7 @@ from .hud_minimize import BUTTON, RESTORE_GLYPH, mark_font, restore_at_command
 from .hud_panel import TOOLTIP_PAD, draw_button, draw_tooltip, text_width, to_bgra
 from .hud_placement import HudCorner, corner_at, hud_origin
 
-__all__ = ["CORNER_PLUS_OVERLAY_ID", "plus_bgra", "plus_button", "tooltip_size"]
+__all__ = ["CORNER_PLUS_OVERLAY_ID"]
 
 CORNER_PLUS_OVERLAY_ID = 11
 REACH = 64

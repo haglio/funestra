@@ -12,7 +12,7 @@ from .hud_minimize import BUTTON, mark_font, minimize_button, restore_button
 from .hud_panel import draw_button, draw_tooltip, to_bgra
 from .hud_placement import HudCorner, HudEdge
 
-__all__: list[str] = []
+__all__ = ["OutsideButtons"]
 
 _PLUS_NEAREST_THE_PICTURE = {
     HudEdge.LEFT: HudCorner.UPPER_RIGHT,

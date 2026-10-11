@@ -12,7 +12,7 @@ from .hud_marks import shared_mark
 from .hud_panel import draw_button, draw_tooltip, load_font, to_bgra
 from .hud_placement import HudCorner
 
-__all__ = ["BUTTON", "mark_font", "minimize_button", "restore_button"]
+__all__: list[str] = []
 
 BUTTON = BUTTON_SIZE_HUD
 ROOM = BUTTON + BUTTON_GAP
