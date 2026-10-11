@@ -651,6 +651,51 @@ class TestPresses:
         assert painter.hover_at(mx, my) == (mx - left, my - top)
 
 
+class TestThePointer:
+    """The console follows the pointer itself, so every window that draws one -- a
+    Funestra's, and Origenerator's own at its top left -- lights the button under
+    it the same way."""
+
+    @staticmethod
+    def _hud(corner: HudCorner = HudCorner.UPPER_LEFT) -> ConsoleHud:
+        return ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO, hud_corner=corner,
+                                               rows=console_rows(MainMode.KINO)))
+
+    @staticmethod
+    def _ground(rgb: np.ndarray, painter: ConsolePainter, command: str) -> int:
+        x, y, _w, h = _rect_of(painter, command)
+        return int(rgb[y + h // 2, x + 2].sum())
+
+    def test_the_button_under_the_pointer_draws_lighter(self):
+        painter = ConsolePainter()
+        at_rest = _rgb(painter.bgra(self._hud()))
+
+        painter.motion(*_over(painter, "main_next"))
+        under_the_pointer = _rgb(painter.bgra(self._hud()))
+
+        assert (self._ground(under_the_pointer, painter, "main_next")
+                > self._ground(at_rest, painter, "main_next"))
+
+    def test_the_pointer_leaving_the_panel_puts_the_button_back(self):
+        painter = ConsolePainter()
+        at_rest = _rgb(painter.bgra(self._hud()))
+        painter.motion(*_over(painter, "main_next"))
+        painter.bgra(self._hud())
+
+        painter.motion(-1, -1)
+
+        assert (_rgb(painter.bgra(self._hud())) == at_rest).all()
+
+    def test_a_panel_sent_to_another_corner_forgets_where_the_pointer_was(self):
+        painter = ConsolePainter()
+        painter.bgra(self._hud())
+        painter.motion(*_over(painter, "main_next"))
+
+        moved = _rgb(painter.bgra(self._hud(HudCorner.UPPER_RIGHT)))
+
+        assert (moved == _rgb(ConsolePainter().bgra(self._hud(HudCorner.UPPER_RIGHT)))).all()
+
+
 class TestDrags:
     """The readout's bars are set by pressing in them and dragging along them, so
     a level is reached in one gesture rather than by walking a mark to it."""
