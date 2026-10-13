@@ -10,7 +10,7 @@ import numpy as np
 import pytest
 from console_rows import console_rows
 from funestra_fakes import FakeEngine
-from host_blocks import HostsBlock
+from host_controls_fakes import AHost, middle_of
 
 from funestra.console import ConsoleModel, ModeHud, console_text
 from funestra.flick_picture import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, Picture
@@ -466,7 +466,7 @@ class Genau(Kino):
 
 
 def _main(tmp_path: Path, *, commands: str = "", user=Kino,
-          genau: bool = False, host_block=None) -> tuple[Funestra, FakeEngine, Kino]:
+          genau: bool = False, host_controls=None) -> tuple[Funestra, FakeEngine, Kino]:
     channels = _console_channels(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0", "v1")],
                                  commands=commands)
     _publish_console(tmp_path)
@@ -480,7 +480,7 @@ def _main(tmp_path: Path, *, commands: str = "", user=Kino,
     users = {"kino": make, **({"genau": Genau} if genau else {})}
     funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
                         locked=True, sound_is_the_rooms=True, users=users,
-                        host_block=host_block)
+                        host_controls=host_controls)
     return funestra, engine, made[0]
 
 
@@ -501,16 +501,16 @@ class TestTheMainFunestra:
 
         assert list(engine.overlays) == [HUD_OVERLAY_ID]
 
-    def test_a_block_its_host_hands_it_is_on_the_console_and_pressed_there(self, tmp_path):
-        host = HostsBlock()
-        funestra, engine, _kino = _main(tmp_path, host_block=host)
+    def test_the_controls_its_host_hands_it_are_on_the_console_and_pressed_there(self, tmp_path):
+        host = AHost()
+        funestra, engine, _kino = _main(tmp_path, host_controls=host)
         funestra.tick(window=WINDOW)
         left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
-        x, y, w, h = host.drawn_at
+        x, y = middle_of(funestra._panel._painter.host_controls_layout.bar)
 
-        funestra.press(left + x + 5, top + y + 6, window=WINDOW)
+        funestra.press(left + x, top + y, window=WINDOW)
 
-        assert host.presses == [(x + 5, y + 6, (x, y, w, h))]
+        assert host.set_to == [pytest.approx(110.0, abs=1.0)]
 
     def test_the_console_leads_with_what_runs_on_the_funestra_says_it_is_playing(self, tmp_path):
         funestra, engine, kino = _main(tmp_path)

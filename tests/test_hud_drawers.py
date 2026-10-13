@@ -39,6 +39,7 @@ HUD_PAINTERS: dict[str, set[str] | None] = {
     "volume": {"VolumeHudPainter"},
     "timeline": {"progress_bar_bgra"},
     "drive_readout": {"DriveSection"},
+    "host_controls": {"HostControlsSection"},
 }
 
 KNOWN_DRAWERS = {

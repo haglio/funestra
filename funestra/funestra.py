@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Protocol, runtime_checkable
 
 from .console import ModeHud
-from .console_overlay import ConsoleOverlay, HostBlock
+from .console_overlay import ConsoleOverlay
 from .control_registry import look_up
 from .dashboard import ask
 from .drive_gate import DriveGate
@@ -20,6 +20,7 @@ from .file_channel import consume_command_file, read_paused_state
 from .flick_picture import FlickPicture, Picture
 from .funestra_controls import VERBS, FunestraControls
 from .funestra_status import status_fields
+from .host_controls import HostControls
 from .hud_corners import CORNER_PLUS_OVERLAY_ID, HudCorners
 from .hud_overlay import HUD_OVERLAY_ID, HudOverlay
 from .hud_placement import HudEdge
@@ -173,14 +174,14 @@ class Funestra:
         panel_surface: PanelSurface | None = None,
         users_picture: UsersPicture | None = None,
         window_verbs: Callable[[str], bool] = _nothing_of_its_own,
-        host_block: HostBlock | None = None,
+        host_controls: HostControls | None = None,
     ) -> None:
         self._engine = engine
         self._channels = channels
         self._tiles = tiles
         self._panel_surface = panel_surface
         self._window_verbs = window_verbs
-        self._host_block = host_block
+        self._host_controls = host_controls
         self._stop = threading.Event()
         start_paused = (channels.paused is not None
                         and read_paused_state(channels.paused, logger=logger))
@@ -259,7 +260,7 @@ class Funestra:
                 minus_on_the_panel=self._panel_surface is None,
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
                 set_volume=self._volume.set_level, toggle_mute=self._volume.toggle_mute,
-                host_block=self._host_block,
+                host_controls=self._host_controls,
             )
         if channels.hud is not None:
             return HudOverlay(
