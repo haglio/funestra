@@ -191,6 +191,7 @@ class HudModel:
     osr2_control: str = ""
     osr2_controls: tuple[Button, ...] = ()
     max_intensity: int | None = None
+    paused: bool = False
     # The motion being sent, drawn under that line — the main console's readout
     # (:mod:`funestra.drive_readout`), hosted here rather than on a panel of
     # its own.  None wherever there is nothing to report.
@@ -926,6 +927,7 @@ def hud_text(model: HudModel) -> str:
         "rows": rows_raw(model.rows),
         "osr2": model.osr2,
         "osr2_control": model.osr2_control,
+        "paused": model.paused,
         "osr2_rows": rows_raw(model.osr2_rows),
         "osr2_controls": buttons_raw(model.osr2_controls),
         "max_intensity": model.max_intensity,
@@ -970,6 +972,7 @@ def parse_hud(text: str) -> HudModel | None:
         rows=rows_from_raw(raw.get("rows")),
         osr2=str(raw.get("osr2", "") or ""),
         osr2_control=str(raw.get("osr2_control", "") or ""),
+        paused=bool(raw.get("paused", False)),
         osr2_rows=rows_from_raw(raw.get("osr2_rows")),
         osr2_controls=buttons_from_raw(raw.get("osr2_controls")),
         max_intensity=max_intensity_from_raw(raw.get("max_intensity")),

@@ -704,7 +704,7 @@ class TestThePublishedPanelIsWrittenWhereItIsRead:
             current_action="alpha", filter_query="alpha", active_loop="seed",
             camera_words=CAMERA_WORDS,
             seed_count=7, action_count=3, playing=("seed", 1),
-            item_note="Enhance 1 — 1 of 2 · Enhancing…",
+            item_note="Enhance 1 — 1 of 2 · Enhancing…", paused=True,
             rows=((Button("origenerator_activate", "Origenerator", "Shows", width=0),
                    Button("landscape_minimize", "\x00minimize", "Park", group_break=True)),
                   (Button("landscape_lock", "🔒", "Hold", lit=True, favorite=True),)),
