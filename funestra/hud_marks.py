@@ -57,3 +57,6 @@ FMODE_ICON = app_mark("F")
 # A drawn bar rather than a glyph: the minimize mark Windows puts on a title bar
 # is in a face these HUDs do not load, and a painter draws the bar instead.
 MINIMIZE_ICON = "\0minimize"
+
+# The family's on/off switch, on while its button is lit.
+TOGGLE_SWITCH = "\0switch"

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
-from shared_ui.palette import BLUE, GREEN, RED, TEXT_MUTED
+from shared_ui.palette import BLUE, GREEN, TEXT_MUTED
 
 from funestra.drive_readout import DriveHud, track_command
 from funestra.hud_button import Button
@@ -49,10 +49,6 @@ class TestTheLine:
     def test_nothing_driving_is_said_in_the_muted_gray(self):
         panel, _ = _drawn(Osr2Line(state=Osr2State.OFF))
         assert _has(panel, TEXT_MUTED)
-
-    def test_the_app_having_let_go_is_said_in_red(self):
-        panel, _ = _drawn(Osr2Line(state="control_off"))
-        assert _has(panel, RED)
 
     def test_the_word_starts_in_one_place_whatever_it_says(self):
         def where_it_starts(state: str) -> int:
@@ -149,22 +145,30 @@ def _park() -> Button:
 
 
 class TestWhoTheLineNames:
-    """One precedence, wherever the line is drawn: the device running itself
-    beats anything the room is doing to it, a hold or a let-go beats whoever
-    would otherwise be driving, and only then does the driver get named."""
+    """One precedence, wherever the line is drawn: the device running itself or
+    switched off beats anything the room is doing to it, a hold beats whoever
+    would otherwise be driving, and only then does the driver get
+    named."""
 
     def test_the_driver_is_named_when_nothing_is_holding_the_device(self):
         assert state_for(Osr2State.ROBOT_HAND, "") == Osr2State.ROBOT_HAND
 
     def test_a_hold_is_named_ahead_of_whoever_would_have_been_driving(self):
-        for control in ("control_off", "parked", "retracted"):
+        for control in ("parked", "retracted"):
             assert state_for(Osr2State.FUNSCRIPT, control) == control
 
     def test_the_device_running_itself_beats_even_a_hold(self):
         assert state_for(Osr2State.AUTO, "parked") == Osr2State.AUTO
 
+    def test_a_switched_off_device_beats_even_a_hold(self):
+        for control in ("parked", "retracted"):
+            assert state_for(Osr2State.OFF, control) == Osr2State.OFF
+
     def test_a_panel_that_knows_better_says_who_is_driving(self):
-        assert state_for(Osr2State.OFF, "", driving=Osr2State.FUNSCRIPT) == Osr2State.FUNSCRIPT
+        assert state_for(Osr2State.ROBOT_HAND, "", driving=Osr2State.FUNSCRIPT) == Osr2State.FUNSCRIPT
+
+    def test_a_switched_off_device_beats_whoever_a_panel_drew_driving(self):
+        assert state_for(Osr2State.OFF, "", driving=Osr2State.FUNSCRIPT) == Osr2State.OFF
 
     def test_a_composed_trace_names_whoever_it_drew_at_the_playhead(self):
         handoff = ((0, "funscript"), (40, "robot_hand"))

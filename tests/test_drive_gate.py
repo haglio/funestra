@@ -42,9 +42,9 @@ NEWER_MS = 200
 def _motion(ms: int = 0, **over) -> DriveHud:
     """Genau's publish, *ms* into the video: the same wave, phase advanced."""
     steps = ms / STEP_MS
-    base = dict(
-        speed=50, amplitude=100, center=50, trace_seconds=SPAN_S,
-        waveform=tuple(0.5 - 0.5 * np.cos((i + steps) / 6) for i in range(TRACE_SAMPLES)))
+    base = {
+        "speed": 50, "amplitude": 100, "center": 50, "trace_seconds": SPAN_S,
+        "waveform": tuple(0.5 - 0.5 * np.cos((i + steps) / 6) for i in range(TRACE_SAMPLES))}
     base.update(over)
     return DriveHud(**base)
 
@@ -126,6 +126,32 @@ class TestTheDeviceRunningItself:
         gate.readout(_motion(NEWER_MS), device_drives_itself=True)
 
         assert gate.handoff_touch() is None
+
+
+class TestTheVideoUnderGenau:
+    def test_genaus_publish_is_drawn_whole_while_genau_has_the_screen(self):
+        gate = DriveGate(FakeSession())
+        published = _motion()
+
+        hud = gate.readout(published, video_shows=False)
+
+        assert hud.waveform == published.waveform
+        assert hud.segments == ()
+
+    def test_no_forecast_survives_genau_taking_the_screen(self):
+        gate, _session = _gate_holding_a_forecast()
+
+        gate.readout(_motion(NEWER_MS), video_shows=False)
+
+        assert gate.handoff_touch() is None
+
+    def test_genau_driving_on_its_own_screen_is_genau_seen_live_for_the_video_under_it(self):
+        gate = DriveGate(FakeSession())
+        gate.readout(_motion(), video_shows=False)
+
+        hud = gate.readout(_motion(let_go=0.44))
+
+        assert hud.let_go == 0.44
 
 
 class TestAChoiceThatIsHeld:

@@ -20,9 +20,19 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from shared_ui.toggle_geometry import TRACK_HUD
+
 from .geometry import Rect, contains
-from .hud_button import BUTTON, Button, buttons_from_raw, buttons_raw, rows_from_raw, rows_raw
-from .hud_marks import shared_mark
+from .hud_button import (
+    BUTTON,
+    FIT_THE_WORD,
+    Button,
+    buttons_from_raw,
+    buttons_raw,
+    rows_from_raw,
+    rows_raw,
+)
+from .hud_marks import TOGGLE_SWITCH, shared_mark
 from .hud_placement import HudCorner, HudEdge
 from .modes import LengthMode, MainMode, Osr2State, read_mode
 from .renamed import answers_to_old_names, drops_retired_arguments
@@ -97,28 +107,34 @@ class ModeHud:
     scripted_filter: bool = False
 
 
-# Those four states themselves.  One word rather than a flag each, because they
-# are exclusive: whatever this app is doing to the OSR2, it is doing exactly one
-# of these, and the console lights exactly one button to say which.  Off is the
-# app not driving the device at all — the device itself is untouched by it, which
-# is why the word on the button and the pill is "control off" rather than "off".
+# What this app is doing to the OSR2: driving it, or holding it still at one end
+# of its travel.  The console's one switch is on while driving and off while
+# parked; retracted is a hold only Fun Time's relief pause puts the device in,
+# which the switch shows as off.
 OSR2_PARKED = "parked"
 OSR2_RETRACTED = "retracted"
 OSR2_DRIVING = "driving"
-OSR2_CONTROL_OFF = "control_off"
-# And a fifth answer that is not a state: this host has no such switch, so the
-# console names none of the four.
+# And an answer that is not a state: this host has no such switch.
 OSR2_CONTROL_UNANSWERED = ""
+# Control off, which the switch no longer has: Origenerator and Fun Time import
+# the name until every checkout of theirs has moved to the switch, and a console
+# told it draws the switch off.
+OSR2_CONTROL_OFF = "control_off"
 
-# Which button stands for which state, in the order they sit, from off to on:
-# nothing going out, the two holds, the motion running.  Data, so a consumer
-# routing a press can read the state off the command rather than spelling this
-# out a second time.
+# The press that puts the device in each of the switch's two positions.  Data,
+# so a consumer routing a press can read the state off the command rather than
+# spelling this out a second time.
 OSR2_CONTROL_BUTTONS: dict[str, str] = {
-    OSR2_CONTROL_OFF: "osr2_control_off",
     OSR2_PARKED: "robot_hand_park",
-    OSR2_RETRACTED: "robot_hand_retract",
     OSR2_DRIVING: "robot_hand_release",
+}
+_SWITCH_SAYS = {
+    OSR2_DRIVING: "OSR2 control on — the OSR2 follows whatever the motion is doing.  "
+                  "Press to switch control off: the OSR2 parks at home",
+    OSR2_PARKED: "OSR2 control off — the OSR2 parked, held still at home.  "
+                 "Press to switch control on",
+    OSR2_RETRACTED: "OSR2 control off — the OSR2 held still at the far end, away from you.  "
+                    "Press to switch control on",
 }
 
 HELD_HEIGHT = {OSR2_PARKED: 0.0, OSR2_RETRACTED: 1.0}
@@ -134,29 +150,25 @@ _WAVEFORM_FACES = {
 @drops_retired_arguments("cruise")
 def aim_row(*, learned: bool, shape: str, control: str) -> tuple[Button, ...]:
     return (
-        Button("robot_hand_toggle_learned", "hi",
+        *_osr2_switch(control),
+        Button("robot_hand_toggle_learned", shared_mark("human"),
                "Human inspired: motion drawn from real hand-made scripts, not a waveform",
-               lit=learned),
+               lit=learned, group_break=True),
         Button("robot_hand_cycle_shape", shared_mark(_WAVEFORM_FACES.get(shape, "wave")),
                f"Waveform: {shape_label(shape)}"),
         Button("quarter_button", shared_mark("quarter_offset"), "Offset the motion a ¼ cycle"),
-        *((
-            Button(OSR2_CONTROL_BUTTONS[OSR2_CONTROL_OFF], shared_mark("control_off"),
-                   "Control off — the OSR2 settles home and is left there; nothing "
-                   "here moves it again until you park, retract or drive it.  The "
-                   "device itself stays on: this is the app letting go of it, not "
-                   "the OSR2 switching off",
-                   warn=control == OSR2_CONTROL_OFF, group_break=True),
-        ) if control != OSR2_CONTROL_UNANSWERED else ()),
-        Button(OSR2_CONTROL_BUTTONS[OSR2_PARKED], shared_mark("park"),
-               "Parked — the OSR2 held still, settled home",
-               lit=control == OSR2_PARKED, group_break=control == OSR2_CONTROL_UNANSWERED),
-        Button(OSR2_CONTROL_BUTTONS[OSR2_RETRACTED], shared_mark("retract"),
-               "Retracted — the OSR2 held still at the far end, away from you",
-               lit=control == OSR2_RETRACTED),
-        Button(OSR2_CONTROL_BUTTONS[OSR2_DRIVING], shared_mark("release"),
-               "Driving — the OSR2 back on whatever the motion was doing",
-               lit=control == OSR2_DRIVING),
+    )
+
+
+def _osr2_switch(control: str) -> tuple[Button, ...]:
+    on = control == OSR2_DRIVING
+    return (
+        Button("", "OSR2 control", "", width=FIT_THE_WORD),
+        Button("", "Off", "", lit=not on),
+        Button(OSR2_CONTROL_BUTTONS[OSR2_PARKED if on else OSR2_DRIVING], TOGGLE_SWITCH,
+               _SWITCH_SAYS.get(control, "OSR2 control off.  Press to switch control on"),
+               width=TRACK_HUD[0], lit=on),
+        Button("", "On", "", lit=on),
     )
 
 
@@ -180,9 +192,9 @@ class ConsoleModel:
     active: bool = False
     # What is driving the OSR2 right now.
     osr2: Osr2State = Osr2State.OFF
-    # And what this app is doing to it, which is a different question: one of
-    # OSR2_CONTROL_BUTTONS' four states, or OSR2_CONTROL_UNANSWERED from a host
-    # that has no such switch.  Published like the rest of this, because the
+    # And what this app is doing to it, which is a different question: driving,
+    # parked or retracted, or OSR2_CONTROL_UNANSWERED from a host that has no
+    # such switch.  Published like the rest of this, because the
     # state is the orchestrator's and the Funestra drawing the console is not
     # always the one it is about.
     osr2_control: str = OSR2_CONTROL_UNANSWERED
@@ -212,6 +224,10 @@ class ConsoleModel:
     osr2_controls: tuple[Button, ...] = ()
     has_osr2: bool = True
     max_intensity: int | None = None
+    # Whether this host moves the device to a hold itself, at once, rather than
+    # through the broker's second -- Origenerator, which drives it directly.
+    # Not published: Fun Time's holds all go through the broker.
+    parks_at_once: bool = False
 
     @property
     def device_drives_itself(self) -> bool:

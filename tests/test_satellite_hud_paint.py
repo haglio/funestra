@@ -25,6 +25,7 @@ from funestra.geometry import Rect
 from funestra.hud_button import Button
 from funestra.hud_minimize import RESTORE_TOOLTIP, minimize_command
 from funestra.hud_minimize import ROOM as MINUS_ROOM
+from funestra.hud_osr2 import ReadoutResolver
 from funestra.hud_panel import ACTIVE_DOT
 from funestra.hud_placement import HudCorner
 from funestra.hud_row import SCRUBBER, RowHud, row_part
@@ -1397,7 +1398,17 @@ class TestTheReadoutIsDrawnAsTheMainConsoleDrawsIt:
 
         assert not np.array_equal(moving, still)
 
-    def test_a_funestras_own_composed_trace_keeps_sliding_with_the_device_off(self):
+    def test_a_funestras_own_composed_trace_keeps_sliding_while_the_device_is_on(self):
+        renderer = HudRenderer("portrait")
+        first = renderer.render(_model(osr2=Osr2State.FUNSCRIPT, drive=_wave(0.0),
+                                       drive_composed=True)).bgra.copy()
+
+        later = renderer.render(_model(osr2=Osr2State.FUNSCRIPT, drive=_wave(3.0),
+                                       drive_composed=True)).bgra
+
+        assert not np.array_equal(later, first)
+
+    def test_a_funestras_own_composed_trace_holds_still_with_the_device_off(self):
         renderer = HudRenderer("portrait")
         first = renderer.render(_model(osr2=Osr2State.OFF, drive=_wave(0.0),
                                        drive_composed=True)).bgra.copy()
@@ -1405,7 +1416,7 @@ class TestTheReadoutIsDrawnAsTheMainConsoleDrawsIt:
         later = renderer.render(_model(osr2=Osr2State.OFF, drive=_wave(3.0),
                                        drive_composed=True)).bgra
 
-        assert not np.array_equal(later, first)
+        assert np.array_equal(later, first)
 
     def test_a_held_device_is_a_gray_line_nobody_can_press(self):
         rendered = HudRenderer("portrait").render(_model(
@@ -1817,3 +1828,16 @@ class TestEverySectionIsSetOffFromTheNextByALine:
         assert len(lines) == len(sections) - 1
         for (_top, above_ends), line, (below_starts, _end) in zip(sections, lines, sections[1:]):
             assert above_ends <= line < below_starts
+
+
+def test_a_panel_whose_host_holds_the_device_itself_tells_its_readout_so(monkeypatch):
+    told = {}
+
+    def resolve(self, drive, **said):
+        told.update(said)
+        return drive
+
+    monkeypatch.setattr(ReadoutResolver, "resolve", resolve)
+    HudRenderer("portrait").render(_model(parks_at_once=True))
+
+    assert told["at_once"] is True

@@ -36,8 +36,17 @@ from shared_ui.palette import (
     hovered,
 )
 from shared_ui.spacing import BUTTON_MARK_INSET
+from shared_ui.toggle_geometry import TRACK_HUD
+from shared_ui.toggle_switch_pil import paste_toggle_switch
 
-from .hud_marks import APP_MARK, MINIMIZE_ICON, SHARED_MARK, app_mark_letter, shared_mark_name
+from .hud_marks import (
+    APP_MARK,
+    MINIMIZE_ICON,
+    SHARED_MARK,
+    TOGGLE_SWITCH,
+    app_mark_letter,
+    shared_mark_name,
+)
 
 __all__ = [
     "SYMBOL_FONT",
@@ -430,13 +439,18 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
     """
     x, y, w, h = rect
     if not button.command:
-        ink = TEXT_MUTED if button.glyph.replace(" ", "").isalpha() else TEXT_PRIMARY
+        named = button.is_a_name and not button.lit
+        ink = TEXT_MUTED if named else TEXT_PRIMARY
         if row_label:
             draw.text((x, y + h / 2), button.glyph, font=word_font, anchor="lm",
                       fill=(*ink, 255))
         else:
             draw.text((x + w / 2, y + h / 2), button.glyph, font=word_font,
                       anchor="mm", fill=(*ink, 255))
+        return
+    if button.glyph == TOGGLE_SWITCH:
+        paste_toggle_switch(image, (x + (w - TRACK_HUD[0]) // 2, y + (h - TRACK_HUD[1]) // 2),
+                            on=button.lit, hovered=hovered)
         return
 
     lit = GREEN if button.favorite else AMBER if button.enhanced else BLUE

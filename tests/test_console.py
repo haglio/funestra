@@ -13,8 +13,10 @@ from funestra.console import (
     GAP,
     GROUP_GAP,
     OSR2_CONTROL_BUTTONS,
+    OSR2_CONTROL_OFF,
     OSR2_CONTROL_UNANSWERED,
     OSR2_DRIVING,
+    OSR2_PARKED,
     OSR2_RETRACTED,
     ROW_LABEL_W,
     VALUE_W,
@@ -30,8 +32,14 @@ from funestra.console import (
     shape_label,
     tooltip_at,
 )
-from funestra.hud_button import Button
-from funestra.hud_marks import BROKER_ICON, MINIMIZE_ICON, shared_mark, shared_mark_name
+from funestra.hud_button import FIT_THE_WORD, Button
+from funestra.hud_marks import (
+    BROKER_ICON,
+    MINIMIZE_ICON,
+    TOGGLE_SWITCH,
+    shared_mark,
+    shared_mark_name,
+)
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.modes import MainMode, Osr2State
 from funestra.robot_hand import WaveformShape
@@ -84,21 +92,56 @@ def _waveform_face(shape: str) -> str:
 
 
 class TestTheRowThatAimsTheDevice:
-    def test_the_motion_comes_first_then_the_four_control_states_from_off_to_on(self):
-        assert [button.command for button in _aim_row()] == [
-            "robot_hand_toggle_learned", "robot_hand_cycle_shape",
-            "quarter_button", *OSR2_CONTROL_BUTTONS.values()]
+    def test_the_switch_comes_first_then_the_motion_set_apart(self):
+        row = _aim_row()
 
-    def test_a_host_with_no_switch_offers_no_control_off_and_sets_the_holds_apart(self):
-        row = _aim_row(control=OSR2_CONTROL_UNANSWERED)
+        _label, _off, switch, _on = row[:4]
+        assert switch.glyph == TOGGLE_SWITCH
+        assert [button.command for button in row[4:]] == [
+            "robot_hand_toggle_learned", "robot_hand_cycle_shape", "quarter_button"]
+        assert row[4].group_break
 
-        assert "osr2_control_off" not in [button.command for button in row]
-        assert _button(row, "robot_hand_park").group_break
+    def test_human_inspired_wears_the_familys_human_figure(self):
+        face = _button(_aim_row(), "robot_hand_toggle_learned").glyph
 
-    def test_the_state_the_switch_is_in_is_the_one_button_on(self):
-        for state, verb in OSR2_CONTROL_BUTTONS.items():
-            on = [button.command for button in _aim_row(control=state) if button.lit or button.warn]
-            assert on == [verb], state
+        assert face == shared_mark("human")
+        assert shared_mark_name(face) in glyph_names()
+
+    def test_the_switch_is_labeled_osr2_control_apart_from_the_osr2_itself(self):
+        label, *_switch = _aim_row()[:4]
+
+        assert label.glyph == "OSR2 control"
+        assert not label.command
+        assert label.width == FIT_THE_WORD
+
+    def test_the_switch_says_off_on_one_side_and_on_on_the_other(self):
+        _label, off, _switch, on = _aim_row()[:4]
+
+        assert (off.glyph, on.glyph) == ("Off", "On")
+        assert not off.command and not on.command
+
+    def test_the_switch_is_on_while_driving_and_a_press_parks(self):
+        _label, off, switch, on = _aim_row(control=OSR2_DRIVING)[:4]
+
+        assert switch.lit and on.lit and not off.lit
+        assert switch.command == OSR2_CONTROL_BUTTONS[OSR2_PARKED]
+
+    @pytest.mark.parametrize("control", [OSR2_PARKED, OSR2_RETRACTED, OSR2_CONTROL_UNANSWERED,
+                                         OSR2_CONTROL_OFF])
+    def test_the_switch_is_off_while_held_or_unsaid_and_a_press_drives(self, control):
+        _label, off, switch, on = _aim_row(control=control)[:4]
+
+        assert off.lit and not switch.lit and not on.lit
+        assert switch.command == OSR2_CONTROL_BUTTONS[OSR2_DRIVING]
+
+    def test_the_switch_says_where_the_device_is_and_what_a_press_does(self):
+        def says(control: str) -> str:
+            return _aim_row(control=control)[2].tooltip
+
+        assert says(OSR2_DRIVING).startswith("OSR2 control on")
+        assert says(OSR2_PARKED).startswith("OSR2 control off")
+        assert says(OSR2_RETRACTED).startswith("OSR2 control off")
+        assert "far end" in says(OSR2_RETRACTED)
 
     def test_human_inspired_lights_while_it_has_the_motion(self):
         assert _button(_aim_row(learned=True), "robot_hand_toggle_learned").lit

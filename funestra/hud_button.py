@@ -63,6 +63,10 @@ class Button:
     host_value: str = ""
 
     @property
+    def is_a_name(self) -> bool:
+        return self.glyph[:1].isalpha()
+
+    @property
     def tooltip_on_hover(self) -> str:
         if not self.glyph.startswith(SHARED_MARK):
             return self.tooltip

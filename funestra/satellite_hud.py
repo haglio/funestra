@@ -185,9 +185,9 @@ class HudModel:
     # map between them they came out as one group of OSR2 controls split in two.
     osr2_rows: tuple[tuple[Button, ...], ...] = ()
     # And what the host is doing to the device, which is a different question:
-    # one of OSR2_CONTROL_BUTTONS' four states, or empty from a host with no
-    # such switch.  The panel resolves the two into one word exactly as the
-    # console does (:func:`funestra.hud_osr2.state_for`).
+    # driving, parked or retracted, or empty from a host with no such switch.
+    # The panel resolves the two into one word exactly as the console does
+    # (:func:`funestra.hud_osr2.state_for`).
     osr2_control: str = ""
     osr2_controls: tuple[Button, ...] = ()
     max_intensity: int | None = None
@@ -196,6 +196,9 @@ class HudModel:
     # its own.  None wherever there is nothing to report.
     drive: DriveHud | None = None
     drive_composed: bool = False
+    # Whether the host moves the device to a hold itself, at once, rather than
+    # through the broker's second (see ConsoleModel.parks_at_once).
+    parks_at_once: bool = False
 
     foot: HudSection | None = None
 

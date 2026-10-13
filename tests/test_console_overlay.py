@@ -29,10 +29,13 @@ class SpyGate:
     def __init__(self) -> None:
         self.handed: list[DriveHud | None] = []
         self.told_the_device_drives_itself: list[bool] = []
+        self.told_the_video_shows: list[bool] = []
 
-    def readout(self, published, *, device_drives_itself: bool = False):
+    def readout(self, published, *, device_drives_itself: bool = False,
+                video_shows: bool = True):
         self.handed.append(published)
         self.told_the_device_drives_itself.append(device_drives_itself)
+        self.told_the_video_shows.append(video_shows)
         return published if published is not None else DriveHud()
 
 
@@ -169,6 +172,15 @@ class TestReadingTheMotion:
         _tick(overlay)
 
         assert gate.told_the_device_drives_itself == [False]
+        assert gate.told_the_video_shows == [True]
+
+    def test_the_gate_is_told_when_genau_has_the_screen(self, tmp_path):
+        overlay, _engine, gate = _overlay(tmp_path)
+        _console_file(tmp_path / "console.json", GENAU_MODE, osr2=Osr2State.ROBOT_HAND)
+
+        _tick(overlay)
+
+        assert gate.told_the_video_shows == [False]
 
 
 class TestWhatThePanelSays:

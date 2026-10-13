@@ -12,7 +12,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
-from .console import ConsoleModel, ModeHud, read_console
+from .console import ConsoleModel, ModeHud, kino_shows, read_console
 from .console_hud import ConsoleHud, ConsolePainter, with_playback_speed
 from .dashboard import ask
 from .drive_readout import DriveHud, read_drive
@@ -86,7 +86,8 @@ class ConsoleOverlay:
         if self._drive_file is not None:
             self._drive = read_drive(self._drive_file) or self._drive
         drive = self._drive_gate.readout(
-            self._drive, device_drives_itself=self._console.device_drives_itself)
+            self._drive, device_drives_itself=self._console.device_drives_itself,
+            video_shows=kino_shows(self._console.main_mode))
         self._clip_row = clip_row
         if self.minimized and not self._minus_on_the_panel:
             self.close()
