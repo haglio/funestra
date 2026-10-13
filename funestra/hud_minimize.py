@@ -1,15 +1,25 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from functools import lru_cache
 
 import numpy as np
 from PIL import Image, ImageDraw
-from shared_ui.spacing import BUTTON_GAP, BUTTON_SIZE_HUD
+from shared_ui.palette import TEXT_MUTED
+from shared_ui.spacing import BUTTON_GAP, BUTTON_SIZE_HUD, MARGIN_STANDARD
 
 from .geometry import Rect
 from .hud_button import Button
 from .hud_marks import shared_mark
-from .hud_panel import draw_button, draw_tooltip, load_font, to_bgra
+from .hud_panel import (
+    TINY_PT,
+    HudPanel,
+    draw_button,
+    draw_tooltip,
+    load_font,
+    text_width,
+    to_bgra,
+)
 from .hud_placement import HudCorner
 
 __all__: list[str] = []
@@ -22,6 +32,8 @@ RESTORE_GLYPH = shared_mark("plus")
 MINIMIZE_TOOLTIP = "Minimize this HUD"
 RESTORE_TOOLTIP = "Show this HUD again"
 
+FLASH_S = 3.0
+
 _MARK_FONT_PT = 9
 
 # Room beside the plus for its tooltip, which a panel this small cannot hold:
@@ -33,6 +45,24 @@ _TOOLTIP_ROOM_H = 26
 @lru_cache(maxsize=1)
 def mark_font():
     return load_font(_MARK_FONT_PT)
+
+
+@lru_cache(maxsize=1)
+def name_font():
+    return load_font(TINY_PT)
+
+
+class NameFlash:
+    def __init__(self, clock: Callable[[], float]) -> None:
+        self._clock = clock
+        self._name = ""
+        self._since = 0.0
+
+    def showing(self, on_screen: str) -> str:
+        now = self._clock()
+        if on_screen != self._name:
+            self._name, self._since = on_screen, now
+        return self._name if now - self._since < FLASH_S else ""
 
 
 def minimize_command(funestra: str) -> str:
@@ -64,20 +94,34 @@ def corner_button_rect(corner: HudCorner, *, panel: tuple[int, int],
     return (x, y, BUTTON, BUTTON)
 
 
-def _collapsed_size(*, room_for_the_tooltip: bool) -> tuple[int, int]:
+def name_slab(name: str) -> Image.Image:
+    slab = HudPanel(text_width(name_font(), name) + 2 * MARGIN_STANDARD, BUTTON)
+    slab.draw.text((MARGIN_STANDARD, BUTTON / 2), name, font=name_font(), anchor="lm",
+                   fill=(*TEXT_MUTED, 255))
+    return slab.image
+
+
+def _collapsed_size(*, room_for_the_tooltip: bool,
+                    beside: Image.Image | None) -> tuple[int, int]:
+    if beside is not None:
+        return ROOM + beside.width, BUTTON
     if not room_for_the_tooltip:
         return BUTTON, BUTTON
     return BUTTON + _TOOLTIP_ROOM_W, BUTTON + _TOOLTIP_ROOM_H
 
 
 def collapsed_button(funestra: str, corner: HudCorner = HudCorner.UPPER_LEFT, *,
-                     hover: tuple[int, int] | None = None, room_for_the_tooltip: bool = False
-                     ) -> tuple[Image.Image, list[tuple[Rect, Button]]]:
-    size = _collapsed_size(room_for_the_tooltip=room_for_the_tooltip or hover is not None)
+                     hover: tuple[int, int] | None = None, room_for_the_tooltip: bool = False,
+                     flash: str = "") -> tuple[Image.Image, list[tuple[Rect, Button]]]:
+    named = name_slab(flash) if flash and hover is None else None
+    size = _collapsed_size(room_for_the_tooltip=room_for_the_tooltip or hover is not None,
+                           beside=named)
     image = Image.new("RGBA", size, (0, 0, 0, 0))
     rect = corner_button_rect(corner, panel=size, inset=(0, 0))
     draw_button(image, ImageDraw.Draw(image), rect, restore_button(funestra),
                 hovered=hover is not None, glyph_font=mark_font(), word_font=mark_font())
+    if named is not None:
+        image.alpha_composite(named, (0 if corner.right else ROOM, 0))
     if hover is not None:
         draw_tooltip(ImageDraw.Draw(image), mark_font(), RESTORE_TOOLTIP, hover, size)
     return image, [(rect, restore_button(funestra))]
