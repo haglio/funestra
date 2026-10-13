@@ -201,6 +201,7 @@ class ConsoleModel:
     # state is the orchestrator's and the Funestra drawing the console is not
     # always the one it is about.
     osr2_control: str = OSR2_CONTROL_UNANSWERED
+    paused: bool = False
     # Whether what runs on the Main Funestra is holding what is on screen rather
     # than letting it move on -- Kino's video in kino mode, Genau's flick in
     # genau.  On is where both open, so it is the default here
@@ -272,6 +273,7 @@ def console_text(model: ConsoleModel) -> str:
         "latest": model.latest,
         "osr2": model.osr2,
         "osr2_control": model.osr2_control,
+        "paused": model.paused,
         "locked": model.locked,
         "rows": rows_raw(model.rows),
         "osr2_rows": rows_raw(model.osr2_rows),
@@ -300,6 +302,7 @@ def parse_console(text: str) -> ConsoleModel | None:
         latest=(None if raw.get("latest") is None else bool(raw.get("latest"))),
         osr2=read_mode(Osr2State, raw.get("osr2"), Osr2State.OFF),
         osr2_control=str(raw.get("osr2_control", "") or OSR2_CONTROL_UNANSWERED),
+        paused=bool(raw.get("paused", False)),
         locked=bool(raw.get("locked", True)),
         rows=rows_from_raw(raw.get("rows")),
         osr2_rows=rows_from_raw(raw.get("osr2_rows")),

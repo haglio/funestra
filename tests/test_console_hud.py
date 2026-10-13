@@ -1120,9 +1120,11 @@ class TestTheDotIsWhereTheDeviceIs:
     second and slides to the held end as the device settles there."""
 
     @staticmethod
-    def _hud(control: str, *, osr2: str = Osr2State.ROBOT_HAND) -> ConsoleHud:
+    def _hud(control: str, *, osr2: str = Osr2State.ROBOT_HAND,
+             paused: bool = False) -> ConsoleHud:
         return ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.GENAU, osr2=osr2, osr2_control=control),
+            console=ConsoleModel(main_mode=MainMode.GENAU, osr2=osr2, osr2_control=control,
+                                 paused=paused),
             drive=_drive(0.0, position=6_000))
 
     @staticmethod
@@ -1136,9 +1138,9 @@ class TestTheDotIsWhereTheDeviceIs:
         assert self._dot(painter, self._hud(OSR2_DRIVING)) == 6_000
 
         def at(seconds_after_the_hold: float, *, osr2: str = Osr2State.ROBOT_HAND,
-               held: str = control) -> int:
+               held: str = control, paused: bool = False) -> int:
             clock[0] = 11.0 + seconds_after_the_hold
-            return self._dot(painter, self._hud(held, osr2=osr2))
+            return self._dot(painter, self._hud(held, osr2=osr2, paused=paused))
         return at
 
     def test_parked_it_waits_out_the_broker_then_sets_down_at_the_bottom_over_a_second(self):
@@ -1154,6 +1156,22 @@ class TestTheDotIsWhereTheDeviceIs:
 
         assert at(0.0) == 6_000
         assert at(1.6) == POSITION_MAX
+
+    def test_in_a_paused_room_it_goes_home_the_way_a_park_takes_it(self):
+        at = self._held_from(OSR2_DRIVING)
+
+        assert at(0.0, paused=True) == 6_000
+        assert at(0.9, paused=True) == 6_000
+        assert 0 < at(1.6, paused=True) < 6_000
+        assert at(2.0, paused=True) == 0
+
+    def test_played_again_it_slides_from_home_back_into_the_motion(self):
+        at = self._held_from(OSR2_DRIVING)
+        at(0.0, paused=True)
+        assert at(2.0, paused=True) == 0
+
+        assert at(2.4) == 0
+        assert at(2.8) == 6_000
 
     def test_with_the_device_switched_off_it_stays_where_it_was(self):
         at = self._held_from(OSR2_PARKED)

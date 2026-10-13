@@ -130,7 +130,7 @@ class ReadoutResolver:
         self._device = _DeviceDot()
 
     def resolve(self, drive: DriveHud | None, *, osr2: str, control: str,
-                composed: bool) -> DriveHud | None:
+                composed: bool, paused: bool = False) -> DriveHud | None:
         if drive is None:
             self._still = None
             self._device = _DeviceDot()
@@ -168,9 +168,15 @@ class ReadoutResolver:
         if osr2 == Osr2State.AUTO:
             self._device = _DeviceDot()
             return drive
-        held = control if control in _HELD and not switched_off else None
+        held = None if switched_off else _held_by(control, paused=paused)
         return replace(drive, position=self._device.at(
             self._clock(), drive.position, held=held, switched_on=not switched_off))
+
+
+def _held_by(control: str, *, paused: bool) -> str | None:
+    if control in _HELD:
+        return control
+    return OSR2_PARKED if paused else None
 
 
 class _DeviceDot:

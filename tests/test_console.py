@@ -288,7 +288,7 @@ class TestThePublishedConsoleIsWrittenWhereItIsRead:
     def test_every_published_field_survives_the_round_trip(self):
         model = ConsoleModel(
             main_mode=MainMode.GENAU, active=True, osr2=Osr2State.AUTO,
-            osr2_control=OSR2_RETRACTED, locked=False, latest=True,
+            osr2_control=OSR2_RETRACTED, paused=True, locked=False, latest=True,
         )
 
         assert parse_console(console_text(model)) == model

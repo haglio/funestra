@@ -272,7 +272,7 @@ class HudRenderer:
             return RenderedHud(bgra, HudTargets(click=[], loop=[], filter=[], expand=None,
                                                 buttons=buttons))
         model = replace(model, drive=self._readout.resolve(
-            model.drive, osr2=model.osr2, control=model.osr2_control,
+            model.drive, osr2=model.osr2, control=model.osr2_control, paused=model.paused,
             composed=model.drive_composed))
         counts = self._count_lines(model)
         model, seed_win, action_win = self._window(model)
