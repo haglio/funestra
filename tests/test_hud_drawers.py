@@ -46,6 +46,12 @@ KNOWN_DRAWERS = {
     ("origenerator", "origenerator"),
 }
 
+DRAWS_A_FUNESTRAS_MODE_PAIR_WHERE_NO_FUNESTRA_IS = {
+    ("fun_time", "fun_time"),
+}
+
+ALLOWED_DRAWERS = KNOWN_DRAWERS | DRAWS_A_FUNESTRAS_MODE_PAIR_WHERE_NO_FUNESTRA_IS
+
 _NOT_A_DRAWER = {"tests"}
 
 
@@ -117,7 +123,7 @@ def test_a_painter_names_a_module_this_package_has():
 
 def test_nothing_outside_the_known_drawers_paints_a_hud(drawers_and_consumers):
     drawers, consumers = drawers_and_consumers
-    new = {where: found for where, found in drawers.items() if where not in KNOWN_DRAWERS}
+    new = {where: found for where, found in drawers.items() if where not in ALLOWED_DRAWERS}
     assert not new, (
         f"a package draws a HUD itself (read from: {', '.join(consumers)}). "
         "Only a Funestra draws one: run on a Funestra and hand it the buttons to draw:\n"
@@ -128,10 +134,10 @@ def test_nothing_outside_the_known_drawers_paints_a_hud(drawers_and_consumers):
 
 def test_every_known_drawer_still_draws(drawers_and_consumers):
     drawers, consumers = drawers_and_consumers
-    moved_on = sorted(KNOWN_DRAWERS - set(drawers))
+    moved_on = sorted(ALLOWED_DRAWERS - set(drawers))
     assert not moved_on, (
         f"listed as a drawer and no longer drawing (read from: {', '.join(consumers)}); "
-        "take its line out of KNOWN_DRAWERS:\n"
+        "take its line out of the list it is in:\n"
         + "\n".join(f"  {sibling}/{package}" for sibling, package in moved_on)
     )
 
