@@ -44,7 +44,6 @@ HUD_PAINTERS: dict[str, set[str] | None] = {
 
 KNOWN_DRAWERS = {
     ("origenerator", "origenerator"),
-    ("fun_time", "fun_time_vr"),
 }
 
 _NOT_A_DRAWER = {"tests"}
