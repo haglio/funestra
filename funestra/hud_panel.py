@@ -56,6 +56,9 @@ UI_FONT = "segoeuib.ttf"
 # lacks, where Qt falls back silently — so anything typed names this face.
 SYMBOL_FONT = "seguisym.ttf"
 
+BODY_PT = 11
+TINY_PT = 8
+
 # Translucent enough to read the video through, opaque enough to read the text.
 PANEL_ALPHA = 224
 CORNER_RADIUS = 8

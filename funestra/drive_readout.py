@@ -38,6 +38,7 @@ from .file_channel import publish_whole
 from .geometry import Rect, contains
 from .hud_button import Button
 from .hud_panel import (
+    TINY_PT,
     draw_mark,
     load_font,
     text_width,
@@ -86,7 +87,6 @@ _TRACE_INK = {
 }
 
 
-_SIZE_TINY = 8
 _TRACK = (56, 56, 62)  # the unfilled part of a bar — a shade off the slab
 
 _LABEL_H = drive_layout.LABEL_H
@@ -356,7 +356,7 @@ class DriveSection:
     """The readout itself, drawn into whatever panel is hosting it."""
 
     def __init__(self) -> None:
-        self._tiny = load_font(_SIZE_TINY)
+        self._tiny = load_font(TINY_PT)
 
     def draw(self, image: Image.Image, x: int, y: int, hud: DriveHud) -> None:
         """Paint the readout with its top-left corner at ``(x, y)`` of *image*.

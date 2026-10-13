@@ -30,7 +30,9 @@ from shared_ui.spacing import BUTTON_GROUP_GAP
 from funestra.hud_button import Button
 from funestra.hud_marks import SHARED_MARK, shared_mark, shared_mark_name
 from funestra.hud_panel import (
+    BODY_PT,
     SYMBOL_FONT,
+    TINY_PT,
     HudPanel,
     button_ground,
     draw_active_dot,
@@ -131,8 +133,6 @@ _DOT = 1        # radius of one dot in a "…" mark — small, so three read as 
 _DOT_GAP = 4    # center-to-center spacing of those dots along the axis
 _COUNT_LINE_H = 11  # line pitch of the axis counts in the map's top-left corner
 
-_SIZE_BODY = 11
-_SIZE_TINY = 8
 _ROW_LABEL_PT = 7
 _LOOP_GLYPH = shared_mark(LOOP_MARK)
 _EXPAND_GLYPH = shared_mark(EXPAND_MARK)
@@ -179,12 +179,12 @@ class HudRenderer:
 
     def __init__(self, funestra: str) -> None:
         self._funestra = funestra
-        self._body = load_font(_SIZE_BODY)
-        self._titles: dict[int, ImageFont.FreeTypeFont] = {_SIZE_BODY: self._body}
-        self._tiny = load_font(_SIZE_TINY)
+        self._body = load_font(BODY_PT)
+        self._titles: dict[int, ImageFont.FreeTypeFont] = {BODY_PT: self._body}
+        self._tiny = load_font(TINY_PT)
         self._row = load_font(_ROW_LABEL_PT)
         self._pointer: tuple[int, int] | None = None
-        self._glyph = load_font(_SIZE_BODY, SYMBOL_FONT)
+        self._glyph = load_font(BODY_PT, SYMBOL_FONT)
         self._thumbs: dict[str, Image.Image] = {}
         # The main console's own two blocks, hosted here for a panel whose
         # Funestra has the OSR2 -- see HudModel.osr2.
@@ -326,7 +326,7 @@ class HudRenderer:
         minus_room = MINIMIZE_ROOM if minus_on_the_panel else 0
         room = width - STATUS_TEXT_X - PAD - minus_room
         title = self._title_font(largest_size_that_fits(
-            _SIZE_BODY, room,
+            BODY_PT, room,
             lambda size: text_width(self._title_font(size), model.lock_label)))
         favorite = self._draw_status_band(
             image, draw, PAD, model, width, title,
