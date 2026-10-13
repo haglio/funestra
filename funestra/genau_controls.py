@@ -3,18 +3,18 @@
 Genau -- on the Main Funestra, whether on the desktop or in the headset --
 is spoken to from two places: a verb in ``genau_cmd.txt`` and a press on the
 console.  Both of them have to be able to move the same
-handful of things: the hand's own state, the cruise stack, the learned motion,
-the flick advance, the two flags an orchestrator flips, the flick sequence.
+handful of things: the hand's own state, the learned motion, the flick advance,
+the two flags an orchestrator flips, the flick sequence.
 
 Passing those one at a time is what made adding a control a four-to-six file
 edit: a keyword parameter on the dispatcher, another on the refresh controller,
 an attribute to store it and a line to hand it on.  They travel together here
 instead, built once where the app is wired and handed whole.
 
-Optional means *this build did not wire it* -- a Genau launched without a cruise
-stack, a test that only cares about the flick sequence.  A verb whose collaborator
-is absent is refused and logged rather than half-acted-on, which is the behavior
-:func:`apply_runtime_command` documents.
+Optional means *this build did not wire it* -- a test that only cares about the
+flick sequence, say.  A verb whose collaborator is absent is refused and logged
+rather than half-acted-on, which is the behavior :func:`apply_runtime_command`
+documents.
 """
 from __future__ import annotations
 
@@ -26,11 +26,6 @@ from pathlib import Path
 
 from .console import HELD_HEIGHT, OSR2_PARKED, OSR2_RETRACTED
 from .control_registry import Control, Verb, bind, look_up
-from .cruise_control import (
-    CruiseControlState,
-    disable_cruise_control,
-    enable_cruise_control,
-)
 from .device_walk import RoomHold
 from .flag import Flag
 from .flick_advance import (
@@ -59,7 +54,7 @@ from .learned_motion import (
     enable_learned_motion,
 )
 from .playlist import item_from_line
-from .renamed import answers_to_old_names
+from .renamed import answers_to_old_names, drops_retired_arguments
 from .robot_hand import (
     RobotHandState,
     adjust_amplitude,
@@ -81,6 +76,7 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
+@drops_retired_arguments("cruise_control_state", "set_motion_phase")
 @answers_to_old_names({
     "clip_advance_state": "flick_advance_state",
     "clip_flip": "flick_flip",
@@ -97,9 +93,7 @@ class GenauControls:
     step_flick: Callable[[int], None]
     condemn_flick: Callable[[], None] | None = None
     robot_hand: RobotHandState | None = None
-    cruise_control_state: CruiseControlState | None = None
     learned_motion_state: LearnedMotionState | None = None
-    set_motion_phase: Callable[[float], None] | None = None
     flick_advance_state: FlickAdvanceState | None = None
     stop_event: threading.Event | None = None
     hud: Flag | None = None
@@ -116,15 +110,6 @@ class GenauControls:
 # whether they could.
 Act = Callable[[GenauControls, str], bool]
 
-# The verbs that name a value or a state outright, which a Genau taking over
-# another's room says to itself to take up what the room was doing.
-HAND_SPEED = "SPEED"
-HAND_AMP = "AMP"
-HAND_CENTER = "CENTER"
-CRUISE_ON = "CRUISE_ON"
-CRUISE_OFF = "CRUISE_OFF"
-LEARNED_ON = "LEARNED_ON"
-LEARNED_OFF = "LEARNED_OFF"
 FLICK_SECONDS = "FLICK_SECONDS"
 PAUSE = "PAUSE"
 RESUME = "RESUME"
@@ -180,35 +165,6 @@ def _number_setter(setter) -> Act:
     return act
 
 
-def _handed_back(controls: GenauControls, phase) -> None:
-    """Cruise control letting go says where the single wave should pick up — at
-    the phase of the wave that had most of the travel, which is the one the
-    device was mostly following.  Nowhere to put it (a build with no driver) and
-    the motion simply resumes on its own free-running phase."""
-    if phase is not None and controls.set_motion_phase is not None:
-        controls.set_motion_phase(phase)
-
-
-def _cruise_toggled(controls: GenauControls, _value: str) -> bool:
-    if controls.cruise_control_state.active:
-        return _cruise_off(controls, _value)
-    return _cruise_on(controls, _value)
-
-
-def _cruise_on(controls: GenauControls, _value: str) -> bool:
-    """Hands off to the dice -- and away from the learned motion, which cannot
-    hold the hand at the same time."""
-    if controls.learned_motion_state is not None:
-        disable_learned_motion(controls.learned_motion_state)
-    enable_cruise_control(controls.cruise_control_state)
-    return True
-
-
-def _cruise_off(controls: GenauControls, _value: str) -> bool:
-    _handed_back(controls, disable_cruise_control(controls.cruise_control_state))
-    return True
-
-
 def _learned_toggled(controls: GenauControls, _value: str) -> bool:
     if controls.learned_motion_state.active:
         return _learned_off(controls, _value)
@@ -216,10 +172,6 @@ def _learned_toggled(controls: GenauControls, _value: str) -> bool:
 
 
 def _learned_on(controls: GenauControls, _value: str) -> bool:
-    """Hands off to the scripts -- and away from cruise control, which lets go
-    of the motion the way it always does."""
-    if controls.cruise_control_state is not None:
-        _cruise_off(controls, _value)
     enable_learned_motion(controls.learned_motion_state)
     return True
 
@@ -411,15 +363,6 @@ CONTROLS: tuple[Control, ...] = (
         verbs=(
             Verb("CYCLE_SHAPE", _shape_step(1)),
             Verb("CYCLE_SHAPE_PREV", _shape_step(-1)),
-        ),
-    ),
-    Control(
-        name="cruise",
-        needs=("cruise_control_state",),
-        verbs=(
-            Verb("TOGGLE_CRUISE", _cruise_toggled),
-            Verb("CRUISE_ON", _cruise_on),
-            Verb("CRUISE_OFF", _cruise_off),
         ),
     ),
     Control(

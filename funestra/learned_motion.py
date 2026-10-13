@@ -1,19 +1,16 @@
 """Motion learned from real scripts -- the Robot Hand's learned mode, shared.
 
-It lives beside :mod:`funestra.cruise_control` and is the other thing that
-can take the motion over from the bars.  Where cruise control varies the
-waveform, this replaces it: the device follows phrases of real scripting, drawn
-one after another from a :mod:`funestra.learned_model`, each phrase joined
-to the last where it ended, so the motion is an endless script that no video
-was written for.
+It takes the motion over from the bars, in place of the waveform: the device
+follows phrases of real scripting, drawn one after another from a
+:mod:`funestra.learned_model`, each phrase joined to the last where it ended,
+so the motion is an endless script that no video was written for.
 
 The bars are the envelope rather than the motion.  Amplitude and center say
 the range the phrases play inside, and the Speed bar says how many cycles a
 minute the motion makes, exactly as it does for the wave: the scripts' own
 pace (:attr:`~funestra.learned_model.LearnedModel.native_cycle_ms`) is
 scaled to the bar's rate, so a bar at 50 cycles about as often as the wave
-does at 50.  Cruise control and this are never on together: switching one on
-switches the other off, which :mod:`funestra.genau_controls` sees to.
+does at 50.
 
 The motion has a clock of its own, in script seconds: it advances only while
 the motion is running, and faster or slower than the wall as the Speed bar

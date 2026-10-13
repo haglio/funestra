@@ -1336,7 +1336,7 @@ class TestTheDeviceOnAHostThatDrivesItself:
 
     def test_the_rows_that_aim_the_device_stay_between_the_sets_bands_and_the_readout(
             self, thumb):
-        aim = (Button("robot_hand_toggle_cruise", "cc", "Cruise"),
+        aim = (Button("robot_hand_toggle_learned", "hi", "Human inspired"),
                Button("robot_hand_park", "P", "Parked"))
         rendered = HudRenderer("portrait").render(_model(
             lock_label="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
@@ -1345,7 +1345,7 @@ class TestTheDeviceOnAHostThatDrivesItself:
             drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND)))
         placed = {button.command: rect for rect, button in rendered.targets.buttons}
 
-        assert placed["robot_hand_toggle_cruise"][1] > placed["portrait_prev"][1]
+        assert placed["robot_hand_toggle_learned"][1] > placed["portrait_prev"][1]
         assert all(band.rect[1] > placed["robot_hand_park"][1]
                    for band in rendered.targets.tracks)
 
@@ -1804,7 +1804,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
         rendered = HudRenderer("portrait").render(
             _model(lock_label="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
                    playback_speed=1.0, osr2=Osr2State.ROBOT_HAND, drive=drive, foot=block,
-                   osr2_rows=((Button("robot_hand_toggle_cruise", "cc", "Cruise"),),)),
+                   osr2_rows=((Button("robot_hand_toggle_learned", "hi", "Human inspired"),),)),
             video="example clip one", clip_row=RowHud(duration_ms=60_000))
         painted = np.argwhere((_rgb(rendered.bgra) == np.array(_Block.MARK)).all(axis=-1))
         _x, row_y, _w, row_h = rendered.targets.row.rect

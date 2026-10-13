@@ -5,7 +5,6 @@ from pathlib import Path
 
 from app_support.state_files import GENAU_STATUS
 
-from .cruise_control import CruiseControlState
 from .file_channel import publish_whole
 from .flick_advance import FlickAdvanceState
 from .learned_motion import LearnedMotionState
@@ -26,7 +25,6 @@ def _flag_or_unknown(flag: bool | None) -> str:
 
 def build_status_text(
     hand: RobotHandState,
-    cruise: CruiseControlState | None = None,
     *,
     learned: LearnedMotionState | None = None,
     flick_advance: FlickAdvanceState | None = None,
@@ -37,8 +35,7 @@ def build_status_text(
     limits = control_limits(hand)
     advance = flick_advance or FlickAdvanceState()
     return (
-        ("" if cruise is None else f"cruise={'1' if cruise.active else '0'}\n")
-        + f"learned={'1' if learned is not None and learned.active else '0'}\n"
+        f"learned={'1' if learned is not None and learned.active else '0'}\n"
         f"locked={'1' if advance.locked else '0'}\n"
         # Which flick is up.  Empty until the first flick is on screen.
         f"flick={flick if flick is not None else ''}\n"

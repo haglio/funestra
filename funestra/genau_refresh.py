@@ -6,7 +6,6 @@ from functools import partial
 from pathlib import Path
 
 from .broker_feed import snapshot
-from .cruise_control import tick_cruise_control
 from .device_walk import Walk, the_broker_holding, the_hand_taking_back
 from .file_channel import consume_command_file
 from .flick_advance import set_elapsed, tick_flick_advance
@@ -55,12 +54,11 @@ class GenauRefreshController:
         drive_file: Path | None = None,
     ):
         self.controls = controls
-        # The seven the tick itself reads, named here rather than reached for
+        # The ones the tick itself reads, named here rather than reached for
         # through the controls on every line below.
         self.engine = controls.engine
         self.paused = controls.paused
         self.robot_hand = controls.robot_hand
-        self.cruise_control = controls.cruise_control_state
         self.learned = controls.learned_motion_state
         self.flick_advance = controls.flick_advance_state
         self.hud = controls.hud
@@ -198,21 +196,11 @@ class GenauRefreshController:
         )
 
     def _tick_the_hand(self, now: float) -> None:
-        """The three things that move the hand on their own: the cruise stack
-        varying it, the learned motion replacing it, and the flick advance
-        letting the picture move on."""
-        if self.cruise_control is not None:
-            # The phase is only read on the tick that draws the waves: they
-            # all start where the motion already is, so taking over cannot
-            # be felt.
-            tick_cruise_control(
-                self.robot_hand, self.cruise_control, now,
-                phase=(self.tcode_sender.motion_phase
-                       if self.tcode_sender is not None else 0.0),
-            )
+        """The two things that move the hand on their own: the learned motion
+        replacing it, and the flick advance letting the picture move on."""
         if self.learned is not None:
-            # Likewise where the device is, read on the tick that lays out the
-            # first phrase, so it begins from there.
+            # Where the device is, read on the tick that lays out the first
+            # phrase, so it begins from there and taking over cannot be felt.
             tick_learned_motion(
                 self.robot_hand, self.learned, now,
                 start_fraction=self._where_the_device_is(),
@@ -287,7 +275,6 @@ class GenauRefreshController:
     def _publish_status(self) -> None:
         write_status_file(self.status_file, build_status_text(
             self.robot_hand,
-            self.cruise_control,
             learned=self.learned,
             flick_advance=self.flick_advance,
             flick=self.renderer.current_flick_path,

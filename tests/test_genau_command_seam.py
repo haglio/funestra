@@ -28,7 +28,6 @@ from test_genau_refresh import (
 )
 
 from funestra.broker_feed import BrokerFeed
-from funestra.cruise_control import CruiseControlState
 from funestra.flag import Flag
 from funestra.flick_advance import FlickAdvanceState
 from funestra.genau_controls import VERBS, GenauControls
@@ -63,7 +62,6 @@ class Seam:
             intended_center=start.get("center", 40),
             shape=start.get("shape", WaveformShape.TRIANGLE),
         )
-        self.cruise = CruiseControlState(active=bool(start.get("cruise", False)))
         self.learned = LearnedMotionState(model=LearnedModel(),
                                           active=bool(start.get("learned", False)))
         self.advance = FlickAdvanceState(
@@ -90,9 +88,7 @@ class Seam:
                 step_flick=self.selection.step,
                 condemn_flick=self.selection.condemn_current,
                 robot_hand=self.direct,
-                cruise_control_state=self.cruise,
                 learned_motion_state=self.learned,
-                set_motion_phase=self.tcode.set_motion_phase,
                 flick_advance_state=self.advance,
                 stop_event=self.stop_event,
                 hud=self.hud,
@@ -136,7 +132,6 @@ class Seam:
             "intended_center": self.direct.intended_center,
             "shape": self.direct.shape,
             "phase": round(self.engine.phase, 6),
-            "cruise": self.cruise.active,
             "learned": self.learned.active,
             "locked": self.advance.locked,
             "interval": self.advance.interval,
@@ -192,17 +187,10 @@ SEAM = [
     ("CENTER_UP", {}, {"center": 45, "intended_center": 45}),
     ("CYCLE_SHAPE", {}, {"shape": WaveformShape.ROUNDED_SQUARE}),
     ("CYCLE_SHAPE_PREV", {}, {"shape": WaveformShape.SINE}),
-    ("TOGGLE_CRUISE", {}, {"cruise": True}),
-    ("TOGGLE_CRUISE", {"cruise": True}, {"cruise": False}),
-    ("CRUISE_ON", {}, {"cruise": True}),
-    ("CRUISE_OFF", {"cruise": True}, {"cruise": False}),
     ("TOGGLE_LEARNED", {}, {"learned": True}),
     ("TOGGLE_LEARNED", {"learned": True}, {"learned": False}),
     ("LEARNED_ON", {}, {"learned": True}),
     ("LEARNED_OFF", {"learned": True}, {"learned": False}),
-    # Never both: switching one on switches the other off.
-    ("LEARNED_ON", {"cruise": True}, {"learned": True, "cruise": False}),
-    ("CRUISE_ON", {"learned": True}, {"cruise": True, "learned": False}),
     ("TOGGLE_LOCK", {}, {"locked": True}),
     ("TOGGLE_LOCK", {"locked": True}, {"locked": False}),
     ("LOCK_ON", {}, {"locked": True}),

@@ -9,6 +9,30 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-13 — cruise control is gone
+
+Human-inspired motion outclassed it, and Fun Time and Origenerator took it out
+of every control they had for it. What went from here: the dice and the summed
+waves (`cruise_control`'s `CruiseControlState`, `enable_cruise_control`,
+`disable_cruise_control` and `tick_cruise_control`; `wave_stack`'s `bars`,
+`position`, `position_ahead` and `trace_window`), Genau's `TOGGLE_CRUISE`,
+`CRUISE_ON` and `CRUISE_OFF`, the status file's `cruise` line, the drive
+readout's picture of the stack, the driver's stack position, the cc button on
+`aim_row`, and `GenauControls`' `cruise_control_state` and `set_motion_phase`,
+whose one caller was cruise control letting go. So did the verb-name
+constants nothing has read since the crossing a second Genau made went on
+2026-10-10 (`HAND_SPEED`, `HAND_AMP`, `HAND_CENTER`, `LEARNED_ON`,
+`LEARNED_OFF`).
+
+A branch from before then still spells all of it, and runs on whatever this
+package an app's venv holds, so it keeps working with cruise control as
+nothing: `cruise_control` keeps a `CruiseControlState` that never turns on and
+three functions that do nothing, `wave_stack` stays an empty module, and
+`GenauControls`, `RobotHandTCodeDriver` and `aim_row` drop the arguments it
+still hands them (`renamed.drops_retired_arguments`). Its keys and words for
+cruise reach Genau as verbs it refuses and logs. None of those is declared;
+they go once no checkout names them.
+
 ## 2026-10-12 — the console draws the host's list and bar itself
 
 Only a Funestra draws a HUD, and the console's `host_block` let a host paint

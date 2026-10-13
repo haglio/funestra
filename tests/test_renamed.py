@@ -14,9 +14,8 @@ from pathlib import Path
 import pytest
 from funestra_fakes import FakeEngine
 
-from funestra import flick_folder, mpv_engine, playhead, status
-from funestra.console import ConsoleModel, console_text, parse_console
-from funestra.cruise_control import CruiseControlState
+from funestra import cruise_control, flick_folder, mpv_engine, playhead, status, wave_stack
+from funestra.console import OSR2_DRIVING, ConsoleModel, aim_row, console_text, parse_console
 from funestra.flag import Flag
 from funestra.flick_cache import FlickCacheStore
 from funestra.flick_picture import Picture
@@ -30,6 +29,7 @@ from funestra.renamed import method_of
 from funestra.render_engine import MpvRenderEngine
 from funestra.robot_hand import RobotHandState
 from funestra.robot_hand_beat import BeatEngine
+from funestra.robot_hand_driver import RobotHandTCodeDriver
 from funestra.satellite_hud import HudModel, hud_text, parse_hud
 
 
@@ -89,9 +89,43 @@ def test_an_old_seconds_verb_still_sets_the_pace():
 
 
 def test_the_status_says_the_flick_under_both_keys():
-    text = build_status_text(RobotHandState(), CruiseControlState(), flick=Path("C:/flicks/alpha.mp4"))
+    text = build_status_text(RobotHandState(), flick=Path("C:/flicks/alpha.mp4"))
 
     assert {line.split("=", 1)[0] for line in text.splitlines()} >= {"flick", "clip"}
+
+
+class TestACheckoutFromBeforeCruiseControlWent:
+    """Fun Time built a CruiseControlState and handed it, with the driver's
+    set_motion_phase, to Genau's controls and driver; Origenerator ticked one
+    and read its stack; both named it on the row that aims the device."""
+
+    def test_genaus_controls_and_driver_take_what_it_handed_them_and_drop_it(self):
+        sink = type("Sink", (), {"send": lambda _self, _line: None, "close": lambda _self: None})()
+        driver = RobotHandTCodeDriver(sink, robot_hand=RobotHandState(),
+                                      cruise=cruise_control.CruiseControlState())
+        controls = GenauControls(engine=BeatEngine(last_tick=0.0), paused=Flag(),
+                                 step_flick=lambda _step: None,
+                                 cruise_control_state=cruise_control.CruiseControlState(),
+                                 set_motion_phase=driver.set_motion_phase)
+
+        assert not hasattr(controls, "cruise_control_state")
+        assert not hasattr(controls, "set_motion_phase")
+
+    def test_the_row_it_names_cruise_on_draws_none(self):
+        row = aim_row(cruise=True, learned=False, shape="sine", control=OSR2_DRIVING)
+
+        assert row[0].command == "robot_hand_toggle_learned"
+
+    def test_the_cruise_it_ticks_never_moves(self):
+        state = cruise_control.CruiseControlState()
+
+        cruise_control.enable_cruise_control(state)
+        cruise_control.tick_cruise_control(RobotHandState(playing=True), state, 1.0, phase=0.25)
+
+        assert (state.active, bool(state.stack), list(state.stack.waves), state.clock) == (
+            False, False, [], 0.0)
+        assert cruise_control.disable_cruise_control(state) is None
+        assert wave_stack.__all__ == []
 
 
 def test_a_collaborator_from_before_the_rename_is_asked_by_its_old_method_name():

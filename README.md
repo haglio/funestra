@@ -33,8 +33,8 @@ another application's internals to get it. By what it is:
   script and the questions asked of one, and for a motion of this family's own:
   `robot_hand` (the waveform), `robot_hand_beat` (the phase it runs at),
   `robot_hand_driver` (the motion on the wire, and the device changing hands),
-  `wave_stack` / `cruise_control` (the motion varying itself), `broker_feed`
-  (the beat the OSR2 broker publishes when it has the room).
+  `learned_motion` (phrases of real scripting in place of the waveform),
+  `broker_feed` (the beat the OSR2 broker publishes when it has the room).
 - **Genau** — wherever it runs. A flick is one of the
   short looping videos Genau scrubs to wherever the OSR2 is; the apps show and
   hear it under the word the settings all of Haglio share give it

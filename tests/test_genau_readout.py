@@ -11,13 +11,6 @@ import random
 
 import pytest
 
-from funestra import wave_stack
-from funestra.cruise_control import (
-    CruiseControlState,
-    enable_cruise_control,
-    tick_cruise_control,
-)
-from funestra.drive_readout import TRACE_SAMPLES
 from funestra.flag import Flag
 from funestra.flick_advance import FlickAdvanceState
 from funestra.genau_controls import GenauControls
@@ -46,7 +39,6 @@ def _controls(**over) -> GenauControls:
         paused=Flag(),
         step_flick=lambda _step: None,
         robot_hand=over.get("direct") or RobotHandState(speed=50, amplitude=60),
-        cruise_control_state=over.get("cruise") or CruiseControlState(),
         flick_advance_state=FlickAdvanceState(interval=20),
     )
 
@@ -163,24 +155,6 @@ class TestTheTraceHoldsStillAndSlides:
         assert readout.drive.slide > first.slide
         assert readout.drive.edge is not None
 
-    def test_cruise_controls_sum_holds_its_picture_between_knots(self):
-
-        hand = RobotHandState(playing=True, speed=50, amplitude=60)
-        cruise = CruiseControlState(rng=random.Random(2))
-        enable_cruise_control(cruise)
-        tick_cruise_control(hand, cruise, now=1.0)
-        tick_cruise_control(hand, cruise, now=1.05)
-        controls = _controls(direct=hand, cruise=cruise)
-        readout = _readout(controls=controls)
-        readout.update(1.05)
-        first = readout.drive
-        tick_cruise_control(hand, cruise, now=1.1)
-
-        readout.update(1.1)
-
-        assert readout.drive.waveform == pytest.approx(first.waveform, abs=1e-4)
-        assert readout.drive.slide > first.slide
-
 
 class TestTheTraceUnderTheMaxIntensity:
     def test_the_readout_says_the_max_intensity_the_wave_is_held_to(self):
@@ -190,21 +164,6 @@ class TestTheTraceUnderTheMaxIntensity:
         readout.update(1.0)
 
         assert readout.drive.max_intensity == 40
-
-    def test_a_stack_held_down_by_its_max_intensity_is_drawn_as_the_stack_it_leaves(self):
-        hand = RobotHandState(playing=True, speed=90, amplitude=100, max_intensity=40)
-        cruise = CruiseControlState(rng=random.Random(2))
-        enable_cruise_control(cruise)
-        tick_cruise_control(hand, cruise, now=1.0)
-        tick_cruise_control(hand, cruise, now=1.05)
-        readout = _readout(controls=_controls(direct=hand, cruise=cruise))
-
-        readout.update(1.05)
-
-        drive = readout.drive
-        heights, _slide = wave_stack.trace_window(
-            cruise.stack, cruise.clock, TRACE_SAMPLES, drive.trace_seconds, max_intensity=40)
-        assert drive.waveform == pytest.approx(tuple(heights[:TRACE_SAMPLES]))
 
 
 class TestTheTraceUnderTheLearnedMotion:
