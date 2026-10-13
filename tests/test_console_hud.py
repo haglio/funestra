@@ -8,6 +8,7 @@ import pytest
 from console_rows import console_rows, motion_rows, osr2_controls
 from host_blocks import RED_BAND, Band
 from shared_ui import colors
+from shared_ui.app_icon import LETTERS
 from shared_ui.palette import BG_PRIMARY, BLUE, BORDER_PANEL, GREEN, MAGENTA, TEXT_MUTED, WHITE
 from shared_ui.spacing import BUTTON_GAP
 
@@ -48,7 +49,6 @@ from funestra.hud_minimize import minimize_command
 from funestra.hud_osr2 import COLORS as _OSR2_COLORS
 from funestra.hud_osr2 import LABELS as _OSR2_LABELS
 from funestra.hud_panel import (
-    ICON_GRIDS,
     TOOLTIP_PAD,
     load_font,
     text_width,
@@ -468,8 +468,8 @@ class TestPainter:
         set in the body face is a thin thing beside them.  What has to hold is the
         shape: the grid the .ico carries, in its magenta, whatever the button is
         doing underneath it."""
-        for action, grid in (("broker_panel", ICON_GRIDS["B"]),
-                             ("main_fmode", ICON_GRIDS["F"])):
+        for action, grid in (("broker_panel", LETTERS["B"]),
+                             ("main_fmode", LETTERS["F"])):
             pixels = self._button_pixels(action, ConsoleModel(
                 main_mode=MainMode.KINO, rows=console_rows(favorites=True),
                 osr2_controls=osr2_controls()))

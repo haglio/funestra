@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+from shared_ui.app_icon import LETTERS
 from shared_ui.icons_pil import paste_glyph
 
 # The palette is shared_ui's, read without Qt: shared_ui.palette imports
@@ -187,18 +188,11 @@ def draw_active_dot(draw: ImageDraw.ImageDraw, x: int, y: int, active: bool) -> 
                  fill=(*(WHITE if active else TEXT_MUTED), 255))
 
 
-# The app marks, cell by cell.  Every icon in this family is a magenta letter laid
-# out on a five-by-five grid — the shape each app's own .ico carries — and a HUD
-# that wants one draws it from the grid rather than loading the file: the .ico
-# files live in the apps' own repos, and no app here may reach into another's.
-# A letter set in the body face is not the same mark: it is a thin letterform
-# where the icon is a chunky one, and it reads as a caption rather than a badge.
-ICON_GRIDS = {
-    "B": ("#####", "#...#", "#####", "#...#", "#####"),  # the OSR2 broker
-    "F": ("#####", "#....", "#####", "#....", "#...."),  # F-mode
-}
-
-
+# The app marks are the family's five-by-five letters (shared_ui.app_icon), the
+# shape each app's own .ico carries; a HUD draws one from that table rather than
+# loading the file, since the .ico files live in the apps' own repos.  A letter
+# set in the body face is not the same mark: it is a thin letterform where the
+# icon is a chunky one, and it reads as a caption rather than a badge.
 def draw_icon(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int],
               letter: str) -> None:
     """Draw the app mark for *letter*, centered in *rect* and sized to fill it.
@@ -210,7 +204,7 @@ def draw_icon(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int],
     x, y, w, h = rect
     cell = max(1, min(w, h) // 7)
     left, top = x + (w - 5 * cell) / 2, y + (h - 5 * cell) / 2
-    for row, line in enumerate(ICON_GRIDS[letter]):
+    for row, line in enumerate(LETTERS[letter]):
         for column, painted in enumerate(line):
             if painted != "#":
                 continue

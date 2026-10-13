@@ -4,11 +4,11 @@ from __future__ import annotations
 import numpy as np
 from PIL import Image, ImageDraw
 from shared_ui import palette
+from shared_ui.app_icon import LETTERS
 from shared_ui.palette import BG_PRIMARY, MAGENTA, TEXT_MUTED, WHITE
 
 from funestra import hud_panel
 from funestra.hud_panel import (
-    ICON_GRIDS,
     PANEL_ALPHA,
     TOOLTIP_PAD,
     HudPanel,
@@ -176,8 +176,8 @@ def test_an_app_mark_draws_the_grid_its_icon_carries():
     """The .ico files live in the apps' own repos, so a HUD in one of them draws
     the mark from the grid instead of loading another repo's file — which only
     works if what lands on the pixels is that grid."""
-    for letter, grid in ICON_GRIDS.items():
-        assert _icon_cells(letter) == list(grid), letter
+    for letter in ("B", "F"):
+        assert _icon_cells(letter) == list(LETTERS[letter]), letter
 
 
 def test_an_app_mark_leaves_its_counters_clear_for_the_fill_beneath_it():

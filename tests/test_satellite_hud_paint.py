@@ -8,6 +8,7 @@ import pytest
 from PIL import Image, ImageDraw
 from satellite_rows import funestra_rows, short_name
 from shared_ui import colors
+from shared_ui.app_icon import LETTERS
 from shared_ui.palette import BLUE, BORDER_PANEL, GREEN, TEXT_MUTED, TEXT_PRIMARY, WHITE
 from shared_ui.spacing import BUTTON_GAP
 
@@ -24,7 +25,7 @@ from funestra.geometry import Rect
 from funestra.hud_button import Button
 from funestra.hud_minimize import RESTORE_TOOLTIP, minimize_command
 from funestra.hud_minimize import ROOM as MINUS_ROOM
-from funestra.hud_panel import ACTIVE_DOT, ICON_GRIDS
+from funestra.hud_panel import ACTIVE_DOT
 from funestra.hud_placement import HudCorner
 from funestra.hud_row import SCRUBBER, RowHud, row_part
 from funestra.hud_sections import DIVIDER_H, SECTION_GAP
@@ -562,7 +563,7 @@ def test_f_mode_wears_its_own_badge_rather_than_a_typed_letter():
             for r in range(5)
         ]
 
-        assert drawn == list(ICON_GRIDS["F"]), favorites
+        assert drawn == list(LETTERS["F"]), favorites
 
 
 def test_a_running_loops_button_fills_white_and_not_the_locks_green(thumb):
