@@ -6,7 +6,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from console_rows import console_rows, motion_rows, osr2_controls
-from host_blocks import RED_BAND, Band
+from host_controls_fakes import a_hud
 from shared_ui import colors
 from shared_ui.app_icon import LETTERS
 from shared_ui.palette import BG_PRIMARY, BLUE, BORDER_PANEL, GREEN, MAGENTA, TEXT_MUTED, WHITE
@@ -41,6 +41,7 @@ from funestra.drive_readout import (
     tracks,
 )
 from funestra.geometry import Rect
+from funestra.host_controls import HostControlsSection
 from funestra.hud_button import Button
 from funestra.hud_corners import HudPlace
 from funestra.hud_marks import BROKER_ICON, shared_mark
@@ -1415,63 +1416,59 @@ class TestTheRowTheConsoleCarriesForItsVideo:
         assert row_part((x0 + x1) // 2, row_h - 2, painter.row) == SCRUBBER
 
 
-class TestABlockTheHostPaints:
-    """A control only one host has -- the headset's projection, say -- drawn by
-    that host into room the console makes for it, inside the one panel."""
+class TestTheHostsControls:
+    """A list and a bar only one host has -- the headset's projection list and
+    Angle bar -- drawn at the console's foot, inside the one panel."""
 
     @staticmethod
     def _hud() -> ConsoleHud:
         return ConsoleHud(modes=ModeHud(video="scene one"),
                           console=ConsoleModel(main_mode=MainMode.KINO, locked=False))
 
-    def test_the_panel_grows_by_the_room_the_block_asks_for(self):
+    def test_the_panel_grows_by_the_room_they_take(self):
         without = ConsolePainter().rgba(self._hud())[1][1]
 
-        with_block = ConsolePainter().rgba(self._hud(), host_block=Band())[1][1]
+        with_them = ConsolePainter().rgba(self._hud(), host_controls=a_hud())[1][1]
 
-        assert with_block >= without + Band.height
+        assert with_them >= without + HostControlsSection.height
 
-    def test_the_host_paints_it_at_the_foot_under_everything_else(self):
+    def test_they_land_at_the_foot_under_everything_else(self):
         painter = ConsolePainter()
         row = RowHud(position_ms=30_000, duration_ms=60_000, volume=VolumeHud(volume=40))
 
-        rgba, (width, height) = painter.rgba(self._hud(), clip_row=row, host_block=Band())
-        x, y, block_w, block_h = painter.host_block_rect
-        image = np.frombuffer(rgba, np.uint8).reshape(height, width, 4)
+        _rgba, (_width, height) = painter.rgba(self._hud(), clip_row=row, host_controls=a_hud())
+        _x, y, _field_width, field_height = painter.host_controls_layout.field
 
-        assert block_h == Band.height
-        assert y + block_h == height - PAD
+        assert field_height == HostControlsSection.height
+        assert y + field_height == height - PAD
         assert painter.row.rect[1] + painter.row.rect[3] <= y
         assert all(rect[1] + rect[3] <= y for rect, _button in painter.buttons)
-        assert tuple(image[y + block_h // 2, x + block_w // 2, :3]) == RED_BAND
 
-    def test_a_block_wider_than_the_panel_widens_it_rather_than_being_cut(self):
-        wide = Band()
-        wide.least_width = 900
+    def test_controls_wider_than_the_panel_widen_it_rather_than_being_cut(self):
+        wide = replace(a_hud(), choices=("A name far too long for a console held to its width",))
         painter = ConsolePainter(width=380)
 
-        _rgba, (width, _height) = painter.rgba(self._hud(), host_block=wide)
+        _rgba, (width, _height) = painter.rgba(self._hud(), host_controls=wide)
 
-        assert width >= 900 + 2 * PAD
-        assert painter.host_block_rect[2] >= 900
+        assert width >= HostControlsSection().least_width(wide) + 2 * PAD > 380
 
-    def test_a_block_the_host_changes_shows_on_the_next_paint(self):
+    def test_a_change_in_what_the_host_shows_is_on_the_next_paint(self):
         painter = ConsolePainter()
 
-        red = painter.rgba(self._hud(), host_block=Band(RED_BAND))[0]
-        blue = painter.rgba(self._hud(), host_block=Band((30, 40, 200)))[0]
+        curved = painter.rgba(self._hud(), host_controls=a_hud("Curved"))[0]
+        round_ = painter.rgba(self._hud(), host_controls=a_hud("Round"))[0]
 
-        assert red != blue
+        assert curved != round_
 
-    def test_a_minimized_console_has_no_block_to_press(self):
+    def test_a_minimized_console_has_none_to_press(self):
         painter = ConsolePainter()
-        painter.rgba(self._hud(), host_block=Band())
+        painter.rgba(self._hud(), host_controls=a_hud())
         hud = self._hud()
         minimized = replace(hud, console=replace(hud.console, hud_minimized=True))
 
-        painter.rgba(minimized, host_block=Band())
+        painter.rgba(minimized, host_controls=a_hud())
 
-        assert painter.host_block_rect is None
+        assert painter.host_controls_layout is None
 
 
 def _declared(painter) -> list:

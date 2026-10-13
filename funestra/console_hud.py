@@ -51,6 +51,7 @@ from .drive_readout import (
     section_size,
 )
 from .geometry import Rect, contains
+from .host_controls import HostControlsHud, HostControlsLayout, HostControlsSection
 from .hud_corners import HudPlace
 from .hud_minimize import ROOM as MINUS_ROOM
 from .hud_minimize import collapsed_button, corner_button_rect, minimize_button
@@ -247,6 +248,7 @@ class ConsolePainter:
         self._drive = DriveSection()
         self._osr2 = Osr2Section()
         self._clip_row = RowSection()
+        self._host_controls = HostControlsSection()
         # What the panel on hand was painted from.  The heatmap is held by
         # identity rather than value: comparing a track's worth of colors every
         # frame costs more than the paint it saves, and a host rebuilds the
@@ -260,27 +262,28 @@ class ConsolePainter:
         # Where the clip's row landed, for a press to be placed in its own
         # coordinates (:func:`funestra.hud_row.row_part`).
         self.row: RowLayout | None = None
-        self.host_block_rect: Rect | None = None
+        self.host_controls_layout: HostControlsLayout | None = None
         self._grip = TrackGrip()
         self._readout = ReadoutResolver()
         self._origin = hud_xy()
         self._pointer: PointerReading[tuple[int, int] | None] = PointerReading(None)
 
     def bgra(self, hud: ConsoleHud, *, hover: tuple[int, int] | None = None,
-             clip_row: RowHud | None = None, heatmap=None, host_block=None) -> np.ndarray:
+             clip_row: RowHud | None = None, heatmap=None,
+             host_controls: HostControlsHud | None = None) -> np.ndarray:
         """*hud* as an mpv overlay bitmap — what the Main Funestra composites into its video."""
-        if (self._ensure(self._resolve(hud), hover, clip_row, heatmap, host_block)
+        if (self._ensure(self._resolve(hud), hover, clip_row, heatmap, host_controls)
                 or self._bgra is None):
             self._bgra = to_bgra(self._image)
         return self._bgra
 
     def rgba(self, hud: ConsoleHud, *, hover: tuple[int, int] | None = None,
              clip_row: RowHud | None = None, heatmap=None,
-             host_block=None) -> tuple[bytes, tuple[int, int]]:
+             host_controls: HostControlsHud | None = None) -> tuple[bytes, tuple[int, int]]:
         """*hud* as ``(rgba_bytes, size)`` — what pygame takes, for Genau to blit
         into its own window in genau mode.  The size varies with the contents, so
         the caller sizes its blit from what comes back."""
-        self._ensure(self._resolve(hud), hover, clip_row, heatmap, host_block)
+        self._ensure(self._resolve(hud), hover, clip_row, heatmap, host_controls)
         return self._image.tobytes(), self._image.size
 
     def _resolve(self, hud: ConsoleHud) -> ConsoleHud:
@@ -300,18 +303,19 @@ class ConsolePainter:
             composed=kino_shows(console.main_mode)))
 
     def _ensure(self, hud: ConsoleHud, hover: tuple[int, int] | None,
-                clip_row: RowHud | None = None, heatmap=None, host_block=None) -> bool:
-        """Repaint if *hud*/*hover*/the clip's row/the host's block moved; report whether it did
+                clip_row: RowHud | None = None, heatmap=None,
+                host_controls: HostControlsHud | None = None) -> bool:
+        """Repaint if *hud*/*hover*/the clip's row/the host's controls moved; report whether it did
         (so a cached bitmap can be reused).  The panel is redrawn a few times a
         minute at most — Pillow is too slow to run every frame — so the image is
         kept until it changes.  The row is the one part that moves with playback,
         which is why a Funestra redrawing on its beat gets a fresh panel."""
         hover = hover if hover is not None else self._pointer.on(hud.console)
-        if ((hud, hover, clip_row, host_block) == self._painted[:4]
+        if ((hud, hover, clip_row, host_controls) == self._painted[:4]
                 and heatmap is self._painted[4] and self._image is not None):
             return False
-        self._painted = (hud, hover, clip_row, host_block, heatmap)
-        self._image = self._paint(hud, hover, clip_row, heatmap, host_block)
+        self._painted = (hud, hover, clip_row, host_controls, heatmap)
+        self._image = self._paint(hud, hover, clip_row, heatmap, host_controls)
         return True
 
     def press_at(self, mx: int, my: int) -> str:
@@ -432,7 +436,8 @@ class ConsolePainter:
         return placed
 
     def _paint(self, hud: ConsoleHud, hover: tuple[int, int] | None = None,
-               clip_row: RowHud | None = None, heatmap=None, host_block=None) -> Image.Image:
+               clip_row: RowHud | None = None, heatmap=None,
+               host_controls: HostControlsHud | None = None) -> Image.Image:
         console, drive = hud.console, hud.drive
         if console.hud_minimized:
             return self._paint_minimized(console.funestra, console.hud_corner, hover)
@@ -461,11 +466,11 @@ class ConsolePainter:
                   max(_row_width(aim_rows), drive_w,
                       self._osr2_width(console) if console.has_osr2 else 0),
                   self._clip_row.least_width(clip_row) if clip_row is not None else 0,
-                  host_block.least_width if host_block is not None else 0]
+                  self._host_controls.least_width(host_controls) if host_controls is not None else 0]
         minus_room = MINUS_ROOM if whole and self._minus_on_the_panel else 0
         last = max(index for index, used in enumerate(
             (True, bool(rows), bool(aim_rows) or console.has_osr2 or drive is not None,
-             clip_row is not None, host_block is not None)) if used)
+             clip_row is not None, host_controls is not None)) if used)
         reserves = [0] * len(widths)
         reserves[last if corner.lower else 0] = minus_room
         parts_w = max(width_ + reserve for width_, reserve in zip(widths, reserves))
@@ -492,7 +497,7 @@ class ConsolePainter:
             blocks_height([rows_height(aim_rows), _OSR2_H if console.has_osr2 else 0,
                            drive_h], _BLOCK_GAP),
             row_h,
-            host_block.height if host_block is not None else 0,
+            HostControlsSection.height if host_controls is not None else 0,
         ])
         status_top, rows_top, device_top, row_top, host_top = sections.tops
         height = sections.end + _PAD
@@ -541,7 +546,7 @@ class ConsolePainter:
                         glyph_font=self._glyph, word_font=self._tiny)
             self.buttons.append(minus)
         self._draw_the_foot(panel.image, corner, reserves, clip_row, row_top, row_h, heatmap,
-                            host_block, host_top)
+                            host_controls, host_top)
 
         if hover is not None:
             tip = tooltip_at(self.buttons, *hover)
@@ -551,23 +556,23 @@ class ConsolePainter:
 
     def _draw_the_foot(self, image: Image.Image, corner: HudCorner, reserves: list[int],
                        clip_row: RowHud | None, row_top: int, row_h: int, heatmap,
-                       host_block, host_top: int) -> None:
+                       host_controls: HostControlsHud | None, host_top: int) -> None:
         self.row = None
         if clip_row is not None:
             self.row = row_layout(clip_row, rect=_section_rect(
                 corner, image.width, reserves[3], row_top, row_h))
             self._clip_row.draw(image, self.row, clip_row, heatmap=heatmap)
-        self.host_block_rect = None
-        if host_block is not None:
-            self.host_block_rect = _section_rect(corner, image.width, reserves[4], host_top,
-                                                 host_block.height)
-            host_block.draw(image, self.host_block_rect)
+        self.host_controls_layout = None
+        if host_controls is not None:
+            self.host_controls_layout = self._host_controls.draw(image, _section_rect(
+                corner, image.width, reserves[4], host_top, HostControlsSection.height),
+                host_controls)
 
     def _paint_minimized(self, funestra: str, corner: HudCorner,
                          hover: tuple[int, int] | None) -> Image.Image:
         image, buttons = collapsed_button(funestra, corner, hover=hover,
                                           room_for_the_tooltip=self._width is not None)
-        self.buttons, self.tracks, self.row, self.host_block_rect = buttons, [], None, None
+        self.buttons, self.tracks, self.row, self.host_controls_layout = buttons, [], None, None
         return image
 
     def _osr2_state(self, model: ConsoleModel) -> str:

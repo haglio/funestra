@@ -9,6 +9,24 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-12 — the console draws the host's list and bar itself
+
+Only a Funestra draws a HUD, and the console's `host_block` let a host paint
+its own block into it, which FunTimeVR's headset did for its projection list
+and Angle bar. `host_block` is gone. A Funestra takes `host_controls` instead
+(`host_controls.HostControls`): something that says what its list and bar
+show now (`hud()`, a `HostControlsHud` naming what is chosen, the list in
+order and an optional `BarHud` with its label, value, ends and unit), and is
+handed back the row picked (`pick(index)`) and the value the bar is set to
+(`set_bar(value)`). `HostControlsSection` paints them at the console's foot,
+exactly as the headset did, and `HostControlsPress` keeps the list open or
+the bar held and places each press; the console offers every press to them
+first, as before, and `ConsolePainter.host_controls_layout` says where the
+field, the bar and the list's rows landed. The field and the list are
+`shared_ui.dropdown_pil`'s, the dropdown the headset's dashboard draws, and
+the bar's track is `hud_panel.draw_track`, which the volume chip's slider now
+draws with too.
+
 ## 2026-10-11 — the repo, its folder and its package are all funestra
 
 The package `funestra_core` is `funestra`, the repository `haglio/player_core`
