@@ -8,7 +8,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from funestra.broker_feed import BrokerFeed
-from funestra.cruise_control import CruiseControlState
 from funestra.device_walk import BROKER_HOLD_DELAY_MS
 from funestra.flag import Flag
 from funestra.flick_advance import FlickAdvanceState
@@ -155,7 +154,6 @@ def _build_controller(
     # has one, so a test that does not care about it still gets it.
     robot_hand: RobotHandState | None = None,
     tcode_sender: FakeTCodeSender | None = None,
-    cruise_control: CruiseControlState | None = None,
     learned: LearnedMotionState | None = None,
     flick_advance: FlickAdvanceState | None = None,
     hud: Flag | None = None,
@@ -188,7 +186,6 @@ def _build_controller(
         step_flick=selection.step,
         condemn_flick=selection.condemn_current,
         robot_hand=robot_hand if robot_hand is not None else RobotHandState(),
-        cruise_control_state=cruise_control,
         learned_motion_state=learned,
         set_motion_phase=(
             tcode_sender.set_motion_phase if tcode_sender is not None else None
@@ -493,20 +490,6 @@ def test_speed_up_command_via_refresh():
     assert dc.speed == 55
 
 
-def test_toggle_cruise_command_via_refresh():
-    dc = RobotHandState(playing=True, bpm=120.0)
-    auto = CruiseControlState(active=False)
-    tcode = FakeTCodeSender()
-    entry = {"frames": [object() for _ in range(8)]}
-    built = _build_controller(
-        entry=entry, robot_hand=dc, tcode_sender=tcode, cruise_control=auto, command="TOGGLE_CRUISE"
-    )
-
-    built["controller"].refresh()
-
-    assert auto.active is True
-
-
 def test_toggle_lock_command_via_refresh():
     dc = RobotHandState(playing=True, bpm=120.0)
     aa = FlickAdvanceState(locked=True)
@@ -519,24 +502,6 @@ def test_toggle_lock_command_via_refresh():
     built["controller"].refresh()
 
     assert aa.locked is False
-
-
-def test_cruise_control_ticks_during_refresh():
-    dc = RobotHandState(playing=True, bpm=120.0, speed=50)
-    auto = CruiseControlState(active=True, rng=random.Random(42))
-    tcode = FakeTCodeSender()
-    entry = {"frames": [object() for _ in range(8)]}
-    built = _build_controller(
-        entry=entry, robot_hand=dc, tcode_sender=tcode, cruise_control=auto
-    )
-    # Advance clock enough that auto pilot actually triggers changes
-    tick = 0.0
-    for _ in range(200):
-        tick += 0.1
-        built["controller"].now_source = lambda t=tick: 5.0 + t
-        built["controller"].refresh()
-    # Auto pilot should have changed something
-    assert dc.speed != 50 or dc.amplitude != 100 or dc.center != 50
 
 
 def _run_flick_advance(*, playing: bool, seconds: float = 15.0, locked: bool = False):
@@ -614,25 +579,6 @@ def test_broker_auto_uses_linear_display_phase():
     # Engine phase is 0.25, frame_count=8
     # Linear: logical_index = int(0.25 * 8) = 2, display = 7 - 2 = 5
     assert built["renderer"].display_calls == [5]
-
-
-def test_broker_auto_does_not_tick_cruise_control():
-    """When broker signals auto, cruise control should not modify direct state."""
-    dc = RobotHandState(playing=True, bpm=120.0, speed=50)
-    cruise = CruiseControlState(active=True, rng=random.Random(42))
-    state = BrokerFeed(auto_active=True, raw_bpm=120.0)
-    tcode = FakeTCodeSender()
-    entry = {"frames": [object() for _ in range(8)]}
-    built = _build_controller(
-        broker=state, entry=entry, robot_hand=dc, tcode_sender=tcode, cruise_control=cruise,
-    )
-    tick = 0.0
-    for _ in range(200):
-        tick += 0.1
-        built["controller"].now_source = lambda t=tick: 5.0 + t
-        built["controller"].refresh()
-
-    assert dc.speed == 50 and dc.amplitude == 100 and dc.center == 50
 
 
 def test_broker_auto_sync_pulses_never_move_the_cursor_backward():
@@ -1104,7 +1050,7 @@ def test_the_learned_motion_ticks_during_refresh(tmp_path):
     learned = LearnedMotionState(model=_learned_model(), rng=random.Random(1), active=True)
     built = _build_controller(
         entry={"frames": [object() for _ in range(8)]}, robot_hand=dc,
-        tcode_sender=FakeTCodeSender(), cruise_control=CruiseControlState(), learned=learned,
+        tcode_sender=FakeTCodeSender(), learned=learned,
         status_file=tmp_path / "status.txt",
     )
 
@@ -1205,7 +1151,7 @@ class TestAFlippedFlick:
             path=str(self._flick(tmp_path)),
             entry={"frames": [object() for _ in range(8)]},
             robot_hand=RobotHandState(playing=True, bpm=120.0),
-            tcode_sender=FakeTCodeSender(), cruise_control=CruiseControlState(),
+            tcode_sender=FakeTCodeSender(),
             status_file=tmp_path / "genau_status.txt",
             flick_flip=self._flip(tmp_path),
         )
@@ -1218,7 +1164,6 @@ class TestAFlippedFlick:
 def test_the_status_says_whether_the_flick_up_is_portrait(tmp_path):
     built = _build_controller(
         entry={"frames": [object() for _ in range(8)]},
-        cruise_control=CruiseControlState(),
         status_file=tmp_path / "genau_status.txt",
     )
     built["renderer"].portrait = True
@@ -1228,7 +1173,7 @@ def test_the_status_says_whether_the_flick_up_is_portrait(tmp_path):
     assert "portrait=1" in (tmp_path / "genau_status.txt").read_text(encoding="utf-8")
 
 
-def test_with_no_cruise_control_the_status_still_goes_out_and_says_nothing_of_it(tmp_path):
+def test_the_status_goes_out_with_nothing_but_the_hand_wired(tmp_path):
     built = _build_controller(
         entry={"frames": [object() for _ in range(8)]},
         status_file=tmp_path / "genau_status.txt",
@@ -1238,7 +1183,6 @@ def test_with_no_cruise_control_the_status_still_goes_out_and_says_nothing_of_it
 
     status = (tmp_path / "genau_status.txt").read_text(encoding="utf-8")
     assert "shape=sine" in status
-    assert "cruise" not in status
 
 
 class TestSeekingTheFlicksTimeOnScreen:

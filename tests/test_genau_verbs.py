@@ -8,7 +8,6 @@ from pathlib import Path
 
 import pytest
 
-from funestra.cruise_control import CruiseControlState
 from funestra.flag import Flag
 from funestra.flick_advance import MAX_INTERVAL_S, MIN_INTERVAL_S, FlickAdvanceState
 from funestra.flick_flip import FlickFlip
@@ -325,22 +324,6 @@ class TestApplyRuntimeCommand:
         assert handled is True
         assert ds.shape == WaveformShape.SAWTOOTH  # SINE wraps backward to SAWTOOTH
 
-    def test_toggle_cruise_activates_cruise_control(self):
-        engine = BeatEngine(phase=0.0, last_tick=0.0)
-        paused = Flag()
-        auto = CruiseControlState(active=False)
-
-        handled = _answered(
-            "TOGGLE_CRUISE",
-            engine=engine,
-            paused=paused,
-            step_flick=lambda _step: None,
-            cruise_control_state=auto,
-        )
-
-        assert handled is True
-        assert auto.active is True
-
     def test_direct_commands_ignored_without_direct_state(self):
         engine = BeatEngine(phase=0.0, last_tick=0.0)
         paused = Flag()
@@ -355,63 +338,16 @@ class TestApplyRuntimeCommand:
             )
             assert handled is False, f"{cmd} should be ignored without robot_hand"
 
-    def test_toggle_cruise_ignored_without_cruise_control_state(self):
-        engine = BeatEngine(phase=0.0, last_tick=0.0)
-        paused = Flag()
-
-        handled = _answered(
-            "TOGGLE_CRUISE",
-            engine=engine,
-            paused=paused,
-            step_flick=lambda _step: None,
-        )
-
-        assert handled is False
-
-    def test_cruise_on_enables_cruise_control(self):
-        engine = BeatEngine(phase=0.0, last_tick=0.0)
-        paused = Flag()
-        cc = CruiseControlState(active=False)
-
-        handled = _answered(
-            "CRUISE_ON",
-            engine=engine,
-            paused=paused,
-            step_flick=lambda _step: None,
-            cruise_control_state=cc,
-        )
-
-        assert handled is True
-        assert cc.active is True
-
-    def test_cruise_off_disables_cruise_control(self):
-        engine = BeatEngine(phase=0.0, last_tick=0.0)
-        paused = Flag()
-        cc = CruiseControlState(active=True)
-
-        handled = _answered(
-            "CRUISE_OFF",
-            engine=engine,
-            paused=paused,
-            step_flick=lambda _step: None,
-            cruise_control_state=cc,
-        )
-
-        assert handled is True
-        assert cc.active is False
-
-    def test_cruise_on_off_ignored_without_cruise_control_state(self):
-        engine = BeatEngine(phase=0.0, last_tick=0.0)
-        paused = Flag()
-
-        for cmd in ("CRUISE_ON", "CRUISE_OFF"):
+    def test_an_orchestrator_from_before_cruise_control_went_is_refused_its_verbs(self):
+        for cmd in ("TOGGLE_CRUISE", "CRUISE_ON", "CRUISE_OFF"):
             handled = _answered(
                 cmd,
-                engine=engine,
-                paused=paused,
+                engine=BeatEngine(phase=0.0, last_tick=0.0),
+                paused=Flag(),
                 step_flick=lambda _step: None,
+                robot_hand=RobotHandState(),
             )
-            assert handled is False, f"{cmd} should be ignored without cruise_control_state"
+            assert handled is False, cmd
 
     def test_amp_sets_amplitude(self):
         engine = BeatEngine(phase=0.0, last_tick=0.0)
@@ -901,8 +837,7 @@ class TestAnUnhandledCommand:
 
 
 class TestLearnedMotionVerbs:
-    """The learned motion answers the same three spellings cruise does, and the
-    two are never on together: switching one on switches the other off."""
+    """The learned motion answers a flip and an explicit on and off."""
 
     def _learned(self, active: bool = False) -> LearnedMotionState:
         return LearnedMotionState(model=LearnedModel(), active=active)
@@ -930,25 +865,3 @@ class TestLearnedMotionVerbs:
     def test_learned_verbs_are_refused_without_the_learned_state(self):
         assert _answered("TOGGLE_LEARNED", engine=BeatEngine(phase=0.0, last_tick=0.0),
                          paused=Flag(), step_flick=lambda _step: None) is False
-
-    def test_switching_learned_on_switches_cruise_off(self):
-        learned = self._learned()
-        cruise = CruiseControlState(active=True)
-
-        _answered("LEARNED_ON", engine=BeatEngine(phase=0.0, last_tick=0.0), paused=Flag(),
-                  step_flick=lambda _step: None, learned_motion_state=learned,
-                  cruise_control_state=cruise)
-
-        assert learned.active is True
-        assert cruise.active is False
-
-    def test_switching_cruise_on_switches_learned_off(self):
-        learned = self._learned(active=True)
-        cruise = CruiseControlState(active=False)
-
-        _answered("TOGGLE_CRUISE", engine=BeatEngine(phase=0.0, last_tick=0.0), paused=Flag(),
-                  step_flick=lambda _step: None, learned_motion_state=learned,
-                  cruise_control_state=cruise)
-
-        assert cruise.active is True
-        assert learned.active is False

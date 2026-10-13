@@ -16,9 +16,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from . import learned_motion, wave_stack
+from . import learned_motion
 from .funscript import HANDOFF_RAMP_MS
-from .robot_hand import FULL_INTENSITY, POSITION_MAX, phase_to_position
+from .renamed import drops_retired_arguments
+from .robot_hand import POSITION_MAX, phase_to_position
 from .tcode import HandoffGlide, TCodeSink, format_tcode_command
 
 __all__ = [
@@ -35,23 +36,18 @@ if TYPE_CHECKING:
 _RISE_SKIP_BELOW = 200
 
 
+@drops_retired_arguments("cruise")
 class RobotHandTCodeDriver:
     def __init__(
         self,
         sink: TCodeSink,
         *,
         robot_hand: RobotHandState | None = None,
-        cruise=None,
         learned=None,
         min_interval: float = 1.0 / 30.0,
     ) -> None:
         self._sink = sink
         self._robot_hand = robot_hand
-        # Cruise control's own motion, when it has one: several waves summed,
-        # each at its own speed, so there is no one phase to read it off — the
-        # stack is asked where it is instead.  None, or holding no waves, and
-        # the motion is the single wave this has always sent.
-        self._cruise = cruise
         # The learned motion's, when it has the hand: phrases of real scripting
         # with no phase at all, asked where they are on their own clock.
         self._learned = learned
@@ -135,24 +131,16 @@ class RobotHandTCodeDriver:
         swing froze.
         """
         self._motion_phase = 0.0
-        if self._cruise is not None:
-            wave_stack.rest_at_floor(self._cruise.stack)
         if self._learned is not None:
             learned_motion.rest_at_floor(self._learned)
 
     def set_motion_phase(self, phase: float) -> None:
-        """Put the single wave at *phase* — what cruise control hands back when
-        it lets go, so the motion carries on from the wave that had most of the
-        travel rather than from wherever the free-running phase had got to."""
         self._motion_phase = phase
 
     def _compute_position(self) -> int:
         if self._learned is not None and self._learned.active:
             return round(POSITION_MAX * learned_motion.position(
                 self._learned, self._robot_hand) / 100)
-        if self._cruise is not None and self._cruise.stack:
-            return round(POSITION_MAX * wave_stack.position(
-                self._cruise.stack, self._cruise.clock, max_intensity=self._max_intensity) / 100)
         if self._robot_hand is not None:
             return phase_to_position(
                 self._motion_phase,
@@ -161,10 +149,6 @@ class RobotHandTCodeDriver:
                 center=self._robot_hand.center,
             )
         return phase_to_position(self._motion_phase)
-
-    @property
-    def _max_intensity(self) -> int:
-        return FULL_INTENSITY if self._robot_hand is None else self._robot_hand.max_intensity
 
     def current_position(self) -> int:
         """Where the device is being sent right now — scaled by the rise while

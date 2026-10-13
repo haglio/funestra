@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-from . import learned_motion, wave_stack
+from . import learned_motion
 from .drive_readout import TRACE_SAMPLES, DriveHud, publish_drive
 from .genau_controls import GenauControls
 from .renamed import answers_to_old_names
@@ -73,7 +73,6 @@ class GenauReadout:
         drive_file: Path | None = None,
     ):
         self.robot_hand = controls.robot_hand
-        self.cruise_control = controls.cruise_control_state
         self.learned = controls.learned_motion_state
         self.flick_advance = controls.flick_advance_state
         self.beats_per_loop = beats_per_loop
@@ -165,20 +164,14 @@ class GenauReadout:
         — as the samples, how far the line is shifted, and the knot past the
         border.
 
-        Every source is read on knots a fixed stretch of its own clock apart,
-        so the picture holds still between knots and slides by the fraction,
-        rather than being redrawn at fixed columns every frame: the wave on its
-        phase, cruise control's sum on the stack's clock (its waves each run at
-        their own speed, so it is walked in time), the learned motion on its
-        script.
+        Both sources are read on knots a fixed stretch of their own clock
+        apart, so the picture holds still between knots and slides by the
+        fraction, rather than being redrawn at fixed columns every frame: the
+        wave on its phase, the learned motion on its script.
         """
         if self.learned is not None and self.learned.active:
             heights, slide = learned_motion.trace_window(
                 self.learned, self.robot_hand, TRACE_SAMPLES, display_seconds)
-        elif self.cruise_control is not None and self.cruise_control.stack:
-            heights, slide = wave_stack.trace_window(
-                self.cruise_control.stack, self.cruise_control.clock,
-                TRACE_SAMPLES, display_seconds, max_intensity=self.robot_hand.max_intensity)
         else:
             ds = self.robot_hand
             heights, slide = trace_window(

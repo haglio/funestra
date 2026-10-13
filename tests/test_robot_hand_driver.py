@@ -2,12 +2,6 @@ from __future__ import annotations
 
 import random
 
-from funestra import wave_stack
-from funestra.cruise_control import (
-    CruiseControlState,
-    enable_cruise_control,
-    tick_cruise_control,
-)
 from funestra.funscript import HANDOFF_RAMP_MS
 from funestra.learned_model import LearnedModel, Phrase, classify
 from funestra.learned_motion import (
@@ -16,7 +10,6 @@ from funestra.learned_motion import (
     tick_learned_motion,
 )
 from funestra.robot_hand import (
-    POSITION_MAX,
     RobotHandState,
     WaveformShape,
     bpm_for_speed,
@@ -397,17 +390,6 @@ class TestSenderWithDirectState:
         sender.maybe_send(phase=0.5, now=1.0)
         assert sender.current_position() == 9999
 
-    def test_a_cruising_hand_held_down_by_its_max_intensity_is_sent_the_stack_it_leaves(self):
-        state = RobotHandState(playing=True, amplitude=100, speed=90, max_intensity=25)
-        cruise = CruiseControlState(rng=random.Random(3))
-        enable_cruise_control(cruise)
-        tick_cruise_control(state, cruise, now=10.0)
-        tick_cruise_control(state, cruise, now=10.05)
-        sender = RobotHandTCodeDriver(FakeTCodeSink(), robot_hand=state, cruise=cruise,
-                                      min_interval=0.0)
-
-        assert sender.current_position() == round(POSITION_MAX * wave_stack.position(
-            cruise.stack, cruise.clock, max_intensity=25) / 100)
 
 
 

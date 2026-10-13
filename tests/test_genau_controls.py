@@ -86,13 +86,12 @@ class TestHalfACommandIsNotACommand:
 
 # Every verb the registry answers.  Written down
 # here so a verb added to the registry is a deliberate line in a diff -- the
-# spellings are a contract with the orchestrator that sends them, kept from its
-# own side in genau's tests/test_genau_vocabulary.py.
+# spellings are a contract with the orchestrator that sends them.
 WRITTEN_DOWN_VERBS = frozenset({
     "QUIT", "PREV", "NEXT", "WEIRD", "FLIP_ENDS", "LATEST", "SHUFFLE", "OFFSET_QUARTER_CYCLE",
     "PAUSE", "RESUME", "PARK", "RETRACT", "SPEED_DOWN", "SPEED_UP", "AMPLITUDE_DOWN", "AMPLITUDE_UP",
-    "CENTER_DOWN", "CENTER_UP", "CYCLE_SHAPE", "CYCLE_SHAPE_PREV", "TOGGLE_CRUISE",
-    "CRUISE_ON", "CRUISE_OFF", "TOGGLE_LEARNED", "LEARNED_ON", "LEARNED_OFF",
+    "CENTER_DOWN", "CENTER_UP", "CYCLE_SHAPE", "CYCLE_SHAPE_PREV",
+    "TOGGLE_LEARNED", "LEARNED_ON", "LEARNED_OFF",
     "TOGGLE_LOCK", "LOCK_ON", "LOCK_OFF",
     "FLICK_SECONDS_DOWN", "FLICK_SECONDS_UP", "HUD_ON", "HUD_OFF",
     "AMP", "CENTER", "SPEED", "FLICK_SECONDS", "SET_VOLUME", "SET_TCODE_ENABLED", "SHAPES",

@@ -86,6 +86,25 @@ def answers_to_old_names(renamed: Mapping[str, str]) -> Callable[[type], type]:
     return wrap
 
 
+def drops_retired_arguments(*retired: str) -> Callable[[Any], Any]:
+    """For a class or function an old checkout still hands arguments it no
+    longer takes: those keywords are dropped, unread."""
+    def without_them(call: Callable[..., Any]) -> Callable[..., Any]:
+        @functools.wraps(call)
+        def called(*args, **kwargs):
+            for name in retired:
+                kwargs.pop(name, None)
+            return call(*args, **kwargs)
+        return called
+
+    def wrap(target: Any) -> Any:
+        if isinstance(target, type):
+            target.__init__ = without_them(target.__init__)
+            return target
+        return without_them(target)
+    return wrap
+
+
 def method_of(obj: object, name: str, *, old_name: str) -> Callable[..., Any]:
     """*obj*'s method *name*, or *old_name* on a collaborator from before the rename."""
     return getattr(obj, name, None) or getattr(obj, old_name)

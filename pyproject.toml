@@ -73,8 +73,7 @@ funestra = ["learned_motion.json.gz", "tiles.glsl"]
 # The timeout is a ceiling on a hang, not a performance budget. The slowest
 # test on a developer machine is that tracked-tree content scan, but it is not
 # the slowest on a runner: it returns early when no blocklist is reachable, and
-# the blocklist is git-ignored, so a fresh checkout has none. What CI does run
-# longest here is a cruise-control simulation at about a second.
+# the blocklist is git-ignored, so a fresh checkout has none.
 # --timeout-method=thread is the half that pays for itself: it dumps the stack
 # of the test that stopped, which turns a stalled required check into a
 # one-line diagnosis.

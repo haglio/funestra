@@ -48,8 +48,8 @@ def console_rows(mode: str = "kino", *, locked: bool = False, favorites: bool = 
     )
 
 
-def motion_rows(*, cruise: bool = False) -> tuple[tuple[Button, ...], ...]:
-    return ((Button("robot_hand_toggle_cruise", "cc", "Cruise control", lit=cruise),),)
+def motion_rows(*, learned: bool = False) -> tuple[tuple[Button, ...], ...]:
+    return ((Button("robot_hand_toggle_learned", "hi", "Human inspired", lit=learned),),)
 
 
 def osr2_controls(*, broker: bool = True) -> tuple[Button, ...]:

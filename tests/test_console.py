@@ -71,8 +71,8 @@ class TestShapeLabel:
         assert shape_label("half_moon") == "Half Moon"
 
 
-def _aim_row(*, cruise=False, learned=False, shape="sine", control=OSR2_DRIVING):
-    return aim_row(cruise=cruise, learned=learned, shape=shape, control=control)
+def _aim_row(*, learned=False, shape="sine", control=OSR2_DRIVING):
+    return aim_row(learned=learned, shape=shape, control=control)
 
 
 def _button(row, command: str) -> Button:
@@ -86,7 +86,7 @@ def _waveform_face(shape: str) -> str:
 class TestTheRowThatAimsTheDevice:
     def test_the_motion_comes_first_then_the_four_control_states_from_off_to_on(self):
         assert [button.command for button in _aim_row()] == [
-            "robot_hand_toggle_cruise", "robot_hand_toggle_learned", "robot_hand_cycle_shape",
+            "robot_hand_toggle_learned", "robot_hand_cycle_shape",
             "quarter_button", *OSR2_CONTROL_BUTTONS.values()]
 
     def test_a_host_with_no_switch_offers_no_control_off_and_sets_the_holds_apart(self):
@@ -100,16 +100,9 @@ class TestTheRowThatAimsTheDevice:
             on = [button.command for button in _aim_row(control=state) if button.lit or button.warn]
             assert on == [verb], state
 
-    def test_cruise_and_human_inspired_light_while_they_have_the_motion(self):
-        assert _button(_aim_row(cruise=True), "robot_hand_toggle_cruise").lit
+    def test_human_inspired_lights_while_it_has_the_motion(self):
         assert _button(_aim_row(learned=True), "robot_hand_toggle_learned").lit
-        assert not any(button.lit for button in _aim_row()[:2])
-
-    def test_a_host_with_no_cruise_control_is_offered_none_and_hears_nothing_of_it(self):
-        row = aim_row(learned=False, shape="sine", control=OSR2_DRIVING)
-
-        assert row[0].command == "robot_hand_toggle_learned"
-        assert not [button for button in row if "cruise" in f"{button.command} {button.tooltip}".lower()]
+        assert not _button(_aim_row(), "robot_hand_toggle_learned").lit
 
     def test_the_waveform_button_names_the_waveform_the_motion_is_in(self):
         row = _aim_row(shape="rounded_square")

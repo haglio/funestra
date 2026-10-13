@@ -414,9 +414,9 @@ class TestPainter:
 
         blue = BLUE
         shade, _pixels = self._busiest_shade(
-            "robot_hand_toggle_cruise",
+            "robot_hand_toggle_learned",
             ConsoleModel(main_mode=MainMode.GENAU, rows=console_rows("genau"),
-                         osr2_rows=motion_rows(cruise=True)))
+                         osr2_rows=motion_rows(learned=True)))
 
         assert shade == blue
 
@@ -1632,7 +1632,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
         controls = _span(rect for rect, button in _declared(painter)
                          if button.command.startswith(("main_", "genau_")))
         readout_top = painter.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
-        device = (_button_rect(painter, "robot_hand_toggle_cruise")[1],
+        device = (_button_rect(painter, "robot_hand_toggle_learned")[1],
                   readout_top + section_size()[1])
         _x, row_y, _w, row_h = painter.row.rect
 
@@ -1665,12 +1665,12 @@ class TestADeviceOnlyConsole:
     def test_its_first_line_is_the_row_that_aims_the_device(self):
         painter, bgra = self._painted()
 
-        assert _button_rect(painter, "robot_hand_toggle_cruise")[1] == PAD
+        assert _button_rect(painter, "robot_hand_toggle_learned")[1] == PAD
         assert _dividers(bgra) == []
 
     def test_nothing_is_drawn_beside_the_row_that_aims_the_device(self):
         painter, bgra = self._painted()
-        x, y, w, h = _button_rect(painter, "robot_hand_toggle_cruise")
+        x, y, w, h = _button_rect(painter, "robot_hand_toggle_learned")
 
         assert (_rgb(bgra)[y:y + h, x + w:-1] == BG_PRIMARY).all()
 
@@ -1683,7 +1683,7 @@ class TestADeviceOnlyConsole:
                                  osr2_controls=osr2_controls()),
             drive=_drive()))
 
-        assert _button_rect(painter, "robot_hand_toggle_cruise")[0] == PAD
+        assert _button_rect(painter, "robot_hand_toggle_learned")[0] == PAD
 
     def test_a_long_name_for_the_video_does_not_widen_it(self):
         def width(video: str) -> int:

@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import pytest
 
-from funestra.cruise_control import CruiseControlState
 from funestra.genau_status import build_status_text
 from funestra.robot_hand import (
     MAX_SPEED,
@@ -136,7 +135,7 @@ class TestBothPublicationsReadTheSameSix:
         limits = control_limits(direct)
         said = dict(
             line.split("=", 1)
-            for line in build_status_text(direct, CruiseControlState()).splitlines()
+            for line in build_status_text(direct).splitlines()
         )
 
         for field in ("amp_at_max", "amp_at_min", "ctr_at_max", "ctr_at_min",

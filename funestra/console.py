@@ -25,7 +25,7 @@ from .hud_button import BUTTON, Button, buttons_from_raw, buttons_raw, rows_from
 from .hud_marks import shared_mark
 from .hud_placement import HudCorner, HudEdge
 from .modes import LengthMode, MainMode, Osr2State, read_mode
-from .renamed import answers_to_old_names
+from .renamed import answers_to_old_names, drops_retired_arguments
 from .robot_hand import WaveformShape
 
 __all__ = [
@@ -131,12 +131,9 @@ _WAVEFORM_FACES = {
 }
 
 
-def aim_row(*, learned: bool, shape: str, control: str,
-            cruise: bool | None = None) -> tuple[Button, ...]:
+@drops_retired_arguments("cruise")
+def aim_row(*, learned: bool, shape: str, control: str) -> tuple[Button, ...]:
     return (
-        *(() if cruise is None else (
-            Button("robot_hand_toggle_cruise", "cc",
-                   "Cruise control: vary the motion hands-free", lit=cruise),)),
         Button("robot_hand_toggle_learned", "hi",
                "Human inspired: motion drawn from real hand-made scripts, not a waveform",
                lit=learned),
