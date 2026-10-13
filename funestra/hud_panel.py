@@ -14,6 +14,7 @@ from __future__ import annotations
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from shared_ui.app_icon import LETTERS
+from shared_ui.button_pil import slab
 from shared_ui.icons_pil import paste_glyph
 
 # The palette is shared_ui's, read without Qt: shared_ui.palette imports
@@ -363,8 +364,6 @@ class KeptBitmap:
         raise NotImplementedError
 
 
-# The family's button: its ground, and its face drawn on it.
-BUTTON_RADIUS = 3
 # The minimize bar: as wide as the satellite HUD's filter funnel, so the two
 # drawn marks are built to one size, and two pixels deep like a title bar's.
 _MINIMIZE_W = 9
@@ -385,12 +384,10 @@ def button_ground(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int], fi
     ground it keeps *rest_ink* or the chrome's own, muted while dim; over a
     colored ground it is white.
     """
-    x, y, w, h = rect
     edge = TEXT_MUTED if (dim or fill in (BG_BUTTON, BG_BUTTON_ACTIVE)) else fill
     if hovered and not dim:
         fill = hovered_fill(fill)
-    draw.rounded_rectangle([x, y, x + w - 1, y + h - 1], radius=BUTTON_RADIUS,
-                           fill=(*fill, 255), outline=(*edge, 255), width=1)
+    slab(draw, rect, fill, edge)
     if fill in (WHITE, AMBER):
         return (*BG_PRIMARY, 255)
     if fill in (BG_BUTTON, BG_BUTTON_ACTIVE):
