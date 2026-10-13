@@ -297,7 +297,7 @@ class Funestra:
                   panel: Callable[[], HudModel | None] | None = None,
                   muted: bool = True) -> Funestra:
         return cls(
-            MpvEngine(wid, muted=muted, loop_file=False, prefetch=True),
+            MpvEngine(wid, muted=muted, loop_file=False, prefetch=True, audio=audible),
             channels=channels, playlist=playlist, tcode=osr2_line(channels),
             audible=audible, tiles=tiles, locked=locked, sound_is_the_rooms=sound_is_the_rooms,
             users=users, panel=panel, muted=muted,

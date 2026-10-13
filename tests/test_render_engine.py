@@ -105,3 +105,23 @@ def test_a_file_asked_for_is_shown_as_itself_only_once_mpv_has_started_it(engine
 
     assert engine.has_picture_to_draw
     assert engine.render(0, 16, 9) == str(flat)
+
+
+def _options_mpv_opened_with(monkeypatch, engine, **engine_args) -> dict:
+    opened: dict = {}
+
+    def open_mpv(**options):
+        opened.update(options)
+        return FakeHandle()
+
+    monkeypatch.setattr(engine, "MPV", open_mpv)
+    render_engine.MpvRenderEngine(lambda _name: 0, **engine_args)
+    return opened
+
+
+def test_an_offscreen_engine_never_heard_opens_mpv_with_no_sound_track(monkeypatch, engine):
+    assert _options_mpv_opened_with(monkeypatch, engine, audio=False)["aid"] == "no"
+
+
+def test_an_offscreen_engine_that_can_be_heard_leaves_mpv_its_sound_track(monkeypatch, engine):
+    assert "aid" not in _options_mpv_opened_with(monkeypatch, engine)

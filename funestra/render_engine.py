@@ -46,18 +46,9 @@ class MpvRenderEngine(_MpvControl):
     ) -> None:
         super().__init__(looping=loop_file)
         mpv = _import_mpv()
-        options = _shared_options(muted=muted, loop_file=loop_file, prefetch=prefetch)
+        options = _shared_options(muted=muted, loop_file=loop_file, prefetch=prefetch, audio=audio)
         # No window to own: libmpv renders on demand into the caller's FBO.
         options["vo"] = "libmpv"
-        if not audio:
-            # No audio track at all — stronger than muted.  mpv's default
-            # clock follows audio, so a muted engine still stalls its VIDEO
-            # the moment its output device stops draining (a VR headset's
-            # sink parks whenever the headset isn't worn, and every engine
-            # in the process opens some device).  A host whose engine is
-            # silent by design opts out of audio selection entirely, and the
-            # clock runs on video timing, immune to any device's state.
-            options["aid"] = "no"
         self._adopt(mpv.MPV(**options))
         self._drawn_file = DrawnFile()
         self._file_heard = {
