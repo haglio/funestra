@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
 import pytest
 from console_rows import console_rows
 from funestra_fakes import FakeEngine
@@ -17,6 +18,7 @@ from funestra.console_hud import MARGIN
 from funestra.console_overlay import ConsoleOverlay
 from funestra.drive_readout import DriveHud, drive_text
 from funestra.hud_corners import HudPlace
+from funestra.hud_minimize import collapsed_panel
 from funestra.hud_overlay import HUD_OVERLAY_ID
 from funestra.hud_placement import HudCorner
 from funestra.modes import LengthMode, MainMode, Osr2State
@@ -346,6 +348,25 @@ class TestNamingTheButtonUnderThePointer:
         overlay.press(left + x + w // 2, top + y + h // 2)
 
         _publish(tmp_path, hud_minimized=True)
+        _tick(overlay)
+
+        bgra = overlay._engine.overlays[HUD_OVERLAY_ID][2]
+        assert bgra.shape[:2] == (BUTTON_SIZE_HUD, BUTTON_SIZE_HUD)
+
+
+class TestANameFlashingWhileMinimized:
+    def test_it_is_drawn_beside_the_plus(self, tmp_path):
+        overlay = _published(tmp_path, hud_minimized=True)
+
+        overlay.tick(playback_speed=1.0, window=WINDOW, flash="scene one")
+
+        bgra = overlay._engine.overlays[HUD_OVERLAY_ID][2]
+        assert np.array_equal(bgra, collapsed_panel("main", flash="scene one")[0])
+
+    def test_the_plus_is_alone_again_once_it_is_over(self, tmp_path):
+        overlay = _published(tmp_path, hud_minimized=True)
+        overlay.tick(playback_speed=1.0, window=WINDOW, flash="scene one")
+
         _tick(overlay)
 
         bgra = overlay._engine.overlays[HUD_OVERLAY_ID][2]

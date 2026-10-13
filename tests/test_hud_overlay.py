@@ -5,6 +5,7 @@ import json
 import math
 from pathlib import Path
 
+import numpy as np
 import pytest
 from funestra_fakes import FakeEngine
 from PIL import Image
@@ -13,6 +14,7 @@ from shared_ui.spacing import BUTTON_SIZE_HUD
 from funestra.drive_readout import DriveHud, publish_drive
 from funestra.hud_button import Button
 from funestra.hud_corners import HudPlace
+from funestra.hud_minimize import collapsed_panel
 from funestra.hud_overlay import HudOverlay
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.hud_row import UNDER_THE_PANEL_GAP, RowHud
@@ -731,6 +733,45 @@ def test_a_minimized_panel_is_the_plus_button_in_that_corner(tmp_path: Path, pan
     across, down = MINUS_INSET
     assert (x, y) == (1200 - MARGIN - across - width, MARGIN + down)
     assert [b.command for _rect, b in overlay.targets.buttons] == ["portrait_hud_restore"]
+
+
+class TestANameFlashingWhileMinimized:
+    def test_it_is_drawn_beside_the_plus(self, tmp_path: Path, panel: Path):
+        engine = FakeEngine()
+        _publish(panel, hud_minimized=True)
+        overlay = _overlay(tmp_path, panel, engine)
+
+        overlay.tick(window=(1200, 800), flash="scene one")
+
+        (_x, _y, bgra), = engine.overlays.values()
+        assert np.array_equal(bgra, collapsed_panel("portrait", flash="scene one")[0])
+
+    def test_the_plus_is_alone_again_once_it_is_over(self, tmp_path: Path, panel: Path):
+        engine = FakeEngine()
+        _publish(panel, hud_minimized=True)
+        overlay = _overlay(tmp_path, panel, engine)
+        overlay.tick(window=(1200, 800), flash="scene one")
+
+        overlay.tick(window=(1200, 800))
+
+        (_x, _y, bgra), = engine.overlays.values()
+        assert bgra.shape[:2] == (BUTTON_SIZE_HUD, BUTTON_SIZE_HUD)
+
+    @pytest.mark.parametrize("corner", list(HudCorner))
+    def test_the_plus_stays_where_it_was(self, tmp_path: Path, panel: Path, corner: HudCorner):
+        engine = FakeEngine()
+        overlay = _panel_at(tmp_path, panel, engine, hud_minimized=True, hud_corner=corner.value)
+        alone = self._plus_on_the_screen(overlay, engine)
+
+        overlay.tick(window=(1200, 800), flash="scene one")
+
+        assert self._plus_on_the_screen(overlay, engine) == alone
+
+    @staticmethod
+    def _plus_on_the_screen(overlay: HudOverlay, engine) -> tuple[int, int]:
+        (left, top, _bgra), = engine.overlays.values()
+        ((x, y, _w, _h), _plus), = overlay.targets.buttons
+        return left + x, top + y
 
 
 def test_a_panel_hanging_on_its_own_screen_keeps_its_default_justification(

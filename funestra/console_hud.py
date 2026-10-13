@@ -151,6 +151,7 @@ class ConsoleHud:
     # floating this over a video wants (see hud_panel.HudPanel).  Part of the
     # value compared for the repaint cache, like the rest.
     ground: tuple[int, int, int] | None = None
+    flash: str = ""
 
     @property
     def advance_interval(self) -> int:
@@ -440,7 +441,7 @@ class ConsolePainter:
                host_controls: HostControlsHud | None = None) -> Image.Image:
         console, drive = hud.console, hud.drive
         if console.hud_minimized:
-            return self._paint_minimized(console.funestra, console.hud_corner, hover)
+            return self._paint_minimized(console.funestra, console.hud_corner, hover, hud.flash)
         # Held for the OSR2 pill: with a composed trace on the panel the pill
         # reads the trace's own answer to who has the device (see _osr2_state),
         # and the width helpers need it before the pill is drawn.
@@ -569,9 +570,10 @@ class ConsolePainter:
                 host_controls)
 
     def _paint_minimized(self, funestra: str, corner: HudCorner,
-                         hover: tuple[int, int] | None) -> Image.Image:
+                         hover: tuple[int, int] | None, flash: str) -> Image.Image:
         image, buttons = collapsed_button(funestra, corner, hover=hover,
-                                          room_for_the_tooltip=self._width is not None)
+                                          room_for_the_tooltip=self._width is not None,
+                                          flash=flash)
         self.buttons, self.tracks, self.row, self.host_controls_layout = buttons, [], None, None
         return image
 

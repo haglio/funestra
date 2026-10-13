@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 
 from .hud_button import Button
 from .hud_corners import plus_bgra, plus_button, tooltip_size
-from .hud_minimize import BUTTON, mark_font, minimize_button, restore_button
+from .hud_minimize import BUTTON, mark_font, minimize_button, name_slab, restore_button
 from .hud_panel import draw_button, draw_tooltip, to_bgra
 from .hud_placement import HudCorner, HudEdge
 
@@ -32,6 +32,7 @@ class PaintedButton:
 class OutsideButtons:
     funestra: str
     minimized: bool = False
+    flash: str = ""
 
     def toggle(self, *, pointed: bool) -> PaintedButton:
         button = self._toggle_button()
@@ -39,6 +40,9 @@ class OutsideButtons:
 
     def toggle_tip(self) -> np.ndarray:
         return _tip_bgra(self._toggle_button().tooltip)
+
+    def name_flash(self) -> np.ndarray | None:
+        return _name_bgra(self.flash) if self.minimized and self.flash else None
 
     def plus_beside(self, edge: HudEdge) -> PaintedButton:
         button = plus_button(self.funestra, edge, minimized=self.minimized)
@@ -63,3 +67,8 @@ def _tip_bgra(name: str) -> np.ndarray:
     image = Image.new("RGBA", size, (0, 0, 0, 0))
     draw_tooltip(ImageDraw.Draw(image), mark_font(), name, (0, 0), size)
     return to_bgra(image)
+
+
+@lru_cache(maxsize=8)
+def _name_bgra(name: str) -> np.ndarray:
+    return to_bgra(name_slab(name))

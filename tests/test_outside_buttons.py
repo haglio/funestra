@@ -4,7 +4,8 @@ import numpy as np
 import pytest
 
 from funestra.hud_corners import plus_bgra, plus_button, tooltip_size
-from funestra.hud_minimize import BUTTON, MINIMIZE_TOOLTIP, RESTORE_TOOLTIP
+from funestra.hud_minimize import BUTTON, MINIMIZE_TOOLTIP, RESTORE_TOOLTIP, name_slab
+from funestra.hud_panel import to_bgra
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.outside_buttons import OutsideButtons
 
@@ -51,3 +52,16 @@ class TestTheButtonBetweenThePictureAndTheHud:
         width, height = tooltip_size(name)
 
         assert outside.toggle_tip().shape == (height, width, 4)
+
+
+class TestTheNameOfWhatHasJustStarted:
+    def test_minimized_it_is_painted_as_the_hud_paints_it_beside_its_plus(self):
+        flashing = OutsideButtons("portrait", minimized=True, flash="scene one")
+
+        assert np.array_equal(flashing.name_flash(), to_bgra(name_slab("scene one")))
+
+    def test_an_open_hud_names_the_video_itself(self):
+        assert OutsideButtons("portrait", flash="scene one").name_flash() is None
+
+    def test_with_nothing_flashing_there_is_none(self):
+        assert MINIMIZED.name_flash() is None
