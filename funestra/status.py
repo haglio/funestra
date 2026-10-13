@@ -27,6 +27,7 @@ from .renamed import old_name_getter
 
 __all__ = [
     "FunestraStatus",
+    "StatusWriter",
     "parse_status",
     "status_fields",
 ]
