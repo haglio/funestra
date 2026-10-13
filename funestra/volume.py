@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from PIL import Image, ImageDraw
 from shared_ui.palette import TEXT_MUTED, TEXT_PRIMARY
 
-from funestra.hud_panel import KeptBitmap, pill
+from funestra.hud_panel import KeptBitmap, draw_track, pill
 
 __all__: list[str] = []  # package-internal: the row hosts the chip
 
@@ -36,7 +36,6 @@ CHIP_H = 22
 TRACK_GAP = 6        # between the row's track and the chip
 SPEAKER_W = 26       # the left end that toggles the mute
 PAD = 6
-TRACK_H = 4
 
 MIN_VOLUME = 0
 MAX_VOLUME = 100
@@ -148,18 +147,10 @@ class VolumeHudPainter(KeptBitmap):
     def _paint(self, hud: VolumeHud) -> Image.Image:
         image, draw = pill(CHIP_W, CHIP_H)
         _draw_speaker(draw, hud.muted)
-        mid = CHIP_H // 2
-        draw.rounded_rectangle(
-            [_TRACK_X0, mid - TRACK_H // 2, _TRACK_X1, mid + TRACK_H // 2],
-            radius=TRACK_H // 2, fill=(*TEXT_MUTED, 255),
-        )
         # The fill stays put under a mute: the level is what unmuting returns to,
         # so hiding it would lose the only record of where the speaker was set.
         level = min(MAX_VOLUME, max(MIN_VOLUME, hud.volume))
         filled = _TRACK_X0 + round((_TRACK_X1 - _TRACK_X0) * level / MAX_VOLUME)
-        if filled > _TRACK_X0:
-            draw.rounded_rectangle(
-                [_TRACK_X0, mid - TRACK_H // 2, filled, mid + TRACK_H // 2],
-                radius=TRACK_H // 2, fill=(*TEXT_PRIMARY, 255),
-            )
+        draw_track(draw, _TRACK_X0, _TRACK_X1, CHIP_H // 2,
+                   filled_to=filled if filled > _TRACK_X0 else None)
         return image

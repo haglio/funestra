@@ -322,6 +322,19 @@ def pill(width: int, height: int) -> tuple[Image.Image, ImageDraw.ImageDraw]:
     return image, draw
 
 
+TRACK_H = 4
+
+
+def draw_track(draw: ImageDraw.ImageDraw, left: int, right: int, middle: int, *,
+               filled_to: int | None) -> None:
+    upper, lower = middle - TRACK_H // 2, middle + TRACK_H // 2
+    draw.rounded_rectangle([left, upper, right, lower], radius=TRACK_H // 2,
+                           fill=(*TEXT_MUTED, 255))
+    if filled_to is not None:
+        draw.rounded_rectangle([left, upper, filled_to, lower], radius=TRACK_H // 2,
+                               fill=(*TEXT_PRIMARY, 255))
+
+
 class KeptBitmap:
     """A painting kept until what it shows changes, handed out in both shapes the
     Funestras take: a BGRA array for mpv's overlays, RGBA bytes for a pygame blit."""
