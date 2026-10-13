@@ -105,6 +105,12 @@ class TestTheRowThatAimsTheDevice:
         assert _button(_aim_row(learned=True), "robot_hand_toggle_learned").lit
         assert not any(button.lit for button in _aim_row()[:2])
 
+    def test_a_host_with_no_cruise_control_is_offered_none_and_hears_nothing_of_it(self):
+        row = aim_row(learned=False, shape="sine", control=OSR2_DRIVING)
+
+        assert row[0].command == "robot_hand_toggle_learned"
+        assert not [button for button in row if "cruise" in f"{button.command} {button.tooltip}".lower()]
+
     def test_the_waveform_button_names_the_waveform_the_motion_is_in(self):
         row = _aim_row(shape="rounded_square")
         assert _button(row, "robot_hand_cycle_shape").tooltip == "Waveform: Square"

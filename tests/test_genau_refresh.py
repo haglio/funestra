@@ -1227,6 +1227,20 @@ def test_the_status_says_whether_the_flick_up_is_portrait(tmp_path):
 
     assert "portrait=1" in (tmp_path / "genau_status.txt").read_text(encoding="utf-8")
 
+
+def test_with_no_cruise_control_the_status_still_goes_out_and_says_nothing_of_it(tmp_path):
+    built = _build_controller(
+        entry={"frames": [object() for _ in range(8)]},
+        status_file=tmp_path / "genau_status.txt",
+    )
+
+    built["controller"].refresh()
+
+    status = (tmp_path / "genau_status.txt").read_text(encoding="utf-8")
+    assert "shape=sine" in status
+    assert "cruise" not in status
+
+
 class TestSeekingTheFlicksTimeOnScreen:
     """A press along the track at the console's foot, which runs the time a flick
     has had of its turn on screen rather than the loop of the flick itself."""
