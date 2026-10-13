@@ -7,7 +7,7 @@ from functools import cache
 from PIL import Image, ImageDraw
 from shared_ui.palette import TEXT_PRIMARY
 
-from .hud_panel import KeptBitmap, ink_center_offset, load_font, text_width
+from .hud_panel import TINY_PT, KeptBitmap, ink_center_offset, load_font, text_width
 from .hud_status import SEPARATOR
 from .renamed import old_name_getter
 from .volume import CHIP_H, chip_xy
@@ -17,8 +17,6 @@ __all__: list[str] = []
 _RENAMED = {"clip_playhead": "flick_playhead"}
 
 __getattr__ = old_name_getter(__name__, _RENAMED)
-
-_TEXT_PT = 8
 
 FIGURE_SPACE = "\u2007"
 
@@ -96,7 +94,7 @@ def on_readout(x: int, y: int, *, win_w: int, win_h: int, timeline_h: int) -> bo
 
 @cache
 def _font():
-    return load_font(_TEXT_PT)
+    return load_font(TINY_PT)
 
 
 def readout_width(hud: PlayheadHud) -> int:

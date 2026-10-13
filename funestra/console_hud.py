@@ -65,7 +65,9 @@ from .hud_osr2 import (
 )
 from .hud_panel import (
     ACTIVE_DOT,
+    BODY_PT,
     SYMBOL_FONT,
+    TINY_PT,
     HudPanel,
     draw_active_dot,
     draw_button,
@@ -118,8 +120,6 @@ def compilation_label(title: str) -> str:
 
 # --- the panel ---------------------------------------------------------------
 
-_SIZE_BODY = 11
-_SIZE_TINY = 8
 _PAD = 10
 _MINUS_INSET = (_PAD, _PAD)
 DOT_GAP = 8  # the room between the active-Funestra dot and the words beside it
@@ -242,9 +242,9 @@ class ConsolePainter:
         self._width = width
         self._device_only = device_only
         self._minus_on_the_panel = minus_on_the_panel
-        self._body = load_font(_SIZE_BODY)
-        self._tiny = load_font(_SIZE_TINY)
-        self._glyph = load_font(_SIZE_BODY, SYMBOL_FONT)
+        self._body = load_font(BODY_PT)
+        self._tiny = load_font(TINY_PT)
+        self._glyph = load_font(BODY_PT, SYMBOL_FONT)
         self._drive = DriveSection()
         self._osr2 = Osr2Section()
         self._clip_row = RowSection()

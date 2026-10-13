@@ -41,7 +41,7 @@ from .drive_readout import (
 )
 from .geometry import Rect, contains
 from .hud_button import BUTTON, Button
-from .hud_panel import SYMBOL_FONT, draw_button, load_font, text_width
+from .hud_panel import BODY_PT, SYMBOL_FONT, TINY_PT, draw_button, load_font, text_width
 from .modes import Osr2State
 from .robot_hand import FULL_INTENSITY
 
@@ -57,9 +57,6 @@ LABEL = "OSR2"
 _LABEL_GAP = 5   # "OSR2" sits right up against the pill it names …
 _GROUP_GAP = 16  # … and well clear of the controls beside them
 _PILL_PAD = 10   # the room the state word keeps either side of itself
-
-_SIZE_BODY = 11
-_SIZE_TINY = 8
 
 MAX_INTENSITY_LABEL = "Max intensity"
 MAX_INTENSITY_TIP = ("Max intensity: all the way up puts no limit on the OSR2; lower, "
@@ -214,8 +211,8 @@ class Osr2Section:
     """The line itself, drawn into whatever panel is hosting it."""
 
     def __init__(self) -> None:
-        self._tiny = load_font(_SIZE_TINY)
-        self._glyph = load_font(_SIZE_BODY, SYMBOL_FONT)
+        self._tiny = load_font(TINY_PT)
+        self._glyph = load_font(BODY_PT, SYMBOL_FONT)
 
     def width(self, line: Osr2Line) -> int:
         """How wide the line runs — a floor on the panel holding it."""

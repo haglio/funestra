@@ -4,12 +4,11 @@ from __future__ import annotations
 from PIL import Image
 from shared_ui.palette import TEXT_PRIMARY
 
-from .hud_panel import KeptBitmap, load_font, pill, px, text_width
+from .hud_panel import BODY_PT, KeptBitmap, load_font, pill, px, text_width
 
 __all__: list[str] = []
 
 WORD = "Loading…"
-_TEXT_PT = 11
 _PAD_X = 16
 _PAD_Y = 9
 
@@ -25,9 +24,9 @@ def loading_mark(duration_ms: float) -> str:
 
 class LoadingMarkPainter(KeptBitmap):
     def _paint(self, word: str) -> Image.Image:
-        font = load_font(_TEXT_PT)
+        font = load_font(BODY_PT)
         width = text_width(font, word) + 2 * _PAD_X
-        height = px(_TEXT_PT) + 2 * _PAD_Y
+        height = px(BODY_PT) + 2 * _PAD_Y
         image, draw = pill(width, height)
         draw.text((width / 2, height / 2), word, font=font,
                   fill=(*TEXT_PRIMARY, 255), anchor="mm")
