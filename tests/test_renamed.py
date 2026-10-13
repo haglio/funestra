@@ -112,9 +112,11 @@ class TestACheckoutFromBeforeCruiseControlWent:
         assert not hasattr(controls, "set_motion_phase")
 
     def test_the_row_it_names_cruise_on_draws_none(self):
-        row = aim_row(cruise=True, learned=False, shape="sine", control=OSR2_DRIVING)
+        commands = [button.command for button in
+                    aim_row(cruise=True, learned=False, shape="sine", control=OSR2_DRIVING)]
 
-        assert row[0].command == "robot_hand_toggle_learned"
+        assert "robot_hand_toggle_learned" in commands
+        assert "robot_hand_toggle_cruise" not in commands
 
     def test_the_cruise_it_ticks_never_moves(self):
         state = cruise_control.CruiseControlState()

@@ -20,6 +20,8 @@ so every Funestra says things the same way and from the same corner.
 from __future__ import annotations
 
 import re
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, field, replace
 
 import numpy as np
@@ -230,7 +232,8 @@ class ConsolePainter:
     """
 
     def __init__(self, *, width: int | None = None, device_only: bool = False,
-                 minus_on_the_panel: bool = True) -> None:
+                 minus_on_the_panel: bool = True,
+                 clock: Callable[[], float] = time.monotonic) -> None:
         """*width* holds every panel to one width, whatever is on it.  A console
         hanging in a scene as a screen of its own (FunTimeVR's) otherwise changes
         size with its contents — the genau-mode rows are narrower than the
@@ -265,7 +268,7 @@ class ConsolePainter:
         self.row: RowLayout | None = None
         self.host_controls_layout: HostControlsLayout | None = None
         self._grip = TrackGrip()
-        self._readout = ReadoutResolver()
+        self._readout = ReadoutResolver(clock=clock)
         self._origin = hud_xy()
         self._pointer: PointerReading[tuple[int, int] | None] = PointerReading(None)
 
@@ -301,7 +304,7 @@ class ConsolePainter:
         return replace(hud, drive=self._readout.resolve(
             hud.drive if console.has_osr2 else None,
             osr2=console.osr2, control=console.osr2_control,
-            composed=kino_shows(console.main_mode)))
+            composed=kino_shows(console.main_mode), at_once=console.parks_at_once))
 
     def _ensure(self, hud: ConsoleHud, hover: tuple[int, int] | None,
                 clip_row: RowHud | None = None, heatmap=None,
@@ -584,7 +587,7 @@ class ConsolePainter:
         where the device belongs to neither driver.  The round-tripped osr2
         stands in everywhere else, and for its own device-level states.
 
-        The precedence around it -- auto, then a hold or a let-go, then whoever
+        The precedence around it -- auto, then a hold, then whoever
         is driving -- is the shared line's (:func:`funestra.hud_osr2.state_for`),
         since every panel that draws this line answers it the same way."""
         return state_for(model.osr2, model.osr2_control,
@@ -618,7 +621,7 @@ class ConsolePainter:
         elif button.host_value == "advance_interval":
             glyph = f"{hud.advance_interval}s"
         width = button.width
-        if glyph.replace(" ", "").isalpha():
+        if button.is_a_name:
             width = max(width, text_width(self._tiny, glyph) + BUTTON_GAP)
         return replace(button, glyph=glyph, width=width)
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 
 import pytest
+from app_support.osr2_device import Osr2Mode
 
 from funestra.modes import (
     LengthMode,
@@ -76,3 +77,22 @@ def test_read_mode_answers_none_for_a_reader_whose_default_is_no_mode_at_all():
 def test_read_mode_hands_an_entry_straight_back():
     assert read_mode(SatellitesMode, SatellitesMode.ORIGENERATOR, SatellitesMode.KINO) is (
         SatellitesMode.ORIGENERATOR)
+
+
+class TestWhatHasTheOsr2:
+    """The OSR2 line's word, from what the device reads as and whether the
+    funscript in front is driving: every app badges it the same way."""
+
+    @pytest.mark.parametrize("funscript_driving", [False, True])
+    def test_a_switched_off_device_is_off_whatever_would_drive_it(self, funscript_driving):
+        assert Osr2State.of(Osr2Mode.OFF, funscript_driving=funscript_driving) is Osr2State.OFF
+
+    @pytest.mark.parametrize("funscript_driving", [False, True])
+    def test_one_running_its_own_auto_mode_is_auto_whatever_would_drive_it(self, funscript_driving):
+        assert Osr2State.of(Osr2Mode.AUTO, funscript_driving=funscript_driving) is Osr2State.AUTO
+
+    def test_one_taking_commands_is_the_funscripts_while_one_drives(self):
+        assert Osr2State.of(Osr2Mode.CONTROLLED, funscript_driving=True) is Osr2State.FUNSCRIPT
+
+    def test_and_the_robot_hands_otherwise(self):
+        assert Osr2State.of(Osr2Mode.CONTROLLED, funscript_driving=False) is Osr2State.ROBOT_HAND

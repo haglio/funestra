@@ -13,9 +13,11 @@ import numpy as np
 from PIL import Image, ImageDraw
 from shared_ui.palette import BG_BUTTON, RED
 from shared_ui.spacing import BUTTON_MARK_INSET
+from shared_ui.toggle_geometry import TRACK_HUD
+from shared_ui.toggle_switch_pil import paste_toggle_switch
 
 from funestra.hud_button import Button
-from funestra.hud_marks import shared_mark, shared_mark_name
+from funestra.hud_marks import TOGGLE_SWITCH, shared_mark, shared_mark_name
 from funestra.hud_panel import (
     SYMBOL_FONT,
     draw_button,
@@ -104,3 +106,41 @@ class TestButtonGrounds:
         assert ground(False) == BG_BUTTON
         assert ground(True) != BG_BUTTON
         assert sum(ground(True)) > sum(BG_BUTTON)
+
+
+class TestTheFamilysSwitch:
+    def test_a_switch_is_the_familys_own_switch_on_while_lit(self):
+        width, height = TRACK_HUD
+
+        def cell(lit: bool) -> bytes:
+            panel = Image.new("RGBA", (width, 18), (0, 0, 0, 255))
+            draw_button(panel, ImageDraw.Draw(panel), (0, 0, width, 18),
+                        Button("x", TOGGLE_SWITCH, "", width=width, lit=lit), hovered=False,
+                        glyph_font=load_font(11, SYMBOL_FONT), word_font=load_font(8))
+            return panel.tobytes()
+
+        def familys(on: bool) -> bytes:
+            panel = Image.new("RGBA", (width, 18), (0, 0, 0, 255))
+            paste_toggle_switch(panel, (0, (18 - height) // 2), on=on)
+            return panel.tobytes()
+
+        assert cell(lit=True) == familys(on=True)
+        assert cell(lit=False) == familys(on=False)
+
+    def test_the_word_on_the_side_the_switch_is_at_is_the_bright_one(self):
+        def brightest(lit: bool) -> int:
+            panel = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
+            _drawn(panel, ImageDraw.Draw(panel), Button("", "On", "", lit=lit))
+            return int(np.asarray(panel)[:, :, :3].max())
+
+        assert brightest(lit=True) > brightest(lit=False)
+
+    def test_a_read_out_that_starts_with_a_letter_names_something_and_is_drawn_muted(self):
+        def brightest(glyph: str) -> int:
+            panel = Image.new("RGBA", (60, 18), (0, 0, 0, 255))
+            draw_button(panel, ImageDraw.Draw(panel), (0, 0, 60, 18), Button("", glyph, ""),
+                        hovered=False, glyph_font=load_font(11, SYMBOL_FONT),
+                        word_font=load_font(8))
+            return int(np.asarray(panel)[:, :, :3].max())
+
+        assert brightest("OSR2 control") < brightest("4s")

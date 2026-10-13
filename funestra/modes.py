@@ -15,6 +15,8 @@ from __future__ import annotations
 
 from enum import Enum, StrEnum
 
+from app_support.osr2_device import Osr2Mode
+
 __all__ = [
     "LengthMode",
     "LoopState",
@@ -60,6 +62,14 @@ class Osr2State(StrEnum):
     AUTO = "auto"
     FUNSCRIPT = "funscript"
     ROBOT_HAND = "robot_hand"
+
+    @classmethod
+    def of(cls, device: Osr2Mode, *, funscript_driving: bool) -> Osr2State:
+        if device is Osr2Mode.OFF:
+            return cls.OFF
+        if device is Osr2Mode.AUTO:
+            return cls.AUTO
+        return cls.FUNSCRIPT if funscript_driving else cls.ROBOT_HAND
 
 
 class LengthMode(StrEnum):

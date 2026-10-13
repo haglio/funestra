@@ -274,7 +274,7 @@ class HudRenderer:
                                                 buttons=buttons))
         model = replace(model, drive=self._readout.resolve(
             model.drive, osr2=model.osr2, control=model.osr2_control,
-            composed=model.drive_composed))
+            composed=model.drive_composed, at_once=model.parks_at_once))
         counts = self._count_lines(model)
         model, seed_win, action_win = self._window(model)
         corner_thumb, seed_thumbs, action_thumbs = self._map_thumbnails(model)

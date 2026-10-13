@@ -14,6 +14,8 @@ reads as one read-out instead of as another button.
 """
 from __future__ import annotations
 
+import time
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 
 from PIL import Image, ImageDraw
@@ -21,12 +23,12 @@ from shared_ui.palette import (
     BLUE,
     GREEN,
     MAGENTA,
-    RED,
     TEXT_MUTED,
     TEXT_PRIMARY,
 )
 
-from .console import GAP, HELD_HEIGHT, OSR2_CONTROL_OFF, OSR2_PARKED, OSR2_RETRACTED
+from .console import GAP, HELD_HEIGHT, OSR2_PARKED, OSR2_RETRACTED
+from .device_walk import Walk, the_broker_holding, the_hand_taking_back
 from .drive_layout import BAR_H, MAX_INTENSITY, DriveTrack, fraction
 from .drive_readout import (
     DISABLED_INK,
@@ -35,15 +37,15 @@ from .drive_readout import (
     DRIVEN_BY_NEUTRAL,
     DRIVEN_BY_NOTHING,
     DRIVEN_BY_ROBOT_HAND,
-    POSITION_MAX,
     DriveHud,
     draw_level_bar,
 )
+from .funscript import PARK_SETTLE_MS
 from .geometry import Rect, contains
 from .hud_button import BUTTON, Button
 from .hud_panel import BODY_PT, SYMBOL_FONT, TINY_PT, draw_button, load_font, text_width
 from .modes import Osr2State
-from .robot_hand import FULL_INTENSITY
+from .robot_hand import FULL_INTENSITY, POSITION_MAX
 
 # Package-internal: the two panels that draw this line are both in here, and a
 # host says what its line shows through the model it already hands over
@@ -73,17 +75,11 @@ _NEUTRAL_PILL = (168, 168, 174)
 LABELS = {
     Osr2State.OFF: "Off", Osr2State.AUTO: "Auto", Osr2State.FUNSCRIPT: "FunScript",
     Osr2State.ROBOT_HAND: "Robot Hand", BUFFER: "Buffer",
-    # Said in three words because two of them would be read as the device: the
-    # OSR2 is on and well, this app has simply stopped sending it anything.  In
-    # the red its own button wears, so the lit control and the pill saying what
-    # it did are visibly the one fact.
-    OSR2_CONTROL_OFF: "Control off",
     OSR2_PARKED: "Parked", OSR2_RETRACTED: "Retracted",
 }
 COLORS = {
     Osr2State.FUNSCRIPT: GREEN, Osr2State.ROBOT_HAND: BLUE, Osr2State.AUTO: MAGENTA,
     Osr2State.OFF: TEXT_MUTED, BUFFER: _NEUTRAL_PILL,
-    OSR2_CONTROL_OFF: RED,
     # The held device's line is the handoff's gray -- nobody is moving it -- and
     # the word beside it says so in the same ink.
     OSR2_PARKED: _NEUTRAL_PILL, OSR2_RETRACTED: _NEUTRAL_PILL,
@@ -92,21 +88,15 @@ COLORS = {
 
 def state_for(osr2: str, control: str, *, driving: str = "") -> str:
     """Who the pill names, given what the wire says has the device (*osr2*) and
-    what this app is doing to it (*control*).
-
-    One precedence wherever the line is drawn.  The device running its own
-    firmware wins over everything the room does to it: no hold, no let-go and no
-    handoff reaches it.  Then a hold or a let-go, because there is nobody
-    driving to name and what the reader needs is why.  Only then the driver —
-    *driving* where the panel has a better answer than the round-tripped one
-    (the main console reads it off the trace it actually drew), the wire's
-    otherwise.
-    """
-    if osr2 == Osr2State.AUTO:
+    what this app is doing to it (*control*)."""
+    if osr2 in (Osr2State.AUTO, Osr2State.OFF):
         return osr2
-    if control in (OSR2_CONTROL_OFF, OSR2_PARKED, OSR2_RETRACTED):
+    if control in _HELD:
         return control
     return driving or osr2
+
+
+_HELD = (OSR2_PARKED, OSR2_RETRACTED)
 
 
 _OSR2_AT_THE_PLAYHEAD = {
@@ -132,13 +122,16 @@ _DRIVEN_BY_OSR2 = {
 class ReadoutResolver:
     """The readout under the line, drawn by the same precedence as the pill."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, clock: Callable[[], float] = time.monotonic) -> None:
+        self._clock = clock
         self._still: tuple[tuple[float, ...], int, float, float | None] | None = None
+        self._device = _DeviceDot()
 
     def resolve(self, drive: DriveHud | None, *, osr2: str, control: str,
-                composed: bool) -> DriveHud | None:
+                composed: bool, at_once: bool = False) -> DriveHud | None:
         if drive is None:
             self._still = None
+            self._device = _DeviceDot()
             return None
         # Genau cannot see the handoff, so whoever draws the readout tells it
         # who has the device.  Anything but Genau dims every control on it:
@@ -148,47 +141,71 @@ class ReadoutResolver:
         # playhead — set by the same function that drew the line under the dot —
         # since the round trip lags the arbiter, and the arbiter itself decides
         # seconds before the device is done riding the blue.
-        held = HELD_HEIGHT.get(control)
+        switched_off = osr2 == Osr2State.OFF
         if osr2 == Osr2State.AUTO:
             # The device is running its own firmware, and that wins over
-            # everything the room does to it: a hold, a let-go, a handoff
+            # everything the room does to it: a hold, a handoff
             # between two drivers.  None of those reaches it, so none is the
             # picture — one line, the device's own, in its own color.
             drive = replace(drive, driven=DRIVEN_BY_AUTO, segments=())
-        elif held is not None:
-            # The device is being kept at one end, so that is the picture: a
-            # flat line there with the dot on it, in the gray of a device nobody
-            # is moving.  Whatever the motion or the script had planned is not
-            # reaching it, and drawn it would be a picture of a device in motion.
-            drive = replace(
-                drive, waveform=(held,) * len(drive.waveform or (0.0,)),
-                position=round(held * POSITION_MAX), segments=(), slide=0.0,
-                edge=None, let_go=None, driven=DRIVEN_BY_NEUTRAL)
-        elif control == OSR2_CONTROL_OFF:
-            # Nothing is going out, so nobody has the device — whatever the
-            # round trip or the composed trace last said had it.  The trace's own
-            # names go with it: a kino-mode plan says who has the device at each
-            # knot, and kept, they drew the line in the script's green under a
-            # word that read "control off".
+        elif switched_off:
             drive = replace(drive, driven=DRIVEN_BY_NOTHING, segments=())
+        elif control in _HELD:
+            drive = replace(drive, segments=(), driven=DRIVEN_BY_NEUTRAL)
         elif not (composed and drive.segments):
             drive = replace(drive, driven=_DRIVEN_BY_OSR2.get(osr2, DRIVEN_BY_NOTHING))
-        # A composed trace is the script's plan, computed fresh per frame from
-        # the playhead: it keeps sliding through every rest and every handoff
-        # whatever the OSR2 state says, because the rests ARE part of what it
-        # draws — freezing it on the round-tripped "off" was the picture that
-        # stopped scrolling for the length of each gap.  Anything else is
-        # Genau's own resampled motion, which goes on moving while nobody is
-        # sending it, and the slide freezes with it or the "still" trace would
-        # go on creeping left a fraction of a sample at a time.
-        if not drive.live and (control == OSR2_CONTROL_OFF or not composed):
+        held_or_off = osr2 != Osr2State.AUTO and (control in _HELD or switched_off)
+        if held_or_off or not (drive.live or composed):
             if self._still is None:
                 self._still = (drive.waveform, drive.position, drive.slide, drive.edge)
             waveform, position, slide, edge = self._still
-            return replace(drive, waveform=waveform, position=position,
-                           segments=(), slide=slide, edge=edge)
-        self._still = None
-        return drive
+            drive = replace(drive, waveform=waveform, position=position,
+                            segments=(), slide=slide, edge=edge)
+        else:
+            self._still = None
+        if osr2 == Osr2State.AUTO:
+            self._device = _DeviceDot()
+            return drive
+        held_at = None if switched_off else HELD_HEIGHT.get(control)
+        return replace(drive, position=self._device.at(
+            self._clock(), drive.position, held_at=held_at, switched_on=not switched_off,
+            at_once=at_once))
+
+
+class _DeviceDot:
+    """Where the readout's dot puts the OSR2: on the line while the motion has
+    it, walking to the held end as a hold parks it, and back into the motion as
+    the motion takes it again.  The motion's own position stops being the
+    device's the moment it is held, so the walk is the device's."""
+
+    def __init__(self) -> None:
+        self._height: float | None = None
+        self._held_at: float | None = None
+        self._walk: Walk | None = None
+
+    def at(self, now: float, drawn: int, *, held_at: float | None, switched_on: bool,
+           at_once: bool) -> int:
+        line = drawn / POSITION_MAX
+        if not switched_on:
+            self._held_at, self._walk = None, None
+            height = line if self._height is None else self._height
+        elif held_at is not None:
+            if held_at != self._held_at:
+                start = line if self._height is None else self._height
+                self._walk = (Walk(start, now, 0.0, PARK_SETTLE_MS / 1000) if at_once
+                              else the_broker_holding(start, now))
+                self._held_at = held_at
+            height = self._walk.height_at(now, held_at)
+        else:
+            if self._held_at is not None:
+                start = self._held_at if self._height is None else self._height
+                self._walk = the_hand_taking_back(start, now)
+                self._held_at = None
+            if self._walk is not None and now >= self._walk.began + self._walk.wait_s + self._walk.over_s:
+                self._walk = None
+            height = line if self._walk is None else self._walk.height_at(now, line)
+        self._height = height
+        return round(height * POSITION_MAX)
 
 
 @dataclass(frozen=True)

@@ -107,7 +107,7 @@ class DriveGate:
         self._stalled = 0
 
     def readout(self, published: DriveHud | None, *,
-                device_drives_itself: bool = False) -> DriveHud:
+                device_drives_itself: bool = False, video_shows: bool = True) -> DriveHud:
         """The readout to draw, with this video's funscript folded into it.
 
         *published* is Genau's readout as it last said it, or None while it has
@@ -153,6 +153,9 @@ class DriveGate:
             elif not self._seen_live:
                 drive = replace(drive, let_go=None)
         self._position = position
+        if not video_shows:
+            self._latch.void_all()
+            return drive or DriveHud()
         return drive_readout(
             drive,
             script=self._script_as_played(),
