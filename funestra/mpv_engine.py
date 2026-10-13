@@ -140,7 +140,7 @@ def _where_it_looked() -> str:
     return f"Looked in: {', '.join(answers)}. PATH starts: {front}"
 
 
-def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool) -> dict:
+def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool = True) -> dict:
     """The mpv options every engine in this family shares, however it renders.
 
     The windowed engine adds its ``wid``/``vo=gpu`` pair on top; the offscreen
@@ -185,6 +185,8 @@ def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool) -> dict:
         # satellites pass this; the Main Funestra plays one file at a time (loop_file=inf,
         # explicit [ ] nav) and has no next entry to prefetch.
         options["prefetch_playlist"] = "yes"
+    if not audio:
+        options["aid"] = "no"
     return options
 
 
@@ -656,11 +658,12 @@ class _MpvControl:
 
 class MpvEngine(_MpvControl):
     def __init__(
-        self, wid: int, *, muted: bool = False, loop_file: bool = True, prefetch: bool = False
+        self, wid: int, *, muted: bool = False, loop_file: bool = True, prefetch: bool = False,
+        audio: bool = True,
     ) -> None:
         super().__init__(looping=loop_file)
         mpv = _import_mpv()
-        options = _shared_options(muted=muted, loop_file=loop_file, prefetch=prefetch)
+        options = _shared_options(muted=muted, loop_file=loop_file, prefetch=prefetch, audio=audio)
         options.update(
             wid=str(int(wid)),
             vo="gpu",

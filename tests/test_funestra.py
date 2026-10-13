@@ -385,7 +385,7 @@ def test_on_a_window_the_way_of_playing_is_mpv_opened_on_that_window(tmp_path):
     with patch("funestra.funestra.MpvEngine", return_value=engine) as mpv:
         funestra = Funestra.on_window(4242, channels=channels, playlist=read_playlist(channels.playlist))
 
-    mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True)
+    mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True, audio=True)
     assert funestra.playback.current_video == clips[0]
 
 
@@ -949,7 +949,18 @@ def test_on_a_window_the_way_of_playing_can_be_heard(tmp_path):
         Funestra.on_window(4242, channels=channels, playlist=read_playlist(channels.playlist),
                            muted=False)
 
-    mpv.assert_called_once_with(4242, muted=False, loop_file=False, prefetch=True)
+    mpv.assert_called_once_with(4242, muted=False, loop_file=False, prefetch=True, audio=True)
+
+
+def test_on_a_window_that_can_never_be_heard_the_way_of_playing_takes_no_sound(tmp_path):
+    clips = _clips(tmp_path, "v0")
+    channels = _channels(tmp_path, [str(clips[0])])
+
+    with patch("funestra.funestra.MpvEngine", return_value=FakeEngine()) as mpv:
+        Funestra.on_window(4242, channels=channels, playlist=read_playlist(channels.playlist),
+                           audible=False)
+
+    mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True, audio=False)
 
 
 def test_a_window_told_to_fall_silent_mutes_its_engine_and_its_chip(tmp_path):

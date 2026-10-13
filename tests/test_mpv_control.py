@@ -12,14 +12,16 @@ import math
 import threading
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 from dealt_moves import DRIFT, Deals
 
-from funestra import audio_outputs
+from funestra import audio_outputs, mpv_engine
 from funestra.ken_burns import Move, zoom_in
 from funestra.mpv_engine import (
     TILES_SHADER,
+    MpvEngine,
     _MpvControl,
     _shared_options,
     tiles_across,
@@ -185,6 +187,27 @@ def test_a_engine_runs_none_of_mpvs_lua_scripts():
 
     assert {name: options.get(name) for name in MPVS_OWN_SCRIPTS} == dict.fromkeys(
         MPVS_OWN_SCRIPTS, "no")
+
+
+def _options_mpv_opened_with(monkeypatch, **engine_args) -> dict:
+    opened: dict = {}
+
+    def open_mpv(**options):
+        opened.update(options)
+        return FakeMpv()
+
+    monkeypatch.setattr(mpv_engine, "_import_mpv", lambda: SimpleNamespace(MPV=open_mpv))
+    MpvEngine(4242, **engine_args)
+    return opened
+
+
+def test_a_window_never_heard_opens_mpv_with_no_sound_track_for_a_sound_device_to_hold(
+        monkeypatch):
+    assert _options_mpv_opened_with(monkeypatch, audio=False)["aid"] == "no"
+
+
+def test_a_window_that_can_be_heard_leaves_mpv_its_sound_track(monkeypatch):
+    assert "aid" not in _options_mpv_opened_with(monkeypatch)
 
 
 def test_staging_the_next_clip_never_removes_by_index():
