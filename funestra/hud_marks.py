@@ -36,7 +36,7 @@ def shared_mark_name(glyph: str) -> str:
 
 
 # An app's own mark: the magenta five-by-five letter its .ico carries, drawn
-# from :data:`funestra.hud_panel.ICON_GRIDS` by the letter the marker names.
+# from :data:`shared_ui.app_icon.LETTERS` by the letter the marker names.
 APP_MARK = "\0app:"
 
 
