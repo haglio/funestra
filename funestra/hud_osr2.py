@@ -221,7 +221,7 @@ class Osr2Section:
         """How wide the line runs — a floor on the panel holding it."""
         return (self._controls_width(line.controls)
                 + text_width(self._tiny, LABEL) + _LABEL_GAP
-                + self._pill_width(line.state)
+                + self._widest_word + _PILL_PAD
                 + self._max_intensity_width(line))
 
     def draw(self, image: Image.Image, draw: ImageDraw.ImageDraw, x: int, y: int,
@@ -242,13 +242,13 @@ class Osr2Section:
         label_x = x + self._controls_width(line.controls)
         draw.text((label_x, y + HEIGHT / 2), LABEL, font=self._tiny, anchor="lm",
                   fill=(*TEXT_MUTED, 255))
-        state = LABELS.get(line.state, line.state)
+        word = LABELS.get(line.state, line.state)
         color = COLORS.get(line.state, TEXT_PRIMARY)
         pill_x = label_x + text_width(self._tiny, LABEL) + _LABEL_GAP
         # No frame around it: what has the device is a read-out, and an outlined
         # word beside two real buttons reads as a third one you can press.
-        draw.text((pill_x + self._pill_width(line.state) / 2, y + HEIGHT / 2), state,
-                  font=self._tiny, anchor="mm", fill=(*color, 255))
+        draw.text((pill_x + _PILL_PAD // 2, y + HEIGHT / 2), word,
+                  font=self._tiny, anchor="lm", fill=(*color, 255))
         for band in self.bands(x, y, line):
             self._draw_max_intensity(draw, band, line.max_intensity)
             placed.append((band.rect, Button("", "", band.tooltip)))
@@ -290,5 +290,6 @@ class Osr2Section:
     def _widest_number(self) -> int:
         return text_width(self._tiny, str(FULL_INTENSITY))
 
-    def _pill_width(self, state: str) -> int:
-        return text_width(self._tiny, LABELS.get(state, state)) + _PILL_PAD
+    @property
+    def _widest_word(self) -> int:
+        return max(text_width(self._tiny, word) for word in LABELS.values())
