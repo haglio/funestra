@@ -6,13 +6,12 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
+from app_support.osr2_hold import HOLD_DELAY_S, HOLD_MOVE_MS, PARK, RETRACT
 
 from funestra.broker_feed import BrokerFeed
-from funestra.device_walk import BROKER_HOLD_DELAY_MS
 from funestra.flag import Flag
 from funestra.flick_advance import FlickAdvanceState
 from funestra.flick_flip import FlickFlip
-from funestra.funscript import PARK_SETTLE_MS
 from funestra.genau_controls import GenauControls
 from funestra.genau_refresh import GenauRefreshController
 from funestra.learned_model import LearnedModel, Phrase, classify
@@ -729,8 +728,9 @@ def _heights(*heights: float):
 
 class TestTheRoomHoldingTheDevice:
     ASKED = 5.1
-    WAITS = BROKER_HOLD_DELAY_MS / 1000
-    GLIDES = PARK_SETTLE_MS / 1000
+    WAITS = HOLD_DELAY_S
+    GLIDES = HOLD_MOVE_MS[PARK] / 1000
+    RETRACT_GLIDES = HOLD_MOVE_MS[RETRACT] / 1000
     SETTLED = ASKED + WAITS + GLIDES
 
     @staticmethod
@@ -765,7 +765,7 @@ class TestTheRoomHoldingTheDevice:
 
         shown = [tick(5.0), tick(self.ASKED, "PAUSE", "RETRACT"),
                  tick(self.ASKED + self.WAITS - 0.1),
-                 tick(self.ASKED + self.WAITS + self.GLIDES / 2), tick(self.SETTLED)]
+                 tick(self.ASKED + self.WAITS + self.RETRACT_GLIDES / 2), tick(self.SETTLED)]
 
         assert shown == _heights(0.5, 0.5, 0.5, 0.75, 1.0)
 
@@ -816,8 +816,8 @@ class TestTheRoomHoldingTheDevice:
         moved = self.SETTLED + 1.0
 
         shown = [tick(moved, "PAUSE", "RETRACT"), tick(moved + self.WAITS - 0.1),
-                 tick(moved + self.WAITS + self.GLIDES / 2),
-                 tick(moved + self.WAITS + self.GLIDES)]
+                 tick(moved + self.WAITS + self.RETRACT_GLIDES / 2),
+                 tick(moved + self.WAITS + self.RETRACT_GLIDES)]
 
         assert shown == _heights(0.0, 0.0, 0.5, 1.0)
 

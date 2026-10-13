@@ -2,17 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .funscript import PARK_SETTLE_MS
+from app_support.osr2_hold import HOLD_DELAY_S, HOLD_MOVE_MS
+
 from .tcode import HANDOFF_MS
 
 __all__: list[str] = []
 
-BROKER_HOLD_DELAY_MS = 1000
-
 
 @dataclass
 class RoomHold:
-    height: float | None = None
+    held: str | None = None
 
 
 @dataclass(frozen=True)
@@ -27,8 +26,8 @@ class Walk:
         return self.start + (toward - self.start) * walked
 
 
-def the_broker_holding(start: float, asked_at: float) -> Walk:
-    return Walk(start, asked_at, BROKER_HOLD_DELAY_MS / 1000, PARK_SETTLE_MS / 1000)
+def the_broker_holding(start: float, asked_at: float, hold: str) -> Walk:
+    return Walk(start, asked_at, HOLD_DELAY_S, HOLD_MOVE_MS[hold] / 1000)
 
 
 def the_hand_taking_back(start: float, taken_at: float) -> Walk:

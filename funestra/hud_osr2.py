@@ -27,7 +27,7 @@ from shared_ui.palette import (
     TEXT_PRIMARY,
 )
 
-from .console import GAP, HELD_HEIGHT, OSR2_PARKED, OSR2_RETRACTED
+from .console import GAP, HELD_HEIGHT, HOLD_VERB, OSR2_PARKED, OSR2_RETRACTED
 from .device_walk import Walk, the_broker_holding, the_hand_taking_back
 from .drive_layout import BAR_H, MAX_INTENSITY, DriveTrack, fraction
 from .drive_readout import (
@@ -40,7 +40,6 @@ from .drive_readout import (
     DriveHud,
     draw_level_bar,
 )
-from .funscript import PARK_SETTLE_MS
 from .geometry import Rect, contains
 from .hud_button import BUTTON, Button
 from .hud_panel import BODY_PT, SYMBOL_FONT, TINY_PT, draw_button, load_font, text_width
@@ -128,7 +127,7 @@ class ReadoutResolver:
         self._device = _DeviceDot()
 
     def resolve(self, drive: DriveHud | None, *, osr2: str, control: str,
-                composed: bool, at_once: bool = False) -> DriveHud | None:
+                composed: bool) -> DriveHud | None:
         if drive is None:
             self._still = None
             self._device = _DeviceDot()
@@ -166,10 +165,9 @@ class ReadoutResolver:
         if osr2 == Osr2State.AUTO:
             self._device = _DeviceDot()
             return drive
-        held_at = None if switched_off else HELD_HEIGHT.get(control)
+        held = control if control in _HELD and not switched_off else None
         return replace(drive, position=self._device.at(
-            self._clock(), drive.position, held_at=held_at, switched_on=not switched_off,
-            at_once=at_once))
+            self._clock(), drive.position, held=held, switched_on=not switched_off))
 
 
 class _DeviceDot:
@@ -180,27 +178,25 @@ class _DeviceDot:
 
     def __init__(self) -> None:
         self._height: float | None = None
-        self._held_at: float | None = None
+        self._held: str | None = None
         self._walk: Walk | None = None
 
-    def at(self, now: float, drawn: int, *, held_at: float | None, switched_on: bool,
-           at_once: bool) -> int:
+    def at(self, now: float, drawn: int, *, held: str | None, switched_on: bool) -> int:
         line = drawn / POSITION_MAX
         if not switched_on:
-            self._held_at, self._walk = None, None
+            self._held, self._walk = None, None
             height = line if self._height is None else self._height
-        elif held_at is not None:
-            if held_at != self._held_at:
+        elif held is not None:
+            if held != self._held:
                 start = line if self._height is None else self._height
-                self._walk = (Walk(start, now, 0.0, PARK_SETTLE_MS / 1000) if at_once
-                              else the_broker_holding(start, now))
-                self._held_at = held_at
-            height = self._walk.height_at(now, held_at)
+                self._walk = the_broker_holding(start, now, HOLD_VERB[held])
+                self._held = held
+            height = self._walk.height_at(now, HELD_HEIGHT[held])
         else:
-            if self._held_at is not None:
-                start = self._held_at if self._height is None else self._height
+            if self._held is not None:
+                start = HELD_HEIGHT[self._held] if self._height is None else self._height
                 self._walk = the_hand_taking_back(start, now)
-                self._held_at = None
+                self._held = None
             if self._walk is not None and now >= self._walk.began + self._walk.wait_s + self._walk.over_s:
                 self._walk = None
             height = line if self._walk is None else self._walk.height_at(now, line)

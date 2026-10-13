@@ -6,6 +6,7 @@ from functools import partial
 from pathlib import Path
 
 from .broker_feed import snapshot
+from .console import HELD_HEIGHT, HOLD_VERB
 from .device_walk import Walk, the_broker_holding, the_hand_taking_back
 from .file_channel import consume_command_file
 from .flick_advance import set_elapsed, tick_flick_advance
@@ -99,7 +100,7 @@ class GenauRefreshController:
         # the motion is at — see :meth:`_scrub_the_flick`.
         self._scrub = FlickScrub()
         self._walk: Walk | None = None
-        self._held: float | None = None
+        self._held: str | None = None
         self._following = self.robot_hand.playing
 
     def refresh(self) -> None:
@@ -236,10 +237,10 @@ class GenauRefreshController:
 
     def _follow_the_room_hold(self, now: float) -> None:
         if self.robot_hand.playing and self.tcode_enabled.on:
-            self.room_hold.height = None
-        held = self.room_hold.height
+            self.room_hold.held = None
+        held = self.room_hold.held
         if held is not None and held != self._held:
-            self._walk = the_broker_holding(self._scrub.height, now)
+            self._walk = the_broker_holding(self._scrub.height, now, HOLD_VERB[held])
         following = held is None and self.robot_hand.playing
         if following and not self._following:
             self._walk = the_hand_taking_back(self._scrub.height, now)
@@ -327,4 +328,4 @@ class GenauRefreshController:
         live = self.tcode_sender.current_position() / POSITION_MAX
         if self._walk is None:
             return live
-        return self._walk.height_at(now, live if self._held is None else self._held)
+        return self._walk.height_at(now, live if self._held is None else HELD_HEIGHT[self._held])

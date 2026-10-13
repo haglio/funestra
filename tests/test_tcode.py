@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from app_support.osr2_hold import HOLD_MOVE_MS, PARK
 
 from funestra.tcode import (
     PARK_COMMAND,
@@ -104,6 +105,6 @@ class TestToTcodePosition:
         assert to_tcode_position(1) == 100
 
 
-def test_the_park_command_rests_the_motion_axis_at_the_floor_over_half_a_second():
+def test_the_park_command_rests_the_motion_axis_at_the_floor_over_the_hold_move():
 
-    assert format_tcode_command("L0", 0, 500) == PARK_COMMAND
+    assert format_tcode_command("L0", 0, HOLD_MOVE_MS[PARK]) == PARK_COMMAND
