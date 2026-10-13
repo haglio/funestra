@@ -131,10 +131,12 @@ _WAVEFORM_FACES = {
 }
 
 
-def aim_row(*, cruise: bool, learned: bool, shape: str, control: str) -> tuple[Button, ...]:
+def aim_row(*, learned: bool, shape: str, control: str,
+            cruise: bool | None = None) -> tuple[Button, ...]:
     return (
-        Button("robot_hand_toggle_cruise", "cc",
-               "Cruise control: vary the motion hands-free", lit=cruise),
+        *(() if cruise is None else (
+            Button("robot_hand_toggle_cruise", "cc",
+                   "Cruise control: vary the motion hands-free", lit=cruise),)),
         Button("robot_hand_toggle_learned", "hi",
                "Human inspired: motion drawn from real hand-made scripts, not a waveform",
                lit=learned),
@@ -156,8 +158,7 @@ def aim_row(*, cruise: bool, learned: bool, shape: str, control: str) -> tuple[B
                "Retracted — the OSR2 held still at the far end, away from you",
                lit=control == OSR2_RETRACTED),
         Button(OSR2_CONTROL_BUTTONS[OSR2_DRIVING], shared_mark("release"),
-               "Driving — the OSR2 back on whatever the motion was doing, "
-               "cruise included",
+               "Driving — the OSR2 back on whatever the motion was doing",
                lit=control == OSR2_DRIVING),
     )
 

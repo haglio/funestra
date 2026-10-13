@@ -285,8 +285,6 @@ class GenauRefreshController:
         return self.hud is not None and self.hud.on
 
     def _publish_status(self) -> None:
-        if self.cruise_control is None:
-            return
         write_status_file(self.status_file, build_status_text(
             self.robot_hand,
             self.cruise_control,
