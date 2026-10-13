@@ -303,7 +303,7 @@ class ConsolePainter:
         return replace(hud, drive=self._readout.resolve(
             hud.drive if console.has_osr2 else None,
             osr2=console.osr2, control=console.osr2_control,
-            composed=kino_shows(console.main_mode), at_once=console.parks_at_once))
+            composed=kino_shows(console.main_mode)))
 
     def _ensure(self, hud: ConsoleHud, hover: tuple[int, int] | None,
                 clip_row: RowHud | None = None, heatmap=None,

@@ -25,7 +25,6 @@ from funestra.geometry import Rect
 from funestra.hud_button import Button
 from funestra.hud_minimize import RESTORE_TOOLTIP, minimize_command
 from funestra.hud_minimize import ROOM as MINUS_ROOM
-from funestra.hud_osr2 import ReadoutResolver
 from funestra.hud_panel import ACTIVE_DOT
 from funestra.hud_placement import HudCorner
 from funestra.hud_row import SCRUBBER, RowHud, row_part
@@ -1829,15 +1828,3 @@ class TestEverySectionIsSetOffFromTheNextByALine:
         for (_top, above_ends), line, (below_starts, _end) in zip(sections, lines, sections[1:]):
             assert above_ends <= line < below_starts
 
-
-def test_a_panel_whose_host_holds_the_device_itself_tells_its_readout_so(monkeypatch):
-    told = {}
-
-    def resolve(self, drive, **said):
-        told.update(said)
-        return drive
-
-    monkeypatch.setattr(ReadoutResolver, "resolve", resolve)
-    HudRenderer("portrait").render(_model(parks_at_once=True))
-
-    assert told["at_once"] is True

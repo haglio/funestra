@@ -13,6 +13,7 @@ import socket
 from typing import Protocol
 
 from app_support import ports
+from app_support.osr2_hold import PARK, hold_tcode
 
 __all__ = [
     "PARK_COMMAND",
@@ -25,10 +26,7 @@ __all__ = [
 # The ceiling of the linear axis's range; 0 is the floor of it.
 POSITION_MAX = 9999
 
-# The device's rest: the motion axis to the floor over half a second.  A driver
-# that stops sends it, and the broker sends it when it parks a paused room, so
-# the one spelling is here and both read it.
-PARK_COMMAND = "L00000I500"
+PARK_COMMAND = hold_tcode(PARK)
 
 
 def to_tcode_position(percent: float) -> int:

@@ -24,7 +24,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .console import HELD_HEIGHT, OSR2_PARKED, OSR2_RETRACTED
+from .console import OSR2_PARKED, OSR2_RETRACTED
 from .control_registry import Control, Verb, bind, look_up
 from .device_walk import RoomHold
 from .flag import Flag
@@ -280,9 +280,9 @@ def _playing(playing: bool) -> Act:
     return act
 
 
-def _held_at(height: float) -> Act:
+def _held(control: str) -> Act:
     def act(controls: GenauControls, _value: str) -> bool:
-        controls.room_hold.height = height
+        controls.room_hold.held = control
         return True
     return act
 
@@ -449,8 +449,8 @@ CONTROLS: tuple[Control, ...] = (
     ),
     Control(
         name="hold",
-        verbs=(Verb("PARK", _held_at(HELD_HEIGHT[OSR2_PARKED])),
-               Verb("RETRACT", _held_at(HELD_HEIGHT[OSR2_RETRACTED]))),
+        verbs=(Verb("PARK", _held(OSR2_PARKED)),
+               Verb("RETRACT", _held(OSR2_RETRACTED))),
     ),
     Control(
         name="tcode",

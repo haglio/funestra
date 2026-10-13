@@ -1120,11 +1120,9 @@ class TestTheDotIsWhereTheDeviceIs:
     second and slides to the held end as the device settles there."""
 
     @staticmethod
-    def _hud(control: str, *, osr2: str = Osr2State.ROBOT_HAND,
-             at_once: bool = False) -> ConsoleHud:
+    def _hud(control: str, *, osr2: str = Osr2State.ROBOT_HAND) -> ConsoleHud:
         return ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.GENAU, osr2=osr2, osr2_control=control,
-                                 parks_at_once=at_once),
+            console=ConsoleModel(main_mode=MainMode.GENAU, osr2=osr2, osr2_control=control),
             drive=_drive(0.0, position=6_000))
 
     @staticmethod
@@ -1132,7 +1130,7 @@ class TestTheDotIsWhereTheDeviceIs:
         painter.rgba(hud)
         return painter._painted[0].drive.position
 
-    def _held_from(self, control: str, *, at_once: bool = False):
+    def _held_from(self, control: str):
         clock = [10.0]
         painter = ConsolePainter(clock=lambda: clock[0])
         assert self._dot(painter, self._hud(OSR2_DRIVING)) == 6_000
@@ -1140,29 +1138,22 @@ class TestTheDotIsWhereTheDeviceIs:
         def at(seconds_after_the_hold: float, *, osr2: str = Osr2State.ROBOT_HAND,
                held: str = control) -> int:
             clock[0] = 11.0 + seconds_after_the_hold
-            return self._dot(painter, self._hud(held, osr2=osr2, at_once=at_once))
+            return self._dot(painter, self._hud(held, osr2=osr2))
         return at
 
-    def test_parked_it_waits_out_the_broker_then_slides_to_the_bottom(self):
+    def test_parked_it_waits_out_the_broker_then_sets_down_at_the_bottom_over_a_second(self):
         at = self._held_from(OSR2_PARKED)
 
         assert at(0.0) == 6_000
         assert at(0.9) == 6_000
-        assert 0 < at(1.25) < 6_000
-        assert at(1.6) == 0
+        assert 0 < at(1.6) < 6_000
+        assert at(2.0) == 0
 
     def test_retracted_it_slides_to_the_top(self):
         at = self._held_from(OSR2_RETRACTED)
 
         assert at(0.0) == 6_000
         assert at(1.6) == POSITION_MAX
-
-    def test_a_host_that_holds_the_device_itself_slides_it_at_once(self):
-        at = self._held_from(OSR2_PARKED, at_once=True)
-
-        assert at(0.0) == 6_000
-        assert 0 < at(0.25) < 6_000
-        assert at(0.6) == 0
 
     def test_with_the_device_switched_off_it_stays_where_it_was(self):
         at = self._held_from(OSR2_PARKED)
@@ -1173,11 +1164,11 @@ class TestTheDotIsWhereTheDeviceIs:
     def test_taken_back_it_slides_from_the_held_end_into_the_motion(self):
         at = self._held_from(OSR2_PARKED)
         at(0.0)
-        assert at(1.6) == 0
+        assert at(2.0) == 0
 
-        assert at(2.0, held=OSR2_DRIVING) == 0
-        assert 0 < at(2.15, held=OSR2_DRIVING) < 6_000
-        assert at(2.4, held=OSR2_DRIVING) == 6_000
+        assert at(2.4, held=OSR2_DRIVING) == 0
+        assert 0 < at(2.55, held=OSR2_DRIVING) < 6_000
+        assert at(2.8, held=OSR2_DRIVING) == 6_000
 
 
 class TestNothingDriving:

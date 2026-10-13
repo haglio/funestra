@@ -19,7 +19,9 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from pathlib import Path
+from types import MappingProxyType
 
+from app_support import osr2_hold
 from shared_ui.toggle_geometry import TRACK_HUD
 
 from .geometry import Rect, contains
@@ -138,6 +140,7 @@ _SWITCH_SAYS = {
 }
 
 HELD_HEIGHT = {OSR2_PARKED: 0.0, OSR2_RETRACTED: 1.0}
+HOLD_VERB = MappingProxyType({OSR2_PARKED: osr2_hold.PARK, OSR2_RETRACTED: osr2_hold.RETRACT})
 
 _WAVEFORM_FACES = {
     WaveformShape.SINE.value: "wave",
@@ -224,10 +227,6 @@ class ConsoleModel:
     osr2_controls: tuple[Button, ...] = ()
     has_osr2: bool = True
     max_intensity: int | None = None
-    # Whether this host moves the device to a hold itself, at once, rather than
-    # through the broker's second -- Origenerator, which drives it directly.
-    # Not published: Fun Time's holds all go through the broker.
-    parks_at_once: bool = False
 
     @property
     def device_drives_itself(self) -> bool:

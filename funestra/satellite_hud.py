@@ -196,9 +196,6 @@ class HudModel:
     # its own.  None wherever there is nothing to report.
     drive: DriveHud | None = None
     drive_composed: bool = False
-    # Whether the host moves the device to a hold itself, at once, rather than
-    # through the broker's second (see ConsoleModel.parks_at_once).
-    parks_at_once: bool = False
 
     foot: HudSection | None = None
 

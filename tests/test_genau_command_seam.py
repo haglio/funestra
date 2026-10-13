@@ -28,6 +28,7 @@ from test_genau_refresh import (
 )
 
 from funestra.broker_feed import BrokerFeed
+from funestra.console import OSR2_PARKED, OSR2_RETRACTED
 from funestra.flag import Flag
 from funestra.flick_advance import FlickAdvanceState
 from funestra.genau_controls import VERBS, GenauControls
@@ -138,7 +139,7 @@ class Seam:
             "steps": tuple(self.selection.step_calls),
             "condemned": self.selection.discard_calls,
             "flipped": self.controller.flip.on,
-            "held_at": self.controller.room_hold.height,
+            "held": self.controller.room_hold.held,
             "reorders": tuple(self.reorders),
             "kept_shapes": tuple(self.kept_shapes),
             "played": tuple(path.name for path in self.played),
@@ -176,8 +177,8 @@ SEAM = [
     ("SHUFFLE", {}, {"reorders": (False,)}),
     ("OFFSET_QUARTER_CYCLE", {}, {"phase": 0.25}),
     ("PAUSE", {"playing": True}, {"paused": True, "playing": False}),
-    ("PARK", {}, {"held_at": 0.0}),
-    ("RETRACT", {}, {"held_at": 1.0}),
+    ("PARK", {}, {"held": OSR2_PARKED}),
+    ("RETRACT", {}, {"held": OSR2_RETRACTED}),
     ("RESUME", {"paused": True}, {"paused": False, "playing": True}),
     ("SPEED_DOWN", {}, {"speed": 45}),
     ("SPEED_UP", {}, {"speed": 55}),
