@@ -141,6 +141,7 @@ class HudOverlay:
         self._clicks: HudClicks | None = None
         self._model: HudModel | None = None
         self._video = ""
+        self._flash = ""
         self._playback_speed: float | None = None
         self._clip_row: RowHud | None = None
         self._heatmap = None
@@ -177,13 +178,14 @@ class HudOverlay:
 
     def tick(self, video: str = "", playback_speed: float | None = None,
              window: tuple[int, int] | None = None,
-             clip_row: RowHud | None = None, heatmap=None) -> None:
+             clip_row: RowHud | None = None, heatmap=None, flash: str = "") -> None:
         redraw = (video != self._video or playback_speed != self._playback_speed
-                  or window != self._window
+                  or window != self._window or flash != self._flash
                   or clip_row != self._clip_row or heatmap is not self._heatmap)
         self._video = video
         self._playback_speed = playback_speed
         self._window = window
+        self._flash = flash
         self._clip_row, self._heatmap = clip_row, heatmap
         model, changed = self._source.next(self._model)
         if changed:
@@ -356,7 +358,7 @@ class HudOverlay:
             video=self._video, hover_loop=hover.loop, hover_tip=hover.tip, hover_pos=hover.at,
             may_grow_on_hover=self._over_the_video,
             minus_on_the_panel=self._minus_on_the_panel,
-            clip_row=self._clip_row, heatmap=self._heatmap,
+            clip_row=self._clip_row, heatmap=self._heatmap, flash=self._flash,
         )
         self.targets = rendered.targets
         height, width = rendered.bgra.shape[:2]

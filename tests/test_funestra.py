@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
@@ -17,12 +18,13 @@ from funestra.flick_picture import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, P
 from funestra.funestra import Channels, Funestra, User, _Nobody
 from funestra.hud_button import Button
 from funestra.hud_corners import CORNER_PLUS_OVERLAY_ID
-from funestra.hud_minimize import BUTTON
+from funestra.hud_minimize import BUTTON, FLASH_S, collapsed_panel
 from funestra.hud_overlay import HUD_OVERLAY_ID
 from funestra.hud_placement import HudEdge
 from funestra.hud_row import PARTS_Y
 from funestra.loop_dial import DIAL_SIZE
 from funestra.modes import LengthMode, MainMode, Osr2State
+from funestra.outside_buttons import OutsideButtons
 from funestra.playhead import FIGURE_SPACE
 from funestra.playlist import read_playlist
 from funestra.pointer import OMNIPAUSE_TOGGLE
@@ -330,6 +332,68 @@ class TestACornerTheHudIsNotIn:
         assert CORNER_PLUS_OVERLAY_ID not in engine.overlays
 
 
+class _Clock:
+    def __init__(self) -> None:
+        self.now = 100.0
+
+    def __call__(self) -> float:
+        return self.now
+
+
+def _minimized_satellite(tmp_path: Path, clock: _Clock) -> tuple[Funestra, FakeEngine]:
+    channels = _channels(tmp_path, [str(clip) for clip in _clips(tmp_path, "scene one", "scene two")],
+                         commands="", hud=True)
+    _publish_panel(tmp_path, hud_minimized=True)
+    engine = FakeEngine()
+    return Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
+                    clock=clock), engine
+
+
+class TestTheNameOfWhatHasJustStarted:
+    """Minimized, the HUD is a plus in its corner; it names a video for the
+    first few seconds it plays, as the open HUD does all along."""
+
+    def test_a_minimized_hud_names_it_beside_its_plus(self, tmp_path):
+        funestra, engine = _minimized_satellite(tmp_path, _Clock())
+
+        funestra.tick(window=WINDOW)
+
+        assert np.array_equal(engine.overlays[HUD_OVERLAY_ID][2],
+                              collapsed_panel("portrait", flash="scene one")[0])
+
+    def test_a_few_seconds_in_the_plus_is_alone_again(self, tmp_path):
+        clock = _Clock()
+        funestra, engine = _minimized_satellite(tmp_path, clock)
+        funestra.tick(window=WINDOW)
+
+        clock.now += FLASH_S
+        funestra.tick(window=WINDOW)
+
+        assert engine.overlays[HUD_OVERLAY_ID][2].shape[:2] == (BUTTON, BUTTON)
+
+    def test_the_next_video_is_named_as_it_starts(self, tmp_path):
+        clock = _Clock()
+        funestra, engine = _minimized_satellite(tmp_path, clock)
+        funestra.tick(window=WINDOW)
+        clock.now += FLASH_S
+        funestra.tick(window=WINDOW)
+
+        funestra.playback.step(1)
+        funestra.tick(window=WINDOW)
+
+        assert np.array_equal(engine.overlays[HUD_OVERLAY_ID][2],
+                              collapsed_panel("portrait", flash="scene two")[0])
+
+    def test_the_main_funestras_console_names_what_runs_on_it_says_is_playing(self, tmp_path):
+        funestra, engine, kino = _main(tmp_path, clock=_Clock())
+        _publish_console(tmp_path, hud_minimized=True)
+
+        funestra.tick(window=WINDOW)
+
+        assert np.array_equal(engine.overlays[HUD_OVERLAY_ID][2],
+                              collapsed_panel("main", flash=kino.video)[0])
+
+
 def test_each_pass_carries_a_still_s_move_a_little_further(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
 
@@ -465,8 +529,8 @@ class Genau(Kino):
                        flick=self.flick)
 
 
-def _main(tmp_path: Path, *, commands: str = "", user=Kino,
-          genau: bool = False, host_controls=None) -> tuple[Funestra, FakeEngine, Kino]:
+def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
+          host_controls=None, clock=time.monotonic) -> tuple[Funestra, FakeEngine, Kino]:
     channels = _console_channels(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0", "v1")],
                                  commands=commands)
     _publish_console(tmp_path)
@@ -480,7 +544,7 @@ def _main(tmp_path: Path, *, commands: str = "", user=Kino,
     users = {"kino": make, **({"genau": Genau} if genau else {})}
     funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
                         locked=True, sound_is_the_rooms=True, users=users,
-                        host_controls=host_controls)
+                        host_controls=host_controls, clock=clock)
     return funestra, engine, made[0]
 
 
@@ -1000,7 +1064,7 @@ class TestAPanelBesideThePicture:
         _publish_panel(tmp_path)
         engine = FakeEngine()
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                            panel_surface=surface)
+                            panel_surface=surface, clock=_Clock())
         funestra.tick(window=WINDOW)
         return funestra, engine, surface
 
@@ -1105,6 +1169,15 @@ class TestAPanelBesideThePicture:
         funestra.tick(window=WINDOW)
 
         assert funestra.outside_buttons.toggle(pointed=False).command == "portrait_hud_restore"
+
+    def test_minimized_the_window_is_handed_the_name_of_what_has_just_started(self, tmp_path):
+        funestra, _engine, _surface = self._wearing_a_panel_beside(tmp_path)
+        _publish_panel(tmp_path, hud_minimized=True)
+
+        funestra.tick(window=WINDOW)
+
+        assert np.array_equal(funestra.outside_buttons.name_flash(),
+                              OutsideButtons("portrait", minimized=True, flash="v0").name_flash())
 
     def test_the_console_beside_the_picture_hands_the_window_its_minus_too(self, tmp_path):
         funestra, _engine = self._main_beside(tmp_path, _ASurface(width=380))

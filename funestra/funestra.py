@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import logging
 import threading
+import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from functools import partial
@@ -22,6 +23,7 @@ from .funestra_controls import VERBS, FunestraControls
 from .funestra_status import status_fields
 from .host_controls import HostControls
 from .hud_corners import CORNER_PLUS_OVERLAY_ID, HudCorners
+from .hud_minimize import NameFlash
 from .hud_overlay import HUD_OVERLAY_ID, HudOverlay
 from .hud_placement import HudEdge
 from .hud_row import RowHud
@@ -175,6 +177,7 @@ class Funestra:
         users_picture: UsersPicture | None = None,
         window_verbs: Callable[[str], bool] = _nothing_of_its_own,
         host_controls: HostControls | None = None,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._engine = engine
         self._channels = channels
@@ -203,6 +206,8 @@ class Funestra:
             if sound_is_the_rooms else VolumeControl(engine, live=audible, muted=muted)
         )
         self._panel = self._panel_for(channels, panel_surface or engine, panel)
+        self._name_flash = NameFlash(clock)
+        self._flash = ""
         self._users_picture = users_picture or FlickPicture(engine)
         self._corners = None if self._panel is None or panel_surface is not None else HudCorners(
             self._panel, engine, post=self._where_the_panel_asks(channels))
@@ -340,7 +345,8 @@ class Funestra:
     @property
     def outside_buttons(self) -> OutsideButtons | None:
         place = None if self._panel_surface is None else self._panel.hud_place
-        return None if place is None else OutsideButtons(place.funestra, minimized=place.minimized)
+        return None if place is None else OutsideButtons(place.funestra, minimized=place.minimized,
+                                                         flash=self._flash)
 
     def set_muted(self, muted: bool) -> None:
         self._volume.set_muted(muted)
@@ -464,12 +470,14 @@ class Funestra:
         if self._panel is None:
             return
         if isinstance(self._panel, ConsoleOverlay):
+            self._flash = self._name_flash.showing(self._top_block().video)
             self._panel.tick(playback_speed=playback_speed, window=window,
-                             clip_row=row, heatmap=colors)
+                             clip_row=row, heatmap=colors, flash=self._flash)
         else:
-            self._panel.tick(video=self._front.top_block().video or self.playback.name_on_screen,
-                             playback_speed=playback_speed, window=window,
-                             clip_row=row, heatmap=colors)
+            video = self._front.top_block().video or self.playback.name_on_screen
+            self._flash = self._name_flash.showing(video)
+            self._panel.tick(video=video, playback_speed=playback_speed, window=window,
+                             clip_row=row, heatmap=colors, flash=self._flash)
 
     def _paint_loop_frames(self, window: tuple[int, int]) -> None:
         """The loop's in and out frames, each hanging under the panel below its

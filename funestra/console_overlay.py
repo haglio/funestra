@@ -81,7 +81,7 @@ class ConsoleOverlay:
         return self._painter.hud_place
 
     def tick(self, *, playback_speed: float, window: tuple[int, int],
-             clip_row: RowHud | None = None, heatmap=None) -> None:
+             clip_row: RowHud | None = None, heatmap=None, flash: str = "") -> None:
         self._console = read_console(self._console_file) or self._console
         if self._drive_file is not None:
             self._drive = read_drive(self._drive_file) or self._drive
@@ -95,6 +95,7 @@ class ConsoleOverlay:
             modes=self._top_block(),
             console=with_playback_speed(self._console, playback_speed),
             drive=drive,
+            flash=flash,
         ), clip_row=clip_row, heatmap=heatmap, host_controls=self._host_controls.drawing())
         self._origin = self._painter.place(window=window)
         self._panel_height = bgra.shape[0]
