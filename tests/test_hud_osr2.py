@@ -8,6 +8,7 @@ from funestra.drive_readout import DriveHud, track_command
 from funestra.hud_button import Button
 from funestra.hud_osr2 import (
     BUFFER,
+    COLORS,
     HEIGHT,
     LABELS,
     MAX_INTENSITY_TIP,
@@ -53,6 +54,16 @@ class TestTheLine:
         panel, _ = _drawn(Osr2Line(state="control_off"))
         assert _has(panel, RED)
 
+    def test_the_word_starts_in_one_place_whatever_it_says(self):
+        def where_it_starts(state: str) -> int:
+            panel, _ = _drawn(Osr2Line(state=state))
+            pixels = np.array(panel.image.convert("RGB"))
+            inked = (pixels == np.array(COLORS[state])).all(axis=-1).any(axis=0)
+            return int(np.flatnonzero(inked)[0])
+
+        told_from_the_label = [state for state in LABELS if COLORS[state] != TEXT_MUTED]
+        assert len({where_it_starts(state) for state in told_from_the_label}) == 1
+
 
 class TestTheControlsOnIt:
     def test_a_line_with_no_controls_is_just_the_label_and_the_pill(self):
@@ -85,6 +96,13 @@ class TestTheMaxIntensityOnIt:
         assert track_command(band, x + w - 1, y + h // 2) == "max_intensity_100"
         assert 10 + Osr2Section().width(Osr2Line(state=Osr2State.ROBOT_HAND)) < x
         assert (y, h) == (10, HEIGHT)
+
+    def test_the_slider_holds_still_whatever_word_the_line_shows(self):
+        section = Osr2Section()
+        lines = [Osr2Line(state=state, max_intensity=60) for state in LABELS]
+
+        assert len({section.width(line) for line in lines}) == 1
+        assert len({section.bands(10, 10, line)[0].rect for line in lines}) == 1
 
     def test_a_line_with_no_max_intensity_has_no_slider_to_press(self):
         assert Osr2Section().bands(10, 10, Osr2Line(state=Osr2State.ROBOT_HAND)) == []
