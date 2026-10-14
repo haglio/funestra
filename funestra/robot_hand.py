@@ -23,8 +23,6 @@ __all__ = [
     "MAX_SPEED",
     "MAX_TICK_SECONDS",
     "MIN_SPEED",
-    "PARK_CENTER",
-    "RETRACT_CENTER",
     "RobotHandState",
     "WaveformShape",
     "adjust_amplitude",

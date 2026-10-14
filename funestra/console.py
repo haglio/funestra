@@ -43,6 +43,7 @@ from .robot_hand import WaveformShape
 __all__ = [
     "GAP",
     "GROUP_GAP",
+    "HOLD_VERB",
     "OSR2_CONTROL_BUTTONS",
     "OSR2_CONTROL_OFF",
     "OSR2_CONTROL_UNANSWERED",
