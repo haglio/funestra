@@ -16,7 +16,6 @@ from app_support import ports
 from app_support.osr2_hold import PARK, hold_tcode
 
 __all__ = [
-    "PARK_COMMAND",
     "POSITION_MAX",
     "UdpTCodeSink",
     "format_tcode_command",
