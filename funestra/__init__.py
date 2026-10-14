@@ -1,7 +1,7 @@
 """The Funestra, and everything its programs share.
 
-A Funestra is a window of Fun Time: it plays what it is handed, draws the HUD,
-and is driven through files by whatever runs on it.  Fun Time opens three (the
+A Funestra is a window that plays what it is handed, draws the HUD, and is
+driven by whatever runs on it.  Fun Time opens three (the
 Main, Portrait and Landscape Funestras, or draws them into the headset), and a
 Standalone Origenerator opens one for its Slideshow.  Everything those programs
 had to agree on lives here — the engine, the Funestra contract (the playlist,

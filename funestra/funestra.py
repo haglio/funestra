@@ -1,4 +1,4 @@
-"""A window of Fun Time: it plays what it is handed, draws the HUD, the scrubber and the
+"""A window that plays what it is handed, draws the HUD, the scrubber and the
 volume over it -- or on a screen of the window's own beside it -- answers their presses,
 and is driven through files by whatever runs on it."""
 from __future__ import annotations
