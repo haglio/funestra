@@ -4,9 +4,12 @@ The Funestra, and everything the programs that open one share. The package is
 `funestra`, as this repo is; it was `player_core` until 2026-10-10 and
 `funestra_core` until 2026-10-11, and `player_core.<module>` and
 `funestra_core.<module>` still import, as the very same module, for every
-branch written before then. A Funestra is a window of Fun Time: it plays
-what it is handed, draws the HUD, and is driven through files by whatever runs
-on it.
+branch written before then. A Funestra is the window its users run on: it
+plays what it is handed, draws the HUD, and is driven, in its own process or
+through its files, by whatever runs on it. Its users are Kino and Genau, which
+run on Fun Time's Main Funestra, and Origenerator's Slideshow, which runs on a
+Funestra both in a Standalone Origenerator and inside Fun Time, where
+Origenerator hands it to one of Fun Time's Satellite Funestras.
 
 | Consumer | Repo | What it takes |
 | --- | --- | --- |
@@ -54,7 +57,7 @@ another application's internals to get it. By what it is:
   than panels — the drive readout and `hud_osr2`'s device line — because a host
   that both browses a set and drives the OSR2 (Origenerator's shows) says all of
   it on ONE panel rather than stacking a console under a lock HUD.
-- **the Funestra** — a window of Fun Time: `funestra` builds one on a way of
+- **the Funestra** — the window: `funestra` builds one on a way of
   playing (`Funestra.on_window` opens mpv on a window handle; the base takes
   any engine with the same interface) and the files its User drives it through
   (`Channels`), plays what it is handed (`playback`, with `funestra_controls`
@@ -88,9 +91,10 @@ headset texture.
 ## The Funestra contract
 
 A Funestra shows what a content source hands it and tells the source what it is
-showing. Today the source is Fun Time and the Funestras are its Main, Portrait
-and Landscape Funestras and their headset twins; the contract is what lets a
-second source drive the same Funestras. Every part of it is a pair — a writer
+showing. Fun Time is the source for its Main, Portrait and Landscape Funestras
+and their headset twins, and the contract is what lets a second source drive
+the same Funestras: Origenerator, running as part of Fun Time, hands a
+Slideshow to one of them. Every part of it is a pair — a writer
 and a reader in one module — so the two sides cannot spell a thing differently:
 
 | The source hands the Funestra… | …through | …and reads back |

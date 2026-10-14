@@ -54,10 +54,11 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   Funestra's keys for exactly this reason.
 
 - **A Player is a Funestra, and what ran on a Player runs on a Funestra.** A
-  Funestra is a window of Fun Time (`funestra.Funestra`): it plays what it is
-  handed and draws the HUD. The Main, Portrait and Landscape Players became
-  Funestras, and Kino (Fun Time's Video mode), Genau and an Origenerator
-  Slideshow run on them exactly as they ran on the Players. What is wrong is a
+  Funestra is a window (`funestra.Funestra`) that plays what it is handed and
+  draws the HUD, in Fun Time and in a Standalone Origenerator alike. The Main,
+  Portrait and Landscape Players became Funestras, and Kino (Fun Time's Video
+  mode), Genau and an Origenerator Slideshow run on them exactly as they ran on
+  the Players. What is wrong is a
   third thing between the two -- a Player that "runs on" or "has" a Funestra,
   a Funestra under a Player -- and so is the opposite over-correction, that
   nothing runs on a Player; he has had to correct both. The near miss that
