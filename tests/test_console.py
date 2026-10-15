@@ -134,6 +134,13 @@ class TestTheRowThatAimsTheDevice:
         assert off.lit and not switch.lit and not on.lit
         assert switch.command == OSR2_CONTROL_BUTTONS[OSR2_DRIVING]
 
+    def test_an_older_fun_time_still_finds_the_presses_it_answers_for_retired_holds(self):
+        assert OSR2_CONTROL_BUTTONS[OSR2_RETRACTED] == "robot_hand_retract"
+        assert OSR2_CONTROL_BUTTONS[OSR2_CONTROL_OFF] == "osr2_control_off"
+
+    def test_the_switch_offers_only_its_two_positions(self):
+        assert set(OSR2_CONTROL_BUTTONS) == {OSR2_PARKED, OSR2_DRIVING}
+
     def test_the_switch_says_where_the_device_is_and_what_a_press_does(self):
         def says(control: str) -> str:
             return _aim_row(control=control)[2].tooltip
