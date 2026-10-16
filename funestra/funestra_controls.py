@@ -11,9 +11,11 @@ from typing import Any
 from .control_registry import Control, Verb, bind, look_up
 from .funestra_verbs import (
     CLEAR_FRAME,
+    JUMP_TO_FUNSCRIPT,
     LOCK_OFF,
     LOCK_ON,
     NEXT,
+    NEXT_FUNSCRIPTED,
     NEXT_VERSION,
     PLAY_FILE,
     PREV,
@@ -61,6 +63,7 @@ class FunestraControls:
     reload_playlist: Callable[[], None] | None = None
     volume: Any = None
     show: Callable[[str], bool] | None = None
+    funscript_jumps: Any = None
 
 
 Act = Callable[[FunestraControls, str], bool]
@@ -187,6 +190,16 @@ def _clear_frame(controls: FunestraControls, _value: str) -> bool:
     return True
 
 
+def _jump_to_funscript(controls: FunestraControls, _value: str) -> bool:
+    controls.funscript_jumps.jump_to_funscript()
+    return True
+
+
+def _next_funscripted(controls: FunestraControls, _value: str) -> bool:
+    controls.funscript_jumps.next_funscripted()
+    return True
+
+
 CONTROLS: tuple[Control, ...] = (
     Control(
         name="playlist_position",
@@ -220,6 +233,12 @@ CONTROLS: tuple[Control, ...] = (
     Control(
         name="playing_file",
         verbs=(Verb(PLAY_FILE, _play_file, takes_a_value=True),),
+    ),
+    Control(
+        name="funscript_jump",
+        needs=("funscript_jumps",),
+        verbs=(Verb(JUMP_TO_FUNSCRIPT, _jump_to_funscript),
+               Verb(NEXT_FUNSCRIPTED, _next_funscripted)),
     ),
     Control(name="pace", verbs=(Verb(SET_PACE, _set_pace, takes_a_value=True),)),
     Control(
