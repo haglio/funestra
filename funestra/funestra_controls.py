@@ -217,9 +217,9 @@ CONTROLS: tuple[Control, ...] = (
     Control(
         name="playing_file",
         verbs=(
-            Verb(PLAY_FILE, _naming_an_item(lambda playback, item: playback.play_file(*item)),
+            Verb(PLAY_FILE, _naming_an_item(lambda playback, item: playback.play_file(*item, item.points_of_interest)),
                  takes_a_value=True),
-            Verb(PLAY_NEXT, _naming_an_item(lambda playback, item: playback.play_next(*item)),
+            Verb(PLAY_NEXT, _naming_an_item(lambda playback, item: playback.play_next(*item, item.points_of_interest)),
                  takes_a_value=True),
         ),
     ),

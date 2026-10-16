@@ -30,7 +30,7 @@ from .hud_row import RowHud
 from .mpv_engine import MpvEngine
 from .outside_buttons import OutsideButtons
 from .play_points import PlayPoints
-from .playback import Playback, funscripts_of
+from .playback import Playback, funscripts_of, points_of_interest_of
 from .playhead import framed_playhead, video_playhead
 from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
@@ -180,7 +180,8 @@ class Funestra:
         self._playback = Playback(
             [item.path for item in playlist], engine=engine, start_paused=start_paused,
             locked=locked, play_points=PlayPoints(channels.play_points),
-            funscripts=funscripts_of(playlist), tcode=tcode,
+            funscripts=funscripts_of(playlist), points_of_interest=points_of_interest_of(playlist),
+            tcode=tcode,
         )
         self._follower = (None if channels.playlist is None
                           else PlaylistFollower(channels.playlist, take=self._take_the_list))
@@ -404,7 +405,7 @@ class Funestra:
         return True
 
     def _take_the_list(self, items: list[PlaylistItem]) -> None:
-        self.playback.replace_playlist([item.path for item in items], funscripts_of(items))
+        self.playback.take_the_list(items)
 
     def _paint_if_there_is_memory(self, window: tuple[int, int]) -> None:
         try:
