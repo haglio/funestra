@@ -60,6 +60,20 @@ class TestWhatTheTwoVerbsSet:
         assert volume.hud.muted is True
         assert engine.muted is True
 
+    def test_a_silent_chip_takes_no_level_it_is_handed_either(self):
+        volume, engine = _volume(live=False)
+
+        volume.set(60, False)
+
+        assert (volume.hud.muted, engine.muted) == (True, True)
+
+    def test_a_level_it_is_handed_is_held_within_the_chips_range(self):
+        volume, engine = _volume()
+
+        volume.set(140, False)
+
+        assert (volume.hud.volume, engine.volume) == (100, 100)
+
 
 class TestTheRoomsVolume:
     """The Main Funestra's sound is the room's to decide: the chip shows the level

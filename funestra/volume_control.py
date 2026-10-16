@@ -1,7 +1,9 @@
 """A Funestra's volume chip: its own level and mute, or the room's.
 
 A Funestra whose sound is its own sets mpv's level and mute from the chip it
-draws.  One whose sound is the room's -- the Main Funestra, whose mpv is one of
+draws, and from a level and mute the room hands it back at startup, and
+publishes both in its status for the room to keep.  One whose sound is the
+room's -- the Main Funestra, whose mpv is one of
 two sinks the room drives -- shows the level the room publishes and asks the
 room for a new one; the ask shows at once so the slider does not trail the
 pointer, and the room's answer overwrites it either way.
@@ -41,6 +43,10 @@ class VolumeControl:
     def set_level(self, volume: int) -> None:
         if self._live:
             self._set(VolumeHud(volume=volume, muted=False))
+
+    def set(self, level: int, muted: bool) -> None:
+        if self._live:
+            self._set(VolumeHud(volume=max(MIN_VOLUME, min(MAX_VOLUME, level)), muted=muted))
 
     def _set(self, hud: VolumeHud) -> None:
         self._hud = hud

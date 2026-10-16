@@ -20,7 +20,7 @@ from .drive_gate import DriveGate
 from .file_channel import consume_command_file, read_paused_state
 from .flick_picture import FlickPicture, Picture
 from .funestra_controls import VERBS, FunestraControls
-from .funestra_status import status_fields
+from .funestra_status import status_fields, volume_fields
 from .host_controls import HostControls
 from .hud_corners import CORNER_PLUS_OVERLAY_ID, HudCorners
 from .hud_minimize import NameFlash
@@ -216,10 +216,11 @@ class Funestra:
         self._controls = FunestraControls(
             self.playback, stop_event=self._stop,
             reload_playlist=None if self._follower is None else self._follower.read_now,
-            room_volume=self._volume if sound_is_the_rooms else None, show=self._show)
+            volume=self._volume, show=self._show)
         self._status = (
             StatusWriter(channels.status, lambda playback: {
                 **status_fields(playback, self._drive_gate.handoff_touch()),
+                **volume_fields(self._volume.hud),
                 **{key: value for user in self._users.values()
                    for key, value in user.status_fields().items()}})
             if channels.status else None
