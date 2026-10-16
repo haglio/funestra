@@ -38,6 +38,7 @@ PACKAGE = ROOT / "funestra"
 PACKAGE_NAMES = ("funestra", "funestra_core", "player_core")
 
 _NOT_SOURCE = {".venv", ".claude", "build", "__pycache__", "node_modules"}
+_AN_INSTALLATION = "pyvenv.cfg"
 
 
 def _primary_checkout(repo: Path) -> Path:
@@ -71,6 +72,9 @@ def is_this_package(module: str | None) -> bool:
 
 def _source_files(checkout: Path):
     for directory, subdirectories, files in os.walk(checkout):
+        if _AN_INSTALLATION in files:
+            subdirectories[:] = []
+            continue
         subdirectories[:] = [name for name in subdirectories
                              if name not in _NOT_SOURCE and not name.endswith(".egg-info")]
         yield from (Path(directory) / name for name in files if name.endswith(".py"))
@@ -227,6 +231,19 @@ def test_the_walk_never_enters_a_tree_it_would_throw_away(tmp_path, monkeypatch)
     assert [parts for parts in entered
             if not _NOT_SOURCE.isdisjoint(parts)
             or any(part.endswith(".egg-info") for part in parts)] == []
+
+
+def test_an_installation_kept_under_another_name_is_no_source_of_the_consumers(tmp_path):
+    kept = tmp_path / "pkg" / "kept.py"
+    kept.parent.mkdir()
+    kept.write_text("", encoding="utf-8")
+    installed = tmp_path / "state" / "main_verifier_venv"
+    (installed / "Lib" / "site-packages" / "funestra").mkdir(parents=True)
+    (installed / "pyvenv.cfg").write_text("home = C:/Python314\n", encoding="utf-8")
+    (installed / "Lib" / "site-packages" / "funestra" / "hud_panel.py").write_text(
+        "", encoding="utf-8")
+
+    assert list(_source_files(tmp_path)) == [kept]
 
 
 def test_a_copy_of_this_repo_beside_the_checkout_is_no_consumer(tmp_path):
