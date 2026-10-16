@@ -128,6 +128,25 @@ class TestApplyCommand:
         assert controls.playback.playlist[1] == newcomer
         assert controls.playback.funscript_of(newcomer) == script
 
+    def test_play_file_takes_the_places_column_as_the_pictures_places(self, tmp_path):
+        playback, engine = make_playback(tmp_path, entries=2)
+        controls = FunestraControls(playback, reload_playlist=_never_reloads)
+
+        assert apply_command(f"{PLAY_FILE} C:/out/level two.png\t\t0.5,0.5,0.75,0.75",
+                             controls) is True
+
+        assert engine.points_told == [((0.5, 0.5, 0.75, 0.75),)]
+
+    def test_play_next_keeps_the_places_its_line_names_for_when_the_item_comes_up(self, tmp_path):
+        playback, engine = make_playback(tmp_path, entries=2)
+        controls = FunestraControls(playback, reload_playlist=_never_reloads)
+
+        assert apply_command(f"{PLAY_NEXT} C:/out/level two.png\t\t0.5,0.5,0.75,0.75",
+                             controls) is True
+        playback.step(1)
+
+        assert engine.points_told[-1] == ((0.5, 0.5, 0.75, 0.75),)
+
     def test_a_version_step_plays_the_rendition_the_family_names_next(self, tmp_path):
         controls = _controls(tmp_path)
         clip = controls.playback.current_video

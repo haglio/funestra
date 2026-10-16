@@ -94,9 +94,13 @@ class FakeEngine(RefusesSeeks):
         self.idle = False
         self.stopped = False
         self.settled = 0
+        self.points_told: list[tuple] = []
 
     def tile_to_fill(self, window_width: int, window_height: int) -> None:
         self.tiled_to.append((window_width, window_height))
+
+    def set_points_of_interest(self, points: tuple) -> None:
+        self.points_told.append(points)
 
     def load(self, path: Path) -> None:
         self.opened.append(path)
@@ -197,7 +201,7 @@ class FakeEngine(RefusesSeeks):
 
 
 def make_playback(tmp_path, *, entries=1, start_paused=False, duration_ms=5_000.0, locked=False,
-                  play_points=None, funscripts=None, tcode=None):
+                  play_points=None, funscripts=None, points_of_interest=None, tcode=None):
     playlist = []
     for i in range(entries):
         vid = tmp_path / f"v{i}.mp4"
@@ -207,5 +211,7 @@ def make_playback(tmp_path, *, entries=1, start_paused=False, duration_ms=5_000.
     return Playback(
         playlist, engine=engine, start_paused=start_paused, locked=locked, play_points=play_points,
         funscripts={playlist[index]: script for index, script in (funscripts or {}).items()},
+        points_of_interest={playlist[index]: points
+                            for index, points in (points_of_interest or {}).items()},
         tcode=tcode,
     ), engine
