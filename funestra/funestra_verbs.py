@@ -46,6 +46,11 @@ SPEED_UP = "SPEED_UP"
 SPEED_DOWN = "SPEED_DOWN"
 SET_SPEED = "SET_SPEED"
 
+# Its funscript: past the lull the playhead is in, or on to the next item in
+# the list that has a script, landing where its action begins.
+JUMP_TO_FUNSCRIPT = "JUMP_TO_FUNSCRIPT"
+NEXT_FUNSCRIPTED = "NEXT_FUNSCRIPTED"
+
 # The sound (SET_VOLUME <0-100> [muted]), the device (SET_TCODE_ENABLED 0|1), and
 # how hard the device may work (SET_MAX_INTENSITY <0-100>).
 SET_VOLUME = "SET_VOLUME"

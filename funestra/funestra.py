@@ -24,6 +24,7 @@ from .file_channel import consume_command_file, read_paused_state
 from .flick_overlay import FlickFrame, FlickOverlay
 from .funestra_controls import VERBS, FunestraControls
 from .funestra_status import status_fields, volume_fields
+from .funscript_jumps import FunscriptJumps
 from .host_controls import HostControls
 from .hud_corners import HudCorners
 from .hud_minimize import NameFlash
@@ -31,6 +32,7 @@ from .hud_overlay import HudOverlay
 from .hud_placement import HudEdge
 from .hud_row import RowHud
 from .mpv_engine import MpvEngine
+from .notices import NoticeWriter
 from .outside_buttons import OutsideButtons
 from .play_points import PlayPoints
 from .playback import Playback, funscripts_of, points_of_interest_of
@@ -60,6 +62,7 @@ class Channels:
     command: Path | None = None
     paused: Path | None = None
     status: Path | None = None
+    notice: Path | None = None
     play_points: Path | None = None
     hud: Path | None = None
     console: Path | None = None
@@ -221,7 +224,8 @@ class Funestra:
         self._controls = FunestraControls(
             self.playback, stop_event=self._stop,
             reload_playlist=None if self._follower is None else self._follower.read_now,
-            volume=self._volume, show=self._show)
+            volume=self._volume, show=self._show,
+            funscript_jumps=FunscriptJumps(self.playback, NoticeWriter(channels.notice)))
         self._status = (
             StatusWriter(channels.status, lambda _playback: self.status_fields())
             if channels.status else None
