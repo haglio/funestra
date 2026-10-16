@@ -114,6 +114,20 @@ new file, which skipped a list coming round to the file it left. The engine's
 `drop_consumed` is `settle_on_the_next`, so a host's fake engine standing in
 under `Playback` answers to the new name.
 
+## 2026-10-16 — a locked picture punches in on its places
+
+A playlist line can carry the places in a picture worth a close-up, after a
+second TAB (`PlaylistItem.points_of_interest`), and a locked picture's move,
+each time it comes round, goes to the next of them and then back to the whole
+picture (`KenBurns.set_points_of_interest`, `Moves.close_up`): each close-up is
+framed as close as its window fits the place, and makes one of the three
+ordinary moves inside it. Origenerator fills the column with the places an
+enhancement's fixes found, so a picture locked after one goes over them as the
+enhancement did. The item stays the pair it was, the places riding beside it.
+
+`Fit`, `CLOSEST` (once `CLOSEST_AIM`) and the window-size readers the aim took
+with it on 2026-09-28 are back, framing these close-ups.
+
 ## 2026-10-13 — cruise control is gone
 
 Human-inspired motion outclassed it, and Fun Time and Origenerator took it out

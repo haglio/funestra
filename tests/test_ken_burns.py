@@ -10,7 +10,9 @@ import pytest
 from dealt_moves import CREEP, DRIFT, Deals
 
 from funestra.ken_burns import (
+    CLOSEST,
     ZOOMED_IN,
+    Fit,
     KenBurns,
     Move,
     Moves,
@@ -396,3 +398,182 @@ def test_a_locked_picture_held_for_less_than_its_pace_still_never_runs_out():
     still.set_looping(True, now_s=100.0)
 
     assert still.ran_out(now_s=103.0) is False
+
+
+def part_drawn(window, shown, view: View, part):
+    x0, y0, x1, y1 = part
+    return [(side, start + low * (end - start), start + high * (end - start))
+            for (side, start, end), (low, high) in zip(
+                drawn(window, shown, view), ((x0, x1), (y0, y1)), strict=True)]
+
+
+def test_a_close_up_fits_its_place_in_the_window_and_puts_it_in_the_middle():
+    part = (0.25, 0.25, 0.75, 0.75)
+
+    for window, start, end in part_drawn(WIDE, WIDE, Fit(WIDE, WIDE).framing(part), part):
+        assert start == pytest.approx(0, abs=2)
+        assert end == pytest.approx(window, abs=2)
+
+
+@pytest.mark.parametrize("shown", SHAPES)
+@pytest.mark.parametrize("part", [(0.75, 0.0, 1.0, 0.25), (0.0, 0.8, 0.3, 1.0), (0.4, 0.3, 0.6, 0.5)])
+def test_a_place_anywhere_in_the_picture_is_drawn_whole_inside_the_window(shown, part):
+    for window, start, end in part_drawn(WIDE, shown, Fit(WIDE, shown).framing(part), part):
+        assert start >= -1
+        assert end <= window + 1
+
+
+def test_a_close_up_on_a_sliver_comes_no_closer_than_any_close_up_comes():
+    assert Fit(WIDE, WIDE).framing((0.5, 0.2, 0.5, 0.3)).zoom == CLOSEST
+
+
+def test_a_place_reaching_past_the_picture_is_framed_by_what_of_it_lies_inside():
+    fit = Fit(WIDE, WIDE)
+
+    assert fit.framing((-0.5, 0.25, 0.5, 0.75)) == fit.framing((0.0, 0.25, 0.5, 0.75))
+
+
+def test_a_close_up_before_the_window_is_known_frames_as_if_it_had_the_pictures_shape():
+    part = (0.0, 0.0, 0.5, 0.5)
+
+    assert Fit((0, 0), WIDE).framing(part) == Fit(WIDE, WIDE).framing(part)
+
+
+def test_a_close_up_on_a_picture_laid_out_in_tiles_frames_the_middle_tile():
+    strip = (1920, 1080)
+
+    assert Fit(WIDE, strip, tiles=3).framing((0.25, 0.25, 0.75, 0.75)) == Fit(
+        WIDE, strip).framing((1.25 / 3, 0.25, 1.75 / 3, 0.75))
+
+
+FACE = (0.4, 0.1, 0.6, 0.3)
+HAND = (0.1, 0.6, 0.3, 0.8)
+
+
+def locked_with_places(*places, deals: Deals | None = None) -> KenBurns:
+    still = paced(deals=deals)
+    still.set_points_of_interest(places, now_s=100.0)
+    still.set_looping(True, now_s=100.0)
+    return still
+
+
+def test_a_locked_picture_with_places_punches_in_on_the_first_when_it_comes_round():
+    still = locked_with_places(FACE)
+
+    assert still.view(now_s=104.0) == Fit((0, 0), (0, 0)).framing(FACE)
+
+
+def test_a_locked_picture_goes_round_each_of_its_places_then_the_whole_picture_again():
+    deals = Deals(DRIFT, CREEP, DRIFT)
+    still = locked_with_places(FACE, HAND, deals=deals)
+    framed = Fit((0, 0), (0, 0)).framing
+
+    views = [still.view(now_s=now) for now in (104.0, 108.0, 112.0, 116.0)]
+
+    assert views == [framed(FACE), framed(HAND), CREEP.at(0.0), framed(FACE)]
+
+
+def test_places_that_arrive_partway_round_send_the_next_round_to_the_first_of_them():
+    still = locked_with_places(FACE, HAND)
+    still.view(now_s=104.0)
+
+    still.set_points_of_interest((HAND, FACE), now_s=105.0)
+
+    assert still.view(now_s=108.0) == Fit((0, 0), (0, 0)).framing(HAND)
+
+
+def test_a_new_picture_starts_its_round_of_places_on_the_whole_picture():
+    deals = Deals(DRIFT, CREEP)
+    still = locked_with_places(FACE, deals=deals)
+    still.view(now_s=104.0)
+
+    still.new_picture(now_s=105.0)
+
+    assert still.view(now_s=105.0) == CREEP.at(0.0)
+    assert still.view(now_s=109.0) == Fit((0, 0), (0, 0)).framing(FACE)
+
+
+def test_a_picture_let_go_of_its_lock_makes_its_ordinary_move_and_no_close_up():
+    deals = Deals(DRIFT)
+    still = paced(deals=deals)
+
+    still.set_points_of_interest((FACE,), now_s=100.0)
+
+    assert_along(still.view(now_s=102.0), DRIFT, 0.5)
+    assert deals.closed_up_on == []
+
+
+def test_a_close_up_is_framed_for_the_window_the_picture_is_in_when_it_comes_round():
+    window = Fit(WIDE, (832, 1216))
+    still = KenBurns(Deals(DRIFT), fit=lambda: window)
+    still.set_pace(4.0, now_s=100.0)
+    still.new_picture(now_s=100.0)
+    still.set_points_of_interest((FACE,), now_s=100.0)
+    still.set_looping(True, now_s=100.0)
+
+    assert still.view(now_s=104.0) == window.framing(FACE)
+
+
+PLACE = (0.2, 0.4, 0.6, 0.6)
+
+
+def as_drawn(box):
+    return box
+
+
+def size_of(box) -> tuple[float, float]:
+    return box[2] - box[0], box[3] - box[1]
+
+
+def inside(box, place) -> bool:
+    return all(outer <= edge + 1e-9 for outer, edge in zip(place[:2], box[:2], strict=True)) and all(
+        edge <= outer + 1e-9 for outer, edge in zip(place[2:], box[2:], strict=True))
+
+
+def closed_up(count: int, seed: int = 7) -> list[Move]:
+    moves = Moves(random.Random(seed))
+    return [moves.close_up(as_drawn, PLACE) for _ in range(count)]
+
+
+def test_no_close_up_makes_the_kind_of_move_the_round_before_it_made():
+    moves = Moves(random.Random(7))
+    dealt_in_turn = [moves.close_up(as_drawn, PLACE) if turn % 3 else moves.deal()
+                     for turn in range(300)]
+
+    kinds = [kind_of(move) if isinstance(move.start, View) else close_up_kind(move)
+             for move in dealt_in_turn]
+
+    assert all(one != next_one for one, next_one in itertools.pairwise(kinds))
+
+
+def close_up_kind(move: Move) -> str:
+    start, end = size_of(move.start)[0], size_of(move.end)[0]
+    if start > end + 1e-9:
+        return "in"
+    if start < end - 1e-9:
+        return "out"
+    return "pan"
+
+
+def test_a_close_up_zooms_between_the_whole_place_and_a_spot_inside_it_closer_by_the_ordinary_zoom():
+    zooms = [move for move in closed_up(300) if close_up_kind(move) != "pan"]
+
+    for move in zooms:
+        whole, nearer = (move.start, move.end) if close_up_kind(move) == "in" else (move.end, move.start)
+        assert whole == PLACE
+        assert inside(nearer, PLACE)
+        assert size_of(nearer) == pytest.approx(tuple(side / ZOOMED_IN for side in size_of(PLACE)))
+    assert {close_up_kind(move) for move in zooms} == {"in", "out"}
+
+
+def test_a_close_up_pan_crosses_the_place_from_a_corner_to_the_opposite_one():
+    pans = [move for move in closed_up(300) if close_up_kind(move) == "pan"]
+
+    for move in pans:
+        assert inside(move.start, PLACE) and inside(move.end, PLACE)
+        assert size_of(move.start) == pytest.approx(tuple(side / ZOOMED_IN for side in size_of(PLACE)))
+        start_middle = ((move.start[0] + move.start[2]) / 2, (move.start[1] + move.start[3]) / 2)
+        end_middle = ((move.end[0] + move.end[2]) / 2, (move.end[1] + move.end[3]) / 2)
+        assert start_middle[0] + end_middle[0] == pytest.approx(PLACE[0] + PLACE[2])
+        assert start_middle[1] + end_middle[1] == pytest.approx(PLACE[1] + PLACE[3])
+    assert pans
