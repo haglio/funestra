@@ -11,10 +11,12 @@ from funestra.funestra_controls import VERBS, FunestraControls, apply_command
 from funestra.funestra_verbs import (
     CLEAR_FRAME,
     HOLD_PICTURE,
+    JUMP_TO_FUNSCRIPT,
     LET_GO,
     LOCK_OFF,
     LOCK_ON,
     NEXT,
+    NEXT_FUNSCRIPTED,
     NEXT_VERSION,
     PLAY_FILE,
     PLAY_NEXT,
@@ -351,6 +353,34 @@ class TestTheRoomsLevel:
         assert (engine.volume, engine.muted, volume.hud) == (40, False, VolumeHud(volume=40))
 
 
+class _SpyJumps:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def jump_to_funscript(self) -> None:
+        self.calls.append("jump_to_funscript")
+
+    def next_funscripted(self) -> None:
+        self.calls.append("next_funscripted")
+
+
+class TestTheFunscriptMoves:
+    def test_the_two_verbs_reach_the_jumps_every_funestra_carries(self, tmp_path):
+        jumps = _SpyJumps()
+        controls = _controls(tmp_path, funscript_jumps=jumps)
+
+        assert apply_command(JUMP_TO_FUNSCRIPT, controls) is True
+        assert apply_command(NEXT_FUNSCRIPTED, controls) is True
+
+        assert jumps.calls == ["jump_to_funscript", "next_funscripted"]
+
+    def test_a_build_with_no_jumps_wired_refuses_them(self, tmp_path):
+        controls = _controls(tmp_path, funscript_jumps=None)
+
+        assert apply_command(JUMP_TO_FUNSCRIPT, controls) is False
+        assert apply_command(NEXT_FUNSCRIPTED, controls) is False
+
+
 class TestWhoHasTheWindow:
     def test_show_names_which_user_has_the_window_in_the_rooms_own_spelling(self, tmp_path):
         shown = []
@@ -371,5 +401,6 @@ def test_every_verb_a_funestra_answers_is_spelled_in_the_familys_vocabulary():
         RELOAD_PLAYLIST, SET_PACE, HOLD_PICTURE, SHOW_FRAME, CLEAR_FRAME, QUIT,
         SET_TCODE_ENABLED,
         SET_MAX_INTENSITY, SET_VOLUME, SHOW,
+        JUMP_TO_FUNSCRIPT, NEXT_FUNSCRIPTED,
     }
     assert all(getattr(funestra_verbs, verb) == verb for verb in VERBS)
