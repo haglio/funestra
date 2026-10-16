@@ -8,7 +8,7 @@ it and stages the item after that.  A deliberate step still cold-loads.
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterable, Mapping
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
 
 from .funscript import Funscript
@@ -28,8 +28,16 @@ __all__ = [
 logger = logging.getLogger(__name__)
 
 
+def _by_path(items: Iterable[PlaylistItem], field: str) -> dict:
+    return {item.path: getattr(item, field) for item in items if getattr(item, field)}
+
+
 def funscripts_of(items: Iterable[PlaylistItem]) -> dict[Path, Path]:
-    return {item.path: item.funscript for item in items if item.funscript is not None}
+    return _by_path(items, "funscript")
+
+
+def points_of_interest_of(items: Iterable[PlaylistItem]) -> dict[Path, tuple]:
+    return _by_path(items, "points_of_interest")
 
 
 @answers_to_old_names({"player": "engine"})
@@ -43,6 +51,7 @@ class Playback:
         locked: bool = False,
         play_points: PlayPoints | None = None,
         funscripts: Mapping[Path, Path] | None = None,
+        points_of_interest: Mapping[Path, tuple] | None = None,
         tcode=None,
     ) -> None:
         if not playlist:
@@ -51,6 +60,8 @@ class Playback:
         self._last_pos_ms = 0.0
         self._playlist = list(playlist)
         self._funscripts = dict(funscripts or {})
+        self._points_of_interest = dict(points_of_interest or {})
+        self._points_told: tuple = ()
         self._loaded_funscript: tuple[Path | None, Funscript | None] = (None, None)
         self._engine = engine
         self._paused = start_paused
@@ -259,11 +270,20 @@ class Playback:
         self._frame_on_screen = frame
         self._picture_put_up = True
         self._engine.swap_still(frame)
+        self._tell_the_places()
 
     def clear_frame(self) -> None:
         if self._frame_on_screen is not None:
             self._frame_on_screen = None
             self._engine.swap_still(self.showing)
+            self._tell_the_places()
+
+    def _tell_the_places(self) -> None:
+        on_screen = self.showing if self._frame_on_screen is None else self._frame_on_screen
+        points = self._points_of_interest.get(on_screen, ())
+        if points != self._points_told:
+            self._points_told = points
+            self._engine.set_points_of_interest(points)
 
     def set_locked(self, locked: bool) -> None:
         self._locked = locked
@@ -291,6 +311,7 @@ class Playback:
             self._stage_next()
             self._owed_seek.owe(self._play_points.point_for(self.current_video) or None)
             self._device.take_over()
+            self._tell_the_places()
         elif position_ms + REWIND_MS < self._last_pos_ms:
             self._device.take_over()
         self._last_pos_ms = position_ms
@@ -313,9 +334,12 @@ class Playback:
         self._versions.pop(self._playlist.pop(self._index), None)
         self.load(self._index)
 
-    def play_file(self, video: Path, funscript: Path | None = None) -> None:
+    def play_file(self, video: Path, funscript: Path | None = None,
+                  points_of_interest: tuple = ()) -> None:
         if funscript is not None:
             self._funscripts[video] = funscript
+        if points_of_interest:
+            self._points_of_interest[video] = tuple(points_of_interest)
         for i, path in enumerate(self._playlist):
             if path == video:
                 self.load(i)
@@ -325,16 +349,19 @@ class Playback:
 
     def load_playlist(
         self, playlist: list[Path], funscripts: Mapping[Path, Path] | None = None,
+        points_of_interest: Mapping[Path, tuple] | None = None,
     ) -> None:
         if not playlist:
             raise ValueError("playlist must not be empty")
         self._playlist = list(playlist)
         self._funscripts = dict(funscripts or {})
+        self._points_of_interest = dict(points_of_interest or {})
         self._versions = {}
         self.load(0)
 
     def replace_playlist(
         self, playlist: list[Path], funscripts: Mapping[Path, Path] | None = None,
+        points_of_interest: Mapping[Path, tuple] | None = None,
     ) -> None:
         if not playlist:
             raise ValueError("playlist must not be empty")
@@ -342,20 +369,28 @@ class Playback:
         chosen = self._versions.get(current)
         self._playlist = list(playlist)
         self._funscripts = dict(funscripts or {})
+        self._points_of_interest = dict(points_of_interest or {})
         self._versions = {} if chosen is None else {current: chosen}
-        for i, path in enumerate(self._playlist):
-            if path == current:
-                self._index = i
-                self._stage_next()
-                return
-        if self._frame_on_screen in self._playlist:
+        if not self._stand_on_what_is_on_screen(current):
+            self._versions = {}
+            self.load(0)
+        self._tell_the_places()
+
+    def take_the_list(self, items: Sequence[PlaylistItem]) -> None:
+        self.replace_playlist([item.path for item in items], funscripts_of(items),
+                              points_of_interest_of(items))
+
+    def _stand_on_what_is_on_screen(self, current: Path) -> bool:
+        if current in self._playlist:
+            self._index = self._playlist.index(current)
+        elif self._frame_on_screen in self._playlist:
             self._index = self._playlist.index(self._frame_on_screen)
             self._frame_on_screen = None
             self._versions = {}
-            self._stage_next()
-            return
-        self._versions = {}
-        self.load(0)
+        else:
+            return False
+        self._stage_next()
+        return True
 
     def load(self, index: int) -> None:
         self._play_points.leave()
@@ -374,6 +409,7 @@ class Playback:
         self._owed_seek.owe(self._play_points.point_for(clip) or None)
         self._device.take_over()
         self._last_pos_ms = 0.0
+        self._tell_the_places()
 
     def _stage_next(self) -> None:
         if self._locked:

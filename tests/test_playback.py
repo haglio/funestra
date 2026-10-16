@@ -333,6 +333,75 @@ class TestTheScriptOfTheClipOnScreen:
         assert playback.current_funscript.actions == [(0, 50), (200, 60)]
 
 
+FACE = ((0.4, 0.1, 0.6, 0.3),)
+HANDS = ((0.1, 0.6, 0.3, 0.8), (0.7, 0.6, 0.9, 0.8))
+
+
+class TestThePlacesOfThePictureOnScreen:
+    def test_a_picture_brings_the_places_its_playlist_line_named(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2, points_of_interest={1: FACE})
+
+        playback.step(1)
+
+        assert engine.points_told == [FACE]
+
+    def test_a_picture_with_none_takes_the_places_of_the_one_before_away(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2, points_of_interest={0: FACE})
+
+        playback.step(1)
+
+        assert engine.points_told == [FACE, ()]
+
+    def test_no_place_is_ever_spoken_of_where_no_picture_has_one(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2)
+
+        playback.step(1)
+        playback.show_frame(tmp_path / "frame.png")
+
+        assert engine.points_told == []
+
+    def test_a_picture_played_from_outside_the_playlist_brings_its_places(self, tmp_path):
+        playback, engine = _make_playback(tmp_path)
+        newcomer = tmp_path / "brought back.png"
+
+        playback.play_file(newcomer, points_of_interest=HANDS)
+
+        assert engine.points_told == [HANDS]
+
+    def test_a_rebuilt_playlist_brings_the_places_it_was_written_with(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2)
+
+        playback.replace_playlist([tmp_path / "v0.mp4", tmp_path / "v1.mp4"],
+                                  points_of_interest={tmp_path / "v0.mp4": FACE})
+
+        assert engine.points_told == [FACE]
+
+    def test_a_frame_put_up_over_a_picture_has_none_of_the_pictures_places(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2, points_of_interest={0: FACE})
+
+        playback.show_frame(tmp_path / "frame.png")
+
+        assert engine.points_told == [FACE, ()]
+
+    def test_a_finished_picture_put_up_brings_its_places_once_the_list_names_them(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2)
+        finished = tmp_path / "v0 finished.png"
+        playback.show_frame(finished)
+
+        playback.replace_playlist([finished, tmp_path / "v1.mp4"],
+                                  points_of_interest={finished: HANDS})
+
+        assert engine.points_told == [HANDS]
+
+    def test_a_picture_rolled_onto_by_itself_brings_its_places(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2, points_of_interest={1: FACE})
+
+        engine.simulate_eof_advance()
+        playback.advance()
+
+        assert engine.points_told == [FACE]
+
+
 def _driving(tmp_path, *, entries=2, scripted=(0, 1), locked=False):
     tcode = FakeTCode()
     scripts = {index: _script(tmp_path / f"v{index}.funscript", (0, 0), (1000, 90), (2000, 0))

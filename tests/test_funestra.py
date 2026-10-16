@@ -200,6 +200,25 @@ def test_a_list_written_under_the_window_is_taken_with_no_verb_sent(tmp_path):
     assert f"video={clips[2]}" in _status(tmp_path)
 
 
+def test_a_picture_the_list_opens_on_brings_its_places_to_the_engine(tmp_path):
+    clips = _clips(tmp_path, "v0", "v1")
+
+    _opened, engine = _funestra(tmp_path, [f"{clips[0]}\t\t0.25,0.25,0.5,0.5", str(clips[1])])
+
+    assert engine.points_told == [((0.25, 0.25, 0.5, 0.5),)]
+
+
+def test_a_list_taken_while_its_picture_is_on_screen_brings_that_pictures_places(tmp_path):
+    clips = _clips(tmp_path, "v0", "v1")
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in clips], commands="")
+    (tmp_path / "playlist.tsv").write_text(f"{clips[0]}\t\t0.1,0.1,0.2,0.2\n{clips[1]}\n",
+                                           encoding="utf-8")
+
+    funestra.tick(window=WINDOW)
+
+    assert engine.points_told == [((0.1, 0.1, 0.2, 0.2),)]
+
+
 def test_reload_playlist_reads_the_list_it_was_handed_again(tmp_path):
     clips = _clips(tmp_path, "v0", "v1", "v2")
     funestra, _engine = _funestra(tmp_path, [str(clips[0])], commands="")

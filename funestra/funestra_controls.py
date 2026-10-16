@@ -130,7 +130,7 @@ def _play_file(controls: FunestraControls, value: str) -> bool:
     item = item_from_line(value)
     if item is None:
         return False
-    controls.playback.play_file(item.path, item.funscript)
+    controls.playback.play_file(item.path, item.funscript, item.points_of_interest)
     return True
 
 
