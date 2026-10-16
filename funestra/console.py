@@ -45,7 +45,6 @@ __all__ = [
     "GROUP_GAP",
     "HOLD_VERB",
     "OSR2_CONTROL_BUTTONS",
-    "OSR2_CONTROL_OFF",
     "OSR2_CONTROL_UNANSWERED",
     "OSR2_DRIVING",
     "OSR2_PARKED",
