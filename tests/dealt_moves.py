@@ -11,6 +11,7 @@ class Deals:
         self.moves = moves
         self.rest_move = from_rest
         self.dealt = 0
+        self.closed_up_on: list[tuple] = []
 
     def deal(self) -> Move:
         move = self.moves[min(self.dealt, len(self.moves) - 1)]
@@ -19,3 +20,7 @@ class Deals:
 
     def from_rest(self) -> Move:
         return self.rest_move
+
+    def close_up(self, frame, place) -> Move:
+        self.closed_up_on.append(place)
+        return Move(frame(place), frame(place))

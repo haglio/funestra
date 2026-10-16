@@ -125,3 +125,11 @@ def test_an_offscreen_engine_never_heard_opens_mpv_with_no_sound_track(monkeypat
 
 def test_an_offscreen_engine_that_can_be_heard_leaves_mpv_its_sound_track(monkeypatch, engine):
     assert "aid" not in _options_mpv_opened_with(monkeypatch, engine)
+
+
+def test_an_offscreen_engine_frames_its_close_ups_for_the_target_it_last_drew_into(engine):
+    engine = render_engine.MpvRenderEngine(lambda _name: 0)
+
+    engine.render(0, 1600, 900)
+
+    assert engine._fit().window == (1600, 900)
