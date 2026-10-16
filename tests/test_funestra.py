@@ -106,6 +106,27 @@ def test_one_pass_plays_publishes_and_paints_then_quit_stops_it(tmp_path):
     assert engine.closed is True
 
 
+def test_a_funestra_with_a_sound_of_its_own_publishes_its_level_and_mute(tmp_path):
+    clips = _clips(tmp_path, "v0")
+    funestra, _engine = _funestra(tmp_path, [str(clips[0])])
+
+    funestra.tick(window=WINDOW)
+
+    assert [line for line in _status(tmp_path).splitlines()
+            if line.startswith(("volume=", "muted="))] == ["volume=100", "muted=1"]
+
+
+def test_a_level_and_mute_it_is_handed_are_its_own_from_then_on(tmp_path):
+    clips = _clips(tmp_path, "v0")
+    funestra, engine = _funestra(tmp_path, [str(clips[0])], commands="SET_VOLUME 60 0\nQUIT\n")
+
+    funestra.tick(window=WINDOW)
+
+    assert (engine.volume, engine.muted) == (60, False)
+    assert [line for line in _status(tmp_path).splitlines()
+            if line.startswith(("volume=", "muted="))] == ["volume=60", "muted=0"]
+
+
 def test_a_window_wearing_no_panel_draws_nothing_over_its_picture(tmp_path):
     """The track, the time and the volume are a block of the panel, so a window
     with no panel to wear has nowhere to put them -- and the picture comes

@@ -34,7 +34,8 @@ from funestra.funestra_verbs import (
     TRASH,
     step_version,
 )
-from funestra.volume_control import RoomVolume
+from funestra.volume import VolumeHud
+from funestra.volume_control import RoomVolume, VolumeControl
 
 
 def _never_reloads() -> None:
@@ -255,7 +256,7 @@ class TestTheRoomsLevel:
     def _controls(self, tmp_path):
         playback, engine = make_playback(tmp_path)
         volume = RoomVolume(engine, dashboard_cmd_file=None, live=True)
-        return FunestraControls(playback, reload_playlist=_never_reloads, room_volume=volume), engine, volume
+        return FunestraControls(playback, reload_playlist=_never_reloads, volume=volume), engine, volume
 
     def test_set_volume_plays_and_shows_the_level(self, tmp_path):
         controls, engine, volume = self._controls(tmp_path)
@@ -285,10 +286,20 @@ class TestTheRoomsLevel:
         assert apply_command(SET_VOLUME, controls) is False
         assert engine.volume == 100
 
-    def test_a_funestra_whose_sound_is_its_own_refuses_the_rooms_level(self, tmp_path):
+    def test_a_build_with_no_volume_of_its_own_refuses_a_level(self, tmp_path):
         controls = _controls(tmp_path)
 
         assert apply_command(f"{SET_VOLUME} 40", controls) is False
+
+    def test_a_funestra_whose_sound_is_its_own_takes_the_level_and_mute_it_is_handed(
+            self, tmp_path):
+        playback, engine = make_playback(tmp_path)
+        volume = VolumeControl(engine)
+        controls = FunestraControls(playback, reload_playlist=_never_reloads, volume=volume)
+
+        assert apply_command(f"{SET_VOLUME} 40 0", controls) is True
+
+        assert (engine.volume, engine.muted, volume.hud) == (40, False, VolumeHud(volume=40))
 
 
 class TestWhoHasTheWindow:

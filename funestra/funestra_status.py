@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from .status import FunestraStatus
 from .status import status_fields as leading_fields
+from .volume import VolumeHud
 
 __all__ = [
     "status_fields",
@@ -26,3 +27,7 @@ def status_fields(playback, handoff_touch_ms: int | None) -> dict[str, str]:
         "handoff_touch_ms": "" if handoff_touch_ms is None else str(int(handoff_touch_ms)),
         "portrait": "" if playback.portrait is None else "1" if playback.portrait else "0",
     }
+
+
+def volume_fields(hud: VolumeHud) -> dict[str, str]:
+    return {"volume": str(hud.volume), "muted": "1" if hud.muted else "0"}

@@ -59,7 +59,7 @@ class FunestraControls:
     playback: Playback
     stop_event: threading.Event | None = None
     reload_playlist: Callable[[], None] | None = None
-    room_volume: Any = None
+    volume: Any = None
     show: Callable[[str], bool] | None = None
 
 
@@ -98,7 +98,7 @@ def _set_volume(controls: FunestraControls, value: str) -> bool:
         volume = int(level)
     except ValueError:
         return False
-    controls.room_volume.set(volume, muted_arg.strip() not in ("", "0"))
+    controls.volume.set(volume, muted_arg.strip() not in ("", "0"))
     return True
 
 
@@ -234,7 +234,7 @@ CONTROLS: tuple[Control, ...] = (
     ),
     Control(
         name="volume",
-        needs=("room_volume",),
+        needs=("volume",),
         verbs=(Verb(SET_VOLUME, _set_volume, takes_a_value=True),),
     ),
     Control(
