@@ -25,6 +25,7 @@ hidden-desktop integration suite is what exercises that.
 from __future__ import annotations
 
 import ctypes
+import ctypes.wintypes
 import importlib
 import logging
 import math
@@ -36,7 +37,7 @@ from pathlib import Path
 import numpy as np
 
 from .audio_outputs import Output, pick_output
-from .ken_burns import KenBurns, Moves, View
+from .ken_burns import Fit, KenBurns, Moves, View
 from .libmpv_loader import add_libmpv_to_path, libmpv_dirs
 from .mpv_gate import CallGate, mpv_call
 
@@ -219,6 +220,19 @@ CLOSE_DRAIN_TIMEOUT_S = 10.0
 
 _APTTYPEQUALIFIER_IMPLICIT_MTA = 1
 
+_Corners = ctypes.wintypes.LONG * 4
+_user32 = ctypes.WinDLL("user32")
+_user32.GetClientRect.argtypes = (ctypes.wintypes.HWND, ctypes.POINTER(_Corners))
+_user32.GetClientRect.restype = ctypes.wintypes.BOOL
+
+
+def _client_size(hwnd: int) -> tuple[int, int]:
+    corners = _Corners()
+    if not _user32.GetClientRect(hwnd, ctypes.byref(corners)):
+        return 0, 0
+    x0, y0, x1, y1 = corners
+    return x1 - x0, y1 - y0
+
 
 def _holds_a_com_apartment() -> bool:
     kind, qualifier = ctypes.c_int(), ctypes.c_int()
@@ -270,7 +284,8 @@ class _MpvControl:
         # A still's move runs on a clock of its own: mpv leaves a still's
         # playhead at nought and simply ends the file when the pace runs out
         # (verified against libmpv, 2026-09-19).
-        self._ken_burns = KenBurns(moves, looping=looping)
+        self._ken_burns = KenBurns(moves, looping=looping, fit=self._fit)
+        self._window = (0, 0)
         self._placed = (0.0, 0.0, 0.0)
         self._path: str | None = None
         self._reopened: str | None = None
@@ -495,6 +510,17 @@ class _MpvControl:
     def _hold_pictures_for_the_pace(self) -> None:
         self._mpv.image_display_duration = self._ken_burns.pace_s or "inf"
 
+    def set_points_of_interest(self, places: tuple) -> None:
+        """The places in the picture on screen a lock punches in on, as
+        ``(x0, y0, x1, y1)`` fractions of it -- none for a picture that has none."""
+        self._ken_burns.set_points_of_interest(places, self._now())
+
+    def _fit(self) -> Fit:
+        return Fit(self._window_size(), self._video_dims, self._tiling[0])
+
+    def _window_size(self) -> tuple[int, int]:
+        return self._window
+
     @mpv_call()
     def push_still(self) -> None:
         """Carry the picture on screen one frame further along its move; a video
@@ -669,4 +695,8 @@ class MpvEngine(_MpvControl):
             vo="gpu",
             input_vo_keyboard=False,
         )
+        self._wid = int(wid)
         self._adopt(mpv.MPV(**options))
+
+    def _window_size(self) -> tuple[int, int]:
+        return _client_size(self._wid)
