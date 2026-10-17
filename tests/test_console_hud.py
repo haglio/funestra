@@ -231,7 +231,7 @@ class TestPainter:
             painter.rgba(ConsoleHud(
                 modes=ModeHud(video="scene one"),
                 console=ConsoleModel(main_mode=mode, locked=False, rows=console_rows(mode)),
-                drive=_drive()), clip_row=row)[1][0]
+                drive=_drive()), item_row=row)[1][0]
             for mode in MainMode for row in (flick, video, None)
         }
 
@@ -1424,7 +1424,7 @@ class TestTheRowTheConsoleCarriesForItsVideo:
         painter = ConsolePainter()
         row = RowHud(position_ms=30_000, duration_ms=60_000, volume=VolumeHud(volume=40))
 
-        with_row = painter.rgba(self._hud(), clip_row=row)[1][1]
+        with_row = painter.rgba(self._hud(), item_row=row)[1][1]
         without = ConsolePainter().rgba(self._hud())[1][1]
 
         assert with_row > without
@@ -1434,18 +1434,18 @@ class TestTheRowTheConsoleCarriesForItsVideo:
         on the console it is the track's own fill, as it is on a show's panel."""
         painter = ConsolePainter()
         row = RowHud(position_ms=0, duration_ms=60_000)
-        plain = painter.rgba(self._hud(), clip_row=row)[0]
+        plain = painter.rgba(self._hud(), item_row=row)[0]
         x0, x1 = painter.row.track
         colors = np.array([(200, 40 + x % 150, 30) for x in range(x1 - x0)],
                           dtype=np.uint8)
 
-        colored = ConsolePainter().rgba(self._hud(), clip_row=row, heatmap=colors)[0]
+        colored = ConsolePainter().rgba(self._hud(), item_row=row, heatmap=colors)[0]
 
         assert colored != plain
 
     def test_the_rows_rect_still_answers_under_its_old_name(self):
         painter = ConsolePainter()
-        painter.rgba(self._hud(), clip_row=RowHud(position_ms=30_000, duration_ms=60_000))
+        painter.rgba(self._hud(), item_row=RowHud(position_ms=30_000, duration_ms=60_000))
         assert painter.row_rect == painter.row.rect
 
         painter.rgba(self._hud())
@@ -1455,7 +1455,7 @@ class TestTheRowTheConsoleCarriesForItsVideo:
         painter = ConsolePainter()
         row = RowHud(position_ms=30_000, duration_ms=60_000, volume=VolumeHud(volume=40))
 
-        _rgba, (_width, height) = painter.rgba(self._hud(), clip_row=row)
+        _rgba, (_width, height) = painter.rgba(self._hud(), item_row=row)
         _x, y, _width, row_h = painter.row.rect
 
         assert y + row_h <= height
@@ -1484,7 +1484,7 @@ class TestTheHostsControls:
         painter = ConsolePainter()
         row = RowHud(position_ms=30_000, duration_ms=60_000, volume=VolumeHud(volume=40))
 
-        _rgba, (_width, height) = painter.rgba(self._hud(), clip_row=row, host_controls=a_hud())
+        _rgba, (_width, height) = painter.rgba(self._hud(), item_row=row, host_controls=a_hud())
         _x, y, _field_width, field_height = painter.host_controls_layout.field
 
         assert field_height == HostControlsSection.height
@@ -1620,7 +1620,7 @@ class TestWhereTheConsoleSits:
     @pytest.mark.parametrize("corner", [HudCorner.LOWER_LEFT, HudCorner.LOWER_RIGHT])
     def test_the_clips_row_moves_over_for_the_minus_in_a_lower_corner(self, corner):
         painter = ConsolePainter(width=420)
-        painter.bgra(self._hud(corner), clip_row=RowHud(position_ms=1_000,
+        painter.bgra(self._hud(corner), item_row=RowHud(position_ms=1_000,
                                                         duration_ms=60_000))
         x, y, w, h = _button_rect(painter, "main_hud_minimize")
         rx, ry, rw, rh = painter.row.rect
@@ -1676,7 +1676,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
             console=ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND,
                                  rows=console_rows(), osr2_rows=motion_rows(),
                                  osr2_controls=osr2_controls()),
-            drive=drive), clip_row=RowHud(duration_ms=60_000))
+            drive=drive), item_row=RowHud(duration_ms=60_000))
         controls = _span(rect for rect, button in _declared(painter)
                          if button.command.startswith(("main_", "genau_")))
         readout_top = painter.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
@@ -1702,7 +1702,7 @@ class TestADeviceOnlyConsole:
             console=ConsoleModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
                                  rows=console_rows("genau"), osr2_rows=motion_rows(),
                                  osr2_controls=osr2_controls()),
-            drive=_drive()), clip_row=RowHud(duration_ms=60_000))
+            drive=_drive()), item_row=RowHud(duration_ms=60_000))
         return painter, bgra
 
     def test_it_has_no_minus_since_nothing_under_it_could_be_uncovered(self):

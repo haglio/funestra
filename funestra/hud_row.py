@@ -264,7 +264,7 @@ def row_part(px: int, py: int, layout: RowLayout) -> str:
 
 
 class RowPress:
-    """What a press on the clip's row asks of the window that draws it.
+    """What a press on the item's row asks of the window that draws it.
 
     The Funestra's own overlays place a press on the row with this, so the
     track, the dial, the slider and the speaker answer the same way on each of
