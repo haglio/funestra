@@ -498,8 +498,9 @@ class _MpvControl:
             if value != was:
                 setattr(self._mpv, name, value)
         self._placed = placed
-        pace_ms = self._ken_burns.pace_s * 1000.0
-        self._picture_time = (self._ken_burns.progress(now) * pace_ms, pace_ms)
+        holds_for_ms = self._ken_burns.holds_for_s * 1000.0
+        self._picture_time = (min(self._ken_burns.progress(now) * self._ken_burns.pace_s * 1000.0,
+                                  holds_for_ms), holds_for_ms)
         if self._image_track and not self._moving_on and self._ken_burns.ran_out(now):
             self._move_on_from_the_still()
 
@@ -508,6 +509,9 @@ class _MpvControl:
         """How far the picture on screen is into the time it holds the screen,
         and how long that is, in milliseconds -- None on a video."""
         return self._picture_time if self._image_track else None
+
+    def hold_picture_for(self, seconds: float | None) -> None:
+        self._ken_burns.hold_for(seconds)
 
     def seek_picture(self, ms: float) -> None:
         pace_s = self._ken_burns.pace_s

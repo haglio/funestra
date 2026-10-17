@@ -369,3 +369,30 @@ def test_a_view_at_the_end_of_its_reach_brings_the_pictures_edge_up_to_the_windo
     for window, start, end in drawn(WIDE, shown, View(8.0, *corner)):
         assert start <= 0 and end >= window
         assert min(-start, end - window) == 0
+
+
+def test_a_picture_held_for_less_than_its_pace_runs_out_then_on_the_move_of_the_whole_pace():
+    still = paced()
+
+    still.hold_for(2.0)
+
+    assert (still.ran_out(now_s=101.9), still.ran_out(now_s=102.0)) == (False, True)
+    assert_along(still.view(now_s=101.0), DRIFT, 0.25)
+
+
+def test_a_new_picture_holds_for_its_whole_pace_again():
+    still = paced()
+    still.hold_for(2.0)
+
+    still.new_picture(now_s=103.0)
+
+    assert (still.holds_for_s, still.ran_out(now_s=106.9)) == (4.0, False)
+
+
+def test_a_locked_picture_held_for_less_than_its_pace_still_never_runs_out():
+    still = paced()
+    still.hold_for(2.0)
+
+    still.set_looping(True, now_s=100.0)
+
+    assert still.ran_out(now_s=103.0) is False
