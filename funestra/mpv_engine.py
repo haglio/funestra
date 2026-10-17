@@ -273,7 +273,6 @@ class _MpvControl:
         self._ken_burns = KenBurns(moves, looping=looping)
         self._placed = (0.0, 0.0, 0.0)
         self._path: str | None = None
-        self._reopened: str | None = None
         self._swapped_in: set[str] = set()
         self._ran_out = False
         self._staged: str | None = None
@@ -302,12 +301,6 @@ class _MpvControl:
 
     def _note_file(self, _name: str, path) -> None:
         self._path = path
-        if not path:
-            return
-        dealt_on_reopening, self._reopened = path == self._reopened, None
-        if not dealt_on_reopening and path not in self._swapped_in:
-            self._swapped_in.clear()
-            self._ken_burns.new_picture(self._now())
 
     def _note_video_dims(self, _name: str, value) -> None:
         if isinstance(value, dict):
@@ -374,11 +367,8 @@ class _MpvControl:
     def load(self, path: Path) -> None:
         self._staged = None
         self._ran_out = False
-        self._swapped_in.clear()
+        self._begin_the_new_clip()
         self._hold_pictures_for_the_pace()
-        self._reopened = str(path) if str(path) == self._path else None
-        if self._reopened:
-            self._ken_burns.new_picture(self._now())
         self._mpv.play(str(path))
         # Reset to just this file: drop any entry the previous clip had staged as
         # its prefetched next, so the caller stages a fresh one from a clean base.
@@ -448,15 +438,18 @@ class _MpvControl:
         return pos is not None and pos >= 1
 
     @mpv_call()
-    def drop_consumed(self) -> None:
-        """Remove the played-out head sitting ahead of the clip now playing.
-
-        After an auto-advance the spent clip still occupies index 0; clearing
+    def settle_on_the_next(self) -> None:
+        """After an auto-advance the spent clip still occupies index 0; clearing
         around the current entry shifts it back to the head (mpv keeps playing it
         uninterrupted), restoring the [current, next] window.
         """
         self._staged = None
         self._mpv.playlist_clear()
+        self._begin_the_new_clip()
+
+    def _begin_the_new_clip(self) -> None:
+        self._swapped_in.clear()
+        self._ken_burns.new_picture(self._now())
 
     @property
     @mpv_call(False)

@@ -71,6 +71,7 @@ class FakeEngine(RefusesSeeks):
         self.screenshots = 0
         self.idle = False
         self.stopped = False
+        self.settled = 0
 
     def tile_to_fill(self, window_width: int, window_height: int) -> None:
         self.tiled_to.append((window_width, window_height))
@@ -102,7 +103,8 @@ class FakeEngine(RefusesSeeks):
     def advanced_to_next(self) -> bool:
         return self.playlist_pos >= 1
 
-    def drop_consumed(self) -> None:
+    def settle_on_the_next(self) -> None:
+        self.settled += 1
         while self.playlist_pos > 0:
             self.playlist.pop(0)
             self.playlist_pos -= 1

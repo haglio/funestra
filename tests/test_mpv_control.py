@@ -105,7 +105,8 @@ class Control(_MpvControl):
 WIDE = (1920, 1080)
 
 
-def show_a_picture(mpv: FakeMpv, shape: tuple[int, int] = WIDE) -> None:
+def show_a_picture(control: Control, mpv: FakeMpv, shape: tuple[int, int] = WIDE) -> None:
+    control.load(Path("made-up-scene.png"))
     mpv.report("path", "made-up-scene.png")
     mpv.report("current-tracks/video/image", True)
     mpv.report("video-out-params", {"dw": shape[0], "dh": shape[1]})
@@ -245,11 +246,9 @@ def test_clearing_the_staged_entry_keeps_the_clip_on_screen():
     assert mpv.calls == [("clear",)]
 
 
-def test_dropping_the_spent_head_keeps_the_clip_on_screen():
-    """After an auto-advance the played-out clip still sits ahead of the one now
-    playing; clearing around the current entry is what shifts it back to the head."""
+def test_settling_on_the_next_clip_keeps_it_on_screen():
     mpv = FakeMpv(pos=1, count=2)
-    Control(mpv).drop_consumed()
+    Control(mpv).settle_on_the_next()
     assert mpv.calls == [("clear",)]
 
 
@@ -475,8 +474,7 @@ def test_a_picture_is_drawn_closer_as_its_hold_runs_out():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    mpv.report("path", "made-up-scene.png")
-    mpv.report("current-tracks/video/image", True)
+    show_a_picture(control, mpv)
 
     control.now = 102.0
     control.push_still()
@@ -488,7 +486,7 @@ def test_a_clip_after_a_picture_is_drawn_as_it_comes():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0, move=DRIFT)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     control.now = 101.0
     control.push_still()
 
@@ -503,8 +501,7 @@ def test_a_frozen_room_holds_the_picture_where_its_move_had_got_to():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    mpv.report("path", "made-up-scene.png")
-    mpv.report("current-tracks/video/image", True)
+    show_a_picture(control, mpv)
 
     control.now = 101.0
     control.set_paused(True)
@@ -518,7 +515,7 @@ def test_a_pan_reaches_mpv_as_how_far_the_picture_leans_each_way():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0, move=DRIFT)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
 
     control.push_still()
 
@@ -535,7 +532,7 @@ def test_a_zoom_about_the_middle_asks_mpv_for_the_zoom_alone():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     control.now = 102.0
 
     control.push_still()
@@ -547,7 +544,7 @@ def test_a_picture_that_has_not_moved_since_the_last_frame_asks_mpv_for_nothing(
     mpv = FakeMpv()
     control = Control(mpv, now=100.0, move=DRIFT)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     control.push_still()
     asked = list(mpv.calls)
 
@@ -561,7 +558,7 @@ def test_a_still_swapped_in_carries_on_the_move_of_the_picture_it_replaced():
     deals = Deals(CREEP)
     control = Control(mpv, now=100.0, deals=deals)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     control.now = 102.0
 
     control.swap_still(Path("made-up-frame.png"))
@@ -582,7 +579,7 @@ def test_mpv_leaves_a_swapped_in_still_up_rather_than_ending_it_on_a_clock_of_it
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
 
     swapped_in(mpv, control, at=102.0)
 
@@ -594,7 +591,7 @@ def test_a_swapped_in_still_runs_out_when_the_picture_it_replaced_would_have():
     mpv.eof_reached = False
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     swapped_in(mpv, control, at=102.0)
 
     ran_out = []
@@ -610,7 +607,7 @@ def test_a_still_swapped_in_keeps_the_next_clip_staged_after_it():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     control.stage_next(Path("made-up-next.png"))
     mpv.calls.clear()
 
@@ -625,7 +622,7 @@ def test_a_still_swapped_in_after_the_engine_rolled_onto_its_staged_clip_stages_
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
     control.stage_next(Path("made-up-next.png"))
-    control.drop_consumed()
+    control.settle_on_the_next()
     mpv.calls.clear()
 
     control.swap_still(Path("made-up-frame.png"))
@@ -637,7 +634,7 @@ def test_a_swapped_in_still_that_runs_out_moves_on_to_the_staged_clip_at_the_pac
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     control.stage_next(Path("made-up-next.png"))
     swapped_in(mpv, control, at=102.0)
     mpv.calls.clear()
@@ -653,7 +650,7 @@ def test_a_file_opened_after_a_swapped_in_still_holds_for_the_pace_again():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     swapped_in(mpv, control, at=102.0)
 
     control.load(Path("made-up-next.png"))
@@ -665,7 +662,7 @@ def ran_out_on_a_swapped_in_still(mpv: FakeMpv) -> Control:
     mpv.eof_reached = False
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     swapped_in(mpv, control, at=102.0)
     control.now = 104.05
     control.push_still()
@@ -685,7 +682,7 @@ def test_a_pace_set_while_a_still_is_swapped_in_leaves_mpv_holding_it():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     swapped_in(mpv, control, at=102.0)
 
     control.set_pace(6.0)
@@ -698,7 +695,7 @@ def test_a_file_opened_is_dealt_a_move_of_its_own_though_it_was_once_swapped_in(
     deals = Deals(CREEP)
     control = Control(mpv, now=100.0, deals=deals)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     swapped_in(mpv, control, at=101.0, name="made-up-scene.png")
 
     control.load(Path("made-up-scene.png"))
@@ -711,7 +708,7 @@ def test_a_picture_opened_again_after_its_hold_makes_its_move_again():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
 
     control.now = 104.5
     control.load(Path("made-up-scene.png"))
@@ -720,33 +717,68 @@ def test_a_picture_opened_again_after_its_hold_makes_its_move_again():
     assert drawn_at(control, mpv, 106.5) == pytest.approx(CREEP.at(0.5).placement())
 
 
-def test_a_picture_opened_again_is_dealt_one_move_though_mpv_reports_the_gap_between():
+def test_every_picture_opened_is_dealt_one_move_whatever_mpv_reports_between():
     mpv = FakeMpv()
     deals = Deals(CREEP)
     control = Control(mpv, now=100.0, deals=deals)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
 
     control.load(Path("made-up-scene.png"))
     mpv.report("path", None)
+    control.load(Path("made-up-scene.png"))
     mpv.report("path", "made-up-scene.png")
+    mpv.report("path", None)
+    mpv.report("path", "made-up-other.png")
+
+    assert deals.dealt == 3
+
+
+def test_a_picture_the_engine_settles_on_after_coming_round_to_itself_makes_a_new_move():
+    mpv = FakeMpv()
+    control = Control(mpv, now=100.0, deals=Deals(CREEP, DRIFT))
+    control.set_pace(4.0)
+    show_a_picture(control, mpv)
+    control.stage_next(Path("made-up-scene.png"))
+
+    control.now = 104.5
+    mpv.playlist_pos = 1
+    control.settle_on_the_next()
+
+    assert drawn_at(control, mpv, 106.5) == pytest.approx(DRIFT.at(0.5).placement())
+
+
+def test_a_picture_the_engine_settles_on_is_dealt_one_move_though_mpv_reports_it_opening():
+    mpv = FakeMpv()
+    deals = Deals(CREEP)
+    control = Control(mpv, now=100.0, deals=deals)
+    control.set_pace(4.0)
+    show_a_picture(control, mpv)
+    control.stage_next(Path("made-up-next.png"))
+
+    mpv.playlist_pos = 1
+    mpv.report("path", "made-up-next.png")
+    control.settle_on_the_next()
 
     assert deals.dealt == 2
 
 
-def test_a_reopening_mpv_said_nothing_about_costs_no_later_opening_its_move():
+def test_a_picture_settled_on_from_under_a_still_swapped_in_over_it_is_dealt_one_move():
     mpv = FakeMpv()
     deals = Deals(CREEP)
     control = Control(mpv, now=100.0, deals=deals)
     control.set_pace(4.0)
-    show_a_picture(mpv)
-    control.load(Path("made-up-scene.png"))
-    mpv.report("path", None)
+    show_a_picture(control, mpv)
+    control.stage_next(Path("made-up-scene.png"))
+    swapped_in(mpv, control, at=102.0)
 
-    control.load(Path("made-up-scene.png"))
+    control.now = 104.05
+    control.push_still()
+    mpv.playlist_pos = 1
     mpv.report("path", "made-up-scene.png")
+    control.settle_on_the_next()
 
-    assert deals.dealt == 3
+    assert deals.dealt == 2
 
 
 def test_a_still_swapped_in_on_a_locked_engine_never_runs_out():
@@ -754,7 +786,7 @@ def test_a_still_swapped_in_on_a_locked_engine_never_runs_out():
     mpv.eof_reached = False
     control = Control(mpv, now=100.0, looping=True)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     swapped_in(mpv, control, at=102.0)
 
     control.now = 110.0
@@ -776,19 +808,6 @@ def test_a_still_swapped_in_after_the_engine_let_go_of_its_file_stages_nothing()
     assert mpv.calls == [("play", "made-up-frame.png"), ("clear",)]
 
 
-def test_the_gap_between_two_files_is_dealt_no_move_of_its_own():
-    mpv = FakeMpv()
-    deals = Deals(DRIFT)
-    control = Control(mpv, now=100.0, deals=deals)
-    control.set_pace(4.0)
-
-    mpv.report("path", "made-up-one.png")
-    mpv.report("path", None)
-    mpv.report("path", "made-up-two.png")
-
-    assert deals.dealt == 2
-
-
 def drawn_at(control: Control, mpv: FakeMpv, now: float) -> tuple[float, float, float]:
     control.now = now
     control.push_still()
@@ -799,7 +818,7 @@ def test_an_unlocked_picture_past_its_hold_stays_where_its_move_ended():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
 
     assert drawn_at(control, mpv, 104.05) == pytest.approx(CREEP.at(1.0).placement())
 
@@ -808,7 +827,7 @@ def test_locking_a_picture_has_it_make_a_new_move_each_time_it_repeats():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0, deals=Deals(CREEP, DRIFT))
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
 
     control.set_loop_file(True)
 
@@ -819,7 +838,7 @@ def test_a_engine_opened_locked_has_its_pictures_make_a_new_move_each_time_they_
     mpv = FakeMpv()
     control = Control(mpv, now=100.0, deals=Deals(CREEP, DRIFT), looping=True)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
 
     assert drawn_at(control, mpv, 105.0) == pytest.approx(DRIFT.at(0.25).placement())
 
@@ -828,7 +847,7 @@ def test_unlocking_a_picture_has_it_finish_the_move_it_is_making():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0, deals=Deals(CREEP, DRIFT), looping=True)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
 
     control.now = 104.5
     control.set_loop_file(False)
@@ -840,7 +859,7 @@ def test_between_two_files_a_still_is_left_where_its_move_had_got_to():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0, move=DRIFT)
     control.set_pace(4.0)
-    show_a_picture(mpv)
+    show_a_picture(control, mpv)
     control.now = 101.0
     control.push_still()
 

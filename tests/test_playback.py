@@ -136,6 +136,14 @@ class TestAdvance:
 
         assert playback.current_video == tmp_path / "v0.mp4"
 
+    def test_a_list_of_one_coming_round_has_the_engine_settle_on_it_again(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=1)
+        engine.simulate_eof_advance()
+
+        playback.advance()
+
+        assert engine.settled == 1
+
 
 class TestLock:
     def test_a_locked_playback_repeats_the_same_clip_at_eof(self, tmp_path):
