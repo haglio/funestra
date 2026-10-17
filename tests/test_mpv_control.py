@@ -677,6 +677,23 @@ def test_a_picture_says_how_far_into_its_pace_it_is():
     assert control.picture_time == pytest.approx((1_000.0, 4_000.0))
 
 
+def test_a_picture_with_itself_staged_after_it_comes_round_again_without_mpv_reopening_it():
+    """mpv moved on onto the same file says nothing about it (probed against
+    libmpv on 2026-10-16: no path event at all), so the engine never asks."""
+    mpv = FakeMpv()
+    deals = Deals(CREEP, DRIFT)
+    control = Control(mpv, now=100.0, deals=deals)
+    control.set_pace(4.0)
+    show_a_picture(mpv)
+    control.stage_next(Path("made-up-scene.png"))
+
+    pushed_at(control, 104.05, 105.05)
+
+    assert moved_on(mpv) == 0
+    assert control.picture_time == pytest.approx((1_000.0, 4_000.0))
+    assert deals.dealt == 2
+
+
 def test_a_video_has_no_picture_time():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)

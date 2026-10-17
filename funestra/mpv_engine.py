@@ -503,7 +503,7 @@ class _MpvControl:
         pace_ms = self._ken_burns.pace_s * 1000.0
         self._picture_time = (self._ken_burns.progress(now) * pace_ms, pace_ms)
         if self._image_track and not self._moving_on and self._ken_burns.ran_out(now):
-            self._move_on_from_the_still()
+            self._move_on_from_the_still(now)
 
     @property
     def picture_time(self) -> tuple[float, float] | None:
@@ -516,9 +516,11 @@ class _MpvControl:
         if pace_s:
             self._ken_burns.seek(ms / 1000.0 / pace_s, self._now())
 
-    def _move_on_from_the_still(self) -> None:
+    def _move_on_from_the_still(self, now: float) -> None:
         self._swapped_in.clear()
-        if self._staged is not None:
+        if self._staged == self._path:
+            self._ken_burns.new_picture(now)
+        elif self._staged is not None:
             self._moving_on = True
             self._mpv.command("playlist-next")
 
