@@ -121,10 +121,11 @@ second TAB (`PlaylistItem.points_of_interest`), and a locked picture's move,
 each time it comes round, goes to one of them picked at random or to the whole
 picture, the whole picture as often as all the places together
 (`KenBurns.set_points_of_interest`, `Moves.stop_among`, `Moves.close_up`): each
-close-up is framed as close as its window fits the place, and makes one of the
-three ordinary moves inside it. Origenerator fills the column with the places an
-enhancement's fixes found. The item stays the pair it was, the places riding
-beside it.
+close-up is framed as close as its window fits the place (`Fit.framing`), and
+makes one of the three ordinary moves on top of that framing, so it zooms and
+pans across the window as far as a move over the whole picture does however
+close it is. Origenerator fills the column with the places an enhancement's
+fixes found. The item stays the pair it was, the places riding beside it.
 
 `Fit`, `CLOSEST` (once `CLOSEST_AIM`) and the window-size readers the aim took
 with it on 2026-09-28 are back, framing these close-ups.
