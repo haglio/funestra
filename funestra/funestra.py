@@ -35,6 +35,7 @@ from .playhead import framed_playhead, time_playhead, video_playhead
 from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
+from .radio import Radio, RadioFile, radio_file_for
 from .satellite_hud import HudModel
 from .scrubber import HeatmapStrip, LoopThumbCapture, loop_thumbnail_xys
 from .session_quit import quit_gesture
@@ -205,6 +206,8 @@ class Funestra:
             RoomVolume(engine, dashboard_cmd_file=channels.dashboard_cmd, live=audible)
             if sound_is_the_rooms else VolumeControl(engine, live=audible, muted=muted)
         )
+        self._radio = None if not audible or channels.playlist is None else Radio(
+            engine.radio_station, dealt_in=RadioFile(radio_file_for(channels.playlist)))
         self._panel = self._panel_for(channels, panel_surface or engine, panel)
         self._name_flash = NameFlash(clock)
         self._flash = ""
@@ -390,12 +393,29 @@ class Funestra:
         if self._tiles:
             self._engine.tile_to_fill(*window)
         self._engine.push_still()
+        self._tune_the_radio()
         self._paint(window)
 
     def close(self) -> None:
         for user in self._users.values():
             user.close()
+        if self._radio is not None:
+            self._radio.close()
         self.playback.close()
+
+    def _tune_the_radio(self) -> None:
+        if self._radio is None:
+            return
+        volume = self._volume.hud
+        self._radio.tick(picture=self._a_picture_on_screen(),
+                         level=None if volume.muted else volume.volume,
+                         paused=self.playback.is_paused)
+
+    def _a_picture_on_screen(self) -> bool | None:
+        """True for a picture, False for a video, None between two files."""
+        if self.playback.showing_picture:
+            return True
+        return False if self._engine.showing_video else None
 
     def _apply(self, command: str) -> None:
         for user in self._users.values():

@@ -31,6 +31,7 @@ import math
 import os
 import threading
 import time
+from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
@@ -273,6 +274,7 @@ class _MpvControl:
         self._swapped_in: set[str] = set()
         self._moving_on = False
         self._picture_time = (0.0, 0.0)
+        self._audio_device: str | None = None
         self._staged: str | None = None
         # Read off an observation rather than asked for: a property read takes
         # the core's lock, which a file being opened holds for long stretches,
@@ -360,6 +362,10 @@ class _MpvControl:
     @property
     def showing_picture(self) -> bool:
         return self._image_track is True
+
+    @property
+    def showing_video(self) -> bool:
+        return self._image_track is False
 
     @mpv_call()
     def load(self, path: Path) -> None:
@@ -565,8 +571,12 @@ class _MpvControl:
         picked = pick_output(outputs, substring)
         if picked is None:
             return None
-        self._mpv.audio_device = picked.handle
+        self._mpv.audio_device = self._audio_device = picked.handle
         return picked.label
+
+    def radio_station(self, clips: Sequence[Path]) -> MpvStation | None:
+        """A station of *clips*, sounding wherever this engine's own sound goes."""
+        return MpvStation.opened(clips, audio_device=self._audio_device)
 
     @mpv_call()
     def seek_ms(self, ms: float) -> None:
@@ -660,3 +670,60 @@ class MpvEngine(_MpvControl):
             input_vo_keyboard=False,
         )
         self._adopt(mpv.MPV(**options))
+
+
+def _station_options(audio_device: str | None) -> dict:
+    options = dict(
+        log_handler=_log_mpv,
+        loglevel="warn",
+        vid="no",
+        vo="null",
+        audio_display="no",
+        mute="yes",
+        loop_playlist="inf",
+        shuffle="yes",
+        idle="yes",
+        audio_fallback_to_null="yes",
+        input_default_bindings=False,
+        **_MPV_SCRIPTS_OFF,
+    )
+    if audio_device:
+        options["audio_device"] = audio_device
+    return options
+
+
+class MpvStation:
+    """One of a radio's stations: its clips' sound alone, round and round in a
+    fresh order each time round (mpv reshuffles a looped list as it comes round,
+    and gives up on one whose every clip fails, both probed against libmpv on
+    2026-10-16), playing on whether or not it is heard."""
+
+    def __init__(self, handle, clips: Sequence[Path]) -> None:
+        self._mpv = handle
+        self._heard_at: int | None = None
+        self._paused = False
+        first, *rest = clips
+        handle.loadfile(str(first), "replace")
+        for clip in rest:
+            handle.loadfile(str(clip), "append")
+
+    @classmethod
+    def opened(cls, clips: Sequence[Path], *, audio_device: str | None = None) -> MpvStation:
+        return cls(_import_mpv().MPV(**_station_options(audio_device)), clips)
+
+    def tune(self, level: int | None) -> None:
+        """Be heard at *level*, or not at all for None."""
+        if level == self._heard_at:
+            return
+        self._heard_at = level
+        if level is not None:
+            self._mpv.volume = level
+        self._mpv.mute = level is None
+
+    def set_paused(self, paused: bool) -> None:
+        if paused != self._paused:
+            self._paused = paused
+            self._mpv.pause = paused
+
+    def close(self) -> None:
+        _terminate_outside_the_callers_apartment(self._mpv)
