@@ -182,9 +182,9 @@ class TestLine:
         """Between the lock and the length, where each satellite puts it: F-mode
         cuts the whole library to the funscripted videos and the length mode then
         narrows what is left, so the coarser filter is named first."""
-        assert _line(scripted_filter=True) == "Locked · Shuffle · F-Mode"
+        assert _line(scripted_filter=True) == "Locked · Shuffle · F-mode"
         assert _line(length_mode=CLIPS, scripted_filter=True) == (
-            "Locked · Shuffle · F-Mode · Clips")
+            "Locked · Shuffle · F-mode · Clips")
 
 
 class TestCompilationLabel:

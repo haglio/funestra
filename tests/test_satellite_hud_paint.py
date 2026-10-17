@@ -329,7 +329,7 @@ def test_a_status_too_wide_for_the_map_is_drawn_smaller_rather_than_widening_the
             _model(lock_label=label, corner=HudCell(path="c.mp4", thumb=thumb)))
 
     short = rendered("Locked")
-    long = rendered("Looping actions · Locked · Latest · F-Mode · Enhanceds · beta gamma")
+    long = rendered("Looping actions · Locked · Latest · F-mode · Enhanceds · beta gamma")
     band = _rgb(long.bgra)[PAD:PAD + STATUS_BAND_H, STATUS_TEXT_X:]
     inked_columns = np.nonzero((band > 200).all(axis=2).any(axis=0))[0]
 
@@ -418,7 +418,7 @@ def test_the_map_sits_where_it_sits_however_long_the_status_is(thumb):
         (x, y, _w, _h), _path = rendered.targets.click[0]
         return x, y
 
-    assert (corner("Looping actions · Latest · F-Mode · beta gamma")
+    assert (corner("Looping actions · Latest · F-mode · beta gamma")
             == corner("Locked · Shuffle") == corner(""))
 
 

@@ -38,7 +38,7 @@ SHUFFLE_LABEL = "Shuffle"
 
 # What F-mode is called.  Every Funestra has one of its own, and a reader glancing
 # between two screens is comparing the same switch, so it is named once here.
-F_MODE_LABEL = "F-Mode"
+F_MODE_LABEL = "F-mode"
 
 PLAYBACK_SPEED_LABEL = "Playback speed"
 
