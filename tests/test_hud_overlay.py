@@ -74,7 +74,7 @@ class TestTheClipsRowAtItsFoot:
         engine = FakeEngine()
         overlay = _overlay(tmp_path, panel, engine)
 
-        overlay.tick(clip_row=self._ROW)
+        overlay.tick(item_row=self._ROW)
 
         assert overlay.targets.row is not None
 
@@ -82,17 +82,17 @@ class TestTheClipsRowAtItsFoot:
         engine = FakeEngine()
         overlay = _overlay(tmp_path, panel, engine)
 
-        overlay.tick(clip_row=None)
+        overlay.tick(item_row=None)
 
         assert overlay.targets.row is None
 
     def test_the_rows_rect_still_answers_under_its_old_name(self, tmp_path, panel):
         overlay = _overlay(tmp_path, panel, FakeEngine())
 
-        overlay.tick(clip_row=self._ROW)
+        overlay.tick(item_row=self._ROW)
         assert overlay.row_rect == overlay.targets.row.rect
 
-        overlay.tick(clip_row=None)
+        overlay.tick(item_row=None)
         assert overlay.row_rect is None
 
     def _on_the_row(self, overlay, px, py):
@@ -105,7 +105,7 @@ class TestTheClipsRowAtItsFoot:
             hud_file=panel, command_file=tmp_path / "dashboard_cmd.txt",
             engine=FakeEngine(), clock=lambda: 0.0, seek=seeks.append,
         )
-        overlay.tick(clip_row=self._ROW)
+        overlay.tick(item_row=self._ROW)
         _x, _y, _width, height = overlay.targets.row.rect
         x0, x1 = overlay.targets.row.track
 
@@ -120,7 +120,7 @@ class TestTheClipsRowAtItsFoot:
             hud_file=panel, command_file=tmp_path / "dashboard_cmd.txt",
             engine=FakeEngine(), clock=lambda: 0.0, seek=seeks.append,
         )
-        overlay.tick(clip_row=self._ROW)
+        overlay.tick(item_row=self._ROW)
         _x, _y, _width, height = overlay.targets.row.rect
         x0, x1 = overlay.targets.row.track
         along = height - TIMELINE_HEIGHT // 2
@@ -138,7 +138,7 @@ class TestTheClipsRowAtItsFoot:
             engine=FakeEngine(), clock=lambda: 0.0,
             set_volume=levels.append, toggle_mute=lambda: mutes.append(1),
         )
-        overlay.tick(clip_row=self._ROW)
+        overlay.tick(item_row=self._ROW)
         _x, _y, width, height = overlay.targets.row.rect
         cx, cy = chip_xy(win_w=width, win_h=height, timeline_h=TIMELINE_HEIGHT)
 
@@ -152,10 +152,10 @@ class TestTheClipsRowAtItsFoot:
         """The host measures the track the panel drew and builds the script's
         colors across it; the panel fills the next one with them."""
         plain, scripted = FakeEngine(), FakeEngine()
-        _overlay(tmp_path, panel, plain).tick(clip_row=self._ROW)
+        _overlay(tmp_path, panel, plain).tick(item_row=self._ROW)
         colored = _overlay(tmp_path, panel, scripted)
-        colored.tick(clip_row=self._ROW)
-        colored.tick(clip_row=self._ROW, heatmap=_colors_across(colored.row))
+        colored.tick(item_row=self._ROW)
+        colored.tick(item_row=self._ROW, heatmap=_colors_across(colored.row))
 
         (_x, _y, bare), = plain.overlays.values()
         (_x, _y, filled), = scripted.overlays.values()
@@ -169,10 +169,10 @@ class TestTheClipsRowAtItsFoot:
         which took the window's drawing down with it and left the Main Funestra
         showing no picture at all."""
         plain, mismatched = FakeEngine(), FakeEngine()
-        _overlay(tmp_path, panel, plain).tick(clip_row=self._ROW)
+        _overlay(tmp_path, panel, plain).tick(item_row=self._ROW)
         overlay = _overlay(tmp_path, panel, mismatched)
-        overlay.tick(clip_row=self._ROW)
-        overlay.tick(clip_row=self._ROW, heatmap=[(255, 0, 0)] * 7)
+        overlay.tick(item_row=self._ROW)
+        overlay.tick(item_row=self._ROW, heatmap=[(255, 0, 0)] * 7)
 
         (_x, _y, bare), = plain.overlays.values()
         (_x, _y, drawn), = mismatched.overlays.values()
@@ -183,7 +183,7 @@ class TestTheClipsRowAtItsFoot:
         loop's two frames hang."""
         overlay = _overlay(tmp_path, panel, FakeEngine())
 
-        overlay.tick(clip_row=self._ROW)
+        overlay.tick(item_row=self._ROW)
 
         x, _y, _width, _height = overlay.row.rect
         x0, x1 = overlay.row.track
@@ -195,7 +195,7 @@ class TestTheClipsRowAtItsFoot:
     def test_a_picture_leaves_nothing_for_the_frames_to_hang_under(self, tmp_path, panel):
         overlay = _overlay(tmp_path, panel, FakeEngine())
 
-        overlay.tick(clip_row=None)
+        overlay.tick(item_row=None)
 
         assert overlay.row is None
         assert overlay.row_track is None
