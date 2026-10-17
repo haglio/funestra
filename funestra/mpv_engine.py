@@ -46,9 +46,6 @@ __all__ = [
 
 logger = logging.getLogger(__name__)
 
-# Origenerator's slideshow opens at this pace (slideshow.DEFAULT_IMAGE_DWELL_MS).
-_DEFAULT_PACE_S = 4.0
-
 # Every Lua script mpv loads for itself, the on-screen controller among them.  An
 # engine here is driven through the client API, so the scripting layer has
 # nothing to do but cost, and one of those scripts erroring on the way out takes
@@ -173,7 +170,7 @@ def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool
         audio_fallback_to_null="yes",
         **_MPV_SCRIPTS_OFF,
         input_default_bindings=False,
-        image_display_duration=_DEFAULT_PACE_S,
+        image_display_duration="inf",
         # Leaning a still (video-align) moves it only along a side it
         # overhangs the window on: along one it fits inside, it stays centered.
         video_recenter="yes",
@@ -267,15 +264,16 @@ class _MpvControl:
         # while it has none -- between two files, before the next one's tracks.
         self._image_track: bool | None = None
         self._overlays: dict[int, np.ndarray] = {}
-        # A still's move runs on a clock of its own: mpv leaves a still's
-        # playhead at nought and simply ends the file when the pace runs out
-        # (verified against libmpv, 2026-09-19).
+        # A still runs on a clock of its own, which moves it and ends it: mpv
+        # leaves a still's playhead at nought (verified against libmpv,
+        # 2026-09-19), so nothing of mpv's can say how far into its pace it is.
         self._ken_burns = KenBurns(moves, looping=looping)
         self._placed = (0.0, 0.0, 0.0)
         self._path: str | None = None
         self._reopened: str | None = None
         self._swapped_in: set[str] = set()
-        self._ran_out = False
+        self._moving_on = False
+        self._picture_time = (0.0, 0.0)
         self._staged: str | None = None
         # Read off an observation rather than asked for: a property read takes
         # the core's lock, which a file being opened holds for long stretches,
@@ -304,6 +302,7 @@ class _MpvControl:
         self._path = path
         if not path:
             return
+        self._moving_on = False
         dealt_on_reopening, self._reopened = path == self._reopened, None
         if not dealt_on_reopening and path not in self._swapped_in:
             self._swapped_in.clear()
@@ -373,9 +372,8 @@ class _MpvControl:
     @mpv_call()
     def load(self, path: Path) -> None:
         self._staged = None
-        self._ran_out = False
+        self._moving_on = False
         self._swapped_in.clear()
-        self._hold_pictures_for_the_pace()
         self._reopened = str(path) if str(path) == self._path else None
         if self._reopened:
             self._ken_burns.new_picture(self._now())
@@ -389,7 +387,6 @@ class _MpvControl:
     @mpv_call()
     def swap_still(self, path: Path) -> None:
         self._swapped_in.add(str(path))
-        self._mpv.image_display_duration = "inf"
         self._mpv.play(str(path))
         self._mpv.playlist_clear()
         if self._staged is not None:
@@ -486,14 +483,8 @@ class _MpvControl:
         self._ken_burns.set_paused(paused, self._now())
         self._mpv.pause = paused
 
-    @mpv_call()
     def set_pace(self, seconds: float) -> None:
         self._ken_burns.set_pace(seconds or 0.0, self._now())
-        if not self._swapped_in:
-            self._hold_pictures_for_the_pace()
-
-    def _hold_pictures_for_the_pace(self) -> None:
-        self._mpv.image_display_duration = self._ken_burns.pace_s or "inf"
 
     @mpv_call()
     def push_still(self) -> None:
@@ -502,21 +493,33 @@ class _MpvControl:
         this engine."""
         if self._image_track is None:
             return
-        view = self._ken_burns.view(self._now()) if self._image_track else View()
+        now = self._now()
+        view = self._ken_burns.view(now) if self._image_track else View()
         placed = view.placement()
         for name, value, was in zip(_PLACING, placed, self._placed, strict=True):
             if value != was:
                 setattr(self._mpv, name, value)
         self._placed = placed
-        if self._path in self._swapped_in and self._ken_burns.ran_out(self._now()):
-            self._end_the_swapped_in_still()
+        pace_ms = self._ken_burns.pace_s * 1000.0
+        self._picture_time = (self._ken_burns.progress(now) * pace_ms, pace_ms)
+        if self._image_track and not self._moving_on and self._ken_burns.ran_out(now):
+            self._move_on_from_the_still()
 
-    def _end_the_swapped_in_still(self) -> None:
+    @property
+    def picture_time(self) -> tuple[float, float] | None:
+        """How far the picture on screen is into the time it holds the screen,
+        and how long that is, in milliseconds -- None on a video."""
+        return self._picture_time if self._image_track else None
+
+    def seek_picture(self, ms: float) -> None:
+        pace_s = self._ken_burns.pace_s
+        if pace_s:
+            self._ken_burns.seek(ms / 1000.0 / pace_s, self._now())
+
+    def _move_on_from_the_still(self) -> None:
         self._swapped_in.clear()
-        self._hold_pictures_for_the_pace()
-        if self._staged is None:
-            self._ran_out = True
-        else:
+        if self._staged is not None:
+            self._moving_on = True
             self._mpv.command("playlist-next")
 
     @mpv_call()
@@ -586,11 +589,6 @@ class _MpvControl:
     def clear_ab_loop(self) -> None:
         self._mpv.ab_loop_a = "no"
         self._mpv.ab_loop_b = "no"
-
-    @property
-    @mpv_call(False)
-    def eof(self) -> bool:
-        return self._ran_out or bool(self._mpv.eof_reached)
 
     @mpv_call()
     def screenshot_bgra(self, height: int = 64):

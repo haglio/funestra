@@ -133,11 +133,11 @@ def _before_the_track(row: RowHud, *, held: bool = False) -> tuple[
     if row.loop is not None:
         dial = x
         x += DIAL_SIZE + GAP
-    if row.playhead is not None:
-        held_for = None
-        if held:
-            held_for = _HELD_VIDEO_READOUT if row.loop is None else _HELD_FLICK_READOUT
-        width = _width(row.playhead, held_for)
+    held_for = None
+    if held:
+        held_for = _HELD_VIDEO_READOUT if row.loop is None else _HELD_FLICK_READOUT
+    if row.playhead is not None or held_for is not None:
+        width = _width(row.playhead or held_for, held_for)
         readout = (x, width)
         x += width + GAP
     return readout, dial, x
