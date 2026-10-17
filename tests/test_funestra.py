@@ -63,7 +63,7 @@ def _clips(tmp_path: Path, *names: str) -> list[Path]:
 
 
 def _channels(tmp_path: Path, lines: list[str], *, commands: str = "QUIT\n",
-              hud: bool = False, in_a_session: bool = False) -> Channels:
+              hud: bool = False, in_a_session: bool = False, notice: bool = False) -> Channels:
     (tmp_path / "playlist.tsv").write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
     (tmp_path / "cmd.txt").write_text(commands, encoding="utf-8")
     return Channels(
@@ -71,6 +71,7 @@ def _channels(tmp_path: Path, lines: list[str], *, commands: str = "QUIT\n",
         command=tmp_path / "cmd.txt",
         paused=tmp_path / "paused.txt",
         status=tmp_path / "status.txt",
+        notice=tmp_path / "notice.txt" if notice else None,
         hud=tmp_path / "portrait_hud.json" if hud else None,
         dashboard_cmd=tmp_path / "dashboard_cmd.txt" if hud or in_a_session else None,
     )
@@ -125,6 +126,41 @@ def test_a_level_and_mute_it_is_handed_are_its_own_from_then_on(tmp_path):
     assert (engine.volume, engine.muted) == (60, False)
     assert [line for line in _status(tmp_path).splitlines()
             if line.startswith(("volume=", "muted="))] == ["volume=60", "muted=0"]
+
+
+def test_a_funestra_jumps_to_its_clips_scripting_and_says_so_on_its_notice_channel(tmp_path):
+    """Every Funestra plays scripted clips, so every one answers the two
+    funscript moves itself, and tells the room what came of each on the
+    channel it was given -- a dead end as a warning, a jump in the funscripts'
+    own color."""
+    clip = _clips(tmp_path, "v0")[0]
+    script = tmp_path / "v0.funscript"
+    script.write_text('{"actions": [{"at": 10000, "pos": 0}, {"at": 10300, "pos": 100}, '
+                      '{"at": 40000, "pos": 0}, {"at": 40300, "pos": 100}]}', encoding="utf-8")
+    funestra, engine = _funestra(tmp_path, [f"{clip}\t{script}"],
+                                 commands="JUMP_TO_FUNSCRIPT\nNEXT_FUNSCRIPTED\n", notice=True)
+    engine.duration_ms = 60_000.0
+    engine.position_ms = 20_000.0
+
+    funestra.tick(window=WINDOW)
+
+    assert engine.position_ms == 40_000.0
+    notice = (tmp_path / "notice.txt").read_text(encoding="utf-8")
+    assert "level=warning" in notice and "message=no other funscripted video" in notice
+
+
+def test_a_funestra_given_no_notice_channel_still_jumps(tmp_path):
+    clip = _clips(tmp_path, "v0")[0]
+    script = tmp_path / "v0.funscript"
+    script.write_text('{"actions": [{"at": 10000, "pos": 0}, {"at": 10300, "pos": 100}]}',
+                      encoding="utf-8")
+    funestra, engine = _funestra(tmp_path, [f"{clip}\t{script}"], commands="JUMP_TO_FUNSCRIPT\n")
+    engine.duration_ms = 60_000.0
+
+    funestra.tick(window=WINDOW)
+
+    assert engine.position_ms == 10_000.0
+    assert not (tmp_path / "notice.txt").exists()
 
 
 def test_a_window_wearing_no_panel_draws_nothing_over_its_picture(tmp_path):

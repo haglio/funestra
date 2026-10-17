@@ -9,7 +9,7 @@ from funestra.hud_button import Button
 from funestra.hud_marks import BROKER_ICON, FMODE_ICON, MINIMIZE_ICON, shared_mark
 
 # Wider than any console is drawn, so a hover over its button has to wrap.
-LONG_TIP = ("Reset the browse: no filter, no lock, no loop, no F-Mode, and the "
+LONG_TIP = ("Reset the browse: no filter, no lock, no loop, no F-mode, and the "
             "whole library shuffled again from the top")
 
 
@@ -30,7 +30,7 @@ def console_rows(mode: str = "kino", *, locked: bool = False, favorites: bool = 
         (Button("main_prev", "⏮", "Previous"),
          Button("main_next", "⏭", "Next"),
          Button("main_lock", "🔒", "Lock", lit=locked, favorite=True, group_break=True),
-         Button("main_fmode", FMODE_ICON, "F-Mode", lit=favorites, favorite=True),
+         Button("main_fmode", FMODE_ICON, "F-mode", lit=favorites, favorite=True),
          *(() if enhanced is None else (
              Button("genau_filter_enhanced", shared_mark("enhance_filter"), "Enhanced only",
                     lit=enhanced, enhanced=True),)),
