@@ -44,6 +44,23 @@ class RefusesSeeks:
             raise SystemError("Error running mpv command", -12)
 
 
+class FakeStation:
+    def __init__(self, clips) -> None:
+        self.clips = list(clips)
+        self.heard_at: int | None = None
+        self.paused = False
+        self.closed = False
+
+    def tune(self, level: int | None) -> None:
+        self.heard_at = level
+
+    def set_paused(self, paused: bool) -> None:
+        self.paused = paused
+
+    def close(self) -> None:
+        self.closed = True
+
+
 class FakeEngine(RefusesSeeks):
     def __init__(self, duration_ms: float = 5_000.0) -> None:
         self.opened: list[Path] = []
@@ -62,6 +79,8 @@ class FakeEngine(RefusesSeeks):
         self.speed = 1.0
         self.pace_s: float | None = None
         self.showing_picture = False
+        self.showing_video = True
+        self.stations: list[FakeStation] = []
         self.picture_time: tuple[float, float] | None = None
         self.picture_seeks: list[float] = []
         self.source_dims = (0, 0)
@@ -125,6 +144,10 @@ class FakeEngine(RefusesSeeks):
 
     def seek_picture(self, ms: float) -> None:
         self.picture_seeks.append(ms)
+
+    def radio_station(self, clips) -> FakeStation:
+        self.stations.append(FakeStation(clips))
+        return self.stations[-1]
 
     def seek_ms(self, ms: float) -> None:
         self.refuse_if_asked()
