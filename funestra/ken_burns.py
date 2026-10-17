@@ -97,10 +97,22 @@ class KenBurns:
         self._started_s = 0.0
         self._held_progress = 0.0
         self._looping = looping
+        self._hold_s: float | None = None
 
     @property
     def pace_s(self) -> float:
         return self._pace_s
+
+    @property
+    def holds_for_s(self) -> float:
+        """How long the picture holds the screen: its pace, or less where it
+        was told to move on sooner."""
+        return self._pace_s if self._hold_s is None else min(self._hold_s, self._pace_s)
+
+    def hold_for(self, seconds: float | None) -> None:
+        """Hold this picture *seconds* rather than its pace, its move kept to
+        the pace; a new picture holds for its pace again."""
+        self._hold_s = seconds or None
 
     def set_looping(self, looping: bool, now_s: float) -> None:
         self.progress(now_s)
@@ -120,6 +132,7 @@ class KenBurns:
         self._move = self._moves.deal() if self._pace_s else STANDSTILL
         self._started_s = self._clock.read(now_s)
         self._held_progress = 0.0
+        self._hold_s = None
 
     def set_paused(self, paused: bool, now_s: float) -> None:
         if paused:
@@ -132,7 +145,8 @@ class KenBurns:
         return self._move.at(reached)
 
     def ran_out(self, now_s: float) -> bool:
-        return bool(self._pace_s) and self.progress(now_s) >= 1.0
+        return (bool(self._pace_s) and not self._looping
+                and self.progress(now_s) * self._pace_s >= self.holds_for_s)
 
     def seek(self, progress: float, now_s: float) -> None:
         self.progress(now_s)

@@ -83,6 +83,7 @@ class FakeEngine(RefusesSeeks):
         self.stations: list[FakeStation] = []
         self.picture_time: tuple[float, float] | None = None
         self.picture_seeks: list[float] = []
+        self.held_for: float | None = None
         self.source_dims = (0, 0)
         self.ab_loop: tuple[float, float] | None = None
         self.pushes = 0
@@ -142,6 +143,9 @@ class FakeEngine(RefusesSeeks):
 
     def seek_picture(self, ms: float) -> None:
         self.picture_seeks.append(ms)
+
+    def hold_picture_for(self, seconds: float | None) -> None:
+        self.held_for = seconds
 
     def radio_station(self, clips) -> FakeStation:
         self.stations.append(FakeStation(clips))

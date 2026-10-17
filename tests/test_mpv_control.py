@@ -790,6 +790,27 @@ def test_a_press_along_the_track_of_a_picture_held_for_nought_changes_nothing():
     assert moved_on(mpv) == 0
 
 
+def test_a_picture_held_for_less_than_its_pace_moves_on_then_and_counts_its_time_against_it():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+
+    control.hold_picture_for(2.0)
+
+    pushed_at(control, 101.0)
+    assert control.picture_time == pytest.approx((1_000.0, 2_000.0))
+    pushed_at(control, 101.9)
+    assert moved_on(mpv) == 0
+    pushed_at(control, 102.05)
+    assert moved_on(mpv) == 1
+    assert control.picture_time == pytest.approx((2_000.0, 2_000.0))
+
+
+def test_a_picture_held_for_less_than_its_pace_makes_its_move_at_the_pace():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+    control.hold_picture_for(2.0)
+
+    assert drawn_at(control, mpv, 101.0) == pytest.approx(CREEP.at(0.25).placement())
+
+
 def test_a_file_opened_is_dealt_a_move_of_its_own_though_it_was_once_swapped_in():
     mpv = FakeMpv()
     deals = Deals(CREEP)
