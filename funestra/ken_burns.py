@@ -32,6 +32,7 @@ class Move:
 
 
 STANDSTILL = Move(View(), View())
+AS_FRAMED = View()
 
 
 def _between(start: float, end: float, progress: float) -> float:
@@ -50,14 +51,6 @@ def pan(align_x: float, align_y: float) -> Move:
     return Move(View(ZOOMED_IN, align_x, align_y), View(ZOOMED_IN, -align_x, -align_y))
 
 
-def _closer(place: Place, lean_x: float, lean_y: float) -> Place:
-    x0, y0, x1, y1 = place
-    width, height = (x1 - x0) / ZOOMED_IN, (y1 - y0) / ZOOMED_IN
-    left = x0 + (x1 - x0 - width) * (lean_x + 1.0) / 2.0
-    top = y0 + (y1 - y0 - height) * (lean_y + 1.0) / 2.0
-    return left, top, left + width, top + height
-
-
 class Moves:
     def __init__(self, rng: random.Random | None = None) -> None:
         self._rng = rng or random.Random()
@@ -67,14 +60,9 @@ class Moves:
         kind = self._kind()
         return pan(*self._corner()) if kind is pan else kind(*self._spot())
 
-    def close_up(self, frame: Callable[[Place], View], place: Place) -> Move:
-        kind = self._kind()
-        if kind is pan:
-            corner_x, corner_y = self._corner()
-            return Move(frame(_closer(place, corner_x, corner_y)),
-                        frame(_closer(place, -corner_x, -corner_y)))
-        nearer, whole = frame(_closer(place, *self._spot())), frame(place)
-        return Move(whole, nearer) if kind is zoom_in else Move(nearer, whole)
+    def close_up(self, frame: Callable[[Place, View], View], place: Place) -> Move:
+        move = self.deal()
+        return Move(frame(place, move.start), frame(place, move.end))
 
     def from_rest(self) -> Move:
         self._last = zoom_in
@@ -105,14 +93,15 @@ class Fit:
     shown: tuple[int, int]
     tiles: int = 1
 
-    def framing(self, place: Place) -> View:
+    def framing(self, place: Place, view: View = AS_FRAMED) -> View:
         x0, y0, x1, y1 = (min(max(edge, 0.0), 1.0) for edge in place)
         middle_tile = self.tiles // 2
         x0, x1 = (middle_tile + x0) / self.tiles, (middle_tile + x1) / self.tiles
         room_x, room_y = self._room()
-        zoom = min(CLOSEST, _fitting(room_x, x1 - x0), _fitting(room_y, y1 - y0))
-        return View(zoom, _align_centering((x0 + x1) / 2, room_x, zoom),
-                    _align_centering((y0 + y1) / 2, room_y, zoom))
+        close = min(CLOSEST, _fitting(room_x, x1 - x0), _fitting(room_y, y1 - y0))
+        return View(close * view.zoom,
+                    _align_within((x0 + x1) / 2, room_x, close, view.zoom, view.align_x),
+                    _align_within((y0 + y1) / 2, room_y, close, view.zoom, view.align_y))
 
     def _room(self) -> tuple[float, float]:
         fitted = self._fitted()
@@ -136,6 +125,15 @@ def _align_centering(middle: float, room: float, zoom: float) -> float:
     if zoom <= room:
         return 0.0
     return max(-1.0, min(1.0, 2.0 * (room / 2.0 - middle * zoom) / (room - zoom) - 1.0))
+
+
+def _align_within(middle: float, room: float, close: float, zoom: float, align: float) -> float:
+    close_left = (_align_centering(middle, room, close) + 1.0) / 2.0 * (1.0 - close / room)
+    left = zoom * close_left + (align + 1.0) / 2.0 * (1.0 - zoom)
+    whole = close * zoom
+    if whole <= room:
+        return 0.0
+    return max(-1.0, min(1.0, 2.0 * left / (1.0 - whole / room) - 1.0))
 
 
 class RoomClock:
