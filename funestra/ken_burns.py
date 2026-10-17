@@ -80,6 +80,10 @@ class Moves:
         self._last = zoom_in
         return zoom_in(*self._spot())
 
+    def stop_among(self, places: tuple[Place, ...]) -> Place | None:
+        pick = self._rng.randrange(2 * len(places)) if places else 0
+        return places[pick] if pick < len(places) else None
+
     def _kind(self):
         kind = self._rng.choice([kind for kind in (zoom_in, zoom_out, pan) if kind is not self._last])
         self._last = kind
@@ -169,7 +173,6 @@ class KenBurns:
         self._looping = looping
         self._hold_s: float | None = None
         self._places: tuple[Place, ...] = ()
-        self._stop = 0
 
     @property
     def pace_s(self) -> float:
@@ -205,14 +208,10 @@ class KenBurns:
         self._started_s = self._clock.read(now_s)
         self._held_progress = 0.0
         self._hold_s = None
-        self._stop = 0
 
     def set_points_of_interest(self, places: tuple[Place, ...], now_s: float) -> None:
         self.progress(now_s)
-        places = tuple(places)
-        if places != self._places:
-            self._places = places
-            self._stop = 0
+        self._places = tuple(places)
 
     def set_paused(self, paused: bool, now_s: float) -> None:
         if paused:
@@ -247,7 +246,7 @@ class KenBurns:
         return progress - rounds
 
     def _next_stop(self) -> Move:
-        self._stop = (self._stop + 1) % (len(self._places) + 1)
-        if not self._stop:
+        place = self._moves.stop_among(self._places)
+        if place is None:
             return self._moves.deal()
-        return self._moves.close_up(self._fit().framing, self._places[self._stop - 1])
+        return self._moves.close_up(self._fit().framing, place)
