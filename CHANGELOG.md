@@ -77,12 +77,13 @@ under `Playback` answers to the new name.
 
 A playlist line can carry the places in a picture worth a close-up, after a
 second TAB (`PlaylistItem.points_of_interest`), and a locked picture's move,
-each time it comes round, goes to the next of them and then back to the whole
-picture (`KenBurns.set_points_of_interest`, `Moves.close_up`): each close-up is
-framed as close as its window fits the place, and makes one of the three
-ordinary moves inside it. Origenerator fills the column with the places an
-enhancement's fixes found, so a picture locked after one goes over them as the
-enhancement did. The item stays the pair it was, the places riding beside it.
+each time it comes round, goes to one of them picked at random or to the whole
+picture, the whole picture as often as all the places together
+(`KenBurns.set_points_of_interest`, `Moves.stop_among`, `Moves.close_up`): each
+close-up is framed as close as its window fits the place, and makes one of the
+three ordinary moves inside it. Origenerator fills the column with the places an
+enhancement's fixes found. The item stays the pair it was, the places riding
+beside it.
 
 `Fit`, `CLOSEST` (once `CLOSEST_AIM`) and the window-size readers the aim took
 with it on 2026-09-28 are back, framing these close-ups.
