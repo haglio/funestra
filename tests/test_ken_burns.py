@@ -511,68 +511,63 @@ def test_a_close_up_is_framed_for_the_window_the_picture_is_in_when_it_comes_rou
 
 
 PLACE = (0.2, 0.4, 0.6, 0.6)
-
-
-def as_drawn(box):
-    return box
-
-
-def size_of(box) -> tuple[float, float]:
-    return box[2] - box[0], box[3] - box[1]
-
-
-def inside(box, place) -> bool:
-    return all(outer <= edge + 1e-9 for outer, edge in zip(place[:2], box[:2], strict=True)) and all(
-        edge <= outer + 1e-9 for outer, edge in zip(place[2:], box[2:], strict=True))
+SQUARE = Fit((1000, 1000), (1000, 1000))
 
 
 def closed_up(count: int, seed: int = 7) -> list[Move]:
     moves = Moves(random.Random(seed))
-    return [moves.close_up(as_drawn, PLACE) for _ in range(count)]
+    return [moves.close_up(SQUARE.framing, PLACE) for _ in range(count)]
+
+
+def picture_edges_in_a_square_window(view: View) -> tuple[float, float]:
+    return (view.align_x + 1.0) / 2.0 * (1.0 - view.zoom), (view.align_y + 1.0) / 2.0 * (1.0 - view.zoom)
 
 
 def test_no_close_up_makes_the_kind_of_move_the_round_before_it_made():
     moves = Moves(random.Random(7))
-    dealt_in_turn = [moves.close_up(as_drawn, PLACE) if turn % 3 else moves.deal()
+    dealt_in_turn = [moves.close_up(SQUARE.framing, PLACE) if turn % 3 else moves.deal()
                      for turn in range(300)]
 
-    kinds = [kind_of(move) if isinstance(move.start, View) else close_up_kind(move)
-             for move in dealt_in_turn]
+    kinds = [kind_of(move) for move in dealt_in_turn]
 
     assert all(one != next_one for one, next_one in itertools.pairwise(kinds))
 
 
-def close_up_kind(move: Move) -> str:
-    start, end = size_of(move.start)[0], size_of(move.end)[0]
-    if start > end + 1e-9:
-        return "in"
-    if start < end - 1e-9:
-        return "out"
-    return "pan"
-
-
-def test_a_close_up_zooms_between_the_whole_place_and_a_spot_inside_it_closer_by_the_ordinary_zoom():
-    zooms = [move for move in closed_up(300) if close_up_kind(move) != "pan"]
+def test_a_close_up_zooms_from_its_places_framing_by_the_ordinary_zoom():
+    zooms = [move for move in closed_up(300) if kind_of(move) != "pan"]
 
     for move in zooms:
-        whole, nearer = (move.start, move.end) if close_up_kind(move) == "in" else (move.end, move.start)
-        assert whole == PLACE
-        assert inside(nearer, PLACE)
-        assert size_of(nearer) == pytest.approx(tuple(side / ZOOMED_IN for side in size_of(PLACE)))
-    assert {close_up_kind(move) for move in zooms} == {"in", "out"}
+        whole, nearer = (move.start, move.end) if kind_of(move) == "in" else (move.end, move.start)
+        assert whole == SQUARE.framing(PLACE)
+        assert nearer.zoom == pytest.approx(whole.zoom * ZOOMED_IN)
+    assert {kind_of(move) for move in zooms} == {"in", "out"}
 
 
-def test_a_close_up_pan_crosses_the_place_from_a_corner_to_the_opposite_one():
-    pans = [move for move in closed_up(300) if close_up_kind(move) == "pan"]
+def test_a_close_up_pan_moves_the_picture_across_the_window_as_far_as_a_pan_of_the_whole_picture():
+    whole = pan(1.0, 1.0)
+    whole_shift = [abs(after - before) for before, after in zip(
+        picture_edges_in_a_square_window(whole.start), picture_edges_in_a_square_window(whole.end), strict=True)]
+    pans = [move for move in closed_up(300) if kind_of(move) == "pan"]
 
     for move in pans:
-        assert inside(move.start, PLACE) and inside(move.end, PLACE)
-        assert size_of(move.start) == pytest.approx(tuple(side / ZOOMED_IN for side in size_of(PLACE)))
-        start_middle = ((move.start[0] + move.start[2]) / 2, (move.start[1] + move.start[3]) / 2)
-        end_middle = ((move.end[0] + move.end[2]) / 2, (move.end[1] + move.end[3]) / 2)
-        assert start_middle[0] + end_middle[0] == pytest.approx(PLACE[0] + PLACE[2])
-        assert start_middle[1] + end_middle[1] == pytest.approx(PLACE[1] + PLACE[3])
+        shift = [abs(after - before) for before, after in zip(
+            picture_edges_in_a_square_window(move.start), picture_edges_in_a_square_window(move.end), strict=True)]
+        assert shift == pytest.approx(whole_shift)
     assert pans
+
+
+def test_a_close_up_framed_at_the_closest_zoom_still_zooms_as_far_as_the_whole_picture_does():
+    window = Fit((1000, 1000), (1000, 1000))
+    moves = Moves(random.Random(7))
+    speck = (0.5, 0.5, 0.52, 0.52)
+
+    zooms = [move for move in (moves.close_up(window.framing, speck) for _ in range(30))
+             if move.start.zoom != move.end.zoom]
+
+    assert zooms
+    for move in zooms:
+        assert max(move.start.zoom, move.end.zoom) / min(move.start.zoom, move.end.zoom) == pytest.approx(
+            ZOOMED_IN)
 
 
 def test_the_whole_picture_comes_round_as_often_as_all_the_places_together():
