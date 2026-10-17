@@ -20,12 +20,16 @@ ended a swapped-in still before. Gone with that: the engine's `eof`, which
 nothing read, and the four-second pace mpv opened on, which the first load
 always overwrote. `Funestra.clip_row` is `Funestra.item_row`, and the panels'
 `clip_row` arguments are `item_row`, since a picture carries the row too.
+`HOLD_PICTURE` holds the picture on screen for less than its pace, its move
+still made at the pace, so a source that moves a picture on early lets the
+Funestra do it and the scrubber count it down.
 
 A Funestra whose playlist has a radio file beside it (`radio.radio_file_for`)
 plays the stations it deals (`radio.Radio`, each an `mpv_engine.MpvStation`
 opened from the engine's `radio_station`), one heard while a picture is up.
-`radio_file_for`, `write_radio` and `MpvStation` are for the app that deals
-the stations, and are declared in `__all__` once it imports them.
+`radio_file_for`, `write_radio`, `MpvStation` and `HOLD_PICTURE` are for the
+app that deals the stations and paces the pictures, and are declared in
+`__all__` once it imports them.
 
 ## 2026-10-13 — cruise control is gone
 
