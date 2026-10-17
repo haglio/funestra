@@ -9,6 +9,24 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-16 — a picture keeps its row, and a Funestra plays a radio
+
+A picture no longer takes the row off its panel: the row's track and readout
+are the picture's time on screen, read off the engine (`picture_time`), and a
+press along the track moves that time (`seek_picture`), its slow zoom with it.
+For that the engine keeps a still's time itself: mpv holds every still up
+(`image-display-duration` is `inf`) and the engine ends it at its pace, as it
+ended a swapped-in still before. Gone with that: the engine's `eof`, which
+nothing read, and the four-second pace mpv opened on, which the first load
+always overwrote. `Funestra.clip_row` is `Funestra.item_row`, and the panels'
+`clip_row` arguments are `item_row`, since a picture carries the row too.
+
+A Funestra whose playlist has a radio file beside it (`radio.radio_file_for`)
+plays the stations it deals (`radio.Radio`, each an `mpv_engine.MpvStation`
+opened from the engine's `radio_station`), one heard while a picture is up.
+`radio_file_for`, `write_radio` and `MpvStation` are for the app that deals
+the stations, and are declared in `__all__` once it imports them.
+
 ## 2026-10-13 — cruise control is gone
 
 Human-inspired motion outclassed it, and Fun Time and Origenerator took it out
