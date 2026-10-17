@@ -28,6 +28,7 @@ from funestra.outside_buttons import OutsideButtons
 from funestra.playhead import FIGURE_SPACE
 from funestra.playlist import read_playlist
 from funestra.pointer import OMNIPAUSE_TOGGLE
+from funestra.radio import radio_file_for, write_radio
 from funestra.satellite_hud import MARGIN, HudModel
 from funestra.session_quit import SESSION_QUIT
 from funestra.timeline import TIMELINE_HEIGHT
@@ -236,6 +237,81 @@ def test_a_press_along_a_pictures_track_puts_it_that_far_into_its_time(tmp_path)
 
     assert engine.picture_seeks == [pytest.approx(1_000.0, abs=40.0)]
     assert engine.seeks == []
+
+
+def _radio_beside_the_playlist(tmp_path: Path, *stations: list[str]) -> None:
+    write_radio(radio_file_for(tmp_path / "playlist.tsv"),
+                [[tmp_path / name for name in names] for names in stations])
+
+
+def _heard(engine: FakeEngine) -> list[int | None]:
+    return [station.heard_at for station in engine.stations]
+
+
+def test_a_funestras_radio_is_tuned_in_while_a_picture_is_up_at_its_own_level(tmp_path):
+    _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"], ["c.mp4"])
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 commands="SET_VOLUME 60 0\n")
+    funestra.tick(window=WINDOW)
+    assert _heard(engine) == [None, None, None]
+
+    _a_picture_up(engine)
+    funestra.tick(window=WINDOW)
+
+    assert _heard(engine) == [60, None, None]
+
+
+def test_a_funestra_left_muted_hears_none_of_its_radio(tmp_path):
+    _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 commands="")
+    _a_picture_up(engine)
+
+    funestra.tick(window=WINDOW)
+
+    assert _heard(engine) == [None, None]
+
+
+def test_a_funestra_that_can_never_be_heard_opens_no_radio(tmp_path):
+    _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 audible=False)
+    _a_picture_up(engine)
+
+    funestra.tick(window=WINDOW)
+
+    assert engine.stations == []
+
+
+def test_a_funestras_radio_goes_off_when_its_file_goes(tmp_path):
+    _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra.tick(window=WINDOW)
+
+    radio_file_for(tmp_path / "playlist.tsv").unlink()
+    funestra.tick(window=WINDOW)
+
+    assert [station.closed for station in engine.stations] == [True, True]
+
+
+def test_a_funestras_radio_holds_still_with_the_room(tmp_path):
+    _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    (tmp_path / "paused.txt").write_text("1", encoding="utf-8")
+
+    funestra.tick(window=WINDOW)
+
+    assert [station.paused for station in engine.stations] == [True, True]
+
+
+def test_a_funestra_closed_lets_its_radio_go(tmp_path):
+    _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra.tick(window=WINDOW)
+
+    funestra.close()
+
+    assert [station.closed for station in engine.stations] == [True, True]
 
 
 def test_commands_drain_and_act_before_the_frame_is_published(tmp_path):

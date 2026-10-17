@@ -130,6 +130,18 @@ def test_between_files_there_is_no_frame_rate():
     assert control.frame_rate == 0.0
 
 
+def test_the_engine_shows_a_video_only_when_mpv_says_its_video_track_is_no_image():
+    mpv = FakeMpv()
+    control = Control(mpv)
+
+    shown = []
+    for image in (False, None, True):
+        mpv.report("current-tracks/video/image", image)
+        shown.append(control.showing_video)
+
+    assert shown == [True, False, False]
+
+
 def moved_on(mpv: FakeMpv) -> int:
     return sum(1 for call in mpv.calls if call == ("command", "playlist-next"))
 
@@ -486,6 +498,28 @@ def test_an_output_no_device_is_named_by_leaves_the_sound_on_the_system_default(
 
     assert Control(mpv).set_audio_device_matching("Nowhere") is None
     assert mpv.audio_device == "auto"
+
+
+def test_a_radio_station_the_engine_opens_sounds_where_the_engine_does(monkeypatch):
+    opened: dict = {}
+
+    class StationMpv:
+        def __init__(self, **options):
+            opened.update(options)
+
+        def loadfile(self, path, mode):
+            pass
+
+    monkeypatch.setattr(mpv_engine, "_import_mpv", lambda: SimpleNamespace(MPV=StationMpv))
+    monkeypatch.setattr(audio_outputs, "software_outputs", frozenset)
+    mpv = FakeMpv()
+    mpv.audio_device_list = [STREAMING, HEADSET]
+    control = Control(mpv)
+    control.set_audio_device_matching("Headset")
+
+    control.radio_station([Path("alpha.mp4")])
+
+    assert opened["audio_device"] == HEADSET["name"]
 
 
 def test_a_picture_is_drawn_closer_as_its_hold_runs_out():
