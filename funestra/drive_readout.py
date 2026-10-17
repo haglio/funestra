@@ -51,7 +51,6 @@ __all__ = [
     "DRIVEN_BY_NOTHING",
     "DRIVEN_BY_ROBOT_HAND",
     "DriveHud",
-    "drive_text",
     "publish_drive",
     "read_drive",
     "track_command",
