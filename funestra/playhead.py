@@ -56,12 +56,16 @@ def framed_playhead(frame: int, total: int, position_ms: float,
                        widest=_framed(total, total, duration_ms, duration_ms))
 
 
-def video_playhead(position_ms: float, duration_ms: float, frame_rate: float) -> PlayheadHud | None:
+def time_playhead(position_ms: float, duration_ms: float) -> PlayheadHud | None:
     if duration_ms <= 0:
         return None
-    if frame_rate <= 0:
-        return PlayheadHud(text=_time(position_ms, duration_ms),
-                           widest=_time(duration_ms, duration_ms))
+    return PlayheadHud(text=_time(position_ms, duration_ms),
+                       widest=_time(duration_ms, duration_ms))
+
+
+def video_playhead(position_ms: float, duration_ms: float, frame_rate: float) -> PlayheadHud | None:
+    if duration_ms <= 0 or frame_rate <= 0:
+        return time_playhead(position_ms, duration_ms)
     return framed_playhead(round(position_ms / 1000 * frame_rate),
                            round(duration_ms / 1000 * frame_rate), position_ms, duration_ms)
 

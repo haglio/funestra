@@ -31,10 +31,11 @@ from .mpv_engine import MpvEngine
 from .outside_buttons import OutsideButtons
 from .play_points import PlayPoints
 from .playback import Playback, funscripts_of
-from .playhead import framed_playhead, video_playhead
+from .playhead import framed_playhead, time_playhead, video_playhead
 from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
+from .radio import Radio, RadioFile, radio_file_for
 from .satellite_hud import HudModel
 from .scrubber import HeatmapStrip, LoopThumbCapture, loop_thumbnail_xys
 from .session_quit import quit_gesture
@@ -205,6 +206,8 @@ class Funestra:
             RoomVolume(engine, dashboard_cmd_file=channels.dashboard_cmd, live=audible)
             if sound_is_the_rooms else VolumeControl(engine, live=audible, muted=muted)
         )
+        self._radio = None if not audible or channels.playlist is None else Radio(
+            engine.radio_station, dealt_in=RadioFile(radio_file_for(channels.playlist)))
         self._panel = self._panel_for(channels, panel_surface or engine, panel)
         self._name_flash = NameFlash(clock)
         self._flash = ""
@@ -242,7 +245,7 @@ class Funestra:
 
     def _panel_for(self, channels: Channels, drawn_on,
                    panel: Callable[[], HudModel | None] | None) -> HudOverlay | ConsoleOverlay | None:
-        """The one panel this window wears, which carries the clip's row: the
+        """The one panel this window wears, which carries the item's row: the
         room's console on the main slot, the published HUD, or the window's
         own program's panel where no room publishes one.  Each places a press
         on the row itself, so each is handed what it asks of the window when
@@ -282,11 +285,13 @@ class Funestra:
     def _seek_along_the_track(self, ms: float) -> None:
         """A press on the track names a time in the stretch the track spans,
         which is the whole clip until a loop being recorded zooms it in -- or,
-        under a picture the User put up itself, how far into its time on
-        screen that picture is."""
+        under a picture, how far into its time on screen that picture is."""
         picture = self._front.picture()
         if picture is not None:
             picture.seek_time(ms)
+            return
+        if self.playback.showing_picture:
+            self._engine.seek_picture(ms)
             return
         start_ms, _end_ms = self._strip.window
         self.playback.seek_to(start_ms + ms)
@@ -388,12 +393,29 @@ class Funestra:
         if self._tiles:
             self._engine.tile_to_fill(*window)
         self._engine.push_still()
+        self._tune_the_radio()
         self._paint(window)
 
     def close(self) -> None:
         for user in self._users.values():
             user.close()
+        if self._radio is not None:
+            self._radio.close()
         self.playback.close()
+
+    def _tune_the_radio(self) -> None:
+        if self._radio is None:
+            return
+        volume = self._volume.hud
+        self._radio.tick(picture=self._a_picture_on_screen(),
+                         level=None if volume.muted else volume.volume,
+                         paused=self.playback.is_paused)
+
+    def _a_picture_on_screen(self) -> bool | None:
+        """True for a picture, False for a video, None between two files."""
+        if self.playback.showing_picture:
+            return True
+        return False if self._engine.showing_video else None
 
     def _apply(self, command: str) -> None:
         for user in self._users.values():
@@ -420,9 +442,7 @@ class Funestra:
         picture = self._front.picture()
         if picture is None:
             self._users_picture.hide()
-            row = self.clip_row()
-            self._paint_panel(window, row, self._strip.colors if row is not None else None,
-                              self.playback.speed)
+            self._paint_panel(window, self.item_row(), self._strip.colors, self.playback.speed)
             if self._panel_surface is None:
                 self._paint_loop_frames(window)
         else:
@@ -432,19 +452,21 @@ class Funestra:
         if self._corners is not None:
             self._corners.paint(window=window)
 
-    def clip_row(self) -> RowHud | None:
-        """Where the clip has got to, how long it runs, how loud it is and where
-        its loop ends -- the row the panel carries at its foot, or None on a
-        picture, which has nothing to run through.  Timed against the stretch
-        the track spans, which is the whole clip until a loop being recorded
-        zooms it in.
+    def item_row(self) -> RowHud:
+        """Where the item on screen has got to, how long it runs, how loud it
+        is and where its loop ends -- the row the panel carries at its foot.  A
+        picture runs for the time it holds the screen.  A video is timed
+        against the stretch the track spans, which is the whole video until a
+        loop being recorded zooms it in.
         """
         playback, engine = self.playback, self._engine
         self._strip.update(playback.showing, playback.current_funscript,
                            playback.duration_ms, self._track_width(),
                            mark_in_ms=playback.mark, position_ms=playback.position_ms)
         if playback.showing_picture:
-            return None
+            elapsed_ms, pace_ms = engine.picture_time or (0.0, 0.0)
+            return RowHud(position_ms=elapsed_ms, duration_ms=pace_ms, volume=self._volume.hud,
+                          playhead=time_playhead(elapsed_ms, pace_ms))
         start_ms, end_ms = self._strip.window
         bounds = playback.ab_loop
         return RowHud(
@@ -473,12 +495,12 @@ class Funestra:
         if isinstance(self._panel, ConsoleOverlay):
             self._flash = self._name_flash.showing(self._top_block().video)
             self._panel.tick(playback_speed=playback_speed, window=window,
-                             clip_row=row, heatmap=colors, flash=self._flash)
+                             item_row=row, heatmap=colors, flash=self._flash)
         else:
             video = self._front.top_block().video or self.playback.name_on_screen
             self._flash = self._name_flash.showing(video)
             self._panel.tick(video=video, playback_speed=playback_speed, window=window,
-                             clip_row=row, heatmap=colors, flash=self._flash)
+                             item_row=row, heatmap=colors, flash=self._flash)
 
     def _paint_loop_frames(self, window: tuple[int, int]) -> None:
         """The loop's in and out frames, each hanging under the panel below its

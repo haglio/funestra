@@ -28,6 +28,7 @@ from funestra.outside_buttons import OutsideButtons
 from funestra.playhead import FIGURE_SPACE
 from funestra.playlist import read_playlist
 from funestra.pointer import OMNIPAUSE_TOGGLE
+from funestra.radio import radio_file_for, write_radio
 from funestra.satellite_hud import MARGIN, HudModel
 from funestra.session_quit import SESSION_QUIT
 from funestra.timeline import TIMELINE_HEIGHT
@@ -143,7 +144,7 @@ def test_the_row_says_where_the_clip_is_and_how_long_it_runs(tmp_path):
 
     funestra.tick(window=WINDOW)
 
-    row = funestra.clip_row()
+    row = funestra.item_row()
     assert (row.position_ms, row.duration_ms) == (0.0, engine.duration_ms)
     assert row.playhead is not None
     assert row.volume is funestra._volume.hud
@@ -166,16 +167,151 @@ def test_a_scripted_clips_track_is_filled_across_the_width_the_panel_drew_it_at(
     assert len(funestra._strip.colors) == x1 - x0
 
 
-def test_a_picture_on_screen_puts_no_row_on_the_panel(tmp_path):
+def test_a_picture_on_screen_keeps_the_row_saying_how_far_into_its_time_it_is(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
                                  hud=True)
     _publish_panel(tmp_path)
     engine.showing_picture = True
+    engine.picture_time = (1_000.0, 4_000.0)
 
     funestra.tick(window=WINDOW)
 
-    assert funestra.clip_row() is None
-    assert funestra._panel.row is None
+    row = funestra.item_row()
+    assert (row.position_ms, row.duration_ms) == (1_000.0, 4_000.0)
+    assert row.volume is funestra._volume.hud
+    assert funestra._panel.row is not None
+
+
+def _a_picture_up(engine: FakeEngine, elapsed_ms: float = 1_000.0, pace_ms: float = 4_000.0) -> None:
+    engine.showing_picture = True
+    engine.picture_time = (elapsed_ms, pace_ms)
+
+
+def test_the_panel_keeps_its_size_when_a_picture_comes_up_after_a_video(tmp_path):
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 hud=True)
+    _publish_panel(tmp_path)
+    funestra.tick(window=WINDOW)
+    on_the_video = engine.overlays[HUD_OVERLAY_ID][2].shape
+
+    _a_picture_up(engine)
+    funestra.tick(window=WINDOW)
+
+    assert engine.overlays[HUD_OVERLAY_ID][2].shape == on_the_video
+
+
+def test_the_panel_keeps_its_size_on_a_picture_held_until_something_moves_it(tmp_path):
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 hud=True)
+    _publish_panel(tmp_path)
+    funestra.tick(window=WINDOW)
+    on_the_video = engine.overlays[HUD_OVERLAY_ID][2].shape
+
+    _a_picture_up(engine, 0.0, 0.0)
+    funestra.tick(window=WINDOW)
+
+    assert funestra.item_row().playhead is None
+    assert engine.overlays[HUD_OVERLAY_ID][2].shape == on_the_video
+
+
+def test_a_pictures_row_reads_out_the_time_it_has_had_of_its_time(tmp_path):
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 hud=True)
+    _publish_panel(tmp_path)
+    _a_picture_up(engine, 1_000.0, 4_000.0)
+
+    funestra.tick(window=WINDOW)
+
+    assert funestra.item_row().playhead.text == "0:01 / 0:04"
+
+
+def test_a_press_along_a_pictures_track_puts_it_that_far_into_its_time(tmp_path):
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 hud=True)
+    _publish_panel(tmp_path)
+    _a_picture_up(engine, 3_000.0, 4_000.0)
+    funestra.tick(window=WINDOW)
+    x0, x1 = funestra._panel.row.track
+
+    funestra.press(*_on_the_row(funestra, engine, along=x0 + (x1 - x0) // 4), window=WINDOW)
+
+    assert engine.picture_seeks == [pytest.approx(1_000.0, abs=40.0)]
+    assert engine.seeks == []
+
+
+def _radio_beside_the_playlist(tmp_path: Path, *stations: list[str]) -> None:
+    write_radio(radio_file_for(tmp_path / "playlist.tsv"),
+                [[tmp_path / name for name in names] for names in stations])
+
+
+def _heard(engine: FakeEngine) -> list[int | None]:
+    return [station.heard_at for station in engine.stations]
+
+
+def test_a_funestras_radio_is_tuned_in_while_a_picture_is_up_at_its_own_level(tmp_path):
+    _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"], ["c.mp4"])
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 commands="SET_VOLUME 60 0\n")
+    funestra.tick(window=WINDOW)
+    assert _heard(engine) == [None, None, None]
+
+    _a_picture_up(engine)
+    funestra.tick(window=WINDOW)
+
+    assert _heard(engine) == [60, None, None]
+
+
+def test_a_funestra_left_muted_hears_none_of_its_radio(tmp_path):
+    _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 commands="")
+    _a_picture_up(engine)
+
+    funestra.tick(window=WINDOW)
+
+    assert _heard(engine) == [None, None]
+
+
+def test_a_funestra_that_can_never_be_heard_opens_no_radio(tmp_path):
+    _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 audible=False)
+    _a_picture_up(engine)
+
+    funestra.tick(window=WINDOW)
+
+    assert engine.stations == []
+
+
+def test_a_funestras_radio_goes_off_when_its_file_goes(tmp_path):
+    _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra.tick(window=WINDOW)
+
+    radio_file_for(tmp_path / "playlist.tsv").unlink()
+    funestra.tick(window=WINDOW)
+
+    assert [station.closed for station in engine.stations] == [True, True]
+
+
+def test_a_funestras_radio_holds_still_with_the_room(tmp_path):
+    _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    (tmp_path / "paused.txt").write_text("1", encoding="utf-8")
+
+    funestra.tick(window=WINDOW)
+
+    assert [station.paused for station in engine.stations] == [True, True]
+
+
+def test_a_funestra_closed_lets_its_radio_go(tmp_path):
+    _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra.tick(window=WINDOW)
+
+    funestra.close()
+
+    assert [station.closed for station in engine.stations] == [True, True]
 
 
 def test_commands_drain_and_act_before_the_frame_is_published(tmp_path):
@@ -727,13 +863,13 @@ class TestAStretchOfTheItem:
     def test_a_mark_zooms_the_track_to_the_stretch_around_it(self, tmp_path):
         funestra, engine = _scripted_main(tmp_path)
         funestra.tick(window=WINDOW)
-        assert funestra.clip_row().duration_ms == engine.duration_ms
+        assert funestra.item_row().duration_ms == engine.duration_ms
 
         funestra.playback.set_mark(50_000)
         engine.position_ms = 51_000.0
         funestra.tick(window=WINDOW)
 
-        row = funestra.clip_row()
+        row = funestra.item_row()
         assert row.duration_ms < engine.duration_ms
         assert row.record_in_ms == 50_000 - funestra._strip.window[0]
 
@@ -878,7 +1014,7 @@ class TestAUsersOwnPicture:
         loop of the clip itself."""
         funestra, _engine, genau = self._genau_in_front(tmp_path)
 
-        row = funestra._panel._clip_row
+        row = funestra._panel._item_row
 
         assert (row.position_ms, row.duration_ms) == (genau.elapsed_ms, genau.interval_ms)
         assert row.playhead.text == f"frame {FIGURE_SPACE}6 / 20 · 0:04 / 0:10"
@@ -922,7 +1058,7 @@ class TestAUsersOwnPicture:
         funestra.tick(window=WINDOW)
 
         assert not {BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID} & set(engine.overlays)
-        assert funestra._panel._clip_row.duration_ms == engine.duration_ms
+        assert funestra._panel._item_row.duration_ms == engine.duration_ms
 
 
 class TestAWindowsOwnPanel:
