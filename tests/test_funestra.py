@@ -143,7 +143,7 @@ def test_the_row_says_where_the_clip_is_and_how_long_it_runs(tmp_path):
 
     funestra.tick(window=WINDOW)
 
-    row = funestra.clip_row()
+    row = funestra.item_row()
     assert (row.position_ms, row.duration_ms) == (0.0, engine.duration_ms)
     assert row.playhead is not None
     assert row.volume is funestra._volume.hud
@@ -175,7 +175,7 @@ def test_a_picture_on_screen_keeps_the_row_saying_how_far_into_its_time_it_is(tm
 
     funestra.tick(window=WINDOW)
 
-    row = funestra.clip_row()
+    row = funestra.item_row()
     assert (row.position_ms, row.duration_ms) == (1_000.0, 4_000.0)
     assert row.volume is funestra._volume.hud
     assert funestra._panel.row is not None
@@ -209,7 +209,7 @@ def test_the_panel_keeps_its_size_on_a_picture_held_until_something_moves_it(tmp
     _a_picture_up(engine, 0.0, 0.0)
     funestra.tick(window=WINDOW)
 
-    assert funestra.clip_row().playhead is None
+    assert funestra.item_row().playhead is None
     assert engine.overlays[HUD_OVERLAY_ID][2].shape == on_the_video
 
 
@@ -221,7 +221,7 @@ def test_a_pictures_row_reads_out_the_time_it_has_had_of_its_time(tmp_path):
 
     funestra.tick(window=WINDOW)
 
-    assert funestra.clip_row().playhead.text == "0:01 / 0:04"
+    assert funestra.item_row().playhead.text == "0:01 / 0:04"
 
 
 def test_a_press_along_a_pictures_track_puts_it_that_far_into_its_time(tmp_path):
@@ -787,13 +787,13 @@ class TestAStretchOfTheItem:
     def test_a_mark_zooms_the_track_to_the_stretch_around_it(self, tmp_path):
         funestra, engine = _scripted_main(tmp_path)
         funestra.tick(window=WINDOW)
-        assert funestra.clip_row().duration_ms == engine.duration_ms
+        assert funestra.item_row().duration_ms == engine.duration_ms
 
         funestra.playback.set_mark(50_000)
         engine.position_ms = 51_000.0
         funestra.tick(window=WINDOW)
 
-        row = funestra.clip_row()
+        row = funestra.item_row()
         assert row.duration_ms < engine.duration_ms
         assert row.record_in_ms == 50_000 - funestra._strip.window[0]
 
@@ -938,7 +938,7 @@ class TestAUsersOwnPicture:
         loop of the clip itself."""
         funestra, _engine, genau = self._genau_in_front(tmp_path)
 
-        row = funestra._panel._clip_row
+        row = funestra._panel._item_row
 
         assert (row.position_ms, row.duration_ms) == (genau.elapsed_ms, genau.interval_ms)
         assert row.playhead.text == f"frame {FIGURE_SPACE}6 / 20 · 0:04 / 0:10"
@@ -982,7 +982,7 @@ class TestAUsersOwnPicture:
         funestra.tick(window=WINDOW)
 
         assert not {BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID} & set(engine.overlays)
-        assert funestra._panel._clip_row.duration_ms == engine.duration_ms
+        assert funestra._panel._item_row.duration_ms == engine.duration_ms
 
 
 class TestAWindowsOwnPanel:

@@ -242,7 +242,7 @@ class Funestra:
 
     def _panel_for(self, channels: Channels, drawn_on,
                    panel: Callable[[], HudModel | None] | None) -> HudOverlay | ConsoleOverlay | None:
-        """The one panel this window wears, which carries the clip's row: the
+        """The one panel this window wears, which carries the item's row: the
         room's console on the main slot, the published HUD, or the window's
         own program's panel where no room publishes one.  Each places a press
         on the row itself, so each is handed what it asks of the window when
@@ -422,9 +422,7 @@ class Funestra:
         picture = self._front.picture()
         if picture is None:
             self._users_picture.hide()
-            row = self.clip_row()
-            self._paint_panel(window, row, self._strip.colors if row is not None else None,
-                              self.playback.speed)
+            self._paint_panel(window, self.item_row(), self._strip.colors, self.playback.speed)
             if self._panel_surface is None:
                 self._paint_loop_frames(window)
         else:
@@ -434,12 +432,12 @@ class Funestra:
         if self._corners is not None:
             self._corners.paint(window=window)
 
-    def clip_row(self) -> RowHud | None:
-        """Where the clip has got to, how long it runs, how loud it is and where
-        its loop ends -- the row the panel carries at its foot, or None on a
-        picture, which has nothing to run through.  Timed against the stretch
-        the track spans, which is the whole clip until a loop being recorded
-        zooms it in.
+    def item_row(self) -> RowHud:
+        """Where the item on screen has got to, how long it runs, how loud it
+        is and where its loop ends -- the row the panel carries at its foot.  A
+        picture runs for the time it holds the screen.  A video is timed
+        against the stretch the track spans, which is the whole video until a
+        loop being recorded zooms it in.
         """
         playback, engine = self.playback, self._engine
         self._strip.update(playback.showing, playback.current_funscript,
@@ -477,12 +475,12 @@ class Funestra:
         if isinstance(self._panel, ConsoleOverlay):
             self._flash = self._name_flash.showing(self._top_block().video)
             self._panel.tick(playback_speed=playback_speed, window=window,
-                             clip_row=row, heatmap=colors, flash=self._flash)
+                             item_row=row, heatmap=colors, flash=self._flash)
         else:
             video = self._front.top_block().video or self.playback.name_on_screen
             self._flash = self._name_flash.showing(video)
             self._panel.tick(video=video, playback_speed=playback_speed, window=window,
-                             clip_row=row, heatmap=colors, flash=self._flash)
+                             item_row=row, heatmap=colors, flash=self._flash)
 
     def _paint_loop_frames(self, window: tuple[int, int]) -> None:
         """The loop's in and out frames, each hanging under the panel below its
