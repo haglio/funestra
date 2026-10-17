@@ -143,7 +143,11 @@ class Playback:
 
     @property
     def showing(self) -> Path:
-        return self._versions.get(self.current_video, self.current_video)
+        return self._file_at(self._index)
+
+    def _file_at(self, index: int) -> Path:
+        clip = self._playlist[index % len(self._playlist)]
+        return self._versions.get(clip, clip)
 
     @property
     def idle(self) -> bool:
@@ -280,22 +284,25 @@ class Playback:
         if self._paused:
             return
         if not self._locked and self._engine.advanced_to_next:
-            self._play_points.ended()
-            self._frame_on_screen = None
-            self._picture_put_up = False
-            self._mark = None
-            self._ab_loop = None
-            self._index = (self._index + 1) % len(self._playlist)
-            self._loads += 1
-            self._engine.drop_consumed()
-            self._stage_next()
-            self._owed_seek.owe(self._play_points.point_for(self.current_video) or None)
-            self._device.take_over()
+            self._follow_the_roll()
         elif position_ms + REWIND_MS < self._last_pos_ms:
             self._device.take_over()
         self._last_pos_ms = position_ms
         if self._the_picture_has_resumed(position_ms):
             self._device.drive(position_ms, self.funscript_as_played, speed=self._speed)
+
+    def _follow_the_roll(self) -> None:
+        self._play_points.ended()
+        self._frame_on_screen = None
+        self._picture_put_up = False
+        self._mark = None
+        self._ab_loop = None
+        self._index = (self._index + 1) % len(self._playlist)
+        self._loads += 1
+        self._engine.drop_consumed()
+        self._stage_next()
+        self._owed_seek.owe(self._play_points.point_for(self.current_video) or None)
+        self._device.take_over()
 
     def _the_picture_has_resumed(self, position_ms: float) -> bool:
         """Un-pausing is a request, not a picture: the device waits for the
@@ -364,22 +371,20 @@ class Playback:
         self._picture_put_up = False
         self._index = index % len(self._playlist)
         self._loads += 1
-        clip = self._playlist[self._index]
-        video = self._versions.get(clip, clip)
+        video = self.showing
         logger.info("Loading: %s", video.name)
         self.clear_ab_loop()
         self._engine.load(video)
         self._engine.set_paused(self._paused)
         self._stage_next()
-        self._owed_seek.owe(self._play_points.point_for(clip) or None)
+        self._owed_seek.owe(self._play_points.point_for(self.current_video) or None)
         self._device.take_over()
         self._last_pos_ms = 0.0
 
     def _stage_next(self) -> None:
         if self._locked:
             return
-        nxt = self._playlist[(self._index + 1) % len(self._playlist)]
-        self._engine.stage_next(self._versions.get(nxt, nxt))
+        self._engine.stage_next(self._file_at(self._index + 1))
 
     def close(self) -> None:
         self._play_points.leave()
