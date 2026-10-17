@@ -166,16 +166,76 @@ def test_a_scripted_clips_track_is_filled_across_the_width_the_panel_drew_it_at(
     assert len(funestra._strip.colors) == x1 - x0
 
 
-def test_a_picture_on_screen_puts_no_row_on_the_panel(tmp_path):
+def test_a_picture_on_screen_keeps_the_row_saying_how_far_into_its_time_it_is(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
                                  hud=True)
     _publish_panel(tmp_path)
     engine.showing_picture = True
+    engine.picture_time = (1_000.0, 4_000.0)
 
     funestra.tick(window=WINDOW)
 
-    assert funestra.clip_row() is None
-    assert funestra._panel.row is None
+    row = funestra.clip_row()
+    assert (row.position_ms, row.duration_ms) == (1_000.0, 4_000.0)
+    assert row.volume is funestra._volume.hud
+    assert funestra._panel.row is not None
+
+
+def _a_picture_up(engine: FakeEngine, elapsed_ms: float = 1_000.0, pace_ms: float = 4_000.0) -> None:
+    engine.showing_picture = True
+    engine.picture_time = (elapsed_ms, pace_ms)
+
+
+def test_the_panel_keeps_its_size_when_a_picture_comes_up_after_a_video(tmp_path):
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 hud=True)
+    _publish_panel(tmp_path)
+    funestra.tick(window=WINDOW)
+    on_the_video = engine.overlays[HUD_OVERLAY_ID][2].shape
+
+    _a_picture_up(engine)
+    funestra.tick(window=WINDOW)
+
+    assert engine.overlays[HUD_OVERLAY_ID][2].shape == on_the_video
+
+
+def test_the_panel_keeps_its_size_on_a_picture_held_until_something_moves_it(tmp_path):
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 hud=True)
+    _publish_panel(tmp_path)
+    funestra.tick(window=WINDOW)
+    on_the_video = engine.overlays[HUD_OVERLAY_ID][2].shape
+
+    _a_picture_up(engine, 0.0, 0.0)
+    funestra.tick(window=WINDOW)
+
+    assert funestra.clip_row().playhead is None
+    assert engine.overlays[HUD_OVERLAY_ID][2].shape == on_the_video
+
+
+def test_a_pictures_row_reads_out_the_time_it_has_had_of_its_time(tmp_path):
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 hud=True)
+    _publish_panel(tmp_path)
+    _a_picture_up(engine, 1_000.0, 4_000.0)
+
+    funestra.tick(window=WINDOW)
+
+    assert funestra.clip_row().playhead.text == "0:01 / 0:04"
+
+
+def test_a_press_along_a_pictures_track_puts_it_that_far_into_its_time(tmp_path):
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 hud=True)
+    _publish_panel(tmp_path)
+    _a_picture_up(engine, 3_000.0, 4_000.0)
+    funestra.tick(window=WINDOW)
+    x0, x1 = funestra._panel.row.track
+
+    funestra.press(*_on_the_row(funestra, engine, along=x0 + (x1 - x0) // 4), window=WINDOW)
+
+    assert engine.picture_seeks == [pytest.approx(1_000.0, abs=40.0)]
+    assert engine.seeks == []
 
 
 def test_commands_drain_and_act_before_the_frame_is_published(tmp_path):

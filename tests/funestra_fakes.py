@@ -62,6 +62,8 @@ class FakeEngine(RefusesSeeks):
         self.speed = 1.0
         self.pace_s: float | None = None
         self.showing_picture = False
+        self.picture_time: tuple[float, float] | None = None
+        self.picture_seeks: list[float] = []
         self.source_dims = (0, 0)
         self.ab_loop: tuple[float, float] | None = None
         self.pushes = 0
@@ -120,6 +122,9 @@ class FakeEngine(RefusesSeeks):
 
     def push_still(self) -> None:
         self.pushes += 1
+
+    def seek_picture(self, ms: float) -> None:
+        self.picture_seeks.append(ms)
 
     def seek_ms(self, ms: float) -> None:
         self.refuse_if_asked()
