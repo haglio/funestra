@@ -9,6 +9,14 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-17 — a picture's move starts when the engine puts it up
+
+An engine starts a picture's Ken Burns move when it opens a clip (`load`) and
+when it settles on the clip mpv advanced onto, and never on mpv's report of a
+new file, which skipped a list coming round to the file it left. The engine's
+`drop_consumed` is `settle_on_the_next`, so a host's fake engine standing in
+under `Playback` answers to the new name.
+
 ## 2026-10-13 — cruise control is gone
 
 Human-inspired motion outclassed it, and Fun Time and Origenerator took it out

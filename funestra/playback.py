@@ -299,7 +299,7 @@ class Playback:
         self._ab_loop = None
         self._index = (self._index + 1) % len(self._playlist)
         self._loads += 1
-        self._engine.drop_consumed()
+        self._engine.settle_on_the_next()
         self._stage_next()
         self._owed_seek.owe(self._play_points.point_for(self.current_video) or None)
         self._device.take_over()
