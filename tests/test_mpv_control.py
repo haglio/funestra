@@ -131,20 +131,44 @@ def test_between_files_there_is_no_frame_rate():
     assert control.frame_rate == 0.0
 
 
-def test_a_picture_holds_the_screen_for_the_pace_it_was_given():
+def moved_on(mpv: FakeMpv) -> int:
+    return sum(1 for call in mpv.calls if call == ("command", "playlist-next"))
+
+
+def a_picture_with_the_next_staged(pace_s: float = 4.0, **control) -> tuple[FakeMpv, Control]:
     mpv = FakeMpv()
+    control = Control(mpv, now=100.0, **control)
+    control.set_pace(pace_s)
+    show_a_picture(control, mpv)
+    control.stage_next(Path("made-up-next.png"))
+    return mpv, control
 
-    Control(mpv).set_pace(2.5)
 
-    assert mpv.image_display_duration == 2.5
+def pushed_at(control: Control, *moments: float) -> None:
+    for now in moments:
+        control.now = now
+        control.push_still()
 
 
-def test_a_pace_of_nought_holds_the_picture_until_something_moves_it():
-    mpv = FakeMpv()
+def test_every_engine_opens_mpv_holding_pictures_up_for_its_own_clock_to_end():
+    options = _shared_options(muted=False, loop_file=False, prefetch=True)
 
-    Control(mpv).set_pace(0)
+    assert options["image_display_duration"] == "inf"
 
-    assert mpv.image_display_duration == "inf"
+
+def test_a_pace_reaches_the_engines_clock_and_never_mpvs():
+    mpv, _control = a_picture_with_the_next_staged(2.5)
+
+    assert "image_display_duration" not in vars(mpv)
+
+
+def test_a_picture_moves_on_to_the_staged_clip_once_its_pace_has_gone_by():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+
+    pushed_at(control, 103.9)
+    assert moved_on(mpv) == 0
+    pushed_at(control, 104.05, 104.1, 104.2)
+    assert moved_on(mpv) == 1
 
 
 def test_the_engine_shows_a_picture_when_mpv_says_its_video_track_is_an_image():
@@ -156,12 +180,6 @@ def test_the_engine_shows_a_picture_when_mpv_says_its_video_track_is_an_image():
 
     mpv.report("current-tracks/video/image", None)
     assert control.showing_picture is False
-
-
-def test_a_engine_holds_a_picture_four_seconds_until_a_source_sets_a_pace():
-    options = _shared_options(muted=False, loop_file=False, prefetch=True)
-
-    assert options["image_display_duration"] == 4.0
 
 
 # Every Lua script mpv loads for itself, by the option that keeps it out.
@@ -334,7 +352,6 @@ def test_a_call_arriving_after_the_close_reaches_no_handle():
     control.seek_ms(1000)
     assert control.position_ms == 0.0
     assert control.duration_ms == 0.0
-    assert control.eof is False
     assert control.advanced_to_next is False
     assert mpv.calls == [("terminate",)]
 
@@ -575,7 +592,7 @@ def swapped_in(mpv: FakeMpv, control: Control, at: float, name: str = "made-up-f
     mpv.report("path", name)
 
 
-def test_mpv_leaves_a_swapped_in_still_up_rather_than_ending_it_on_a_clock_of_its_own():
+def test_swapping_a_still_in_hands_mpv_no_clock_to_end_it_on():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
@@ -583,24 +600,17 @@ def test_mpv_leaves_a_swapped_in_still_up_rather_than_ending_it_on_a_clock_of_it
 
     swapped_in(mpv, control, at=102.0)
 
-    assert mpv.image_display_duration == "inf"
+    assert "image_display_duration" not in vars(mpv)
 
 
 def test_a_swapped_in_still_runs_out_when_the_picture_it_replaced_would_have():
-    mpv = FakeMpv()
-    mpv.eof_reached = False
-    control = Control(mpv, now=100.0)
-    control.set_pace(4.0)
-    show_a_picture(control, mpv)
+    mpv, control = a_picture_with_the_next_staged(4.0)
     swapped_in(mpv, control, at=102.0)
 
-    ran_out = []
-    for now in (103.9, 104.05):
-        control.now = now
-        control.push_still()
-        ran_out.append(control.eof)
-
-    assert ran_out == [False, True]
+    pushed_at(control, 103.9)
+    assert moved_on(mpv) == 0
+    pushed_at(control, 104.05)
+    assert moved_on(mpv) == 1
 
 
 def test_a_still_swapped_in_keeps_the_next_clip_staged_after_it():
@@ -630,64 +640,102 @@ def test_a_still_swapped_in_after_the_engine_rolled_onto_its_staged_clip_stages_
     assert mpv.calls == [("play", "made-up-frame.png"), ("clear",)]
 
 
-def test_a_swapped_in_still_that_runs_out_moves_on_to_the_staged_clip_at_the_pace():
+def test_the_picture_after_one_that_moved_on_counts_its_own_pace_from_when_it_came_up():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+    swapped_in(mpv, control, at=102.0)
+    pushed_at(control, 104.05)
+
+    control.now = 104.2
+    mpv.playlist_pos = 1
+    mpv.report("path", "made-up-next.png")
+    control.settle_on_the_next()
+    control.stage_next(Path("made-up-after.png"))
+    pushed_at(control, 108.1)
+    assert moved_on(mpv) == 1
+    pushed_at(control, 108.25)
+    assert moved_on(mpv) == 2
+
+
+def test_a_pace_set_while_a_still_is_swapped_in_times_it_from_then_on():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+    swapped_in(mpv, control, at=102.0)
+
+    control.set_pace(8.0)  # halfway along, so four seconds are left of it
+
+    pushed_at(control, 105.9)
+    assert moved_on(mpv) == 0
+    pushed_at(control, 106.05)
+    assert moved_on(mpv) == 1
+
+
+def test_a_picture_says_how_far_into_its_pace_it_is():
+    _mpv, control = a_picture_with_the_next_staged(4.0)
+
+    pushed_at(control, 101.0)
+
+    assert control.picture_time == pytest.approx((1_000.0, 4_000.0))
+
+
+def test_a_video_has_no_picture_time():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    show_a_picture(control, mpv)
-    control.stage_next(Path("made-up-next.png"))
-    swapped_in(mpv, control, at=102.0)
-    mpv.calls.clear()
+    mpv.report("path", "made-up-scene.mp4")
+    mpv.report("current-tracks/video/image", False)
 
-    control.now = 104.05
-    control.push_still()
+    pushed_at(control, 101.0)
 
-    assert mpv.image_display_duration == 4.0
-    assert [call for call in mpv.calls if call[0] == "command"] == [("command", "playlist-next")]
+    assert control.picture_time is None
 
 
-def test_a_file_opened_after_a_swapped_in_still_holds_for_the_pace_again():
-    mpv = FakeMpv()
-    control = Control(mpv, now=100.0)
-    control.set_pace(4.0)
-    show_a_picture(control, mpv)
-    swapped_in(mpv, control, at=102.0)
+def test_a_locked_pictures_time_comes_round_again_each_pace():
+    _mpv, control = a_picture_with_the_next_staged(4.0, looping=True)
 
-    control.load(Path("made-up-next.png"))
+    pushed_at(control, 105.0)
 
-    assert mpv.image_display_duration == 4.0
+    assert control.picture_time == pytest.approx((1_000.0, 4_000.0))
 
 
-def ran_out_on_a_swapped_in_still(mpv: FakeMpv) -> Control:
-    mpv.eof_reached = False
-    control = Control(mpv, now=100.0)
-    control.set_pace(4.0)
-    show_a_picture(control, mpv)
-    swapped_in(mpv, control, at=102.0)
-    control.now = 104.05
-    control.push_still()
-    return control
+def test_a_press_back_along_a_pictures_track_gives_it_that_much_longer():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+    pushed_at(control, 103.0)
+
+    control.seek_picture(1_000.0)
+
+    pushed_at(control, 103.0)
+    assert control.picture_time == pytest.approx((1_000.0, 4_000.0))
+    pushed_at(control, 105.9)
+    assert moved_on(mpv) == 0
+    pushed_at(control, 106.05)
+    assert moved_on(mpv) == 1
 
 
-def test_a_file_opened_after_a_swapped_in_still_ran_out_has_not():
-    mpv = FakeMpv()
-    control = ran_out_on_a_swapped_in_still(mpv)
+def test_a_pictures_slow_zoom_goes_back_with_its_time():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+    pushed_at(control, 103.0)
 
-    control.load(Path("made-up-next.png"))
+    control.seek_picture(1_000.0)
 
-    assert control.eof is False
+    assert drawn_at(control, mpv, 103.0) == pytest.approx(CREEP.at(0.25).placement())
 
 
-def test_a_pace_set_while_a_still_is_swapped_in_leaves_mpv_holding_it():
-    mpv = FakeMpv()
-    control = Control(mpv, now=100.0)
-    control.set_pace(4.0)
-    show_a_picture(control, mpv)
-    swapped_in(mpv, control, at=102.0)
+def test_a_press_at_the_end_of_a_pictures_track_moves_it_on():
+    mpv, control = a_picture_with_the_next_staged(4.0)
 
-    control.set_pace(6.0)
+    control.seek_picture(4_000.0)
 
-    assert mpv.image_display_duration == "inf"
+    pushed_at(control, 100.1)
+    assert moved_on(mpv) == 1
+
+
+def test_a_press_along_the_track_of_a_picture_held_for_nought_changes_nothing():
+    mpv, control = a_picture_with_the_next_staged(0.0)
+
+    control.seek_picture(2_000.0)
+
+    pushed_at(control, 1_000.0)
+    assert control.picture_time == (0.0, 0.0)
+    assert moved_on(mpv) == 0
 
 
 def test_a_file_opened_is_dealt_a_move_of_its_own_though_it_was_once_swapped_in():
@@ -782,17 +830,12 @@ def test_a_picture_settled_on_from_under_a_still_swapped_in_over_it_is_dealt_one
 
 
 def test_a_still_swapped_in_on_a_locked_engine_never_runs_out():
-    mpv = FakeMpv()
-    mpv.eof_reached = False
-    control = Control(mpv, now=100.0, looping=True)
-    control.set_pace(4.0)
-    show_a_picture(control, mpv)
+    mpv, control = a_picture_with_the_next_staged(4.0, looping=True)
     swapped_in(mpv, control, at=102.0)
 
-    control.now = 110.0
-    control.push_still()
+    pushed_at(control, 110.0)
 
-    assert control.eof is False
+    assert moved_on(mpv) == 0
 
 
 def test_a_still_swapped_in_after_the_engine_let_go_of_its_file_stages_nothing():

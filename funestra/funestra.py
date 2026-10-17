@@ -31,7 +31,7 @@ from .mpv_engine import MpvEngine
 from .outside_buttons import OutsideButtons
 from .play_points import PlayPoints
 from .playback import Playback, funscripts_of
-from .playhead import framed_playhead, video_playhead
+from .playhead import framed_playhead, time_playhead, video_playhead
 from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
@@ -282,11 +282,13 @@ class Funestra:
     def _seek_along_the_track(self, ms: float) -> None:
         """A press on the track names a time in the stretch the track spans,
         which is the whole clip until a loop being recorded zooms it in -- or,
-        under a picture the User put up itself, how far into its time on
-        screen that picture is."""
+        under a picture, how far into its time on screen that picture is."""
         picture = self._front.picture()
         if picture is not None:
             picture.seek_time(ms)
+            return
+        if self.playback.showing_picture:
+            self._engine.seek_picture(ms)
             return
         start_ms, _end_ms = self._strip.window
         self.playback.seek_to(start_ms + ms)
@@ -444,7 +446,9 @@ class Funestra:
                            playback.duration_ms, self._track_width(),
                            mark_in_ms=playback.mark, position_ms=playback.position_ms)
         if playback.showing_picture:
-            return None
+            elapsed_ms, pace_ms = engine.picture_time or (0.0, 0.0)
+            return RowHud(position_ms=elapsed_ms, duration_ms=pace_ms, volume=self._volume.hud,
+                          playhead=time_playhead(elapsed_ms, pace_ms))
         start_ms, end_ms = self._strip.window
         bounds = playback.ab_loop
         return RowHud(

@@ -103,11 +103,11 @@ class KenBurns:
         return self._pace_s
 
     def set_looping(self, looping: bool, now_s: float) -> None:
-        self._reach(now_s)
+        self.progress(now_s)
         self._looping = looping
 
     def set_pace(self, seconds: float, now_s: float) -> None:
-        reached = self._reach(now_s)
+        reached = self.progress(now_s)
         if seconds and self._move is STANDSTILL:
             self._move = self._moves.from_rest()
         self._pace_s = seconds
@@ -128,13 +128,17 @@ class KenBurns:
             self._clock.thaw(now_s)
 
     def view(self, now_s: float) -> View:
-        reached = self._reach(now_s)
+        reached = self.progress(now_s)
         return self._move.at(reached)
 
     def ran_out(self, now_s: float) -> bool:
-        return bool(self._pace_s) and self._reach(now_s) >= 1.0
+        return bool(self._pace_s) and self.progress(now_s) >= 1.0
 
-    def _reach(self, now_s: float) -> float:
+    def seek(self, progress: float, now_s: float) -> None:
+        self.progress(now_s)
+        self._started_s = self._clock.read(now_s) - progress * self._pace_s
+
+    def progress(self, now_s: float) -> float:
         if not self._pace_s:
             return self._held_progress
         progress = (self._clock.read(now_s) - self._started_s) / self._pace_s
