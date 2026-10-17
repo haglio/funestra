@@ -457,29 +457,25 @@ def locked_with_places(*places, deals: Deals | None = None) -> KenBurns:
     return still
 
 
-def test_a_locked_picture_with_places_punches_in_on_the_first_when_it_comes_round():
-    still = locked_with_places(FACE)
-
-    assert still.view(now_s=104.0) == Fit((0, 0), (0, 0)).framing(FACE)
-
-
-def test_a_locked_picture_goes_round_each_of_its_places_then_the_whole_picture_again():
-    deals = Deals(DRIFT, CREEP, DRIFT)
+def test_a_locked_picture_comes_round_to_whichever_stop_its_moves_pick():
+    deals = Deals(DRIFT, CREEP, stops=(HAND, None, FACE))
     still = locked_with_places(FACE, HAND, deals=deals)
     framed = Fit((0, 0), (0, 0)).framing
 
-    views = [still.view(now_s=now) for now in (104.0, 108.0, 112.0, 116.0)]
+    views = [still.view(now_s=now) for now in (104.0, 108.0, 112.0)]
 
-    assert views == [framed(FACE), framed(HAND), CREEP.at(0.0), framed(FACE)]
+    assert views == [framed(HAND), CREEP.at(0.0), framed(FACE)]
 
 
-def test_places_that_arrive_partway_round_send_the_next_round_to_the_first_of_them():
-    still = locked_with_places(FACE, HAND)
+def test_places_that_arrive_partway_round_are_the_ones_the_next_round_picks_among():
+    deals = Deals(DRIFT, stops=(FACE, HAND))
+    still = locked_with_places(FACE, HAND, deals=deals)
     still.view(now_s=104.0)
 
-    still.set_points_of_interest((HAND, FACE), now_s=105.0)
+    still.set_points_of_interest((HAND,), now_s=105.0)
+    still.view(now_s=108.0)
 
-    assert still.view(now_s=108.0) == Fit((0, 0), (0, 0)).framing(HAND)
+    assert deals.offered[-1] == (HAND,)
 
 
 def test_a_new_picture_starts_its_round_of_places_on_the_whole_picture():
@@ -577,3 +573,14 @@ def test_a_close_up_pan_crosses_the_place_from_a_corner_to_the_opposite_one():
         assert start_middle[0] + end_middle[0] == pytest.approx(PLACE[0] + PLACE[2])
         assert start_middle[1] + end_middle[1] == pytest.approx(PLACE[1] + PLACE[3])
     assert pans
+
+
+def test_the_whole_picture_comes_round_as_often_as_all_the_places_together():
+    moves = Moves(random.Random(7))
+    places = (FACE, HAND, PLACE)
+
+    stops = [moves.stop_among(places) for _ in range(6000)]
+
+    assert stops.count(None) / len(stops) == pytest.approx(1 / 2, abs=0.03)
+    for place in places:
+        assert stops.count(place) / len(stops) == pytest.approx(1 / 6, abs=0.03)
