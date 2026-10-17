@@ -18,10 +18,11 @@ import pytest
 from dealt_moves import DRIFT, Deals
 
 from funestra import audio_outputs, mpv_engine
-from funestra.ken_burns import Move, zoom_in
+from funestra.ken_burns import Fit, Move, zoom_in
 from funestra.mpv_engine import (
     TILES_SHADER,
     MpvEngine,
+    _client_size,
     _MpvControl,
     _shared_options,
     tiles_across,
@@ -91,11 +92,12 @@ class Control(_MpvControl):
     """
 
     def __init__(self, mpv, now: float = 0.0, move: Move = CREEP,
-                 deals: Deals | None = None,
+                 window: tuple[int, int] = (0, 0), deals: Deals | None = None,
                  looping: bool = False) -> None:
         # the call gate every method here runs under
         super().__init__(deals or Deals(move), looping=looping)
         self.now = now
+        self._window = window
         self._adopt(mpv)
 
     def _now(self) -> float:
@@ -1000,3 +1002,39 @@ def test_a_portrait_file_of_another_size_but_the_same_shape_keeps_its_tiles():
 
 def test_the_tile_shader_ships_beside_the_engine_and_takes_its_count_as_a_parameter():
     assert "//!PARAM tiles" in TILES_SHADER.read_text(encoding="utf-8")
+
+
+FACE = (0.4, 0.1, 0.6, 0.3)
+
+
+def test_a_locked_picture_with_places_is_drawn_on_the_close_up_its_window_frames():
+    mpv = FakeMpv()
+    control = Control(mpv, now=100.0, window=WIDE, deals=Deals(CREEP), looping=True)
+    control.set_pace(4.0)
+    show_a_picture(mpv, (832, 1216))
+
+    control.set_points_of_interest((FACE,))
+
+    assert drawn_at(control, mpv, 104.0) == pytest.approx(
+        Fit(WIDE, (832, 1216)).framing(FACE).placement())
+
+
+def test_a_windows_size_is_read_off_windows_itself():
+    user32 = ctypes.windll.user32
+    screen = (user32.GetSystemMetrics(0), user32.GetSystemMetrics(1))  # SM_CXSCREEN, SM_CYSCREEN
+
+    assert _client_size(user32.GetDesktopWindow()) == screen
+
+
+def test_a_window_that_is_not_there_has_no_size():
+    assert _client_size(0) == (0, 0)
+
+
+def test_a_windowed_engine_frames_its_close_ups_for_the_window_it_draws_into(monkeypatch):
+    desktop = ctypes.windll.user32.GetDesktopWindow()
+    monkeypatch.setattr(mpv_engine, "_import_mpv",
+                        lambda: SimpleNamespace(MPV=lambda **_options: FakeMpv()))
+
+    engine = MpvEngine(desktop)
+
+    assert engine._fit().window == _client_size(desktop)

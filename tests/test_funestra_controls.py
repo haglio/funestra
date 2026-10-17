@@ -106,6 +106,15 @@ class TestApplyCommand:
         assert controls.playback.current_video == tmp_path / "v2.mp4"
         assert controls.playback.current_funscript.actions == [(0, 20), (250, 80)]
 
+    def test_play_file_takes_the_places_column_as_the_pictures_places(self, tmp_path):
+        playback, engine = make_playback(tmp_path, entries=2)
+        controls = FunestraControls(playback, reload_playlist=_never_reloads)
+
+        assert apply_command(f"{PLAY_FILE} C:/out/level two.png\t\t0.5,0.5,0.75,0.75",
+                             controls) is True
+
+        assert engine.points_told == [((0.5, 0.5, 0.75, 0.75),)]
+
     def test_a_version_step_plays_the_rendition_the_family_names_next(self, tmp_path):
         controls = _controls(tmp_path)
         clip = controls.playback.current_video

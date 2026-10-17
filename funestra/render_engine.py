@@ -108,6 +108,7 @@ class MpvRenderEngine(_MpvControl):
         pacing; presentation timing is the host's, and mpv just supplies its
         latest frame.
         """
+        self._window = (int(width), int(height))
         flags = self._next_frame_flags()
         self._render_context.render(
             flip_y=flip_y,

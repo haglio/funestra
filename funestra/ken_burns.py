@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import math
 import random
+from collections.abc import Callable
 from dataclasses import dataclass
 
 __all__: list[str] = []
 
 ZOOMED_IN = 1.10
+
+Place = tuple[float, float, float, float]
 
 
 @dataclass(frozen=True)
@@ -31,6 +34,7 @@ class Move:
 
 
 STANDSTILL = Move(View(), View())
+AS_FRAMED = View()
 
 
 def _between(start: float, end: float, progress: float) -> float:
@@ -55,19 +59,83 @@ class Moves:
         self._last = None
 
     def deal(self) -> Move:
-        kind = self._rng.choice([kind for kind in (zoom_in, zoom_out, pan) if kind is not self._last])
-        self._last = kind
+        kind = self._kind()
         return pan(*self._corner()) if kind is pan else kind(*self._spot())
+
+    def close_up(self, frame: Callable[[Place, View], View], place: Place) -> Move:
+        move = self.deal()
+        return Move(frame(place, move.start), frame(place, move.end))
 
     def from_rest(self) -> Move:
         self._last = zoom_in
         return zoom_in(*self._spot())
+
+    def stop_among(self, places: tuple[Place, ...]) -> Place | None:
+        pick = self._rng.randrange(2 * len(places)) if places else 0
+        return places[pick] if pick < len(places) else None
+
+    def _kind(self):
+        kind = self._rng.choice([kind for kind in (zoom_in, zoom_out, pan) if kind is not self._last])
+        self._last = kind
+        return kind
 
     def _spot(self) -> tuple[float, float]:
         return self._rng.uniform(-1.0, 1.0), self._rng.uniform(-1.0, 1.0)
 
     def _corner(self) -> tuple[float, float]:
         return self._rng.choice((-1.0, 1.0)), self._rng.choice((-1.0, 1.0))
+
+
+CLOSEST = 8.0
+
+
+@dataclass(frozen=True)
+class Fit:
+    window: tuple[int, int]
+    shown: tuple[int, int]
+    tiles: int = 1
+
+    def framing(self, place: Place, view: View = AS_FRAMED) -> View:
+        x0, y0, x1, y1 = (min(max(edge, 0.0), 1.0) for edge in place)
+        middle_tile = self.tiles // 2
+        x0, x1 = (middle_tile + x0) / self.tiles, (middle_tile + x1) / self.tiles
+        room_x, room_y = self._room()
+        close = min(CLOSEST, _fitting(room_x, x1 - x0), _fitting(room_y, y1 - y0))
+        return View(close * view.zoom,
+                    _align_within((x0 + x1) / 2, room_x, close, view.zoom, view.align_x),
+                    _align_within((y0 + y1) / 2, room_y, close, view.zoom, view.align_y))
+
+    def _room(self) -> tuple[float, float]:
+        fitted = self._fitted()
+        if fitted is None:
+            return 1.0, 1.0
+        return self.window[0] / fitted[0], self.window[1] / fitted[1]
+
+    def _fitted(self) -> tuple[float, float] | None:
+        (window_w, window_h), (shown_w, shown_h) = self.window, self.shown
+        if not (window_w and window_h and shown_w and shown_h):
+            return None
+        scale = min(window_w / shown_w, window_h / shown_h)
+        return shown_w * scale, shown_h * scale
+
+
+def _fitting(room: float, part: float) -> float:
+    return room / part if part > 0 else math.inf
+
+
+def _align_centering(middle: float, room: float, zoom: float) -> float:
+    if zoom <= room:
+        return 0.0
+    return max(-1.0, min(1.0, 2.0 * (room / 2.0 - middle * zoom) / (room - zoom) - 1.0))
+
+
+def _align_within(middle: float, room: float, close: float, zoom: float, align: float) -> float:
+    close_left = (_align_centering(middle, room, close) + 1.0) / 2.0 * (1.0 - close / room)
+    left = zoom * close_left + (align + 1.0) / 2.0 * (1.0 - zoom)
+    whole = close * zoom
+    if whole <= room:
+        return 0.0
+    return max(-1.0, min(1.0, 2.0 * left / (1.0 - whole / room) - 1.0))
 
 
 class RoomClock:
@@ -88,15 +156,22 @@ class RoomClock:
             self._frozen_at_s = None
 
 
+def _unknown_window() -> Fit:
+    return Fit((0, 0), (0, 0))
+
+
 class KenBurns:
-    def __init__(self, moves: Moves | None = None, *, looping: bool = False) -> None:
+    def __init__(self, moves: Moves | None = None, *, looping: bool = False,
+                 fit: Callable[[], Fit] = _unknown_window) -> None:
         self._moves = moves or Moves()
+        self._fit = fit
         self._clock = RoomClock()
         self._move = STANDSTILL
         self._pace_s = 0.0
         self._started_s = 0.0
         self._held_progress = 0.0
         self._looping = looping
+        self._places: tuple[Place, ...] = ()
 
     @property
     def pace_s(self) -> float:
@@ -120,6 +195,10 @@ class KenBurns:
         self._move = self._moves.deal() if self._pace_s else STANDSTILL
         self._started_s = self._clock.read(now_s)
         self._held_progress = 0.0
+
+    def set_points_of_interest(self, places: tuple[Place, ...], now_s: float) -> None:
+        self._reach(now_s)
+        self._places = tuple(places)
 
     def set_paused(self, paused: bool, now_s: float) -> None:
         if paused:
@@ -145,5 +224,11 @@ class KenBurns:
     def _come_round(self, progress: float) -> float:
         rounds = math.floor(progress)
         self._started_s += rounds * self._pace_s
-        self._move = self._moves.deal()
+        self._move = self._next_stop()
         return progress - rounds
+
+    def _next_stop(self) -> Move:
+        place = self._moves.stop_among(self._places)
+        if place is None:
+            return self._moves.deal()
+        return self._moves.close_up(self._fit().framing, place)

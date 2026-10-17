@@ -9,6 +9,22 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-16 — a locked picture punches in on its places
+
+A playlist line can carry the places in a picture worth a close-up, after a
+second TAB (`PlaylistItem.points_of_interest`), and a locked picture's move,
+each time it comes round, goes to one of them picked at random or to the whole
+picture, the whole picture as often as all the places together
+(`KenBurns.set_points_of_interest`, `Moves.stop_among`, `Moves.close_up`): each
+close-up is framed as close as its window fits the place (`Fit.framing`), and
+makes one of the three ordinary moves on top of that framing, so it zooms and
+pans across the window as far as a move over the whole picture does however
+close it is. Origenerator fills the column with the places an enhancement's
+fixes found. The item stays the pair it was, the places riding beside it.
+
+`Fit`, `CLOSEST` (once `CLOSEST_AIM`) and the window-size readers the aim took
+with it on 2026-09-28 are back, framing these close-ups.
+
 ## 2026-10-13 — cruise control is gone
 
 Human-inspired motion outclassed it, and Fun Time and Origenerator took it out
