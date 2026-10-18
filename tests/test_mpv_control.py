@@ -8,6 +8,7 @@ integration suite.
 from __future__ import annotations
 
 import ctypes
+import logging
 import math
 import threading
 import time
@@ -220,16 +221,114 @@ def test_a_engine_runs_none_of_mpvs_lua_scripts():
         MPVS_OWN_SCRIPTS, "no")
 
 
-def _options_mpv_opened_with(monkeypatch, **engine_args) -> dict:
-    opened: dict = {}
+class GpuWatch:
+    """Stands in for a window's watch on its graphics card: what it heard, and what it builds with."""
+
+    def __init__(self, rebuild) -> None:
+        self.rebuild = rebuild
+        self.lines: list[str] = []
+        self.stopped = False
+
+    def heard(self, text: str) -> None:
+        self.lines.append(text)
+
+    def stop(self) -> None:
+        self.stopped = True
+
+
+def a_window(monkeypatch, mpv: FakeMpv | None = None, **engine_args) -> SimpleNamespace:
+    window = SimpleNamespace(mpv=mpv or FakeMpv(), options={})
 
     def open_mpv(**options):
-        opened.update(options)
-        return FakeMpv()
+        window.options.update(options)
+        return window.mpv
+
+    def watch(rebuild) -> GpuWatch:
+        window.watch = GpuWatch(rebuild)
+        return window.watch
 
     monkeypatch.setattr(mpv_engine, "_import_mpv", lambda: SimpleNamespace(MPV=open_mpv))
-    MpvEngine(4242, **engine_args)
-    return opened
+    monkeypatch.setattr(mpv_engine, "LostGpu", watch)
+    window.engine = MpvEngine(4242, **engine_args)
+    return window
+
+
+def _options_mpv_opened_with(monkeypatch, **engine_args) -> dict:
+    return a_window(monkeypatch, **engine_args).options
+
+
+SUSPENDED = ("Failed to create SRV: The GPU device instance has been suspended. Use "
+             "GetDeviceRemovedReason to determine the appropriate action. (0x887a0005)")
+
+
+def test_every_line_mpv_says_reaches_the_windows_watch_on_its_graphics_card_and_the_log(
+        monkeypatch, caplog):
+    window = a_window(monkeypatch)
+
+    with caplog.at_level(logging.ERROR, logger="funestra.mpv_engine"):
+        window.options["log_handler"]("error", "vo/gpu/d3d11", SUSPENDED)
+
+    assert window.watch.lines == [SUSPENDED]
+    assert [record.getMessage() for record in caplog.records] == [f"mpv vo/gpu/d3d11: {SUSPENDED}"]
+
+
+class WindowMpv(FakeMpv):
+    """A window's handle: the outputs it was told to build, whether a new one comes up, its track."""
+
+    def __init__(self, *, vid=1, builds: bool = True) -> None:
+        super().__init__()
+        self.__dict__.update(vid=vid, current_vo="gpu", builds=builds)
+
+    def __setattr__(self, name: str, value) -> None:
+        if name in ("vo", "vid"):
+            self.calls.append(("set", name, value))
+        if name == "vo":
+            self.__dict__["current_vo"] = value if self.builds or value != "gpu" else None
+        super().__setattr__(name, value)
+
+
+def outputs_and_tracks_asked_for(mpv: WindowMpv) -> list[tuple]:
+    return [call for call in mpv.calls if call[0] == "set" and call[1] in ("vo", "vid")]
+
+
+def test_a_window_whose_graphics_card_went_away_is_given_a_new_video_output(monkeypatch):
+    window = a_window(monkeypatch, WindowMpv())
+
+    came_up = window.watch.rebuild()
+
+    assert outputs_and_tracks_asked_for(window.mpv) == [("set", "vo", "null"), ("set", "vo", "gpu")]
+    assert came_up is True
+
+
+def test_a_new_video_output_that_never_came_up_says_so(monkeypatch):
+    assert a_window(monkeypatch, WindowMpv(builds=False)).watch.rebuild() is False
+
+
+@pytest.mark.parametrize("given_up", [False, "no"])
+def test_a_new_video_output_brings_back_the_track_mpv_gave_up_on_while_the_card_was_gone(
+        monkeypatch, given_up):
+    window = a_window(monkeypatch, WindowMpv(vid=given_up))
+
+    window.watch.rebuild()
+
+    assert outputs_and_tracks_asked_for(window.mpv)[-1] == ("set", "vid", "auto")
+
+
+class NoFrameMpv(FakeMpv):
+    def screenshot_raw(self, includes: str = "subtitles"):
+        raise SystemError("Error running mpv command", -12)
+
+
+def test_a_frame_mpv_cannot_capture_while_its_output_is_being_built_is_no_frame():
+    assert Control(NoFrameMpv()).screenshot_bgra() is None
+
+
+def test_a_closed_window_calls_off_its_watch_on_the_graphics_card(monkeypatch):
+    window = a_window(monkeypatch, WindowMpv())
+
+    window.engine.close()
+
+    assert window.watch.stopped
 
 
 def test_a_window_never_heard_opens_mpv_with_no_sound_track_for_a_sound_device_to_hold(
