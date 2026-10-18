@@ -34,6 +34,7 @@ __all__ = [
     "position_fraction",
     "set_amplitude",
     "set_center",
+    "set_dials",
     "set_max_intensity",
     "set_speed",
     "trace_window",
