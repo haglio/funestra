@@ -44,11 +44,9 @@ jobs:
         done
         python tools/fetch_libmpv.py --require
 
-  # A consumer built against the candidate. Every caller of this package lives in
-  # another repo and nothing pins a version, so a change here merges green
-  # against this repo's own suite and turns a consumer red at an arbitrary later
-  # time. The scan above holds the public names; this holds the behaviour. genau
-  # is the cheapest of the three that drives the player.
+  # Genau's repo has held no code since Genau became part of this package, only
+  # the checks that hold its genau_contract.json to the flicks-folder layout here,
+  # so this job is those checks run against the candidate.
   consumer:
     uses: haglio/.github/.github/workflows/merge-gate.yml@main
     with:
@@ -57,6 +55,14 @@ jobs:
       python-version: "3.14"
       timeout-minutes: 15
       sdl-video: dummy
+
+  # Fun Time and Origenerator, the apps that run this package, installed with the
+  # candidate over their own pins and every module they ship imported. The scan
+  # above checks the names they import, never what they read as they import: on
+  # 2026-10-14 v0.1.507 dropped two entries of a table Fun Time built its commands
+  # from, the scan passed it, and production Fun Time would not start.
+  apps:
+    uses: haglio/.github/.github/workflows/apps-import.yml@main
 
   # A version for each landing, so the apps that run this one can pin the copy
   # they were built against. The tag is the version: pyproject reads it with
