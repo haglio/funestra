@@ -9,6 +9,20 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-19 — a window builds a new video output when its graphics card goes
+
+A graphics driver restart took every Funestra window's picture for the rest of
+the session: mpv's d3d11 output went on failing on the device Windows had taken
+away. A windowed engine (`MpvEngine`) now hears that in mpv's own log (DXGI's
+codes for a device that is gone) and two seconds later has mpv build it a new
+output (`lost_gpu.LostGpu`), on which the clip plays on where it was, its
+overlays with it, and a track mpv gave up on meanwhile is picked up again. An
+output that does not come up, or goes again within half a minute, is built again
+after twice the wait, up to half a minute. `screenshot_bgra` gives None when mpv
+cannot take a frame, as it said it would, rather than raising. The headset's
+engine (`MpvRenderEngine`) draws in its host's OpenGL context, which a driver
+restart takes with it and which nothing of mpv's can bring back, so it is as it was.
+
 ## 2026-10-19 — no module keeps an `__all__`, and the dead-code check reads the apps
 
 Every module's `__all__` is gone, and `tests/test_consumer_imports.py`, which

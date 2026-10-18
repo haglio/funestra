@@ -39,6 +39,7 @@ import numpy as np
 from .audio_outputs import Output, pick_output
 from .ken_burns import KenBurns, Moves, View
 from .libmpv_loader import add_libmpv_to_path, libmpv_dirs
+from .lost_gpu import LostGpu
 from .mpv_gate import CallGate, mpv_call
 
 logger = logging.getLogger(__name__)
@@ -137,7 +138,8 @@ def _where_it_looked() -> str:
 def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool = True) -> dict:
     """The mpv options every engine in this family shares, however it renders.
 
-    The windowed engine adds its ``wid``/``vo=gpu`` pair on top; the offscreen
+    The windowed engine adds its ``wid``/``vo=gpu`` pair on top, and a log handler
+    that also tells its :class:`~funestra.lost_gpu.LostGpu` what mpv said; the offscreen
     one (:mod:`funestra.render_engine`) adds ``vo=libmpv`` instead.
 
     ``log_handler`` and ``loglevel`` are python-mpv's own constructor keywords
@@ -600,7 +602,10 @@ class _MpvControl:
         without disturbing playback — mpv renders the video itself.  None when
         no frame is available yet.
         """
-        img = self._mpv.screenshot_raw()  # PIL Image
+        try:
+            img = self._mpv.screenshot_raw()  # PIL Image
+        except SystemError:  # python-mpv's word for a command mpv refused: no frame to take
+            return None
         if img is None or img.height == 0:
             return None
         w = max(1, round(height * img.width / img.height))
@@ -663,13 +668,32 @@ class MpvEngine(_MpvControl):
     ) -> None:
         super().__init__(looping=loop_file)
         mpv = _import_mpv()
+        self._lost_gpu = LostGpu(self._build_a_new_video_output)
         options = _shared_options(muted=muted, loop_file=loop_file, prefetch=prefetch, audio=audio)
         options.update(
             wid=str(int(wid)),
             vo="gpu",
             input_vo_keyboard=False,
+            log_handler=self._hear,
         )
         self._adopt(mpv.MPV(**options))
+
+    def _hear(self, level: str, prefix: str, text: str) -> None:
+        _log_mpv(level, prefix, text)
+        self._lost_gpu.heard(text)
+
+    @mpv_call(False)
+    def _build_a_new_video_output(self) -> bool:
+        # mpv builds a new output only when the option changes, so it passes through null.
+        self._mpv.vo = "null"
+        self._mpv.vo = "gpu"
+        if self._mpv.vid in (False, "no"):
+            self._mpv.vid = "auto"
+        return self._mpv.current_vo == "gpu"
+
+    def close(self) -> None:
+        self._lost_gpu.stop()
+        super().close()
 
 
 def _station_options(audio_device: str | None) -> dict:
