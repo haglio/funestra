@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from .renamed import old_name_getter
 
-__all__: list[str] = []
-
 _RENAMED = {
     "CLEAR_FRAME": "CLEAR_FRAME",
     "LOCK_OFF": "LOCK_OFF",

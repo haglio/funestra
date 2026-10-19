@@ -3,8 +3,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-__all__: list[str] = []
-
 SECTION_GAP = 6
 DIVIDER_H = 1
 

@@ -13,8 +13,6 @@ from pathlib import Path
 
 from .file_channel import append_command
 
-__all__ = []
-
 logger = logging.getLogger(__name__)
 
 

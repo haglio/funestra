@@ -6,8 +6,6 @@ from pathlib import Path
 from app_support.json_store import locked_update, read_json
 from app_support.mirrored_tree import library_roots_beside, mirrored_path
 
-__all__ = ["FlickFlip"]
-
 logger = logging.getLogger(__name__)
 
 HALF_A_LOOP = 0.5

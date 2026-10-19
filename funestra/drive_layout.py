@@ -18,13 +18,6 @@ from dataclasses import dataclass, replace
 
 from .geometry import Rect
 
-__all__ = [
-    "MAX_INTENSITY",
-    "TRACE_SAMPLES",
-    "DriveTrack",
-    "Limits",
-]
-
 # The three axes, named as the numeric set commands name them (``robot_hand_amp_57``),
 # and the OSR2's max intensity, which is the device's rather than the motion's
 # (``max_intensity_57``).

@@ -14,9 +14,6 @@ from pathlib import Path
 
 from .renamed import answers_to_old_names
 
-__all__ = [
-    "FlickLoadController",
-]
 
 @answers_to_old_names({
     "adopt_loaded_clip_if_ready": "adopt_loaded_flick_if_ready",

@@ -29,16 +29,6 @@ from . import learned_model
 from .learned_model import LearnedModel
 from .robot_hand import MAX_TICK_SECONDS, RobotHandState, bpm_for_speed
 
-__all__ = [
-    "LearnedMotionState",
-    "disable_learned_motion",
-    "enable_learned_motion",
-    "load_default_model",
-    "position",
-    "tick_learned_motion",
-    "trace_window",
-]
-
 # The trained model that ships with the package.
 DEFAULT_MODEL = Path(__file__).with_name("learned_motion.json.gz")
 # How far past the clock the phrases are laid out, in script seconds, so the

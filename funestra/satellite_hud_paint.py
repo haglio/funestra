@@ -121,10 +121,6 @@ from .satellite_hud import (
     wrong_action_rect,
 )
 
-__all__ = [
-    "HudRenderer",
-]
-
 _PLACEHOLDER = (48, 48, 60)  # a thumbnail fun_time has not produced yet
 
 _DIM = 0.5      # non-playing thumbnails; the one on screen stays full

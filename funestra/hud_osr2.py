@@ -50,7 +50,6 @@ from .robot_hand import FULL_INTENSITY, POSITION_MAX
 # host says what its line shows through the model it already hands over
 # (:class:`funestra.console.ConsoleModel`,
 # :class:`funestra.satellite_hud.HudModel`) rather than by building one.
-__all__: list[str] = []
 
 # The line is as deep as the controls sharing it.
 HEIGHT = BUTTON

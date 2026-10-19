@@ -12,8 +12,6 @@ from .hud_status import SEPARATOR
 from .renamed import old_name_getter
 from .volume import CHIP_H, chip_xy
 
-__all__: list[str] = []
-
 _RENAMED = {"clip_playhead": "flick_playhead"}
 
 __getattr__ = old_name_getter(__name__, _RENAMED)

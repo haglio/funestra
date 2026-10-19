@@ -10,9 +10,6 @@ from pathlib import Path
 
 from .renamed import answers_to_old_names
 
-__all__ = [
-    "FlickRenderController",
-]
 
 def display_index_for_phase(phase: float, frame_count: int) -> int:
     logical_index = min(int(phase * frame_count), frame_count - 1)

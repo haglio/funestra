@@ -90,13 +90,6 @@ from .hud_status import (
 )
 from .modes import LengthMode
 
-__all__ = [
-    "ConsoleHud",
-    "ConsolePainter",
-    "ModeHud",
-    "hud_xy",
-]
-
 # What the two length modes are called on the line.  MIXED is absent: it
 # applies no length filter at all, so it narrows nothing and prints nothing --
 # the same silence a satellite keeps where its act filter would go when it has

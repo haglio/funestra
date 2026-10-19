@@ -41,10 +41,6 @@ from .ken_burns import KenBurns, Moves, View
 from .libmpv_loader import add_libmpv_to_path, libmpv_dirs
 from .mpv_gate import CallGate, mpv_call
 
-__all__ = [
-    "MpvEngine",
-]
-
 logger = logging.getLogger(__name__)
 
 # Every Lua script mpv loads for itself, the on-screen controller among them.  An

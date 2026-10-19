@@ -11,8 +11,6 @@ import os
 import sys
 from pathlib import Path
 
-__all__: list[str] = []  # package-internal: no sibling reaches anything here
-
 # FOLDERID_Profile: the folder %USERPROFILE% normally names.
 _USER_FOLDER_ID = "{5E6C858F-0E22-4760-9AFE-EA3317B67173}"
 

@@ -36,8 +36,6 @@ import threading
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 
-__all__: list[str] = []  # package-internal: no sibling reaches anything here
-
 
 class CallGate:
     """Leases on one mpv instance: any number of callers in, one closer.

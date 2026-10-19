@@ -48,14 +48,6 @@ from .hud_marks import (
     shared_mark_name,
 )
 
-__all__ = [
-    "SYMBOL_FONT",
-    "draw_button",
-    "fit_text",
-    "load_font",
-    "text_width",
-]
-
 # Segoe UI Bold — every label on these HUDs is bold, because they are read at a
 # glance over moving video.  A caller wanting another face passes its filename.
 UI_FONT = "segoeuib.ttf"

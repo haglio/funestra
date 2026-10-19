@@ -14,7 +14,7 @@ from pathlib import Path
 import pytest
 from funestra_fakes import FakeEngine
 
-from funestra import cruise_control, flick_folder, mpv_engine, playhead, status, wave_stack
+from funestra import cruise_control, flick_folder, mpv_engine, playhead, status
 from funestra.console import OSR2_DRIVING, ConsoleModel, aim_row, console_text, parse_console
 from funestra.flag import Flag
 from funestra.flick_cache import FlickCacheStore
@@ -127,7 +127,6 @@ class TestACheckoutFromBeforeCruiseControlWent:
         assert (state.active, bool(state.stack), list(state.stack.waves), state.clock) == (
             False, False, [], 0.0)
         assert cruise_control.disable_cruise_control(state) is None
-        assert wave_stack.__all__ == []
 
 
 def test_a_collaborator_from_before_the_rename_is_asked_by_its_old_method_name():

@@ -16,10 +16,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-__all__ = [
-    "FlickAdvanceState",
-]
-
 if TYPE_CHECKING:
     from pathlib import Path
 

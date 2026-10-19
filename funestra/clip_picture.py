@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from .renamed import old_name_getter
 
-__all__: list[str] = []
-
 _RENAMED = {
     "BACKDROP_OVERLAY_ID": "BACKDROP_OVERLAY_ID",
     "ClipPicture": "FlickPicture",

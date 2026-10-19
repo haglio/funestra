@@ -25,8 +25,6 @@ from dataclasses import dataclass
 from .drive_readout import DriveHud
 from .robot_hand import FULL_INTENSITY
 
-__all__: list[str] = []
-
 # How many entries make it worth scanning for ones to drop.  Housekeeping, not
 # a rule about what is true: a turn just before the playhead is still the one a
 # status read lands on, so nothing is dropped while there is no crowd.

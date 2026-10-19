@@ -13,8 +13,6 @@ from __future__ import annotations
 
 from typing import NamedTuple
 
-__all__ = ["Output", "pick_output"]
-
 _RENDER_ENDPOINTS = r"SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render"
 _DESCRIPTION = "{a45c254e-df1c-4efd-8020-67d146a850e0},2"  # PKEY_Device_DeviceDesc
 _ADAPTER = "{b3f8fa53-0004-438e-9003-51a46e139bfc},6"  # what Windows shows in the brackets

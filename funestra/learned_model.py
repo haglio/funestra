@@ -18,8 +18,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from statistics import median
 
-__all__ = ["LearnedModel", "Phrase", "classify"]
-
 # How many swings a phrase holds.  Even, so a phrase that begins going up ends
 # coming down, and the next one begins going up again from wherever it ended.
 PHRASE_SWINGS = 16

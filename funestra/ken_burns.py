@@ -4,8 +4,6 @@ import math
 import random
 from dataclasses import dataclass
 
-__all__: list[str] = []
-
 ZOOMED_IN = 1.10
 
 

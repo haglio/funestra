@@ -10,8 +10,6 @@ frame.  One grid, read by both, so the two name the same turn on every frame.
 """
 from __future__ import annotations
 
-__all__: list[str] = []
-
 SLIDE_QUANTUM_MS = 40
 
 

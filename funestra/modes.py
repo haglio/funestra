@@ -17,16 +17,6 @@ from enum import Enum, StrEnum
 
 from app_support.osr2_device import Osr2Mode, Osr2Trouble
 
-__all__ = [
-    "LengthMode",
-    "LoopState",
-    "MainMode",
-    "NoticeLevel",
-    "Osr2State",
-    "SatellitesMode",
-    "read_mode",
-]
-
 
 class MainMode(StrEnum):
     """What holds the main slot: Kino's video, or Genau's flicks."""

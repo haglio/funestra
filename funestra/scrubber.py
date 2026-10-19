@@ -11,8 +11,6 @@ from __future__ import annotations
 from .heatmap import build_heatmap
 from .timeline import TIMELINE_HEIGHT, bar_track_x, bar_x, progress_bar_bgra
 
-__all__: list[str] = []
-
 _ZOOM_SPAN_START_MS = 20_000.0
 _ZOOM_LEAD_FRAC = 0.10
 _ZOOM_GROW_FRAC = 0.85

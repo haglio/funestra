@@ -17,10 +17,6 @@ from pathlib import Path
 
 from app_support.file_channel import append_command
 
-__all__ = [
-    "SESSION_QUIT",
-]
-
 # The verb the dashboard's own Quit button posts, and the one the dispatch loop
 # turns into the teardown of every window in the session.
 SESSION_QUIT = "quit"

@@ -13,9 +13,6 @@ from pathlib import Path
 
 from .renamed import answers_to_old_names, method_of
 
-__all__ = [
-    "FlickSelectionController",
-]
 
 @answers_to_old_names({
     "adopt_pending_clip": "adopt_pending_flick",

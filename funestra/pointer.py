@@ -11,10 +11,6 @@ from collections.abc import Callable
 
 from .timeline import bar_track_x
 
-__all__ = [
-    "OMNIPAUSE_TOGGLE",
-]
-
 OMNIPAUSE_TOGGLE = "omnipause_toggle"
 NOWHERE = (-1, -1)
 

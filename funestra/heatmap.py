@@ -5,8 +5,6 @@ from itertools import pairwise
 
 from .funscript import Funscript
 
-__all__: list[str] = []
-
 _GRADIENT: list[tuple[float, tuple[int, int, int]]] = [
     (0.0, (10, 14, 30)),
     (100.0, (30, 70, 230)),

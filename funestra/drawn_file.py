@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import threading
 
-__all__: list[str] = []
-
 
 class DrawnFile:
     def __init__(self) -> None:

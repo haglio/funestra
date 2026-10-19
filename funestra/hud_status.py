@@ -15,14 +15,6 @@ words.  Kept apart from :mod:`funestra.hud_panel`, which owns how a HUD is
 """
 from __future__ import annotations
 
-__all__ = [
-    "F_MODE_LABEL",
-    "LATEST_LABEL",
-    "SHUFFLE_LABEL",
-    "looping_label",
-    "status_line",
-]
-
 SEPARATOR = " · "
 
 # What the lock is called.  Every Funestra has this one and means the same by it —

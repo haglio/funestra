@@ -22,8 +22,6 @@ from .hud_overlay import HUD_OVERLAY_ID
 from .hud_placement import HudEdge
 from .hud_row import RowHud, RowLayout, RowPress, track_on_screen
 
-__all__ = []
-
 
 class ConsoleOverlay:
     def __init__(

@@ -43,11 +43,10 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   exists to undo. Genau's engine moved in whole on 2026-09-04 ahead of its second
   consumer (Fun Time's headset, item 52), so its modules are the standing
   exception until that lands.
-- **Every module declares its API in `__all__`** — the names the siblings may
-  import, and an empty list for a package-internal module. Nothing else a
-  module defines is a contract, however public its spelling, so a helper the
-  package shares between its own modules needs no leading underscore to say it
-  is not the family's.
+- **No module keeps an `__all__`.** Every name without a leading underscore is
+  one the apps may use, as Python reads it. An `__all__` would also count the
+  names it lists as used and hide them from the dead-code check, so a module
+  that hands on a name it imports marks that import `# noqa: F401` instead.
 - **No app knows another app exists.** Nothing here may import `main_funestra`, `genau`,
   `satellite` or `fun_time`, and nothing here may be shaped around one caller's
   needs. `StatusWriter` takes a `fields` callable rather than hardcoding either
@@ -87,23 +86,16 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
 - **Run all three suites before merging**: this one, genau's unit suite, and
   fun_time's unit *and* hidden-desktop integration suites (the last is what
   actually launches `MpvEngine` against the real DLL).
-- **No vulture scan here, on purpose — the gate reads the consumers instead.**
-  Every caller of this package lives in another repo, so vulture flags the entire
-  public API and the whitelist needed to silence it would just restate that API:
-  a guard that can never fail. Don't add one back.
-  `tests/test_consumer_imports.py` asks the question the consumers can answer —
-  every name a module's `__all__` declares must be imported by some sibling
-  checkout, and every name a sibling imports must be declared. It needs those
-  checkouts on disk and skips without them, so a public clone skips it; the
-  merge gate does not, since it clones fun_time, genau and origenerator at their
-  main, and its `consumer / suite` job also runs genau's suite against your
-  branch. That makes the order across repos matter both ways: drop a name from
-  `__all__` only after the app change that stops importing it has landed, and
-  land this repo's half straight after it, because from the moment an app stops
-  importing a name the gate here is red for every pull request until the name
-  leaves `__all__` (2026-09-26: genau's key test was the only importer of
-  `wave_stack`'s `Ramp`, `Wave` and `WaveStack`, and its removal turned the gate
-  red for half an hour).
+- **The dead-code check reads the apps.** `tests/test_dead_code.py` runs the
+  family's vulture scan over this package with its own tests and the tracked
+  code of every checkout beside it that imports it, found rather than named, so
+  what it reports is what nothing anywhere uses. It skips with no such checkout
+  beside it, which only a public clone has; the merge gate clones fun_time,
+  genau and origenerator beside the checkout for it, and its `consumer / suite`
+  job also runs genau's suite against your branch. A name whose caller the scan
+  cannot read -- Python or a library calls it, or only an old checkout still
+  reaches it -- goes in `vulture_whitelist.py` with who calls it, and leaves
+  when its caller does.
 
 ## libmpv changes: mandatory pre-flight
 

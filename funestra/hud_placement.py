@@ -5,7 +5,6 @@ from enum import StrEnum
 # What the siblings reach: a consumer declares its need by landing the code that
 # imports it, and this gate is what holds the two in step -- so a name joins this
 # list in the landing after the app half that reaches it, never before.
-__all__ = ["HudCorner", "HudEdge"]
 
 _SIDES = {"left": False, "right": True}
 _ENDS = {"up": False, "down": True}

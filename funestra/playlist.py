@@ -18,12 +18,6 @@ from typing import NamedTuple
 
 from app_support.file_channel import write_whole
 
-__all__ = [
-    "PlaylistItem",
-    "read_playlist",
-    "write_playlist",
-]
-
 
 class PlaylistItem(NamedTuple):
     """One thing a Funestra shows: its path, and the script that drives the
