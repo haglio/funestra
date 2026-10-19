@@ -33,6 +33,7 @@ from funestra.console_hud import (
 from funestra.console_hud import _PAD as PAD
 from funestra.drive_layout import AMPLITUDE, CENTER, MAX_INTENSITY, SPEED
 from funestra.drive_readout import (
+    CONTROL_TIPS,
     DRIVEN_BY_NEUTRAL,
     DriveHud,
     section_size,
@@ -1113,6 +1114,33 @@ class TestHolds:
         color -- the handoff's gray, since nobody is moving the device."""
         for control in (OSR2_PARKED, OSR2_RETRACTED):
             assert _OSR2_COLORS[control] == trace_ink(DRIVEN_BY_NEUTRAL)
+
+
+class TestAPausedRoom:
+    @staticmethod
+    def _console(control: str, *, paused: bool, mode: MainMode = MainMode.GENAU) -> ConsoleModel:
+        return ConsoleModel(main_mode=mode, osr2=Osr2State.ROBOT_HAND, osr2_control=control,
+                            paused=paused)
+
+    def test_the_line_reads_as_a_parked_ones_does(self):
+        def panel(control: str, *, paused: bool) -> np.ndarray:
+            return ConsolePainter().bgra(ConsoleHud(console=self._console(control, paused=paused)))
+
+        paused = panel(OSR2_DRIVING, paused=True)
+
+        assert np.array_equal(paused, panel(OSR2_PARKED, paused=False))
+        assert not np.array_equal(paused, panel(OSR2_DRIVING, paused=False))
+
+    @pytest.mark.parametrize("mode", list(MainMode))
+    def test_the_readouts_speed_amp_and_center_buttons_take_presses(self, mode):
+        painter = ConsolePainter()
+        painter.rgba(ConsoleHud(console=self._console(OSR2_DRIVING, paused=True, mode=mode),
+                                drive=_drive()))
+
+        taken = {command for command in CONTROL_TIPS
+                 if painter.press_at(*_over(painter, command)) == command}
+
+        assert taken == set(CONTROL_TIPS)
 
 
 class TestTheDotIsWhereTheDeviceIs:

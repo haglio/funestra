@@ -295,7 +295,8 @@ class HudRenderer:
                     and model.drive.segments else None)
         osr2_line = Osr2Line(
             state=state_for(model.osr2, model.osr2_control,
-                            driving=driving_at_the_playhead(composed, model.osr2)),
+                            driving=driving_at_the_playhead(composed, model.osr2),
+                            paused=model.paused),
             controls=model.osr2_controls, max_intensity=model.max_intensity)
         drive_w, drive_h = section_size() if model.drive is not None else (0, 0)
         device_w = max(self._osr2.width(osr2_line) if model.osr2 else 0, drive_w)

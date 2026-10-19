@@ -12,9 +12,10 @@ from shared_ui.app_icon import LETTERS
 from shared_ui.palette import BLUE, BORDER_PANEL, GREEN, TEXT_MUTED, TEXT_PRIMARY, WHITE
 from shared_ui.spacing import BUTTON_GAP
 
-from funestra.console import OSR2_PARKED
+from funestra.console import OSR2_DRIVING, OSR2_PARKED
 from funestra.drive_layout import MAX_INTENSITY, SECTION_W
 from funestra.drive_readout import (
+    CONTROL_TIPS,
     DRIVEN_BY_ROBOT_HAND,
     DriveHud,
     section_size,
@@ -1310,6 +1311,28 @@ class TestTheDeviceOnAHostThatDrivesItself:
 
         assert (driving == np.array(GREEN)).all(axis=-1).any()
         assert not (parked == np.array(GREEN)).all(axis=-1).any()
+
+    def test_a_paused_rooms_line_reads_as_a_parked_ones_does(self):
+        def panel(control: str, *, paused: bool) -> np.ndarray:
+            return self._rendered(osr2=Osr2State.ROBOT_HAND, osr2_control=control,
+                                  paused=paused).bgra
+
+        paused = panel(OSR2_DRIVING, paused=True)
+
+        assert np.array_equal(paused, panel(OSR2_PARKED, paused=False))
+        assert not np.array_equal(paused, panel(OSR2_DRIVING, paused=False))
+
+    def test_the_readouts_speed_amp_and_center_buttons_take_presses_in_a_paused_room(self):
+        rendered = self._rendered(osr2=Osr2State.ROBOT_HAND, osr2_control=OSR2_DRIVING,
+                                  paused=True, drive=_wave())
+        placed = {button.command: rect for rect, button in rendered.targets.buttons}
+        clicks = HudClicks("portrait")
+
+        def posts(command: str) -> str:
+            x, y, w, h = placed[command]
+            return clicks.press(rendered.targets, x + w // 2, y + h // 2, now=0.0)
+
+        assert {command for command in CONTROL_TIPS if posts(command) == command} == set(CONTROL_TIPS)
 
     def test_the_readout_is_drawn_under_the_line(self):
         with_readout = self._rendered(osr2=Osr2State.ROBOT_HAND, drive=DriveHud())

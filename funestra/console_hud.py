@@ -584,7 +584,8 @@ class ConsolePainter:
         is driving -- is the shared line's (:func:`funestra.hud_osr2.state_for`),
         since every panel that draws this line answers it the same way."""
         return state_for(model.osr2, model.osr2_control,
-                         driving=driving_at_the_playhead(self._composed_drive, model.osr2))
+                         driving=driving_at_the_playhead(self._composed_drive, model.osr2),
+                         paused=model.paused)
 
     def _osr2_line(self, model: ConsoleModel) -> Osr2Line:
         """The device's line as the shared section takes it — the controls the
