@@ -22,9 +22,9 @@ from .flick_picture import FlickPicture, Picture
 from .funestra_controls import VERBS, FunestraControls
 from .funestra_status import status_fields, volume_fields
 from .host_controls import HostControls
-from .hud_corners import CORNER_PLUS_OVERLAY_ID, HudCorners
+from .hud_corners import HudCorners
 from .hud_minimize import NameFlash
-from .hud_overlay import HUD_OVERLAY_ID, HudOverlay
+from .hud_overlay import HudOverlay
 from .hud_placement import HudEdge
 from .hud_row import RowHud
 from .mpv_engine import MpvEngine
@@ -156,9 +156,6 @@ def osr2_line(channels: Channels) -> FunscriptTCodeDriver | None:
 class Funestra:
     IN_FRAME_OVERLAY_ID = 8
     OUT_FRAME_OVERLAY_ID = 9
-    PANEL_OVERLAY_ID = HUD_OVERLAY_ID
-    OVERLAY_IDS = (IN_FRAME_OVERLAY_ID, OUT_FRAME_OVERLAY_ID, PANEL_OVERLAY_ID,
-                   CORNER_PLUS_OVERLAY_ID)
 
     def __init__(
         self,
