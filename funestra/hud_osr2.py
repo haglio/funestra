@@ -89,17 +89,21 @@ COLORS = {
 }
 
 
-def state_for(osr2: str, control: str, *, driving: str = "") -> str:
+def state_for(osr2: str, control: str, *, driving: str = "", paused: bool = False) -> str:
     """Who the pill names, given what the wire says has the device (*osr2*) and
     what this app is doing to it (*control*)."""
     if osr2 == Osr2State.AUTO or osr2 in UNHEARD:
         return osr2
-    if control in _HELD:
-        return control
-    return driving or osr2
+    return _held_by(control, paused=paused) or driving or osr2
 
 
 _HELD = (OSR2_PARKED, OSR2_RETRACTED)
+
+
+def _held_by(control: str, *, paused: bool) -> str | None:
+    if control in _HELD:
+        return control
+    return OSR2_PARKED if paused else None
 
 
 _OSR2_AT_THE_PLAYHEAD = {
@@ -172,12 +176,6 @@ class ReadoutResolver:
         held = None if unheard else _held_by(control, paused=paused)
         return replace(drive, position=self._device.at(
             self._clock(), drive.position, held=held, switched_on=not unheard))
-
-
-def _held_by(control: str, *, paused: bool) -> str | None:
-    if control in _HELD:
-        return control
-    return OSR2_PARKED if paused else None
 
 
 class _DeviceDot:
