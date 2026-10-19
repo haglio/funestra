@@ -9,6 +9,18 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-19 — a lock may name the item it holds
+
+`LOCK_ON` may carry the item it is for, as a playlist line (`LOCK_ON <path>`,
+the line `PLAY_FILE` carries), and `Playback.set_locked` takes it as `on`: the
+item is held where it is when it is the one on screen, and brought back first
+when the screen has moved on from it, so a source names what the person saw
+when they asked rather than whatever is up by the time the verb lands. A bare
+`LOCK_ON` holds what is on screen, after following a roll the engine made. A
+`Verb` declared `value_is_optional` answers with a value and without one. A
+Funestra from before this refuses `LOCK_ON` with an item, so a source sends it
+only to Funestras built on this release or later.
+
 ## 2026-10-19 — no module keeps an `__all__`, and the dead-code check reads the apps
 
 Every module's `__all__` is gone, and `tests/test_consumer_imports.py`, which

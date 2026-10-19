@@ -34,6 +34,7 @@ class Verb:
     spelling: str
     act: Act
     takes_a_value: bool = False
+    value_is_optional: bool = False
 
 
 @dataclass(frozen=True)
@@ -86,7 +87,7 @@ def act(control: Control, verb: Verb, controls: Any, value: str) -> bool:
     """
     if not control.can_act(controls):
         return False
-    if verb.takes_a_value != bool(value):
+    if verb.takes_a_value != bool(value) and not verb.value_is_optional:
         return False
     return verb.act(controls, value)
 

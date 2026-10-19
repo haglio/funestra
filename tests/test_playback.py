@@ -7,6 +7,7 @@ from funestra_fakes import make_playback as _make_playback
 
 from funestra.play_points import PlayPoints
 from funestra.playback_rate import MAX_RATE, MIN_RATE
+from funestra.playlist import PlaylistItem
 from funestra.seeking import GIVE_UP_AFTER
 
 
@@ -174,6 +175,33 @@ class TestLock:
         playback.set_locked(True)
 
         assert engine.playing == playback.current_video == tmp_path / "v1.mp4"
+
+    def test_a_lock_naming_the_clip_the_engine_moved_on_from_brings_it_back(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=3)
+        engine.simulate_eof_advance()
+
+        playback.set_locked(True, on=PlaylistItem(tmp_path / "v0.mp4"))
+
+        assert engine.playing == playback.current_video == tmp_path / "v0.mp4"
+        assert engine.loop_file is True
+
+    def test_a_lock_naming_the_clip_on_screen_holds_it_where_it_is(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=3)
+
+        playback.set_locked(True, on=PlaylistItem(tmp_path / "v0.mp4"))
+
+        assert engine.opened == [tmp_path / "v0.mp4"]
+        assert engine.staged_next is None
+
+    def test_a_lock_naming_the_version_on_screen_holds_it_where_it_is(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=3)
+        version = tmp_path / "v0_upscaled.mp4"
+        playback.step_version([tmp_path / "v0.mp4", version], 1)
+
+        playback.set_locked(True, on=PlaylistItem(version))
+
+        assert engine.opened[-1] == version
+        assert len(engine.opened) == 2
 
     def test_an_unlocked_playback_advances_again(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)

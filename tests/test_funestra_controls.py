@@ -94,6 +94,14 @@ class TestApplyCommand:
         assert apply_command(LOCK_OFF, controls) is True
         assert controls.playback.is_locked is False
 
+    def test_a_hold_naming_an_item_holds_that_item(self, tmp_path):
+        controls = _controls(tmp_path)
+
+        assert apply_command(f"{LOCK_ON} {tmp_path / 'v2.mp4'}", controls) is True
+
+        assert controls.playback.is_locked is True
+        assert controls.playback.current_video == tmp_path / "v2.mp4"
+
     def test_trash_discards_the_current_clip(self, tmp_path):
         controls = _controls(tmp_path)
         assert apply_command(TRASH, controls) is True

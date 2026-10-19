@@ -45,3 +45,22 @@ def test_surrounding_space_and_a_bare_line_are_no_command():
     assert look_up("   ", VERBS, controls) is False
 
     assert controls.steps == 1
+
+
+def test_a_value_said_to_a_verb_that_takes_none_is_refused_and_a_missing_one_too():
+    controls = _Controls()
+
+    assert look_up("NEXT 5", VERBS, controls) is False
+    assert look_up("PLAY_FILE", VERBS, controls) is False
+
+    assert (controls.steps, controls.opened) == (0, [])
+
+
+def test_a_verb_whose_value_may_be_left_off_answers_with_one_and_without():
+    controls = _Controls()
+    verbs = bind((Control("lock", verbs=(Verb("LOCK_ON", _open, value_is_optional=True),)),))
+
+    assert look_up("LOCK_ON", verbs, controls) is True
+    assert look_up("LOCK_ON C:/Videos/My Clip.mp4", verbs, controls) is True
+
+    assert controls.opened == ["", "C:/Videos/My Clip.mp4"]

@@ -267,14 +267,16 @@ class Playback:
             self._frame_on_screen = None
             self._engine.swap_still(self.showing)
 
-    def set_locked(self, locked: bool) -> None:
+    def set_locked(self, locked: bool, on: PlaylistItem | None = None) -> None:
         self._follow_a_roll()
         self._locked = locked
         self._engine.set_loop_file(locked)
-        if locked:
+        if not locked:
+            self._stage_next()
+        elif on is None or on.path in (self.current_video, self.showing):
             self._engine.clear_next()
         else:
-            self._stage_next()
+            self.play_file(on.path, on.funscript)
 
     def advance(self) -> None:
         self._owed_seek.pay(self._engine, self._seek_now)

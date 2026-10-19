@@ -75,11 +75,14 @@ def _seeker(delta_ms: int) -> Act:
     return act
 
 
-def _lock_set(locked: bool) -> Act:
-    def act(controls: FunestraControls, _value: str) -> bool:
-        controls.playback.set_locked(locked)
-        return True
-    return act
+def _lock_on(controls: FunestraControls, value: str) -> bool:
+    controls.playback.set_locked(True, item_from_line(value))
+    return True
+
+
+def _lock_off(controls: FunestraControls, _value: str) -> bool:
+    controls.playback.set_locked(False)
+    return True
 
 
 def _toggle_lock(controls: FunestraControls, _value: str) -> bool:
@@ -201,8 +204,8 @@ CONTROLS: tuple[Control, ...] = (
     ),
     Control(
         name="lock",
-        verbs=(Verb(TOGGLE_LOCK, _toggle_lock), Verb(LOCK_ON, _lock_set(True)),
-               Verb(LOCK_OFF, _lock_set(False))),
+        verbs=(Verb(TOGGLE_LOCK, _toggle_lock), Verb(LOCK_ON, _lock_on, value_is_optional=True),
+               Verb(LOCK_OFF, _lock_off)),
     ),
     Control(name="clip", verbs=(Verb(TRASH, _discard),)),
     Control(
