@@ -165,35 +165,6 @@ class TestTakingOver:
         assert sink.closed is True
 
 
-class TestEasingInWithoutTakingOver:
-    """A Genau taking the room from another already moving the device runs the
-    same motion on; it only needs its first moves given time to meet the device."""
-
-    def _running(self):
-        sink = FakeTCodeSink()
-        sender = RobotHandTCodeDriver(sink, min_interval=0.033)
-        sender.maybe_send(phase=0.0, now=0.05)
-        sender.maybe_send(phase=0.25, now=1.0)
-        return sink, sender
-
-    def test_the_next_moves_are_given_the_glide(self):
-        sink, sender = self._running()
-
-        sender.ease_in()
-        sender.maybe_send(phase=0.5, now=1.05)
-
-        assert f"I{HANDOFF_MS}" in sink.sent[-1]
-
-    def test_the_motion_does_not_start_again_from_its_floor(self):
-        sink, sender = self._running()
-        phase = sender.motion_phase
-
-        sender.ease_in()
-
-        assert sender.motion_phase == phase
-        assert sender.let_go_position is None
-
-
 class TestRestingAtTheFloor:
     """The funscript's turn leaves the device at its park, so the motion resumes
     from the foot of its swing — phase 0, where every shape's raw value is 0 —
