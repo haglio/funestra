@@ -111,12 +111,12 @@ class HudCorners:
         plus = self._plus(window)
         if plus == self._shown:
             return
-        self._shown = plus
         if plus is None:
             self._engine.remove_overlay(self._overlay_id)
         else:
             self._engine.overlay(self._overlay_id, *plus.origin,
                                  plus_bgra(plus.button, plus.corner))
+        self._shown = plus
 
     @staticmethod
     def _button(place: HudPlace, corner: HudCorner) -> Button:

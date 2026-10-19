@@ -617,9 +617,12 @@ class _MpvControl:
         """Composite an (H, W, 4) BGRA uint8 array at (x, y) over the video."""
         arr = np.ascontiguousarray(rgba, dtype=np.uint8)
         h, w = arr.shape[:2]
-        self._mpv.overlay_add(
-            ident, x, y, "&" + str(arr.ctypes.data), 0, "bgra", w, h, w * 4,
-        )
+        try:
+            self._mpv.overlay_add(
+                ident, x, y, "&" + str(arr.ctypes.data), 0, "bgra", w, h, w * 4,
+            )
+        except SystemError as refused:
+            raise MemoryError("mpv had no memory for a copy of the overlay") from refused
         # hold a reference so the buffer isn't freed while mpv reads it
         self._overlays[ident] = arr
 

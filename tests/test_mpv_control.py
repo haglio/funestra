@@ -15,6 +15,7 @@ import time
 from pathlib import Path
 from types import SimpleNamespace
 
+import numpy as np
 import pytest
 from dealt_moves import DRIFT, Deals
 
@@ -1216,3 +1217,15 @@ def test_a_portrait_file_of_another_size_but_the_same_shape_keeps_its_tiles():
 
 def test_the_tile_shader_ships_beside_the_engine_and_takes_its_count_as_a_parameter():
     assert "//!PARAM tiles" in TILES_SHADER.read_text(encoding="utf-8")
+
+
+class _MpvWithNoMemoryForAnOverlay(FakeMpv):
+    def overlay_add(self, *_args) -> None:
+        raise SystemError("Error running mpv command", -12, ())
+
+
+def test_an_overlay_mpv_has_no_memory_to_copy_reaches_the_window_as_running_out_of_memory():
+    control = Control(_MpvWithNoMemoryForAnOverlay())
+
+    with pytest.raises(MemoryError):
+        control.overlay(10, 0, 0, np.zeros((2, 2, 4), dtype=np.uint8))

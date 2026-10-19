@@ -19,6 +19,7 @@ from funestra.hud_overlay import HudOverlay
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.hud_row import UNDER_THE_PANEL_GAP, RowHud
 from funestra.satellite_hud import MARGIN, MINUS_INSET, PAD, HudModel
+from funestra.satellite_hud_paint import HudRenderer
 from funestra.timeline import TIMELINE_HEIGHT
 from funestra.volume import CHIP_H, CHIP_W, SPEAKER_W, VolumeHud, chip_xy
 
@@ -316,6 +317,82 @@ def test_a_panel_that_cannot_be_read_this_frame_keeps_the_map_up(
     overlay.tick()
 
     assert engine.overlays[overlay.overlay_id][2] is drawn
+
+
+class _EngineOutOfMemory(FakeEngine):
+    def __init__(self) -> None:
+        super().__init__()
+        self.out_of_memory = False
+
+    def overlay(self, ident: int, x: int, y: int, bgra) -> None:
+        if self.out_of_memory:
+            raise MemoryError
+        super().overlay(ident, x, y, bgra)
+
+
+def _locked(panel: Path) -> None:
+    panel.write_text(panel.read_text(encoding="utf-8").replace(
+        '"locked": false', '"locked": true'), encoding="utf-8")
+
+
+def test_a_panel_the_engine_has_no_memory_to_put_up_keeps_the_last_one_until_it_has(
+        tmp_path: Path, panel: Path):
+    engine = _EngineOutOfMemory()
+    overlay = _overlay(tmp_path, panel, engine)
+    overlay.tick()
+    drawn = engine.overlays[overlay.overlay_id][2]
+
+    _locked(panel)
+    engine.out_of_memory = True
+    with pytest.raises(MemoryError):
+        overlay.tick()
+    kept = engine.overlays[overlay.overlay_id][2]
+    engine.out_of_memory = False
+    overlay.tick()
+
+    assert kept is drawn
+    assert engine.overlays[overlay.overlay_id][2] is not drawn
+
+
+def test_presses_land_on_the_panel_on_screen_while_the_next_cannot_be_put_up(
+        tmp_path: Path, panel: Path):
+    engine = _EngineOutOfMemory()
+    overlay = _overlay(tmp_path, panel, engine)
+    overlay.tick()
+    targets = overlay.targets
+
+    _locked(panel)
+    engine.out_of_memory = True
+    with pytest.raises(MemoryError):
+        overlay.tick()
+
+    assert overlay.targets is targets
+
+
+def test_a_panel_there_is_no_memory_to_paint_keeps_the_last_one_until_there_is(
+        tmp_path: Path, panel: Path, monkeypatch: pytest.MonkeyPatch):
+    engine = FakeEngine()
+    overlay = _overlay(tmp_path, panel, engine)
+    overlay.tick()
+    drawn = engine.overlays[overlay.overlay_id][2]
+    paint = HudRenderer.render
+    out_of_memory = [True]
+
+    def render(self, *args, **kwargs):
+        if out_of_memory[0]:
+            raise MemoryError
+        return paint(self, *args, **kwargs)
+
+    monkeypatch.setattr(HudRenderer, "render", render)
+    _locked(panel)
+    with pytest.raises(MemoryError):
+        overlay.tick()
+    kept = engine.overlays[overlay.overlay_id][2]
+    out_of_memory[0] = False
+    overlay.tick()
+
+    assert kept is drawn
+    assert engine.overlays[overlay.overlay_id][2] is not drawn
 
 
 def test_a_single_click_posts_the_switch_once_its_window_lapses(tmp_path: Path, panel: Path):
