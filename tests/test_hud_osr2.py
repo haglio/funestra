@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 from shared_ui.palette import BLUE, GREEN, TEXT_MUTED
 
+from funestra.console import OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED
 from funestra.drive_readout import DRIVEN_BY_NOTHING, DriveHud, track_command
 from funestra.hud_button import Button
 from funestra.hud_osr2 import (
@@ -174,6 +175,19 @@ class TestWhoTheLineNames:
     def test_a_switched_off_device_beats_even_a_hold(self):
         for control in ("parked", "retracted"):
             assert state_for(Osr2State.OFF, control) == Osr2State.OFF
+
+    def test_a_paused_room_is_named_parked_ahead_of_whoever_would_have_been_driving(self):
+        assert state_for(Osr2State.ROBOT_HAND, OSR2_DRIVING, paused=True) == OSR2_PARKED
+        assert state_for(Osr2State.ROBOT_HAND, OSR2_DRIVING, driving=Osr2State.FUNSCRIPT,
+                         paused=True) == OSR2_PARKED
+
+    @pytest.mark.parametrize("osr2", [Osr2State.AUTO, Osr2State.OFF, Osr2State.UNPLUGGED,
+                                      Osr2State.NO_ANSWER])
+    def test_the_device_running_itself_or_switched_off_beats_a_paused_room(self, osr2):
+        assert state_for(osr2, OSR2_DRIVING, paused=True) == osr2
+
+    def test_a_retracted_switch_keeps_its_own_word_through_a_paused_room(self):
+        assert state_for(Osr2State.ROBOT_HAND, OSR2_RETRACTED, paused=True) == OSR2_RETRACTED
 
     def test_a_panel_that_knows_better_says_who_is_driving(self):
         assert state_for(Osr2State.ROBOT_HAND, "", driving=Osr2State.FUNSCRIPT) == Osr2State.FUNSCRIPT
