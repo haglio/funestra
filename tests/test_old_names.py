@@ -23,9 +23,9 @@ def test_a_module_under_an_old_package_name_is_the_same_module(old):
 def test_a_patch_through_an_old_name_reaches_the_module_itself(old, monkeypatch):
     import funestra.status  # noqa: PLC0415
 
-    monkeypatch.setattr(f"{old}.status.stamp_the_playhead", lambda ms: (0, 0.0))
+    monkeypatch.setattr(f"{old}.status.parse_status", lambda fields: None)
 
-    assert funestra.status.stamp_the_playhead(5.0) == (0, 0.0)
+    assert funestra.status.parse_status({}) is None
 
 
 @OLD_PACKAGE_NAMES
