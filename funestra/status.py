@@ -54,10 +54,6 @@ class FunestraStatus:
     read_at: float = 0.0
 
 
-def stamp_the_playhead(position_ms: float) -> tuple[int, float]:
-    return int(position_ms), time.time()
-
-
 def _flag(on: bool) -> str:
     return "1" if on else "0"
 

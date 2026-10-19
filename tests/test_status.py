@@ -14,7 +14,6 @@ from funestra.status import (
     FunestraStatus,
     StatusWriter,
     parse_status,
-    stamp_the_playhead,
     status_fields,
 )
 
@@ -183,11 +182,6 @@ class TestWhatEveryFunestraPublishes:
 
         assert status_fields(status)["read_at"] == "1000.250"
         assert parse_status(status_fields(status)).read_at == 1_000.25
-
-    def test_the_playhead_is_stamped_with_the_clock_it_was_read_by(self, monkeypatch):
-        monkeypatch.setattr("funestra.status.time.time", lambda: 1_000.5)
-
-        assert stamp_the_playhead(4_000.7) == (4_000, 1_000.5)
 
     def test_what_is_published_is_what_is_read_back(self):
         status = FunestraStatus(
