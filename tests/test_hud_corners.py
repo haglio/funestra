@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 from funestra_fakes import FakeEngine
 from shared_ui.spacing import BUTTON_GAP
 
@@ -55,6 +56,23 @@ class TestThePlus:
         _pointed_at(corners, (-1, -1))
 
         assert CORNER_PLUS_OVERLAY_ID not in engine.overlays
+
+
+    def test_a_plus_there_was_no_memory_to_put_up_goes_up_on_the_next_frame(self):
+        corners, engine = _corners(_Panel(corner=HudCorner.UPPER_LEFT))
+        corners.motion(*LOWER_RIGHT)
+        engine.overlay = _no_memory_to_put_it_up
+        with pytest.raises(MemoryError):
+            corners.paint(window=WINDOW)
+
+        del engine.overlay
+        corners.paint(window=WINDOW)
+
+        assert CORNER_PLUS_OVERLAY_ID in engine.overlays
+
+
+def _no_memory_to_put_it_up(*_args) -> None:
+    raise MemoryError
 
 
 class TestAPress:

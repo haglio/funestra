@@ -144,6 +144,7 @@ class HudOverlay:
         self._pointer_at = (0, 0)
         self._foot_held = False
         self._shown = False
+        self._draw_owed = False
         self._window: tuple[int, int] | None = None
         self._origin = (MARGIN, MARGIN)
         self._panel_size: tuple[int, int] | None = None
@@ -193,7 +194,7 @@ class HudOverlay:
         if drive != self._drive:
             self._drive = drive
             redraw = True
-        if redraw:
+        if redraw or self._draw_owed:
             self._draw()
         if self._clicks is not None:
             command = self._clicks.due(now=self._clock())
@@ -344,6 +345,7 @@ class HudOverlay:
             return
         corner = self._model.hud_corner if self._over_the_video else HudCorner.UPPER_LEFT
         drive = self._model.drive if self._drive_file is None else self._drive
+        self._draw_owed = True
         rendered = self._renderer.render(
             replace(self._model, playback_speed=self._playback_speed, drive=drive,
                     drive_composed=self._drive_gate is not None, hud_corner=corner),
@@ -352,11 +354,13 @@ class HudOverlay:
             minus_on_the_panel=self._minus_on_the_panel,
             item_row=self._item_row, heatmap=self._heatmap, flash=self._flash,
         )
-        self.targets = rendered.targets
         height, width = rendered.bgra.shape[:2]
+        origin = self._place(corner, (width, height))
+        self._engine.overlay(self.overlay_id, *origin, rendered.bgra)
+        self._draw_owed = False
+        self.targets = rendered.targets
         self._panel_size = (width, height)
-        self._origin = self._place(corner, self._panel_size)
-        self._engine.overlay(self.overlay_id, *self._origin, rendered.bgra)
+        self._origin = origin
         self._shown = True
 
     def _post(self, command: str) -> None:

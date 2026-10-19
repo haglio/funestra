@@ -219,6 +219,7 @@ class Funestra:
         )
         self._loop_frames = LoopThumbCapture()
         self._loop_frames_up = False
+        self._short_of_memory = False
         self._front.set_showing(True)
 
     @property
@@ -383,7 +384,7 @@ class Funestra:
             self._engine.tile_to_fill(*window)
         self._engine.push_still()
         self._tune_the_radio()
-        self._paint(window)
+        self._paint_if_there_is_memory(window)
 
     def close(self) -> None:
         for user in self._users.values():
@@ -426,6 +427,17 @@ class Funestra:
 
     def _take_the_list(self, items: list[PlaylistItem]) -> None:
         self.playback.replace_playlist([item.path for item in items], funscripts_of(items))
+
+    def _paint_if_there_is_memory(self, window: tuple[int, int]) -> None:
+        try:
+            self._paint(window)
+        except MemoryError:
+            if not self._short_of_memory:
+                logger.warning("Out of memory drawing over the picture; drawing it again on "
+                               "the next frame")
+            self._short_of_memory = True
+        else:
+            self._short_of_memory = False
 
     def _paint(self, window: tuple[int, int]) -> None:
         picture = self._front.picture()

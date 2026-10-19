@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import time
 from dataclasses import replace
 from pathlib import Path
@@ -578,6 +579,39 @@ def test_a_funestra_that_does_not_tile_is_never_asked_to(tmp_path):
 def _publish_panel(tmp_path: Path, **panel) -> None:
     (tmp_path / "portrait_hud.json").write_text(json.dumps({"funestra": "portrait", **panel}),
                                                 encoding="utf-8")
+
+
+def _no_memory_to_put_it_up(*_args) -> None:
+    raise MemoryError
+
+
+def test_a_frame_there_is_no_memory_to_draw_is_dropped_and_said_once_while_it_plays_on(
+        tmp_path, caplog):
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 hud=True, commands="")
+    _publish_panel(tmp_path)
+    engine.overlay = _no_memory_to_put_it_up
+
+    with caplog.at_level(logging.WARNING):
+        funestra.tick(window=WINDOW)
+        funestra.tick(window=WINDOW)
+
+    assert [record.getMessage() for record in caplog.records
+            if record.name == "funestra.funestra"] == [
+        "Out of memory drawing over the picture; drawing it again on the next frame"]
+
+
+def test_a_panel_there_was_no_memory_for_is_drawn_once_there_is(tmp_path):
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 hud=True, commands="")
+    _publish_panel(tmp_path)
+    engine.overlay = _no_memory_to_put_it_up
+    funestra.tick(window=WINDOW)
+
+    del engine.overlay
+    funestra.tick(window=WINDOW)
+
+    assert list(engine.overlays) == [HUD_OVERLAY_ID]
 
 
 def test_the_panel_its_source_publishes_is_the_one_thing_over_the_picture(tmp_path):
