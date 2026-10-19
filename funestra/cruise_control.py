@@ -9,8 +9,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-__all__: list[str] = []
-
 
 @dataclass(frozen=True)
 class _NoWaves:

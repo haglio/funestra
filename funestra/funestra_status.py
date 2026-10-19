@@ -5,10 +5,6 @@ from .status import FunestraStatus
 from .status import status_fields as leading_fields
 from .volume import VolumeHud
 
-__all__ = [
-    "status_fields",
-]
-
 
 def status_fields(playback, handoff_touch_ms: int | None) -> dict[str, str]:
     return {

@@ -6,8 +6,6 @@ from app_support.osr2_hold import HOLD_DELAY_S, HOLD_MOVE_MS
 
 from .tcode import HANDOFF_MS
 
-__all__: list[str] = []
-
 
 @dataclass
 class RoomHold:

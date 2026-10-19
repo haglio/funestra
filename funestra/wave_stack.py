@@ -6,4 +6,3 @@ until no checkout names it; nothing new may.
 """
 from __future__ import annotations
 
-__all__: list[str] = []

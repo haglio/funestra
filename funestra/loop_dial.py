@@ -17,8 +17,6 @@ from shared_ui.palette import BG_PRIMARY, BORDER_PANEL, TEXT_MUTED, TEXT_PRIMARY
 from .hud_panel import PILL_ALPHA, KeptBitmap
 from .volume import CHIP_H
 
-__all__: list[str] = []  # package-internal: the row hosts it and hud_row says where
-
 # As tall as the chip and the readout it shares the row with.
 DIAL_SIZE = CHIP_H
 # The positions the hand can show -- four degrees apart, which is as fine as a

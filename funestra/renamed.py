@@ -16,8 +16,6 @@ from collections.abc import Callable, Mapping
 from types import ModuleType
 from typing import Any
 
-__all__: list[str] = []
-
 PACKAGE = "funestra"
 
 

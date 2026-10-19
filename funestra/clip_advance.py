@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from .renamed import old_name_getter
 
-__all__: list[str] = []
-
 _RENAMED = {
     "ClipAdvanceState": "FlickAdvanceState",
     "DEFAULT_INTERVAL_S": "DEFAULT_INTERVAL_S",

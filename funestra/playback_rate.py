@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-__all__ = [
-    "RATE_STEP",
-]
-
 MIN_RATE = 0.25
 MAX_RATE = 2.0
 RATE_STEP = 0.25

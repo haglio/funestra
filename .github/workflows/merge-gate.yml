@@ -25,13 +25,12 @@ jobs:
       # and an extraction, and a job that runs past its clock is cancelled and
       # reports nothing at all.
       timeout-minutes: 8
-      # tests/test_consumer_imports.py is this repo's dead-code gate, and it
-      # asks the consumers: every caller of this package lives in another repo,
-      # so it holds what each module declares against what genau, fun_time and
-      # origenerator import. With nothing beside the checkout it can only skip,
-      # which is what it did on every run here until now. Cloned and not
-      # installed -- the scan reads their source, and installing three
-      # applications to read it would cost more than the whole suite.
+      # tests/test_dead_code.py reads the apps: every caller of this package
+      # lives in another repo, so the scan reads genau, fun_time and
+      # origenerator beside the checkout as its callers, and with nothing
+      # beside it can only skip. Cloned and not installed -- the scan reads
+      # their source, and installing three applications to read it would cost
+      # more than the whole suite.
       #
       # Then the engine itself, at the pin: `tools/libmpv.lock` is the digest every
       # app in the family stands on, and until this line nothing ever downloaded it

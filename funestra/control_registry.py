@@ -17,13 +17,6 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
-__all__ = [
-    "Control",
-    "Verb",
-    "bind",
-    "look_up",
-]
-
 # What a verb does when it lands: move something on the controls, and say
 # whether it could.  The value is the rest of the line after the verb, empty
 # when there was none.

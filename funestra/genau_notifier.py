@@ -13,9 +13,6 @@ from pathlib import Path
 
 from .renamed import answers_to_old_names
 
-__all__ = [
-    "GenauNotifier",
-]
 
 @answers_to_old_names({"notify_clip": "notify_flick"})
 class GenauNotifier:

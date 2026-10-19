@@ -12,10 +12,6 @@ from .tcode import (
     to_tcode_position,
 )
 
-__all__ = [
-    "FunscriptTCodeDriver",
-]
-
 _RESEND_INTERVAL = 0.1
 # Glide to the parked position over this long, matching the broker's own park.
 # The funscript's plan draws this same descent, which is why the number is its.

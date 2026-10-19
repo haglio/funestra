@@ -41,12 +41,6 @@ from .playback import Playback
 from .playback_rate import RATE_STEP, parse_rate
 from .playlist import item_from_line
 
-__all__ = [
-    "SEEK_STEP_MS",
-    "FunestraControls",
-    "apply_command",
-]
-
 logger = logging.getLogger(__name__)
 
 SEEK_STEP_MS = 10_000

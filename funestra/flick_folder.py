@@ -11,17 +11,11 @@ import random
 from collections.abc import Iterable
 from pathlib import Path
 
-from app_support.flick_folder import flat_flicks_in, vr_flicks_in, weird_dir_for_flicks_folder
-
-__all__ = [
-    "SUPPORTED_VIDEO_EXTS",
-    "flat_flicks_in",
-    "move_flick_to_weird",
-    "scan_flicks",
-    "vr_flicks_in",
-    "weird_dir_for_flicks_folder",
-    "weird_folder_for",
-]
+from app_support.flick_folder import (
+    flat_flicks_in,  # noqa: F401 -- handed on to the apps, which import it from here
+    vr_flicks_in,  # noqa: F401
+    weird_dir_for_flicks_folder,
+)
 
 SUPPORTED_VIDEO_EXTS = {".mp4", ".mkv", ".mov", ".avi", ".webm", ".m4v"}
 

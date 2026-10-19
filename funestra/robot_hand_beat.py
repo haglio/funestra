@@ -20,10 +20,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-__all__ = [
-    "BeatEngine",
-]
-
 # The most wall time one tick may move the phase, the same cap
 # :func:`funestra.robot_hand.phase_advanced` puts on a caller's own clock: a
 # clock that stalled comes back owing a step the motion should not take at once.

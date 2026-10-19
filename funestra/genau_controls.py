@@ -68,11 +68,6 @@ from .robot_hand import (
 )
 from .robot_hand_beat import BeatEngine
 
-__all__ = [
-    "VERBS",
-    "GenauControls",
-]
-
 logger = logging.getLogger(__name__)
 
 

@@ -7,10 +7,6 @@ from pathlib import Path
 
 from app_support.file_channel import publish_whole
 
-__all__ = [
-    "play_points_filename",
-]
-
 
 def play_points_filename(who: str) -> str:
     return f"{who}_play_points.json"

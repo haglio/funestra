@@ -32,14 +32,6 @@ from .satellite_hud import (
 )
 from .satellite_hud_paint import HudRenderer
 
-__all__ = [
-    "FOOT_DRAG",
-    "FOOT_PRESS",
-    "FOOT_RELEASE",
-    "FOOT_WHEEL",
-    "HUD_OVERLAY_ID",
-]
-
 HUD_OVERLAY_ID = 10
 
 # What the panel posts about the block its source paints at its foot: the

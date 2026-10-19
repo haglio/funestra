@@ -4,8 +4,6 @@ import math
 
 from .robot_hand import travel_cap
 
-__all__: list[str] = []
-
 
 def share(demand: float, max_intensity: int) -> float:
     return math.sqrt(depth(demand, max_intensity))

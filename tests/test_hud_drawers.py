@@ -1,8 +1,8 @@
 """The gate on who draws a HUD: a Funestra, and the drawers still to move onto one.
 
-Read from the sibling checkouts the way test_consumer_imports.py reads them: a
-package of a consumer that imports a painter out of this one is drawing a HUD
-itself.  A painter is what turns a panel, a row or a chip into pixels; the
+Read from the checkouts beside this one that import it, the way the dead-code
+gate reads them: a package of one that imports a painter out of this one is
+drawing a HUD itself.  A painter is what turns a panel, a row or a chip into pixels; the
 models, the verbs and the placements a source hands a Funestra are not.
 """
 from __future__ import annotations
@@ -12,16 +12,12 @@ from collections import defaultdict
 from pathlib import Path
 
 import pytest
-from test_consumer_imports import (
-    PACKAGE,
-    PACKAGE_NAMES,
-    _names_reached_from,
-    _other_repos_beside,
-    _source_files,
-    is_this_package,
-)
+from app_support.dead_code import tracked_python
+from app_support.siblings import checkouts_that_import
 
 ROOT = Path(__file__).resolve().parent.parent
+PACKAGE = ROOT / "funestra"
+PACKAGE_NAMES = ("funestra", "funestra_core", "player_core")
 
 WHOLE_MODULE = None
 
@@ -53,6 +49,10 @@ DRAWS_A_FUNESTRAS_MODE_PAIR_WHERE_NO_FUNESTRA_IS = {
 ALLOWED_DRAWERS = KNOWN_DRAWERS | DRAWS_A_FUNESTRAS_MODE_PAIR_WHERE_NO_FUNESTRA_IS
 
 _NOT_A_DRAWER = {"tests"}
+
+
+def is_this_package(module: str | None) -> bool:
+    return (module or "").partition(".")[0] in PACKAGE_NAMES
 
 
 def _is_painter(module: str, name: str) -> bool:
@@ -90,20 +90,16 @@ def _painters_reached(source: str) -> set[str]:
 
 def _drawers() -> tuple[dict[tuple[str, str], set[str]], list[str]]:
     drawers: dict[tuple[str, str], set[str]] = defaultdict(set)
-    consumers = []
-    for sibling in _other_repos_beside(ROOT):
-        imports_this_package = False
-        for path in _source_files(sibling):
-            source = path.read_text(encoding="utf-8", errors="replace")
-            imports_this_package = imports_this_package or bool(_names_reached_from(source))
+    consumers = checkouts_that_import(*PACKAGE_NAMES, near=Path(__file__))
+    for sibling in consumers:
+        for path in tracked_python(sibling):
             package = path.relative_to(sibling).parts[0]
             if package in _NOT_A_DRAWER:
                 continue
+            source = path.read_text(encoding="utf-8", errors="replace")
             for painter in _painters_reached(source):
                 drawers[(sibling.name, package)].add(f"{painter} in {path.relative_to(sibling)}")
-        if imports_this_package:
-            consumers.append(sibling.name)
-    return dict(drawers), consumers
+    return dict(drawers), [sibling.name for sibling in consumers]
 
 
 @pytest.fixture(scope="module")

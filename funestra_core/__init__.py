@@ -8,6 +8,4 @@ from __future__ import annotations
 
 from funestra.renamed import answer_as
 
-__all__: list[str] = []
-
 __getattr__ = answer_as(__name__)

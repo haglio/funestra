@@ -20,8 +20,6 @@ from PIL import Image, ImageDraw
 from .hud_panel import load_font, text_width, to_bgra
 from .renamed import answers_to_old_names
 
-__all__ = ["Picture"]
-
 BACKDROP_OVERLAY_ID = 1
 FIRST_TILE_OVERLAY_ID = 2
 LOADING_OVERLAY_ID = 6

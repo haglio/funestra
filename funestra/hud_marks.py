@@ -13,15 +13,6 @@ and a painter can use it without either dragging the other's dependencies along.
 
 from __future__ import annotations
 
-__all__ = [
-    "BROKER_ICON",
-    "FMODE_ICON",
-    "MINIMIZE_ICON",
-    "SHARED_MARK",
-    "shared_mark",
-    "shared_mark_name",
-]
-
 SHARED_MARK = "\x00glyph:"
 
 

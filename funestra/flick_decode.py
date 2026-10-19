@@ -8,9 +8,6 @@ from pathlib import Path
 import numpy as np
 from app_support.subprocess_utils import hidden_subprocess_kwargs
 
-__all__ = [
-    "load_flick_frames",
-]
 
 def _ffprobe_size(path: Path) -> tuple[int, int]:
     cmd = [

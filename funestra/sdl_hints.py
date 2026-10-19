@@ -13,10 +13,6 @@ from __future__ import annotations
 
 import os
 
-__all__ = [
-    "deliver_the_focusing_click",
-]
-
 # SDL's own name for it — set to "1" it stops SDL from swallowing the press that
 # focuses a window.  See :func:`deliver_the_focusing_click`.
 FOCUS_CLICKTHROUGH_HINT = "SDL_MOUSE_FOCUS_CLICKTHROUGH"

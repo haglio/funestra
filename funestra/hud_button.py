@@ -15,12 +15,6 @@ from shared_ui.spacing import BUTTON_SIZE_HUD
 
 from .hud_marks import SHARED_MARK, shared_mark_name
 
-__all__ = [
-    "BUTTON",
-    "FIT_THE_WORD",
-    "Button",
-]
-
 BUTTON = BUTTON_SIZE_HUD  # a square control; the wider ones say their own width
 
 # A word-carrying button asking the painter to size it to its word.

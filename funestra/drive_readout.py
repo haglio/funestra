@@ -45,18 +45,6 @@ from .hud_panel import (
 )
 from .robot_hand import FULL_INTENSITY, POSITION_MAX, amplitude_ceiling, speed_ceiling
 
-__all__ = [
-    "CONTROL_TIPS",
-    "DRIVEN_BY_FUNSCRIPT",
-    "DRIVEN_BY_NOTHING",
-    "DRIVEN_BY_ROBOT_HAND",
-    "DriveHud",
-    "publish_drive",
-    "read_drive",
-    "track_command",
-    "tracks",
-]
-
 # What has the device, which is what the trace is a picture of.  The Robot
 # Hand's motion and a video's funscript take turns in kino mode; in auto mode
 # the OSR2 runs its own firmware and neither of them is sending; and with the

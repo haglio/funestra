@@ -26,10 +26,6 @@ from .drawn_file import DrawnFile
 from .mpv_engine import _import_mpv, _MpvControl, _shared_options
 from .mpv_gate import mpv_call
 
-__all__ = [
-    "MpvRenderEngine",
-]
-
 _FRAME_PRESENT = 1
 _FRAME_REDRAW = 2
 

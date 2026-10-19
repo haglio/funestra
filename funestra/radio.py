@@ -12,8 +12,6 @@ from typing import Protocol
 
 from app_support.file_channel import write_whole
 
-__all__: list[str] = []
-
 logger = logging.getLogger(__name__)
 
 

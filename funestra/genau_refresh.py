@@ -22,10 +22,6 @@ from .robot_hand_beat import Beat, advance_beat
 from .robot_hand_driver import DeviceHandoff
 from .tick_failures import TickFailures
 
-__all__ = [
-    "GenauRefreshController",
-]
-
 consume_command_keeping_its_case = partial(consume_command_file, uppercase=False)
 
 

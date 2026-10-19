@@ -26,8 +26,6 @@ from shared_ui.palette import TEXT_MUTED, TEXT_PRIMARY
 
 from funestra.hud_panel import KeptBitmap, draw_track, pill
 
-__all__: list[str] = []  # package-internal: the row hosts the chip
-
 # The chip: a speaker at the left end, a slider filling the rest.  As narrow as
 # the two need -- the row's track is what the room is for -- while the slider
 # still sets the level by a few per pixel.

@@ -20,31 +20,6 @@ from pathlib import Path
 
 from .playlist import PlaylistItem, item_line
 
-__all__ = [
-    "CLEAR_FRAME",
-    "LOCK_OFF",
-    "LOCK_ON",
-    "NEXT",
-    "PREV",
-    "QUIT",
-    "RELOAD_PLAYLIST",
-    "SEEK_BACK",
-    "SEEK_FWD",
-    "SET_F_MODE",
-    "SET_MAX_INTENSITY",
-    "SET_PACE",
-    "SET_SPEED",
-    "SET_VOLUME",
-    "SHOW",
-    "SHOW_FRAME",
-    "SPEED_DOWN",
-    "SPEED_UP",
-    "TOGGLE_LOCK",
-    "TRASH",
-    "play_file",
-    "step_version",
-]
-
 # The list: step along it, or read it again after the source rewrote the file
 # (keeping the item on screen where it survived).
 NEXT = "NEXT"

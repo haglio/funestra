@@ -17,18 +17,6 @@ import numpy as np
 
 from funestra.volume import SLOT_W as _VOLUME_SLOT_W
 
-__all__ = [
-    "BAR_BORDER",
-    "BAR_EDGE",
-    "BAR_FILL",
-    "BAR_INSET_Y",
-    "BORDER_W",
-    "CURSOR",
-    "CURSOR_W",
-    "TIMELINE_HEIGHT",
-    "bar_x",
-]
-
 RED = (220, 40, 40, 245)
 AMBER = (235, 180, 60, 245)
 

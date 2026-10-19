@@ -6,8 +6,6 @@ from pathlib import Path
 
 from .playlist import PlaylistItem, read_playlist
 
-__all__: list[str] = []
-
 
 class PlaylistFollower:
     """Hands on the list the playlist file holds, as often as that list changes."""

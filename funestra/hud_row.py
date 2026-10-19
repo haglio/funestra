@@ -43,8 +43,6 @@ from .volume import (
     volume_at,
 )
 
-__all__: list[str] = []
-
 # What a press on the row is on.  The chip's two halves are named apart because
 # they do different things to the same control: the speaker mutes, the slider
 # sets the level.

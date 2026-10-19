@@ -20,8 +20,6 @@ from pathlib import Path
 from .dashboard import ask
 from .volume import MAX_VOLUME, MIN_VOLUME, VolumeHud
 
-__all__: list[str] = []
-
 
 class VolumeControl:
     def __init__(self, engine, *, live: bool = True, muted: bool = True) -> None:

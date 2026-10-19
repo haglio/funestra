@@ -22,8 +22,6 @@ from .hud_panel import (
 )
 from .hud_placement import HudCorner
 
-__all__: list[str] = []
-
 BUTTON = BUTTON_SIZE_HUD
 ROOM = BUTTON + BUTTON_GAP
 

@@ -5,9 +5,6 @@ from pathlib import Path
 
 from .renamed import answers_to_old_names
 
-__all__ = [
-    "FlickSequenceController",
-]
 
 def _index_of(flicks: list[Path], wanted: Path | None) -> int | None:
     """Where *wanted* sits in *flicks*, or None for "not among them".

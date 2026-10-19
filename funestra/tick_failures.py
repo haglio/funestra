@@ -17,7 +17,6 @@ from __future__ import annotations
 
 import logging
 
-__all__: list[str] = []  # package-internal: no sibling reaches anything here
 
 class TickFailures:
     def __init__(self, logger: logging.Logger, what: str = "refresh"):

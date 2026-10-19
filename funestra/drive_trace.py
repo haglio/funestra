@@ -51,8 +51,6 @@ from .descent_latch import DescentChoice, DescentLatch, DriveKey
 from .robot_hand import FULL_INTENSITY
 from .trace_grid import on_the_grid
 
-__all__: list[str] = []
-
 # A resumed motion opening this close to the park needs no climb: the sender
 # skips its rise there (the park already IS the motion's floor, full amplitude)
 # and the blue begins the moment Genau's turn does.  The same two percent the

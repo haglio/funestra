@@ -17,8 +17,6 @@ from .robot_hand import (
     trace_window,
 )
 
-__all__: list[str] = []  # package-internal: no sibling reaches anything here
-
 # How often the drive readout goes out for the console to draw.  Its trace
 # scrolls, so it cannot wait on a change the way the status file does -- 25/s is
 # well under Genau's refresh rate and well over what reads as smooth.

@@ -9,6 +9,20 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-19 — no module keeps an `__all__`, and the dead-code check reads the apps
+
+Every module's `__all__` is gone, and `tests/test_consumer_imports.py`, which
+held each one against what the apps import, with them: a name without a
+leading underscore is one the apps may use. The dead-code check is now
+`tests/test_dead_code.py`, the family's vulture scan read with this repo's
+tests and the apps beside it as its callers (app_support v0.1.247), and
+`vulture_whitelist.py` names the callers it cannot read. Taken out first,
+since nothing but this repo's own tests reached them: `loading_mark` whole,
+`RobotHandTCodeDriver.ease_in`, `status.stamp_the_playhead`, and
+`Funestra.OVERLAY_IDS` with `Funestra.PANEL_OVERLAY_ID`. `file_channel` and
+`flick_folder` hand on what they import from app_support as before, and
+`test_hud_drawers` reads the apps through app_support too.
+
 ## 2026-10-17 — a picture keeps its row, and a Funestra plays a radio
 
 A picture no longer takes the row off its panel: the row's track and readout

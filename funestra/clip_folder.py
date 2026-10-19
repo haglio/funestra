@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from .renamed import old_name_getter
 
-__all__: list[str] = []
-
 _RENAMED = {
     "SUPPORTED_VIDEO_EXTS": "SUPPORTED_VIDEO_EXTS",
     "cache_dir_for_clips_folder": "cache_dir_for_flicks_folder",

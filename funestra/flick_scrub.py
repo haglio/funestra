@@ -28,8 +28,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-__all__: list[str] = []  # package-internal: no sibling reaches anything here
-
 
 @dataclass
 class FlickScrub:

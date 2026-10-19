@@ -36,8 +36,6 @@ from .drive_trace import drive_readout
 from .robot_hand import FULL_INTENSITY
 from .trace_grid import on_the_grid
 
-__all__: list[str] = []
-
 # What counts as a seek rather than a frame's worth of playing.  Real frames
 # advance tens of milliseconds (and the trace's 40ms quantum makes some read as
 # zero); anything outside this is a jump.  Asymmetric because a rewind is a

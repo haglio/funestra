@@ -40,27 +40,6 @@ from .modes import LengthMode, MainMode, Osr2State, read_mode
 from .renamed import answers_to_old_names, drops_retired_arguments
 from .robot_hand import WaveformShape
 
-__all__ = [
-    "GAP",
-    "GROUP_GAP",
-    "HOLD_VERB",
-    "OSR2_CONTROL_BUTTONS",
-    "OSR2_CONTROL_UNANSWERED",
-    "OSR2_DRIVING",
-    "OSR2_PARKED",
-    "OSR2_RETRACTED",
-    "ROW_LABEL_W",
-    "VALUE_W",
-    "ConsoleModel",
-    "aim_row",
-    "console_text",
-    "hit_test",
-    "parse_console",
-    "place_rows",
-    "read_console",
-    "tooltip_at",
-]
-
 VALUE_W = 22  # a value read-out between a pair of buttons (the playback rate)
 # The cell a word naming its row takes: "Playback speed", the longer of the
 # two names the family's consoles carry, measures 80 at the tiny face, plus the

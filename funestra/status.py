@@ -25,13 +25,6 @@ from pathlib import Path
 from .file_channel import publish_whole
 from .renamed import old_name_getter
 
-__all__ = [
-    "FunestraStatus",
-    "StatusWriter",
-    "parse_status",
-    "status_fields",
-]
-
 _RENAMED = {"PlayerStatus": "FunestraStatus"}
 
 __getattr__ = old_name_getter(__name__, _RENAMED)
