@@ -43,7 +43,7 @@ from .drive_readout import (
 from .geometry import Rect, contains
 from .hud_button import BUTTON, Button
 from .hud_panel import BODY_PT, SYMBOL_FONT, TINY_PT, draw_button, load_font, text_width
-from .modes import Osr2State
+from .modes import UNHEARD, Osr2State
 from .robot_hand import FULL_INTENSITY, POSITION_MAX
 
 # Package-internal: the two panels that draw this line are both in here, and a
@@ -74,11 +74,13 @@ _NEUTRAL_PILL = (168, 168, 174)
 LABELS = {
     Osr2State.OFF: "Off", Osr2State.AUTO: "Auto", Osr2State.FUNSCRIPT: "FunScript",
     Osr2State.ROBOT_HAND: "Robot Hand", BUFFER: "Buffer",
+    Osr2State.UNPLUGGED: "Unplugged", Osr2State.NO_ANSWER: "No answer",
     OSR2_PARKED: "Parked", OSR2_RETRACTED: "Retracted",
 }
 COLORS = {
     Osr2State.FUNSCRIPT: GREEN, Osr2State.ROBOT_HAND: BLUE, Osr2State.AUTO: MAGENTA,
-    Osr2State.OFF: TEXT_MUTED, BUFFER: _NEUTRAL_PILL,
+    Osr2State.OFF: TEXT_MUTED, Osr2State.UNPLUGGED: TEXT_MUTED, Osr2State.NO_ANSWER: TEXT_MUTED,
+    BUFFER: _NEUTRAL_PILL,
     # The held device's line is the handoff's gray -- nobody is moving it -- and
     # the word beside it says so in the same ink.
     OSR2_PARKED: _NEUTRAL_PILL, OSR2_RETRACTED: _NEUTRAL_PILL,
@@ -88,7 +90,7 @@ COLORS = {
 def state_for(osr2: str, control: str, *, driving: str = "") -> str:
     """Who the pill names, given what the wire says has the device (*osr2*) and
     what this app is doing to it (*control*)."""
-    if osr2 in (Osr2State.AUTO, Osr2State.OFF):
+    if osr2 == Osr2State.AUTO or osr2 in UNHEARD:
         return osr2
     if control in _HELD:
         return control
@@ -140,20 +142,20 @@ class ReadoutResolver:
         # playhead — set by the same function that drew the line under the dot —
         # since the round trip lags the arbiter, and the arbiter itself decides
         # seconds before the device is done riding the blue.
-        switched_off = osr2 == Osr2State.OFF
+        unheard = osr2 in UNHEARD
         if osr2 == Osr2State.AUTO:
             # The device is running its own firmware, and that wins over
             # everything the room does to it: a hold, a handoff
             # between two drivers.  None of those reaches it, so none is the
             # picture — one line, the device's own, in its own color.
             drive = replace(drive, driven=DRIVEN_BY_AUTO, segments=())
-        elif switched_off:
+        elif unheard:
             drive = replace(drive, driven=DRIVEN_BY_NOTHING, segments=())
         elif control in _HELD:
             drive = replace(drive, segments=(), driven=DRIVEN_BY_NEUTRAL)
         elif not (composed and drive.segments):
             drive = replace(drive, driven=_DRIVEN_BY_OSR2.get(osr2, DRIVEN_BY_NOTHING))
-        held_or_off = osr2 != Osr2State.AUTO and (control in _HELD or switched_off)
+        held_or_off = osr2 != Osr2State.AUTO and (control in _HELD or unheard)
         if held_or_off or not (drive.live or composed):
             if self._still is None:
                 self._still = (drive.waveform, drive.position, drive.slide, drive.edge)
@@ -165,9 +167,9 @@ class ReadoutResolver:
         if osr2 == Osr2State.AUTO:
             self._device = _DeviceDot()
             return drive
-        held = None if switched_off else _held_by(control, paused=paused)
+        held = None if unheard else _held_by(control, paused=paused)
         return replace(drive, position=self._device.at(
-            self._clock(), drive.position, held=held, switched_on=not switched_off))
+            self._clock(), drive.position, held=held, switched_on=not unheard))
 
 
 def _held_by(control: str, *, paused: bool) -> str | None:

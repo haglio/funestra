@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from enum import Enum, StrEnum
 
-from app_support.osr2_device import Osr2Mode
+from app_support.osr2_device import Osr2Mode, Osr2Trouble
 
 __all__ = [
     "LengthMode",
@@ -62,14 +62,24 @@ class Osr2State(StrEnum):
     AUTO = "auto"
     FUNSCRIPT = "funscript"
     ROBOT_HAND = "robot_hand"
+    UNPLUGGED = "unplugged"
+    NO_ANSWER = "no_answer"
 
     @classmethod
-    def of(cls, device: Osr2Mode, *, funscript_driving: bool) -> Osr2State:
+    def of(cls, device: Osr2Mode, *, funscript_driving: bool,
+           trouble: Osr2Trouble | None = None) -> Osr2State:
         if device is Osr2Mode.OFF:
-            return cls.OFF
+            return _UNHEARD_BECAUSE.get(trouble, cls.OFF)
         if device is Osr2Mode.AUTO:
             return cls.AUTO
         return cls.FUNSCRIPT if funscript_driving else cls.ROBOT_HAND
+
+
+_UNHEARD_BECAUSE = {
+    Osr2Trouble.NOT_FOUND: Osr2State.UNPLUGGED,
+    Osr2Trouble.NOT_ANSWERING: Osr2State.NO_ANSWER,
+}
+UNHEARD = frozenset({Osr2State.OFF, *_UNHEARD_BECAUSE.values()})
 
 
 class LengthMode(StrEnum):

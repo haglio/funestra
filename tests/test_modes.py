@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 
 import pytest
-from app_support.osr2_device import Osr2Mode
+from app_support.osr2_device import Osr2Mode, Osr2Trouble
 
 from funestra.modes import (
     LengthMode,
@@ -20,7 +20,7 @@ _WIRE_WORDS = {
     MainMode: {"kino", "genau"},
     SatellitesMode: {"kino", "origenerator"},
     LoopState: {"normal", "recording", "looping"},
-    Osr2State: {"off", "auto", "funscript", "robot_hand"},
+    Osr2State: {"off", "auto", "funscript", "robot_hand", "unplugged", "no_answer"},
     LengthMode: {"mixed", "clips", "full", "none"},
     NoticeLevel: {"warning", "notice", "favorite"},
 }
@@ -96,3 +96,11 @@ class TestWhatHasTheOsr2:
 
     def test_and_the_robot_hands_otherwise(self):
         assert Osr2State.of(Osr2Mode.CONTROLLED, funscript_driving=False) is Osr2State.ROBOT_HAND
+
+    def test_an_osr2_the_broker_cannot_find_is_unplugged(self):
+        assert Osr2State.of(Osr2Mode.OFF, funscript_driving=True,
+                            trouble=Osr2Trouble.NOT_FOUND) is Osr2State.UNPLUGGED
+
+    def test_one_driven_for_minutes_without_a_word_back_has_no_answer(self):
+        assert Osr2State.of(Osr2Mode.OFF, funscript_driving=True,
+                            trouble=Osr2Trouble.NOT_ANSWERING) is Osr2State.NO_ANSWER
