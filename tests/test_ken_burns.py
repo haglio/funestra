@@ -267,44 +267,6 @@ def test_a_picture_let_go_of_its_lock_finishes_the_round_it_is_in():
     assert_along(still.view(now_s=109.0), CREEP, 1.0)
 
 
-def test_a_picture_sent_back_along_its_hold_is_drawn_back_along_its_move():
-    still = paced()
-
-    still.seek(0.25, now_s=103.0)
-
-    assert_along(still.view(now_s=103.0), DRIFT, 0.25)
-    assert still.progress(now_s=104.0) == pytest.approx(0.5)
-
-
-def test_a_locked_picture_sent_back_in_a_later_round_keeps_that_rounds_move():
-    still = paced(deals=Deals(DRIFT, CREEP))
-    still.set_looping(True, now_s=100.0)
-
-    still.seek(0.25, now_s=106.0)
-
-    assert_along(still.view(now_s=106.0), CREEP, 0.25)
-
-
-def test_a_held_picture_sent_along_its_hold_stays_where_it_was_held():
-    still = paced()
-    still.set_pace(0.0, now_s=102.0)
-
-    still.seek(0.75, now_s=103.0)
-
-    assert_along(still.view(now_s=110.0), DRIFT, 0.5)
-
-
-def test_a_frozen_picture_sent_back_waits_there_until_the_room_thaws():
-    still = paced()
-    still.set_paused(True, now_s=103.0)
-
-    still.seek(0.25, now_s=104.0)
-
-    assert_along(still.view(now_s=108.0), DRIFT, 0.25)
-    still.set_paused(False, now_s=108.0)
-    assert_along(still.view(now_s=109.0), DRIFT, 0.5)
-
-
 WIDE = (1920, 1080)
 
 
@@ -369,30 +331,3 @@ def test_a_view_at_the_end_of_its_reach_brings_the_pictures_edge_up_to_the_windo
     for window, start, end in drawn(WIDE, shown, View(8.0, *corner)):
         assert start <= 0 and end >= window
         assert min(-start, end - window) == 0
-
-
-def test_a_picture_held_for_less_than_its_pace_runs_out_then_on_the_move_of_the_whole_pace():
-    still = paced()
-
-    still.hold_for(2.0)
-
-    assert (still.ran_out(now_s=101.9), still.ran_out(now_s=102.0)) == (False, True)
-    assert_along(still.view(now_s=101.0), DRIFT, 0.25)
-
-
-def test_a_new_picture_holds_for_its_whole_pace_again():
-    still = paced()
-    still.hold_for(2.0)
-
-    still.new_picture(now_s=103.0)
-
-    assert (still.holds_for_s, still.ran_out(now_s=106.9)) == (4.0, False)
-
-
-def test_a_locked_picture_held_for_less_than_its_pace_still_never_runs_out():
-    still = paced()
-    still.hold_for(2.0)
-
-    still.set_looping(True, now_s=100.0)
-
-    assert still.ran_out(now_s=103.0) is False

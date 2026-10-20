@@ -10,7 +10,6 @@ from funestra import funestra_verbs
 from funestra.funestra_controls import VERBS, FunestraControls, apply_command
 from funestra.funestra_verbs import (
     CLEAR_FRAME,
-    HOLD_PICTURE,
     LOCK_OFF,
     LOCK_ON,
     NEXT,
@@ -71,14 +70,6 @@ class TestApplyCommand:
 
         assert apply_command(f"{SET_PACE} 2.5", controls) is True
         assert engine.pace_s == 2.5
-
-    def test_hold_picture_is_how_long_the_picture_on_screen_holds_it_short_of_its_pace(
-            self, tmp_path):
-        playback, engine = make_playback(tmp_path)
-        controls = FunestraControls(playback, reload_playlist=_never_reloads)
-
-        assert apply_command(f"{HOLD_PICTURE} 2", controls) is True
-        assert engine.held_for == 2.0
 
     def test_next_and_prev_navigate(self, tmp_path):
         controls = _controls(tmp_path)
@@ -328,7 +319,7 @@ def test_every_verb_a_funestra_answers_is_spelled_in_the_familys_vocabulary():
     assert set(VERBS) == {
         NEXT, PREV, LOCK_ON, LOCK_OFF, TOGGLE_LOCK, TRASH, NEXT_VERSION, PREV_VERSION,
         SEEK_FWD, SEEK_BACK, SPEED_UP, SPEED_DOWN, SET_SPEED, PLAY_FILE, RELOAD_PLAYLIST,
-        SET_PACE, HOLD_PICTURE, SHOW_FRAME, CLEAR_FRAME, QUIT, SET_TCODE_ENABLED,
-        SET_MAX_INTENSITY, SET_VOLUME, SHOW,
+        SET_PACE, SHOW_FRAME, CLEAR_FRAME, QUIT, SET_TCODE_ENABLED, SET_MAX_INTENSITY,
+        SET_VOLUME, SHOW,
     }
     assert all(getattr(funestra_verbs, verb) == verb for verb in VERBS)

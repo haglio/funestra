@@ -11,7 +11,6 @@ from typing import Any
 from .control_registry import Control, Verb, bind, look_up
 from .funestra_verbs import (
     CLEAR_FRAME,
-    HOLD_PICTURE,
     LOCK_OFF,
     LOCK_ON,
     NEXT,
@@ -170,14 +169,6 @@ def _set_pace(controls: FunestraControls, value: str) -> bool:
     return True
 
 
-def _hold_picture(controls: FunestraControls, value: str) -> bool:
-    seconds = pace_seconds(value)
-    if seconds is None:
-        return False
-    controls.playback.hold_picture_for(seconds)
-    return True
-
-
 def _show_frame(controls: FunestraControls, value: str) -> bool:
     if not value.strip():
         return False
@@ -224,8 +215,7 @@ CONTROLS: tuple[Control, ...] = (
         name="playing_file",
         verbs=(Verb(PLAY_FILE, _play_file, takes_a_value=True),),
     ),
-    Control(name="pace", verbs=(Verb(SET_PACE, _set_pace, takes_a_value=True),
-                                Verb(HOLD_PICTURE, _hold_picture, takes_a_value=True))),
+    Control(name="pace", verbs=(Verb(SET_PACE, _set_pace, takes_a_value=True),)),
     Control(
         name="frame",
         verbs=(Verb(SHOW_FRAME, _show_frame, takes_a_value=True),

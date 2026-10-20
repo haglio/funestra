@@ -58,11 +58,6 @@ SET_F_MODE = "SET_F_MODE"
 # <seconds>, 0 holding it until something else moves it).
 SET_PACE = "SET_PACE"
 
-# How long the picture on screen holds it, sooner than its pace would move it
-# on (HOLD_PICTURE <seconds>), its move still made at the pace; the next
-# picture holds for the pace again.
-HOLD_PICTURE = "HOLD_PICTURE"
-
 SHOW_FRAME = "SHOW_FRAME"
 CLEAR_FRAME = "CLEAR_FRAME"
 

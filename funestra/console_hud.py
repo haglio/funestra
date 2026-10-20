@@ -244,7 +244,7 @@ class ConsolePainter:
         self._glyph = load_font(BODY_PT, SYMBOL_FONT)
         self._drive = DriveSection()
         self._osr2 = Osr2Section()
-        self._item_row = RowSection()
+        self._clip_row = RowSection()
         self._host_controls = HostControlsSection()
         # What the panel on hand was painted from.  The heatmap is held by
         # identity rather than value: comparing a track's worth of colors every
@@ -256,7 +256,7 @@ class ConsolePainter:
         self._bgra: np.ndarray | None = None
         self.buttons: list[tuple[Rect, Button]] = []
         self.tracks: list[DriveTrack] = []
-        # Where the item's row landed, for a press to be placed in its own
+        # Where the clip's row landed, for a press to be placed in its own
         # coordinates (:func:`funestra.hud_row.row_part`).
         self.row: RowLayout | None = None
         self.host_controls_layout: HostControlsLayout | None = None
@@ -266,21 +266,21 @@ class ConsolePainter:
         self._pointer: PointerReading[tuple[int, int] | None] = PointerReading(None)
 
     def bgra(self, hud: ConsoleHud, *, hover: tuple[int, int] | None = None,
-             item_row: RowHud | None = None, heatmap=None,
+             clip_row: RowHud | None = None, heatmap=None,
              host_controls: HostControlsHud | None = None) -> np.ndarray:
         """*hud* as an mpv overlay bitmap — what the Main Funestra composites into its video."""
-        if (self._ensure(self._resolve(hud), hover, item_row, heatmap, host_controls)
+        if (self._ensure(self._resolve(hud), hover, clip_row, heatmap, host_controls)
                 or self._bgra is None):
             self._bgra = to_bgra(self._image)
         return self._bgra
 
     def rgba(self, hud: ConsoleHud, *, hover: tuple[int, int] | None = None,
-             item_row: RowHud | None = None, heatmap=None,
+             clip_row: RowHud | None = None, heatmap=None,
              host_controls: HostControlsHud | None = None) -> tuple[bytes, tuple[int, int]]:
         """*hud* as ``(rgba_bytes, size)`` — what pygame takes, for Genau to blit
         into its own window in genau mode.  The size varies with the contents, so
         the caller sizes its blit from what comes back."""
-        self._ensure(self._resolve(hud), hover, item_row, heatmap, host_controls)
+        self._ensure(self._resolve(hud), hover, clip_row, heatmap, host_controls)
         return self._image.tobytes(), self._image.size
 
     def _resolve(self, hud: ConsoleHud) -> ConsoleHud:
@@ -300,19 +300,19 @@ class ConsolePainter:
             composed=kino_shows(console.main_mode)))
 
     def _ensure(self, hud: ConsoleHud, hover: tuple[int, int] | None,
-                item_row: RowHud | None = None, heatmap=None,
+                clip_row: RowHud | None = None, heatmap=None,
                 host_controls: HostControlsHud | None = None) -> bool:
-        """Repaint if *hud*/*hover*/the item's row/the host's controls moved; report whether it did
+        """Repaint if *hud*/*hover*/the clip's row/the host's controls moved; report whether it did
         (so a cached bitmap can be reused).  The panel is redrawn a few times a
         minute at most — Pillow is too slow to run every frame — so the image is
         kept until it changes.  The row is the one part that moves with playback,
         which is why a Funestra redrawing on its beat gets a fresh panel."""
         hover = hover if hover is not None else self._pointer.on(hud.console)
-        if ((hud, hover, item_row, host_controls) == self._painted[:4]
+        if ((hud, hover, clip_row, host_controls) == self._painted[:4]
                 and heatmap is self._painted[4] and self._image is not None):
             return False
-        self._painted = (hud, hover, item_row, host_controls, heatmap)
-        self._image = self._paint(hud, hover, item_row, heatmap, host_controls)
+        self._painted = (hud, hover, clip_row, host_controls, heatmap)
+        self._image = self._paint(hud, hover, clip_row, heatmap, host_controls)
         return True
 
     def press_at(self, mx: int, my: int) -> str:
@@ -433,7 +433,7 @@ class ConsolePainter:
         return placed
 
     def _paint(self, hud: ConsoleHud, hover: tuple[int, int] | None = None,
-               item_row: RowHud | None = None, heatmap=None,
+               clip_row: RowHud | None = None, heatmap=None,
                host_controls: HostControlsHud | None = None) -> Image.Image:
         console, drive = hud.console, hud.drive
         if console.hud_minimized:
@@ -450,7 +450,7 @@ class ConsolePainter:
         aim_rows = [[self._filled(button, hud) for button in row] for row in console.osr2_rows]
         status = hud.status_line if whole else ""
         filename = hud.modes.video if whole else ""
-        item_row = item_row if whole else None
+        clip_row = clip_row if whole else None
         drive_w, drive_h = section_size() if drive is not None else (0, 0)
         body_ascent, body_descent = self._body.getmetrics()
         top_h = body_ascent + body_descent if whole else 0
@@ -462,12 +462,12 @@ class ConsolePainter:
         widths = [0, _row_width(rows),
                   max(_row_width(aim_rows), drive_w,
                       self._osr2_width(console) if console.has_osr2 else 0),
-                  self._item_row.least_width(item_row) if item_row is not None else 0,
+                  self._clip_row.least_width(clip_row) if clip_row is not None else 0,
                   self._host_controls.least_width(host_controls) if host_controls is not None else 0]
         minus_room = MINUS_ROOM if whole and self._minus_on_the_panel else 0
         last = max(index for index, used in enumerate(
             (True, bool(rows), bool(aim_rows) or console.has_osr2 or drive is not None,
-             item_row is not None, host_controls is not None)) if used)
+             clip_row is not None, host_controls is not None)) if used)
         reserves = [0] * len(widths)
         reserves[last if corner.lower else 0] = minus_room
         parts_w = max(width_ + reserve for width_, reserve in zip(widths, reserves))
@@ -478,16 +478,16 @@ class ConsolePainter:
                 reserves[0] + text_x + text_width(self._tiny, filename),
             )
         else:
-            any_row = (self._item_row.least_width_for_any_row()
+            any_row = (self._clip_row.least_width_for_any_row()
                        + (minus_room if corner.lower else 0)) if whole else 0
             width = max(self._width, 2 * _PAD + parts_w, 2 * _PAD + any_row)
             room = width - 2 * _PAD - text_x - reserves[0]
             status = fit_text(self._body, status, room)
             filename = fit_text(self._tiny, filename, room)
-        # The item's own row, under everything the console says about the room:
+        # The clip's own row, under everything the console says about the room:
         # where the video is and how loud it is, drawn here rather than along
         # the lower edge of the picture (:mod:`funestra.hud_row`).
-        row_h = ROW_H if item_row is not None else 0
+        row_h = ROW_H if clip_row is not None else 0
         sections = stack(_PAD, [
             top_h + filename_h,
             rows_height(rows),
@@ -542,7 +542,7 @@ class ConsolePainter:
                         hovered=hover is not None and contains(minus[0], *hover),
                         glyph_font=self._glyph, word_font=self._tiny)
             self.buttons.append(minus)
-        self._draw_the_foot(panel.image, corner, reserves, item_row, row_top, row_h, heatmap,
+        self._draw_the_foot(panel.image, corner, reserves, clip_row, row_top, row_h, heatmap,
                             host_controls, host_top)
 
         if hover is not None:
@@ -552,13 +552,13 @@ class ConsolePainter:
         return panel.image
 
     def _draw_the_foot(self, image: Image.Image, corner: HudCorner, reserves: list[int],
-                       item_row: RowHud | None, row_top: int, row_h: int, heatmap,
+                       clip_row: RowHud | None, row_top: int, row_h: int, heatmap,
                        host_controls: HostControlsHud | None, host_top: int) -> None:
         self.row = None
-        if item_row is not None:
-            self.row = row_layout(item_row, rect=_section_rect(
+        if clip_row is not None:
+            self.row = row_layout(clip_row, rect=_section_rect(
                 corner, image.width, reserves[3], row_top, row_h))
-            self._item_row.draw(image, self.row, item_row, heatmap=heatmap)
+            self._clip_row.draw(image, self.row, clip_row, heatmap=heatmap)
         self.host_controls_layout = None
         if host_controls is not None:
             self.host_controls_layout = self._host_controls.draw(image, _section_rect(
