@@ -56,8 +56,8 @@ class ConsoleOverlay:
         self._shown = False
         self._origin = (0, 0)
         self._panel_height = 0
-        self._item_row: RowHud | None = None
-        # The console draws the item's row, so it places a press on it too.
+        self._clip_row: RowHud | None = None
+        # The console draws the clip's row, so it places a press on it too.
         self._row = RowPress(seek=seek, seek_loop=seek_loop, set_volume=set_volume,
                              toggle_mute=toggle_mute)
         self._host_controls = HostControlsPress(host_controls)
@@ -79,14 +79,14 @@ class ConsoleOverlay:
         return self._painter.hud_place
 
     def tick(self, *, playback_speed: float, window: tuple[int, int],
-             item_row: RowHud | None = None, heatmap=None, flash: str = "") -> None:
+             clip_row: RowHud | None = None, heatmap=None, flash: str = "") -> None:
         self._console = read_console(self._console_file) or self._console
         if self._drive_file is not None:
             self._drive = read_drive(self._drive_file) or self._drive
         drive = self._drive_gate.readout(
             self._drive, device_drives_itself=self._console.device_drives_itself,
             video_shows=kino_shows(self._console.main_mode))
-        self._item_row = item_row
+        self._clip_row = clip_row
         if self.minimized and not self._minus_on_the_panel:
             self.close()
             return
@@ -95,7 +95,7 @@ class ConsoleOverlay:
             console=with_playback_speed(self._console, playback_speed),
             drive=drive,
             flash=flash,
-        ), item_row=item_row, heatmap=heatmap, host_controls=self._host_controls.drawing())
+        ), clip_row=clip_row, heatmap=heatmap, host_controls=self._host_controls.drawing())
         self._origin = self._painter.place(window=window)
         self._panel_height = bgra.shape[0]
         self._engine.overlay(self.overlay_id, *self._origin, bgra)
@@ -157,7 +157,7 @@ class ConsoleOverlay:
     def _track_duration(self) -> float:
         """How long the track spans -- the clip, or the window a loop being
         recorded has zoomed it to, which is what the row was drawn from."""
-        return 0.0 if self._item_row is None else self._item_row.duration_ms
+        return 0.0 if self._clip_row is None else self._clip_row.duration_ms
 
     def motion(self, x: int, y: int) -> None:
         self._painter.motion(x, y)

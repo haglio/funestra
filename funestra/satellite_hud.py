@@ -554,7 +554,7 @@ class HudTargets:
     # The drive readout's three bands, on a host that draws one: pressed to set
     # a level outright, and held while the pointer drags along them.
     tracks: list[DriveTrack] = field(default_factory=list)
-    # Where the item's own row landed and how it is laid out, for a press to
+    # Where the clip's own row landed and how it is laid out, for a press to
     # be placed on it (:class:`funestra.hud_row.RowPress`).
     row: RowLayout | None = None
     # Where the block the source paints at the foot landed: its presses and
