@@ -98,7 +98,7 @@ class TestTheRowThatAimsTheDevice:
         _label, _off, switch, _on = row[:4]
         assert switch.glyph == TOGGLE_SWITCH
         assert [button.command for button in row[4:]] == [
-            "robot_hand_toggle_learned", "robot_hand_cycle_shape", "quarter_button"]
+            "robot_hand_toggle_learned", "robot_hand_cycle_shape"]
         assert row[4].group_break
 
     def test_human_inspired_wears_the_familys_human_figure(self):

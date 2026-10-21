@@ -146,7 +146,6 @@ def aim_row(*, learned: bool, shape: str, control: str) -> tuple[Button, ...]:
                lit=learned, group_break=True),
         Button("robot_hand_cycle_shape", shared_mark(_WAVEFORM_FACES.get(shape, "wave")),
                f"Waveform: {shape_label(shape)}"),
-        Button("quarter_button", shared_mark("quarter_offset"), "Offset the motion a ¼ cycle"),
     )
 
 
