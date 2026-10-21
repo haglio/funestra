@@ -21,6 +21,7 @@ from .playlist import PlaylistItem
 from .renamed import answers_to_old_names
 from .scripted_device import REWIND_MS, ScriptedDevice
 from .seeking import OwedSeek, seek_if_taken
+from .up_next import put_up_next
 
 logger = logging.getLogger(__name__)
 
@@ -318,14 +319,27 @@ class Playback:
         self.load(self._index)
 
     def play_file(self, video: Path, funscript: Path | None = None) -> None:
+        self._take_the_script(video, funscript)
+        if video in self._playlist:
+            self.load(self._playlist.index(video))
+            return
+        self._put_next(video)
+        self.load(self._index + 1)
+
+    def play_next(self, video: Path, funscript: Path | None = None) -> None:
+        self._take_the_script(video, funscript)
+        if video == self.current_video:
+            return
+        self._put_next(video)
+        self._stage_next()
+
+    def _take_the_script(self, video: Path, funscript: Path | None) -> None:
         if funscript is not None:
             self._funscripts[video] = funscript
-        for i, path in enumerate(self._playlist):
-            if path == video:
-                self.load(i)
-                return
-        self._playlist.insert(self._index + 1, video)
-        self.load(self._index + 1)
+
+    def _put_next(self, video: Path) -> None:
+        listed_at = self._playlist.index(video) if video in self._playlist else None
+        self._index = put_up_next(self._playlist, self._index, video, listed_at)
 
     def load_playlist(
         self, playlist: list[Path], funscripts: Mapping[Path, Path] | None = None,

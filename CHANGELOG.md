@@ -9,6 +9,16 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-20 — a source can name an item to come up next
+
+`PLAY_NEXT <playlist line>` puts an item right after the one on screen without
+taking the screen from it: moved there when it is listed already, the funscript
+column taken as its script, and waiting behind a held item until the hold is let
+go. Fun Time sends it for whatever arrives in a Funestra's library while that
+Funestra plays its Latest list. Genau's flick sequence takes the same placement
+(`FlickSelectionController.play_next`), and both lists put an item next through
+`up_next.put_up_next`, which `PLAY_FILE`'s splice now goes through too.
+
 ## 2026-10-19 — the radio and a picture's row are taken back out
 
 The change of 2026-10-17 (a picture keeps its row, timed on the engine's own

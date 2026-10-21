@@ -15,6 +15,7 @@ from funestra.funestra_verbs import (
     NEXT,
     NEXT_VERSION,
     PLAY_FILE,
+    PLAY_NEXT,
     PREV,
     PREV_VERSION,
     QUIT,
@@ -32,8 +33,10 @@ from funestra.funestra_verbs import (
     SPEED_UP,
     TOGGLE_LOCK,
     TRASH,
+    play_next,
     step_version,
 )
+from funestra.playlist import PlaylistItem
 from funestra.volume import VolumeHud
 from funestra.volume_control import RoomVolume, VolumeControl
 
@@ -105,6 +108,16 @@ class TestApplyCommand:
 
         assert controls.playback.current_video == tmp_path / "v2.mp4"
         assert controls.playback.current_funscript.actions == [(0, 20), (250, 80)]
+
+    def test_play_next_puts_the_item_the_line_names_after_the_one_on_screen(self, tmp_path):
+        controls = _controls(tmp_path)
+        newcomer, script = tmp_path / "newcomer.mp4", tmp_path / "newcomer.funscript"
+
+        assert apply_command(play_next(PlaylistItem(newcomer, script)), controls) is True
+
+        assert controls.playback.current_video == tmp_path / "v0.mp4"
+        assert controls.playback.playlist[1] == newcomer
+        assert controls.playback.funscript_of(newcomer) == script
 
     def test_a_version_step_plays_the_rendition_the_family_names_next(self, tmp_path):
         controls = _controls(tmp_path)
@@ -318,8 +331,8 @@ class TestWhoHasTheWindow:
 def test_every_verb_a_funestra_answers_is_spelled_in_the_familys_vocabulary():
     assert set(VERBS) == {
         NEXT, PREV, LOCK_ON, LOCK_OFF, TOGGLE_LOCK, TRASH, NEXT_VERSION, PREV_VERSION,
-        SEEK_FWD, SEEK_BACK, SPEED_UP, SPEED_DOWN, SET_SPEED, PLAY_FILE, RELOAD_PLAYLIST,
-        SET_PACE, SHOW_FRAME, CLEAR_FRAME, QUIT, SET_TCODE_ENABLED, SET_MAX_INTENSITY,
-        SET_VOLUME, SHOW,
+        SEEK_FWD, SEEK_BACK, SPEED_UP, SPEED_DOWN, SET_SPEED, PLAY_FILE, PLAY_NEXT,
+        RELOAD_PLAYLIST, SET_PACE, SHOW_FRAME, CLEAR_FRAME, QUIT, SET_TCODE_ENABLED,
+        SET_MAX_INTENSITY, SET_VOLUME, SHOW,
     }
     assert all(getattr(funestra_verbs, verb) == verb for verb in VERBS)

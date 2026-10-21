@@ -340,3 +340,16 @@ class TestPlayingAPickedFlick:
 
         assert controller.adopt_pending_flick() is False
         assert renderer.current_flick_path == Path("c.mp4")
+
+
+def test_a_flick_put_next_leaves_the_one_on_screen_up_and_is_decoded_ahead():
+    controller, _store, loader, renderer, notifier = _build_controller("a.mp4", "b.mp4")
+    controller.set_current_flick(Path("a.mp4"))
+    notifier.flick_notifications.clear()
+
+    controller.play_next(Path("new.mp4"))
+    controller.request_nearby_prefetch()
+
+    assert renderer.current_flick_path == Path("a.mp4")
+    assert notifier.flick_notifications == []
+    assert loader.prefetch_requests == [Path("new.mp4")]

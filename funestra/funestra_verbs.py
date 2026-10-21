@@ -27,14 +27,15 @@ PREV = "PREV"
 RELOAD_PLAYLIST = "RELOAD_PLAYLIST"
 
 # The item on screen: hold it against the list moving on (repeat-one), drop it
-# from the list and move on, or name another -- jumped to if it is in the list,
-# spliced in after this one if not.  The hold is spelled absolutely as well as
-# toggled: a speaker asks for the state they want.
+# from the list and move on, name another -- jumped to if it is in the list,
+# spliced in after this one if not -- or name one to come up after it.  The hold
+# is spelled absolutely as well as toggled: a speaker asks for the state they want.
 TOGGLE_LOCK = "TOGGLE_LOCK"
 LOCK_ON = "LOCK_ON"
 LOCK_OFF = "LOCK_OFF"
 TRASH = "TRASH"
 PLAY_FILE = "PLAY_FILE"  # its value is one playlist line; see play_file
+PLAY_NEXT = "PLAY_NEXT"  # and so is this one's
 
 # Inside the item: ten seconds either way, and the rate it plays at
 # (SET_SPEED min | max | <multiplier>).
@@ -77,6 +78,10 @@ QUIT = "QUIT"
 def play_file(item: PlaylistItem) -> str:
     """The command that shows *item*."""
     return f"{PLAY_FILE} {item_line(item)}"
+
+
+def play_next(item: PlaylistItem) -> str:
+    return f"{PLAY_NEXT} {item_line(item)}"
 
 
 def pace_seconds(value: str) -> float | None:
