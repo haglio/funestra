@@ -87,8 +87,7 @@ def test_a_seed_family_is_the_seed_groups_family_and_needs_no_seed():
     assert seed_family(_from_words(seed="")) == seed_group_key(_from_words())[0]
 
 
-def test_records_holding_nothing_but_the_act_are_one_family_per_act():
-    alpha = {"video": {"action": "Alpha", "duration_seconds": 5}}
-
-    assert seed_family(alpha) == seed_family({"video": {"action": "Alpha", "orientation": "portrait"}})
-    assert seed_family(alpha) != seed_family({"video": {"action": "Beta"}})
+def test_a_record_naming_no_prompt_has_no_seed_family_whatever_its_act():
+    assert seed_family({"video": {"action": "Alpha", "duration_seconds": 5}}) is None
+    assert seed_family({"video": {"action": "Beta", "seed": "7"}}) is None
+    assert seed_family(_from_a_picture(positive_prompt="")) is None
