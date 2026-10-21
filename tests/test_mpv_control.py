@@ -35,7 +35,8 @@ class FakeMpv:
 
     ``playlist_pos`` is settable so a test can put the handle in the states the
     real one reaches: on the head, rolled onto a prefetched entry, or holding no
-    entry at all (-1, mpv's "nothing is playing").
+    entry at all (-1, mpv's "nothing is playing").  Like the real one, it
+    refuses ``playlist-next`` with no entry after the one playing.
     """
 
     def __init__(self, *, pos: int = 0, count: int = 2) -> None:
@@ -70,7 +71,12 @@ class FakeMpv:
         self.calls.append(("play", path))
 
     def command(self, name: str, *args) -> None:
+        if name == "playlist-next" and self._nothing_after_the_entry_playing():
+            raise SystemError("Error running mpv command", -12)
         self.calls.append(("command", name, *args))
+
+    def _nothing_after_the_entry_playing(self) -> bool:
+        return not 0 <= self.playlist_pos < self.playlist_count - 1
 
     def __setattr__(self, name: str, value) -> None:
         if name in PLACING:
@@ -744,6 +750,25 @@ def test_a_swapped_in_still_that_runs_out_moves_on_to_the_staged_clip_at_the_pac
 
     assert mpv.image_display_duration == 4.0
     assert [call for call in mpv.calls if call[0] == "command"] == [("command", "playlist-next")]
+
+
+def test_a_picture_mpv_rolled_onto_by_itself_stays_up_until_the_funestra_follows_the_roll():
+    mpv = FakeMpv()
+    control = Control(mpv, now=100.0)
+    control.set_pace(4.0)
+    control.load(Path("made-up-clip.mp4"))
+    mpv.report("path", "made-up-clip.mp4")
+    mpv.report("current-tracks/video/image", False)
+    control.stage_next(Path("made-up-next.png"))
+    mpv.calls.clear()
+
+    control.now = 112.0
+    mpv.playlist_pos = 1
+    mpv.report("path", "made-up-next.png")
+    mpv.report("current-tracks/video/image", True)
+    control.push_still()
+
+    assert [call for call in mpv.calls if call[0] == "command"] == []
 
 
 def test_a_file_opened_after_a_swapped_in_still_holds_for_the_pace_again():
