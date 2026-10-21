@@ -9,6 +9,14 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-21 — every Funestra runs ahead of background work through one piece of code
+
+`funestra_priority.ahead_on_the_processor` moves here from Fun Time's
+`main_funestra`, where the Main Funestra, the satellites and the headset ran
+inside it. Origenerator's Slideshow Funestra is the one that did not: beside a
+busy computer its picture's move was pushed two to four times in 0.3 s instead
+of eighteen. It now runs inside the same block.
+
 ## 2026-10-20 — a source can name an item to come up next
 
 `PLAY_NEXT <playlist line>` puts an item right after the one on screen without
