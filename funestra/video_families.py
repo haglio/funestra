@@ -41,16 +41,21 @@ def action_group_key(record: dict) -> str | None:
     return _field_key("t2v", video, (*VIDEO_BASE_FIELDS, "seed"))
 
 
-def seed_family(record: dict) -> str:
-    picture = record.get("source_image")
-    if picture:
-        return _field_key("img", picture, _PICTURE_FAMILY_FIELDS)
-    return _field_key("t2v", record.get("video") or {}, _VIDEO_FAMILY_FIELDS)
+def seed_family(record: dict) -> str | None:
+    made, prefix, prompt, fields = _what_made(record)
+    return _field_key(prefix, made, fields) if made.get(prompt) else None
 
 
 def seed_group_key(record: dict) -> tuple[str, str] | None:
-    picture = record.get("source_image")
-    seeded, prompt = (picture, "positive_prompt") if picture else (record.get("video") or {}, "prompt")
-    if not seeded.get("seed") or not seeded.get(prompt):
+    made = _what_made(record)[0]
+    family = seed_family(record)
+    if family is None or not made.get("seed"):
         return None
-    return seed_family(record), normalized_text(seeded.get("seed"))
+    return family, normalized_text(made.get("seed"))
+
+
+def _what_made(record: dict) -> tuple[dict, str, str, tuple[str, ...]]:
+    picture = record.get("source_image")
+    if picture:
+        return picture, "img", "positive_prompt", _PICTURE_FAMILY_FIELDS
+    return record.get("video") or {}, "t2v", "prompt", _VIDEO_FAMILY_FIELDS
