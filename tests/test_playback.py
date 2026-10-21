@@ -860,6 +860,13 @@ class TestShape:
 
         assert playback.portrait is False
 
+    def test_a_square_item_is_landscape_as_the_family_files_one(self, tmp_path):
+        playback, engine = _make_playback(tmp_path)
+
+        engine.source_dims = (1080, 1080)
+
+        assert playback.portrait is False
+
     def test_an_item_not_measured_yet_has_no_shape(self, tmp_path):
         playback, _engine = _make_playback(tmp_path)
 

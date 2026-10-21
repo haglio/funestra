@@ -11,6 +11,8 @@ import logging
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 
+from shared_ui.orientation import PORTRAIT, orientation_of_size
+
 from .funscript import Funscript
 from .funscript import load as load_funscript
 from .play_points import PlayPoints
@@ -91,7 +93,7 @@ class Playback:
     @property
     def portrait(self) -> bool | None:
         width, height = self._engine.source_dims
-        return height > width if width and height else None
+        return orientation_of_size(width, height) == PORTRAIT if width and height else None
 
     def funscript_of(self, video: Path) -> Path | None:
         return self._funscripts.get(video)

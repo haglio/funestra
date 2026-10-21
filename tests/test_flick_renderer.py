@@ -72,6 +72,15 @@ def test_a_flick_taller_than_it_is_wide_is_portrait():
     assert controller.portrait is True
 
 
+def test_a_square_flick_is_landscape_as_the_family_files_one():
+    controller, flick_store, _display_calls = _make_controller()
+    path = Path("demo.mp4")
+    flick_store.flick_cache[path] = {"frames": [np.zeros((480, 480, 3), np.uint8)]}
+    controller.set_current_flick_path(path)
+
+    assert controller.portrait is False
+
+
 def test_the_shape_is_not_known_before_the_flick_is_up():
     controller, _flick_store, _display_calls = _make_controller()
     controller.set_current_flick_path(Path("demo.mp4"))
