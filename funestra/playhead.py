@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw
 from shared_ui.palette import TEXT_PRIMARY
 
 from .hud_panel import TINY_PT, KeptBitmap, ink_center_offset, load_font, text_width
-from .hud_status import SEPARATOR
+from .hud_title import SEPARATOR
 from .renamed import old_name_getter
 from .volume import CHIP_H, chip_xy
 

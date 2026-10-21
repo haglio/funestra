@@ -58,7 +58,7 @@ from .hud_osr2 import (
 )
 from .hud_placement import block_x
 from .hud_row import ROW_H, RowHud, RowSection, row_layout
-from .hud_status import PLAYBACK_SPEED_LABEL
+from .hud_title import PLAYBACK_SPEED_LABEL
 from .playback_rate import format_rate
 from .satellite_hud import (
     ACT_GAP,
@@ -78,10 +78,10 @@ from .satellite_hud import (
     MODE_LABEL_PAD,
     PAD,
     ROW_LABEL_GUTTER,
-    STATUS_BASELINE,
-    STATUS_INDENT,
-    STATUS_TEXT_X,
     SUBTITLE_GAP,
+    TITLE_BASELINE,
+    TITLE_INDENT,
+    TITLE_X,
     WRONG_ACTION_MARK,
     WRONG_BTN,
     WRONG_GAP,
@@ -252,7 +252,7 @@ class HudRenderer:
         Funestra rather than from *model*, being what is decoding rather than what
         the source published.
 
-        *video* is the file on screen, named under the status line.  It comes from
+        *video* is the file on screen, named under the title.  It comes from
         the Funestra rather than from *model*: the published panel is fun_time's answer
         to what this side is browsing, and what is actually decoding is the Funestra's
         own — the same split the Main Funestra draws, which names its file from its own
@@ -309,7 +309,7 @@ class HudRenderer:
                                 if clip_row is not None else 0))
         row_h = ROW_H if clip_row is not None else 0
         layout = panel_layout(
-            status_h=self._status_height(),
+            title_h=self._title_height(),
             bands=len(rows), speed=model.playback_speed is not None, row_h=row_h,
             device_h=device_height(model.osr2, model.drive, drive_h, len(device_rows)),
             foot_h=foot_h)
@@ -321,12 +321,12 @@ class HudRenderer:
 
         x = PAD
         minus_room = MINIMIZE_ROOM if minus_on_the_panel else 0
-        room = width - STATUS_TEXT_X - PAD - minus_room
-        title = self._title_font(largest_size_that_fits(
+        room = width - TITLE_X - PAD - minus_room
+        title_font = self._title_font(largest_size_that_fits(
             BODY_PT, room,
-            lambda size: text_width(self._title_font(size), model.lock_label)))
-        favorite = self._draw_status_band(
-            image, draw, PAD, model, width, title,
+            lambda size: text_width(self._title_font(size), model.title)))
+        favorite = self._draw_title_band(
+            image, draw, PAD, model, width, title_font,
             name_line(video, model.item_note, room, lambda text: text_width(self._tiny, text)),
             reserve=0 if model.hud_corner.lower else minus_room)
         y = layout.bands
@@ -489,22 +489,22 @@ class HudRenderer:
             self._titles[size] = load_font(size)
         return self._titles[size]
 
-    def _draw_status_band(self, image, draw, y: int, model: HudModel, width: int,
-                          title: ImageFont.FreeTypeFont, under_status: str, *,
-                          reserve: int) -> Rect | None:
-        status_x = self._block_x(model, width,
-                                 STATUS_INDENT + text_width(title, model.lock_label),
-                                 reserve=reserve)
-        draw_active_dot(draw, status_x, y + 2, model.active)
-        draw.text((status_x + STATUS_INDENT, y + STATUS_BASELINE), model.lock_label,
-                  font=title, anchor="ls", fill=(*TEXT_PRIMARY, 255))
-        if not under_status:
+    def _draw_title_band(self, image, draw, y: int, model: HudModel, width: int,
+                         title_font: ImageFont.FreeTypeFont, subtitle: str, *,
+                         reserve: int) -> Rect | None:
+        title_x = self._block_x(model, width,
+                                TITLE_INDENT + text_width(title_font, model.title),
+                                reserve=reserve)
+        draw_active_dot(draw, title_x, y + 2, model.active)
+        draw.text((title_x + TITLE_INDENT, y + TITLE_BASELINE), model.title,
+                  font=title_font, anchor="ls", fill=(*TEXT_PRIMARY, 255))
+        if not subtitle:
             return None
         line_y = y + self._name_line_top()
         name_x = self._block_x(model, width,
-                              STATUS_INDENT + text_width(self._tiny, under_status),
+                              TITLE_INDENT + text_width(self._tiny, subtitle),
                               reserve=reserve)
-        draw.text((name_x + STATUS_INDENT, line_y), under_status,
+        draw.text((name_x + TITLE_INDENT, line_y), subtitle,
                   font=self._tiny, anchor="la", fill=(*TEXT_MUTED, 255))
         favorite = favorite_mark_rect(name_x, line_y, sum(self._tiny.getmetrics()))
         draw_mark(image, FAVORITE_MARK, favorite,
@@ -513,9 +513,9 @@ class HudRenderer:
 
     def _name_line_top(self) -> int:
         _ascent, descent = self._body.getmetrics()
-        return STATUS_BASELINE + descent + SUBTITLE_GAP
+        return TITLE_BASELINE + descent + SUBTITLE_GAP
 
-    def _status_height(self) -> int:
+    def _title_height(self) -> int:
         return self._name_line_top() + sum(self._tiny.getmetrics())
 
     def _window(

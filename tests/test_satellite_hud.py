@@ -22,7 +22,7 @@ from funestra.satellite_hud import (
     MAP_GAP,
     PAD,
     ROW_GAP,
-    STATUS_TEXT_X,
+    TITLE_X,
     HudCell,
     HudClicks,
     HudModel,
@@ -61,12 +61,12 @@ def _squares(x: int, y: int, buttons) -> list:
     return button_row_rects(x, y, buttons, [CTRL_BTN] * len(buttons))
 
 
-# --- the status line ---------------------------------------------------------
+# --- the title ---------------------------------------------------------
 
 
 def test_the_panel_is_as_wide_as_its_map_or_its_file_name_whichever_asks_for_more():
     for_map = panel_width("portrait")
-    room = for_map - STATUS_TEXT_X - PAD
+    room = for_map - TITLE_X - PAD
 
     assert panel_width("portrait", name_width=room) == for_map
     assert panel_width("portrait", name_width=room + 20) == for_map + 20
@@ -84,7 +84,7 @@ def test_parse_hud_reads_the_panel_fun_time_published():
     text = json.dumps({
         "funestra": "portrait",
         "locked": True,
-        "lock_label": "Locked · Shuffle · alpha",
+        "title": "Locked · Shuffle · alpha",
         "active_loop": "seed",
         "playing": ["seed", 1],
         "current_action": "alpha",
@@ -98,7 +98,7 @@ def test_parse_hud_reads_the_panel_fun_time_published():
     assert model is not None
     assert model.funestra == "portrait"
     assert model.locked is True
-    assert model.lock_label == "Locked · Shuffle · alpha"
+    assert model.title == "Locked · Shuffle · alpha"
     assert model.active_loop == "seed"
     assert model.playing == ("seed", 1)
     assert model.current_action == "alpha"
@@ -117,7 +117,7 @@ def test_parse_hud_reads_whether_the_clip_is_a_favorite():
 def test_parse_hud_defaults_an_empty_panel():
     """A satellite with nothing to map (no clip yet) still parses — it simply has
     no corner, so nothing is drawn."""
-    model = parse_hud(json.dumps({"funestra": "landscape", "locked": False, "lock_label": "Unlocked"}))
+    model = parse_hud(json.dumps({"funestra": "landscape", "locked": False, "title": "Unlocked"}))
 
     assert model is not None
     assert model.corner is None
@@ -695,7 +695,7 @@ class TestThePublishedPanelIsWrittenWhereItIsRead:
 
     def test_every_field_survives_the_round_trip(self):
         model = HudModel(
-            funestra="landscape", locked=True, lock_label="Looping seeds · Locked · Latest",
+            funestra="landscape", locked=True, title="Looping seeds · Locked · Latest",
             active=True, is_favorite=True,
             corner=HudCell(path="C:/v/cur.mp4", thumb="C:/t/cur.jpg"),
             seeds=(HudCell(path="C:/v/s1.mp4", thumb="C:/t/s1.jpg"),
@@ -735,6 +735,18 @@ class TestThePublishedPanelIsWrittenWhereItIsRead:
             "enhanced_filter": True, "satellites_mode": "video"}))
 
         assert parsed == HudModel(funestra="portrait")
+
+    def test_a_title_published_before_it_was_called_the_title_still_reads(self):
+        assert parse_hud(json.dumps({"funestra": "portrait", "lock_label": "Locked"})).title == (
+            "Locked")
+
+    def test_the_title_also_goes_out_where_a_reader_from_before_the_rename_looks(self):
+        raw = json.loads(hud_text(HudModel(funestra="portrait", title="Locked")))
+
+        assert raw["title"] == raw["lock_label"] == "Locked"
+
+    def test_a_source_from_before_the_rename_still_hands_the_title_over(self):
+        assert HudModel(funestra="portrait", lock_label="Locked").title == "Locked"
 
     def test_a_panel_with_no_clip_yet_round_trips_empty(self):
         parsed = parse_hud(hud_text(HudModel(funestra="portrait")))

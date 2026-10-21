@@ -175,7 +175,7 @@ def draw_mark(image: Image.Image, name: str, rect: tuple[int, int, int, int],
                 fill)
 
 
-# The dot at the head of every HUD's status line, saying whether a bare, unaddressed
+# The dot at the head of every HUD's title, saying whether a bare, unaddressed
 # command lands on this Funestra.  Same size and same corner on all three, because a
 # reader glancing across two screens is looking for one mark in one place.
 ACTIVE_DOT = 10

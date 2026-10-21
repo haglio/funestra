@@ -5,8 +5,8 @@ same under both, so the mode switch and the drive
 controls do not move as you flip between them; only the transport changes,
 because prev/next step Kino's video in kino mode and Genau's flicks in genau.
 
-Kept free of Pillow, as :mod:`funestra.satellite_hud` is, so the
-geometry and the hit-testing are testable without a font.  :mod:`funestra.console_hud` paints them; the
+Kept free of Pillow, so the geometry and the hit-testing are testable
+without a font.  :mod:`funestra.console_hud` paints them; the
 drive readout's own arrows come from :mod:`funestra.drive_readout`.
 
 The buttons are the source's own (:attr:`ConsoleModel.rows`), each posting its
@@ -195,11 +195,12 @@ class ConsoleModel:
     # too: a console drawn before the first panel arrives must not show the lock
     # off when it is not.
     locked: bool = True
-    # Which browse order the status line names: newest-first ("Latest") when
+    # Which browse order the title names: newest-first ("Latest") when
     # set, shuffled when clear, and nothing at all for a host with no browse
     # order to name -- Origenerator's motion panel, whose slides are a show's
     # own set.
     latest: bool | None = None
+    filters: tuple[str, ...] = ()
     # Kino's video playback rate, shown while Kino is on screen.  Not published —
     # Kino knows its own rate and folds it in; Genau leaves it at 1.
     playback_speed: float = 1.0
@@ -258,6 +259,7 @@ def console_text(model: ConsoleModel) -> str:
         "hud_minimized": model.hud_minimized,
         "active": model.active,
         "latest": model.latest,
+        "filters": list(model.filters),
         "osr2": model.osr2,
         "osr2_control": model.osr2_control,
         "paused": model.paused,
@@ -287,6 +289,7 @@ def parse_console(text: str) -> ConsoleModel | None:
         active=bool(raw.get("active", False)),
         # Absent is None -- no browse order to name -- rather than "shuffled".
         latest=(None if raw.get("latest") is None else bool(raw.get("latest"))),
+        filters=_filters_from_raw(raw.get("filters")),
         osr2=read_mode(Osr2State, raw.get("osr2"), Osr2State.OFF),
         osr2_control=str(raw.get("osr2_control", "") or OSR2_CONTROL_UNANSWERED),
         paused=bool(raw.get("paused", False)),
@@ -297,6 +300,12 @@ def parse_console(text: str) -> ConsoleModel | None:
         has_osr2=bool(raw.get("has_osr2", True)),
         max_intensity=max_intensity_from_raw(raw.get("max_intensity")),
     )
+
+
+def _filters_from_raw(raw) -> tuple[str, ...]:
+    if not isinstance(raw, list):
+        return ()
+    return tuple(str(word) for word in raw if word)
 
 
 def max_intensity_from_raw(raw) -> int | None:

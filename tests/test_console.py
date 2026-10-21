@@ -330,6 +330,11 @@ class TestThePublishedConsoleIsWrittenWhereItIsRead:
         assert parsed == ConsoleModel()
         assert "playback_speed" not in json.loads(console_text(model))
 
+    def test_what_the_room_narrowed_the_browse_to_rides_the_panel(self):
+        model = ConsoleModel(filters=("VR", "Clips", "Portrait"))
+
+        assert parse_console(console_text(model)).filters == ("VR", "Clips", "Portrait")
+
     def test_an_order_the_session_does_not_offer_stays_absent(self):
         assert parse_console(console_text(ConsoleModel(latest=None))).latest is None
         assert parse_console(console_text(ConsoleModel(latest=False))).latest is False
