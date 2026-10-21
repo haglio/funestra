@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from shared_ui.orientation import PORTRAIT, orientation_of_size
+
 from .renamed import answers_to_old_names
 
 
@@ -51,7 +53,7 @@ class FlickRenderController:
         if entry is None or not entry["frames"]:
             return None
         height, width = entry["frames"][0].shape[:2]
-        return height > width
+        return orientation_of_size(width, height) == PORTRAIT
 
     @property
     def playhead(self) -> tuple[int, int] | None:
