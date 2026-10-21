@@ -171,3 +171,40 @@ class TestPlayingAPickedFlick:
 
         assert controller.play(Path("C.MP4")) == Path("c.mp4")
         assert controller.count == 3
+
+
+class TestPuttingAFlickNext:
+    def test_a_flick_it_does_not_hold_comes_up_after_the_one_up(self):
+        controller = FlickSequenceController(_paths())
+
+        controller.play_next(Path("new.mp4"))
+
+        assert controller.current_path == Path("a.mp4")
+        assert controller.step(1) == Path("new.mp4")
+        assert controller.step(1) == Path("b.mp4")
+
+    def test_a_flick_it_holds_moves_up_rather_than_coming_twice_whatever_its_case(self):
+        controller = FlickSequenceController(_paths())
+
+        controller.play_next(Path("C.MP4"))
+
+        assert controller.count == 3
+        assert controller.step(1) == Path("c.mp4")
+        assert controller.step(1) == Path("b.mp4")
+
+    def test_a_flick_already_seen_comes_round_again_after_the_one_up(self):
+        controller = FlickSequenceController(_paths(), start_at=Path("c.mp4"))
+
+        controller.play_next(Path("a.mp4"))
+
+        assert controller.current_path == Path("c.mp4")
+        assert controller.step(1) == Path("a.mp4")
+        assert controller.step(1) == Path("b.mp4")
+
+    def test_the_flick_up_stays_where_it_is(self):
+        controller = FlickSequenceController(_paths(), start_at=Path("b.mp4"))
+
+        controller.play_next(Path("B.MP4"))
+
+        assert controller.current_path == Path("b.mp4")
+        assert controller.step(1) == Path("c.mp4")

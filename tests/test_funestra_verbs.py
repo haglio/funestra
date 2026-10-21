@@ -28,15 +28,19 @@ def test_no_two_verbs_share_a_spelling():
     assert len(spellings) == len(set(spellings))
 
 
-def test_play_file_carries_the_item_as_the_playlist_would():
+@pytest.mark.parametrize(("spell", "verb"), [
+    (funestra_verbs.play_file, funestra_verbs.PLAY_FILE),
+    (funestra_verbs.play_next, funestra_verbs.PLAY_NEXT),
+])
+def test_a_verb_naming_an_item_carries_it_as_the_playlist_would(spell, verb):
     """The value is a playlist line, so a receiver reads it back with the file's
     own parser and cannot take the script for part of the path."""
     item = PlaylistItem(Path("C:/vids/My Clip.mp4"), Path("C:/scripts/My Clip.funscript"))
 
-    line = funestra_verbs.play_file(item)
+    line = spell(item)
 
     keyword, _, value = line.partition(" ")
-    assert keyword == funestra_verbs.PLAY_FILE
+    assert keyword == verb
     assert item_from_line(value) == item
 
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from .renamed import answers_to_old_names
+from .up_next import put_up_next
 
 
 def _index_of(flicks: list[Path], wanted: Path | None) -> int | None:
@@ -73,9 +74,11 @@ class FlickSequenceController:
 
     def play(self, flick: Path) -> Path:
         if not self.move_to(flick):
-            self._index += 1
-            self._flicks.insert(self._index, flick)
+            self._index = put_up_next(self._flicks, self._index, flick, None) + 1
         return self.current_path
+
+    def play_next(self, flick: Path) -> None:
+        self._index = put_up_next(self._flicks, self._index, flick, _index_of(self._flicks, flick))
 
     def step(self, delta: int) -> Path:
         self._index = (self._index + delta) % len(self._flicks)

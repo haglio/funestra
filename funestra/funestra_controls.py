@@ -16,6 +16,7 @@ from .funestra_verbs import (
     NEXT,
     NEXT_VERSION,
     PLAY_FILE,
+    PLAY_NEXT,
     PREV,
     PREV_VERSION,
     QUIT,
@@ -38,7 +39,7 @@ from .funestra_verbs import (
 )
 from .playback import Playback
 from .playback_rate import RATE_STEP, parse_rate
-from .playlist import item_from_line
+from .playlist import PlaylistItem, item_from_line
 
 logger = logging.getLogger(__name__)
 
@@ -120,12 +121,14 @@ def _set_speed(controls: FunestraControls, value: str) -> bool:
     return True
 
 
-def _play_file(controls: FunestraControls, value: str) -> bool:
-    item = item_from_line(value)
-    if item is None:
-        return False
-    controls.playback.play_file(item.path, item.funscript)
-    return True
+def _naming_an_item(play: Callable[[Playback, PlaylistItem], None]) -> Act:
+    def act(controls: FunestraControls, value: str) -> bool:
+        item = item_from_line(value)
+        if item is None:
+            return False
+        play(controls.playback, item)
+        return True
+    return act
 
 
 def _step_version(delta: int) -> Act:
@@ -213,7 +216,12 @@ CONTROLS: tuple[Control, ...] = (
     ),
     Control(
         name="playing_file",
-        verbs=(Verb(PLAY_FILE, _play_file, takes_a_value=True),),
+        verbs=(
+            Verb(PLAY_FILE, _naming_an_item(lambda playback, item: playback.play_file(*item)),
+                 takes_a_value=True),
+            Verb(PLAY_NEXT, _naming_an_item(lambda playback, item: playback.play_next(*item)),
+                 takes_a_value=True),
+        ),
     ),
     Control(name="pace", verbs=(Verb(SET_PACE, _set_pace, takes_a_value=True),)),
     Control(

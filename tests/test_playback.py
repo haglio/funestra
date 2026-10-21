@@ -551,6 +551,69 @@ class TestPlayFile:
         assert engine.opened[-1] == newcomer
 
 
+class TestPlayNext:
+    def test_a_newcomer_comes_up_after_the_item_on_screen(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=3)
+        newcomer = tmp_path / "newcomer.mp4"
+
+        playback.play_next(newcomer)
+
+        assert playback.current_video == tmp_path / "v0.mp4"
+        assert engine.opened == [tmp_path / "v0.mp4"]
+        assert engine.staged_next == newcomer
+        assert [p.name for p in playback.playlist] == ["v0.mp4", "newcomer.mp4", "v1.mp4", "v2.mp4"]
+
+    def test_an_item_further_down_the_list_moves_up_rather_than_coming_twice(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=4)
+
+        playback.play_next(tmp_path / "v3.mp4")
+
+        assert [p.name for p in playback.playlist] == ["v0.mp4", "v3.mp4", "v1.mp4", "v2.mp4"]
+        assert engine.staged_next == tmp_path / "v3.mp4"
+
+    def test_an_item_already_played_comes_round_again_after_the_one_on_screen(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=4)
+        playback.step(2)
+
+        playback.play_next(tmp_path / "v0.mp4")
+
+        assert playback.current_video == tmp_path / "v2.mp4"
+        assert [p.name for p in playback.playlist] == ["v1.mp4", "v2.mp4", "v0.mp4", "v3.mp4"]
+        assert engine.staged_next == tmp_path / "v0.mp4"
+
+    def test_the_item_on_screen_stays_where_it_is(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=3)
+        playback.step(1)
+
+        playback.play_next(tmp_path / "v1.mp4")
+
+        assert playback.current_video == tmp_path / "v1.mp4"
+        assert [p.name for p in playback.playlist] == ["v0.mp4", "v1.mp4", "v2.mp4"]
+        assert engine.staged_next == tmp_path / "v2.mp4"
+
+    def test_the_list_rolls_onto_it_with_its_script(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2)
+        newcomer, script = tmp_path / "newcomer.mp4", tmp_path / "newcomer.funscript"
+
+        playback.play_next(newcomer, script)
+        engine.simulate_eof_advance()
+        playback.advance()
+
+        assert playback.current_video == newcomer
+        assert playback.funscript_of(newcomer) == script
+
+    def test_a_held_item_keeps_it_waiting_until_the_hold_is_let_go(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2, locked=True)
+        newcomer = tmp_path / "newcomer.mp4"
+
+        playback.play_next(newcomer)
+        staged_while_held = engine.staged_next
+        playback.set_locked(False)
+
+        assert staged_while_held is None
+        assert engine.staged_next == newcomer
+
+
 class TestPlaylistReplacement:
     def test_replace_playlist_keeps_the_current_clip_when_it_survives(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=3)

@@ -69,6 +69,9 @@ class FlickSelectionController:
     def play(self, flick: Path) -> None:
         self.set_current_flick(self.sequence.play(flick))
 
+    def play_next(self, flick: Path) -> None:
+        self.sequence.play_next(flick)
+
     def reorder(self, flicks: list[Path]) -> None:
         """Browse *flicks* — the folder rescanned in a new order — from the top.
 
