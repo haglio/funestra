@@ -109,11 +109,6 @@ FLICK_SECONDS = "FLICK_SECONDS"
 PAUSE = "PAUSE"
 RESUME = "RESUME"
 
-# Fun Time's spelling for the quarter-turn of the motion's phase.  Named because
-# two spellings of it once shipped side by side, which is the drift a literal per
-# branch invites.
-QUARTER_CYCLE_OFFSET_COMMAND = "OFFSET_QUARTER_CYCLE"
-
 
 def _stepper(step: int) -> Act:
     """A verb that nudges the hand's speed by a fixed amount."""
@@ -252,11 +247,6 @@ def _keep_shapes(controls: GenauControls, value: str) -> bool:
     if not said <= _SHAPE_WORDS:
         return False
     controls.keep_shapes("vr" in said, "flat" in said)
-    return True
-
-
-def _offset_quarter_cycle(controls: GenauControls, _value: str) -> bool:
-    controls.engine.phase = (controls.engine.phase + 0.25) % 1.0
     return True
 
 
@@ -433,10 +423,6 @@ CONTROLS: tuple[Control, ...] = (
         name="shapes",
         needs=("keep_shapes",),
         verbs=(Verb("SHAPES", _keep_shapes, takes_a_value=True),),
-    ),
-    Control(
-        name="quarter_cycle",
-        verbs=(Verb(QUARTER_CYCLE_OFFSET_COMMAND, _offset_quarter_cycle),),
     ),
     Control(
         name="pause",

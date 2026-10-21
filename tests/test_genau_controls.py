@@ -88,7 +88,7 @@ class TestHalfACommandIsNotACommand:
 # here so a verb added to the registry is a deliberate line in a diff -- the
 # spellings are a contract with the orchestrator that sends them.
 WRITTEN_DOWN_VERBS = frozenset({
-    "QUIT", "PREV", "NEXT", "WEIRD", "FLIP_ENDS", "LATEST", "SHUFFLE", "OFFSET_QUARTER_CYCLE",
+    "QUIT", "PREV", "NEXT", "WEIRD", "FLIP_ENDS", "LATEST", "SHUFFLE",
     "PAUSE", "RESUME", "PARK", "RETRACT", "SPEED_DOWN", "SPEED_UP", "AMPLITUDE_DOWN", "AMPLITUDE_UP",
     "CENTER_DOWN", "CENTER_UP", "CYCLE_SHAPE", "CYCLE_SHAPE_PREV",
     "TOGGLE_LEARNED", "LEARNED_ON", "LEARNED_OFF",

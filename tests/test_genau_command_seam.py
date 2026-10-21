@@ -175,7 +175,6 @@ SEAM = [
     ("FLIP_ENDS", {}, {"flipped": True}),
     ("LATEST", {}, {"reorders": (True,)}),
     ("SHUFFLE", {}, {"reorders": (False,)}),
-    ("OFFSET_QUARTER_CYCLE", {}, {"phase": 0.25}),
     ("PAUSE", {"playing": True}, {"paused": True, "playing": False}),
     ("PARK", {}, {"held": OSR2_PARKED}),
     ("RETRACT", {}, {"held": OSR2_RETRACTED}),

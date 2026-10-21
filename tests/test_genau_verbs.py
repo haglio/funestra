@@ -12,11 +12,7 @@ from funestra.flag import Flag
 from funestra.flick_advance import MAX_INTERVAL_S, MIN_INTERVAL_S, FlickAdvanceState
 from funestra.flick_flip import FlickFlip
 from funestra.funestra_verbs import SET_MAX_INTENSITY
-from funestra.genau_controls import (
-    QUARTER_CYCLE_OFFSET_COMMAND,
-    GenauControls,
-    apply_runtime_command,
-)
+from funestra.genau_controls import GenauControls, apply_runtime_command
 from funestra.learned_model import LearnedModel
 from funestra.learned_motion import LearnedMotionState
 from funestra.robot_hand import RobotHandState, WaveformShape
@@ -87,47 +83,12 @@ class TestApplyRuntimeCommand:
         assert handled is True
         assert steps == [1]
 
-    def test_offset_quarter_cycle_advances_phase(self):
-        engine = BeatEngine(phase=0.1, last_tick=0.0)
-        paused = Flag()
-
-        handled = _answered(
-            QUARTER_CYCLE_OFFSET_COMMAND,
-            engine=engine,
-            paused=paused,
-            step_flick=lambda _step: None,
-        )
-
-        assert handled is True
-        assert engine.phase == pytest.approx(0.35)
-
-    def test_offset_quarter_cycle_wraps_phase(self):
-        engine = BeatEngine(phase=0.9, last_tick=0.0)
-        paused = Flag()
-
-        handled = _answered(
-            QUARTER_CYCLE_OFFSET_COMMAND,
-            engine=engine,
-            paused=paused,
-            step_flick=lambda _step: None,
-        )
-
-        assert handled is True
-        assert engine.phase == pytest.approx(0.15)
-
-    @pytest.mark.parametrize("verb", ["NUDGE25", "SLOW_DOWN"])
-    def test_a_spelling_nothing_sends_is_not_a_verb(self, verb):
-        """Two aliases had no sender in any of the eleven repos.
-
-        The live spellings are OFFSET_QUARTER_CYCLE, which Fun Time posts, and
-        SPEED_DOWN, which Genau's own voice grammar maps "slow down" to. These
-        two are now reported unhandled like any other unknown line.
-        """
+    def test_a_spelling_nothing_sends_is_not_a_verb(self):
         engine = BeatEngine(phase=0.0, last_tick=0.0)
         ds = RobotHandState(playing=True, speed=50)
 
         handled = _answered(
-            verb,
+            "SLOW_DOWN",
             engine=engine,
             paused=Flag(),
             step_flick=lambda _step: None,
