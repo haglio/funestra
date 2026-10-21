@@ -974,7 +974,7 @@ class TestAWindowsOwnPanel:
             made.append(user(playback))
             return made[-1]
 
-        panel = [HudModel(funestra="portrait", lock_label="Unlocked",
+        panel = [HudModel(funestra="portrait", title="Unlocked",
                           rows=((Button("portrait_next", "N", "Next"),),))]
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
                             users={"slideshow": make}, panel=lambda: panel[0], muted=muted)
@@ -1017,7 +1017,7 @@ class TestAWindowsOwnPanel:
         funestra.tick(window=WINDOW)
         assert engine.overlays[HUD_OVERLAY_ID][2] is first
 
-        panel[0] = replace(panel[0], locked=True, lock_label="Locked")
+        panel[0] = replace(panel[0], locked=True, title="Locked")
         funestra.tick(window=WINDOW)
 
         assert engine.overlays[HUD_OVERLAY_ID][2] is not first

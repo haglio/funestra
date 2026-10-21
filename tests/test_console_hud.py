@@ -71,10 +71,10 @@ def _drive(offset: float = 0.0, **over) -> DriveHud:
 
 
 def _line(*, locked: bool = True, order_latest: bool = False, **modes) -> str:
-    """The status line for a Main Funestra in *modes*, with that lock and order."""
+    """The title for a Main Funestra in *modes*, with that lock and order."""
     return ConsoleHud(modes=ModeHud(**modes),
                       console=ConsoleModel(main_mode=MainMode.KINO, locked=locked,
-                                           latest=order_latest)).status_line
+                                           latest=order_latest)).title
 
 
 def _rect_of(painter: ConsolePainter, command: str) -> Rect:
@@ -108,6 +108,19 @@ class TestLine:
         assert _line(length_mode=FULL) == "Locked · Shuffle · Full"
         assert _line(length_mode=CLIPS) == "Locked · Shuffle · Clips"
 
+    def test_ends_with_every_word_the_room_narrowed_the_browse_by_in_either_mode(self):
+        for main_mode in MainMode:
+            hud = ConsoleHud(console=ConsoleModel(main_mode=main_mode, latest=False,
+                                                  filters=("VR", "Clips", "Portrait")))
+
+            assert hud.title == "Locked · Shuffle · VR · Clips · Portrait"
+
+    def test_the_rooms_words_stand_in_for_kinos_own_length_word(self):
+        hud = ConsoleHud(modes=ModeHud(length_mode=CLIPS),
+                         console=ConsoleModel(latest=False, filters=("Full",)))
+
+        assert hud.title == "Locked · Shuffle · Full"
+
     def test_claims_no_length_mode_without_a_library_backing_the_playlist(self):
         """A playlist Fun Time drives has no length filter of its own to report, so
         that slot stays empty.  The lock is still said: it belongs to the Main Funestra
@@ -123,7 +136,7 @@ class TestLine:
         something moves it."""
         def line(**over) -> str:
             return ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU, latest=False, **over),
-                              drive=_drive(advance_interval=5)).status_line
+                              drive=_drive(advance_interval=5)).title
 
         assert line(locked=False) == "Unlocked · Shuffle · 5s"
         assert line(locked=True) == "Locked · Shuffle"
@@ -134,7 +147,7 @@ class TestLine:
         pace instead, so "latest" changed the clips and said nothing."""
         def line(**over) -> str:
             return ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU, **over),
-                              drive=_drive(advance_interval=5)).status_line
+                              drive=_drive(advance_interval=5)).title
 
         assert line(locked=False, latest=True) == "Unlocked · Latest · 5s"
         assert line(locked=True, latest=True) == "Locked · Latest"
@@ -144,16 +157,16 @@ class TestLine:
         screen and an unlocked Main Funestra plays through its playlist rather than moving on
         a timer, so saying seconds would describe the wrong Funestra."""
         assert ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO, locked=False, latest=False),
-                          drive=_drive(advance_interval=5)).status_line == "Unlocked · Shuffle"
+                          drive=_drive(advance_interval=5)).title == "Unlocked · Shuffle"
 
     def test_a_host_with_no_browse_order_names_none(self):
         """Origenerator's motion panel draws this console over a show's own set —
         a fixed run, not a browse — so there is no order to name and that slot
         stays empty.  The pace it does have still prints."""
-        assert ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU, locked=True)).status_line == (
+        assert ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU, locked=True)).title == (
             "Locked")
         assert ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU, locked=False),
-                          drive=_drive(advance_interval=5)).status_line == "Unlocked · 5s"
+                          drive=_drive(advance_interval=5)).title == "Unlocked · 5s"
 
     def test_names_the_compilation_and_where_you_are_in_it(self):
         """A compilation is the Main Funestra's loop — a fixed set it plays through
@@ -286,7 +299,7 @@ class TestPainter:
         bgra = painter.bgra(ConsoleHud(modes=ModeHud(length_mode=FULL)))
         rgb = _rgb(bgra)
 
-        # There is ink (the status text) within the first line-height below the pad.
+        # There is ink (the title) within the first line-height below the pad.
         line_h = sum(load_font(11).getmetrics())
         band = rgb[PAD:PAD + line_h, :, :]
         assert (band > 200).any()
@@ -863,7 +876,7 @@ class TestDeclaredRows:
 
     def test_a_panel_that_declares_no_buttons_draws_none(self):
         """The buttons are the source's to declare; a panel naming none is the
-        status line and the OSR2 line, with no row held open for buttons nobody
+        title and the OSR2 line, with no row held open for buttons nobody
         asked for."""
         painter = ConsolePainter()
         painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO)))

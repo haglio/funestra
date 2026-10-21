@@ -31,7 +31,7 @@ def panel(tmp_path: Path) -> Path:
     Image.new("RGB", (40, 60), (90, 90, 90)).save(thumb)
     path = tmp_path / "portrait_hud.json"
     path.write_text(json.dumps({
-        "funestra": "portrait", "locked": False, "lock_label": "Unlocked",
+        "funestra": "portrait", "locked": False, "title": "Unlocked",
         "current_action": "alpha",
         "corner": {"path": "C:/v/cur.mp4", "thumb": str(thumb)},
         "seeds": [{"path": "C:/v/s1.mp4", "thumb": str(thumb)}],
@@ -886,7 +886,7 @@ class _Foot:
 
 
 def _a_windows_own_panel(engine, *, foot=None, posts=None):
-    model = HudModel(funestra="portrait", lock_label="Unlocked",
+    model = HudModel(funestra="portrait", title="Unlocked",
                      rows=((Button("portrait_next", "N", "Next"),),), foot=foot)
     posted = [] if posts is None else posts
     overlay = HudOverlay(panel=lambda: model, post=posted.append, engine=engine,
@@ -913,7 +913,7 @@ class TestAWindowsOwnPanel:
         engine = FakeEngine()
         readout = DriveHud(speed=50, amplitude=80, center=50,
                            waveform=tuple(0.5 for _ in range(80)))
-        model = HudModel(funestra="portrait", lock_label="Unlocked", osr2="robot_hand",
+        model = HudModel(funestra="portrait", title="Unlocked", osr2="robot_hand",
                          osr2_control="driving", drive=readout)
         overlay = HudOverlay(panel=lambda: model, post=lambda command: None, engine=engine,
                              clock=lambda: 0.0)

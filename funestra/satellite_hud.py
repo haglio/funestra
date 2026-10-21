@@ -35,9 +35,10 @@ from .drive_readout import DriveHud, DriveTrack, TrackGrip
 from .geometry import Rect, contains
 from .hud_button import Button, buttons_from_raw, buttons_raw, rows_from_raw, rows_raw
 from .hud_osr2 import HEIGHT as OSR2_H
+from .hud_panel import ACTIVE_DOT
 from .hud_placement import HudCorner, HudEdge
 from .hud_sections import blocks_height, stack
-from .hud_status import SEPARATOR
+from .hud_title import SEPARATOR
 from .modes import read_mode
 from .renamed import answers_to_old_names
 
@@ -69,11 +70,10 @@ MAP_LOWER_RESERVE = LOOP_BTN + MAP_GAP
 MAP_CELLS = 3
 WIDEST_FULL_HEIGHT_SHAPE = {"portrait": (4, 5), "landscape": (16, 9)}
 
-STATUS_BAND_H = 24        # the band the line sits in — one line deep, always
-STATUS_DOT = 10           # the active-Funestra dot at the head of the band
-STATUS_TEXT_X = PAD + STATUS_DOT + 8  # where the status text starts, clear of it
-STATUS_BASELINE = 11      # the status line's baseline, down from the band's top
-# The file on screen, muted under the status line — the same second line the Main
+TITLE_BAND_H = 24        # the band the title sits in — one line deep, always
+TITLE_X = PAD + ACTIVE_DOT + 8  # where the title starts, clear of the active-Funestra dot
+TITLE_BASELINE = 11      # the title's baseline, down from the band's top
+# The file on screen, muted under the title — the same second line the Main
 # Funestra's console carries, so the two panels answer "what am I playing?" in the
 # same corner and the same shape.  Its own height comes from the paint module,
 # which has the face; this is only the gap between the two lines.
@@ -104,7 +104,7 @@ class HudSection(Protocol):
               pointer: tuple[int, int] | None) -> list[tuple[Rect, Button]]: ...
 
 
-@answers_to_old_names({"player": "funestra"})
+@answers_to_old_names({"player": "funestra", "lock_label": "title"})
 @dataclass(frozen=True)
 class HudModel:
     """One satellite's HUD contents, exactly as fun_time published them."""
@@ -115,9 +115,9 @@ class HudModel:
     hud_edge: HudEdge = HudEdge.LOWER
     hud_minimized: bool = False
     locked: bool = False
-    lock_label: str = ""
+    title: str = ""
     # Whether a bare command naming no Funestra lands here — the Funestra addressed
-    # most recently.  Drawn as the dot beside the status line, and the only thing on
+    # most recently.  Drawn as the dot beside the title, and the only thing on
     # any HUD that says where those words are going.
     active: bool = False
 
@@ -161,7 +161,7 @@ class HudModel:
     # main console draws (:mod:`funestra.hud_osr2`), grown here because a host
     # can be both the thing browsing a set AND the thing driving the device.
     # Origenerator's shows are: they floated this HUD for the set and the whole
-    # console underneath it for the device, which is two status lines that
+    # console underneath it for the device, which is two titles that
     # disagree and two copies of every transport button.
     osr2: str = ""
     # The rows that AIM the device -- the hands-free switches, the waveform, the
@@ -213,7 +213,7 @@ def map_block_width(funestra: str) -> int:
 
 def panel_width(funestra: str, name_width: int = 0, *, content_width: int = 0) -> int:
     return max(2 * PAD + map_block_width(funestra),
-               STATUS_TEXT_X + name_width + PAD, content_width)
+               TITLE_X + name_width + PAD, content_width)
 
 
 def device_height(osr2: str, drive: DriveHud | None, drive_h: int,
@@ -235,11 +235,11 @@ class PanelLayout:
     dividers: tuple[int, ...]
 
 
-def panel_layout(*, status_h: int, bands: int = 0, speed: bool = False,
+def panel_layout(*, title_h: int, bands: int = 0, speed: bool = False,
                  row_h: int = 0, device_h: int = 0, foot_h: int = 0) -> PanelLayout:
-    stacked = stack(PAD, [status_h, blocks_height([CTRL_BTN] * (bands + speed), BLOCK_GAP),
+    stacked = stack(PAD, [title_h, blocks_height([CTRL_BTN] * (bands + speed), BLOCK_GAP),
                           row_h, device_h, foot_h, MAP_H])
-    _status, bands_top, row_top, device_top, foot_top, map_top = stacked.tops
+    _title, bands_top, row_top, device_top, foot_top, map_top = stacked.tops
     return PanelLayout(bands_top, bands_top + bands * CTRL_BAND_H, row_top, device_top,
                        foot_top, map_top, stacked.end + PAD, stacked.dividers)
 
@@ -398,12 +398,12 @@ def ellipsis_rects(
 
 
 # --- the Funestra's own buttons ------------------------------------------------
-# What a source declares for this Funestra, drawn in bands between the status line
+# What a source declares for this Funestra, drawn in bands between the title
 # and the map: each row of ``HudModel.rows`` is one band, a square per button, a
 # word button as wide as its word (the painter measures it), and the wider gap
 # before a button that starts a group -- the way the console's rows break.
 CTRL_BTN = BUTTON_SIZE_HUD
-MINUS_INSET = (PAD, PAD + (STATUS_BAND_H - CTRL_BTN) // 2)
+MINUS_INSET = (PAD, PAD + (TITLE_BAND_H - CTRL_BTN) // 2)
 CTRL_BAND_H = CTRL_BTN + BLOCK_GAP
 # Inside a word button, the room either side of its word.
 MODE_LABEL_PAD = 6
@@ -457,7 +457,7 @@ def speed_row(funestra: str, x: int, y: int, *,
     return buttons, (rate_x, y, VALUE_W, CTRL_BTN)
 
 
-STATUS_INDENT = STATUS_TEXT_X - PAD
+TITLE_INDENT = TITLE_X - PAD
 
 
 def favorite_mark_rect(x: int, y: int, line_h: int) -> Rect:
@@ -472,7 +472,7 @@ def favorite_mark_rect(x: int, y: int, line_h: int) -> Rect:
     tall as that line: a mark beside words wants to be the size of the words,
     and anything smaller reads as a speck rather than as a state.
     """
-    return (x + (STATUS_DOT + 1 - line_h) // 2, y, line_h, line_h)
+    return (x + (ACTIVE_DOT + 1 - line_h) // 2, y, line_h, line_h)
 
 
 SHORTENED_MARK = "…"
@@ -897,7 +897,9 @@ def hud_text(model: HudModel) -> str:
         "hud_edge": model.hud_edge,
         "hud_minimized": model.hud_minimized,
         "locked": model.locked,
-        "lock_label": model.lock_label,
+        "title": model.title,
+        # The same, under the key a reader from before the rename looks for.
+        "lock_label": model.title,
         "active": model.active,
         "is_favorite": model.is_favorite,
         "item_note": model.item_note,
@@ -942,7 +944,7 @@ def parse_hud(text: str) -> HudModel | None:
         hud_edge=read_mode(HudEdge, raw.get("hud_edge"), HudEdge.LOWER),
         hud_minimized=bool(raw.get("hud_minimized", False)),
         locked=bool(raw.get("locked", False)),
-        lock_label=str(raw.get("lock_label", "") or ""),
+        title=str(raw.get("title", raw.get("lock_label", "")) or ""),
         active=bool(raw.get("active", False)),
         is_favorite=bool(raw.get("is_favorite", False)),
         item_note=str(raw.get("item_note", "") or ""),

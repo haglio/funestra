@@ -43,9 +43,8 @@ from funestra.satellite_hud import (
     MAP_THUMB_H,
     PAD,
     ROW_LABEL_GUTTER,
-    STATUS_BAND_H,
-    STATUS_DOT,
-    STATUS_TEXT_X,
+    TITLE_BAND_H,
+    TITLE_X,
     HudCell,
     HudClicks,
     HudModel,
@@ -106,7 +105,7 @@ def _sides_and_shapes() -> list[tuple[str, tuple[int, int]]]:
 def _model(**overrides) -> HudModel:
     """A Funestra's panel, with the band its source declares unless *rows* says
     otherwise."""
-    base = dict(funestra="portrait", locked=True, lock_label="Locked")
+    base = dict(funestra="portrait", locked=True, title="Locked")
     base.update(overrides)
     base.setdefault("rows", funestra_rows(base["funestra"]))
     return HudModel(**base)
@@ -144,7 +143,7 @@ def test_render_fills_the_panel_and_draws_the_map(thumb):
 def _crowded(funestra: str, thumb: str) -> HudModel:
     """A side with more seeds and more acts than any map draws."""
     return _model(
-        funestra=funestra, locked=False, lock_label="Unlocked · Shuffle", current_action="Alpha",
+        funestra=funestra, locked=False, title="Unlocked · Shuffle", current_action="Alpha",
         corner=HudCell(path="c.mp4", thumb=thumb),
         seeds=tuple(HudCell(path=f"s{i}.mp4", thumb=thumb) for i in range(6)),
         actions=tuple(HudCell(path=f"a{i}.mp4", thumb=thumb, label="Alpha") for i in range(4)),
@@ -223,8 +222,8 @@ def test_the_column_loop_button_stays_at_the_foot_of_the_map_however_long_the_co
 
 def test_a_satellite_with_no_clip_yet_keeps_the_room_its_map_will_take(thumb):
     renderer = HudRenderer("portrait")
-    shell = renderer.render(_model(lock_label="Unlocked"))
-    mapped = renderer.render(_model(lock_label="Unlocked",
+    shell = renderer.render(_model(title="Unlocked"))
+    mapped = renderer.render(_model(title="Unlocked",
                                     corner=HudCell(path="c.mp4", thumb=thumb)))
 
     assert shell.bgra.shape == mapped.bgra.shape
@@ -236,10 +235,10 @@ def test_render_rings_the_locked_clip_in_white(thumb):
     "Locked" word can't be mistaken for the ring)."""
     def ring_ink(locked: bool) -> int:
         rendered = HudRenderer("portrait").render(
-            _model(locked=locked, lock_label="Locked" if locked else "Unlocked",
+            _model(locked=locked, title="Locked" if locked else "Unlocked",
                    corner=HudCell(path="c.mp4", thumb=thumb))
         )
-        rgb = _rgb(rendered.bgra)[PAD + STATUS_BAND_H:, :]
+        rgb = _rgb(rendered.bgra)[PAD + TITLE_BAND_H:, :]
         return int((rgb > 248).all(axis=2).sum())
 
     assert ring_ink(True) > 0
@@ -254,7 +253,7 @@ def test_the_lock_ring_follows_the_clip_being_held(thumb):
     def ring_ink(playing) -> tuple[int, int]:
         rendered = HudRenderer("portrait").render(
             _model(playing=playing, active_loop="seed",
-                   lock_label="Looping seeds · Locked · Shuffle",
+                   title="Looping seeds · Locked · Shuffle",
                    corner=HudCell(path="c.mp4", thumb=thumb),
                    seeds=(HudCell(path="s1.mp4", thumb=thumb),)))
         rgb = _rgb(rendered.bgra)
@@ -276,7 +275,7 @@ def test_render_without_a_corner_still_draws_the_shell():
     """A satellite with no clip yet gets the lock band and nothing else — and no
     click targets, so a stray press over the empty panel posts nothing."""
     rendered = HudRenderer("landscape").render(
-        HudModel(funestra="landscape", locked=False, lock_label="Unlocked"))
+        HudModel(funestra="landscape", locked=False, title="Unlocked"))
 
     assert (rendered.bgra[:, :, 3] > 0).any()
     assert rendered.targets.click == []
@@ -284,15 +283,15 @@ def test_render_without_a_corner_still_draws_the_shell():
 
 
 def test_the_dot_lights_up_only_on_the_active_side(thumb):
-    """The dot beside the status line says whether a bare "lock" or "next" would
+    """The dot beside the title says whether a bare "lock" or "next" would
     land here.  Lit is white, idle is the palette's gray — never absent, because a
     missing dot could not be told from an idle one, and then the lit one on the
     other Funestra would be the only readable state."""
     def dot(active: bool) -> np.ndarray:
         rendered = HudRenderer("portrait").render(
-            _model(active=active, lock_label="Unlocked · Shuffle",
+            _model(active=active, title="Unlocked · Shuffle",
                    corner=HudCell(path="c.mp4", thumb=thumb)))
-        # The dot's own square, left of where the status text starts, past the
+        # The dot's own square, left of where the title starts, past the
         # minus in the panel's corner.
         left = PAD + MINUS_ROOM
         return _rgb(rendered.bgra)[PAD + 2:PAD + 12, left:left + 10]
@@ -301,40 +300,32 @@ def test_the_dot_lights_up_only_on_the_active_side(thumb):
     assert np.allclose(dot(False).reshape(-1, 3).mean(axis=0), TEXT_MUTED, atol=40)
 
 
-def test_the_side_leaves_room_for_the_dot_the_chrome_actually_draws():
-    """satellite_hud is kept free of Pillow, so it cannot read the chrome's own
-    size for the dot it measures STATUS_TEXT_X against — it keeps its own copy of
-    the number, and this is what holds the two together."""
-
-    assert STATUS_DOT == ACTIVE_DOT
-
-
-def test_the_status_text_starts_clear_of_the_dot(thumb):
+def test_the_title_starts_clear_of_the_dot(thumb):
     """Drawn over each other they would be illegible, and the width the line asks
     the panel for is measured from the room the dot leaves, not from the far edge."""
     rendered = HudRenderer("portrait").render(
-        _model(active=True, lock_label="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb)))
+        _model(active=True, title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb)))
     rgb = _rgb(rendered.bgra)
 
-    # STATUS_TEXT_X is absolute, so the gap runs from the dot's right edge to it —
+    # TITLE_X is absolute, so the gap runs from the dot's right edge to it —
     # skipping the 2px where the round dot's antialiased edge feathers out, which
     # is the dot, not text starting early.
-    gap = rgb[PAD:PAD + 14, MINUS_ROOM + PAD + STATUS_DOT + 2:MINUS_ROOM + STATUS_TEXT_X]
+    gap = rgb[PAD:PAD + 14, MINUS_ROOM + PAD + ACTIVE_DOT + 2:MINUS_ROOM + TITLE_X]
     assert (gap > 200).all(axis=2).sum() == 0, "text ink in the gap before the text starts"
 
 
 def test_a_status_too_wide_for_the_map_is_drawn_smaller_rather_than_widening_the_panel(thumb):
     def rendered(label: str):
         return HudRenderer("portrait").render(
-            _model(lock_label=label, corner=HudCell(path="c.mp4", thumb=thumb)))
+            _model(title=label, corner=HudCell(path="c.mp4", thumb=thumb)))
 
     short = rendered("Locked")
     long = rendered("Looping actions · Locked · Latest · F-Mode · Enhanceds · beta gamma")
-    band = _rgb(long.bgra)[PAD:PAD + STATUS_BAND_H, STATUS_TEXT_X:]
+    band = _rgb(long.bgra)[PAD:PAD + TITLE_BAND_H, TITLE_X:]
     inked_columns = np.nonzero((band > 200).all(axis=2).any(axis=0))[0]
 
     assert long.bgra.shape == short.bgra.shape
-    assert STATUS_TEXT_X + inked_columns.max() < long.bgra.shape[1] - PAD
+    assert TITLE_X + inked_columns.max() < long.bgra.shape[1] - PAD
 
 
 def _control_band_top(rendered) -> int:
@@ -343,19 +334,19 @@ def _control_band_top(rendered) -> int:
     return min(y for (_x, y, _w, _h), _button in _declared(rendered))
 
 
-def test_the_file_on_screen_is_named_in_muted_gray_under_the_status_line(thumb):
+def test_the_file_on_screen_is_named_in_muted_gray_under_the_title(thumb):
     renderer = HudRenderer("portrait")
-    model = _model(lock_label="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))
+    model = _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))
     named = renderer.render(model, video="example clip one")
 
-    strip = _rgb(named.bgra)[PAD + STATUS_BAND_H:_dividers(named)[0], STATUS_TEXT_X:-PAD]
+    strip = _rgb(named.bgra)[PAD + TITLE_BAND_H:_dividers(named)[0], TITLE_X:-PAD]
     assert (strip > 80).any(axis=2).sum() > 0
     assert (strip > 200).all(axis=2).sum() == 0
 
 
 def test_the_line_the_file_name_takes_is_kept_while_there_is_no_name(thumb):
     renderer = HudRenderer("portrait")
-    model = _model(lock_label="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))
+    model = _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))
     bare = renderer.render(model)
     named = renderer.render(model, video="example clip one")
 
@@ -366,9 +357,9 @@ def test_the_line_the_file_name_takes_is_kept_while_there_is_no_name(thumb):
 def test_a_file_name_too_wide_for_the_map_widens_the_panel(thumb):
     """Names run long, and a name cut off mid-word says nothing about which clip this
     is — which is the whole reason it is drawn.  So it takes the width it needs, the
-    way the status line above it does."""
+    way the title above it does."""
     renderer = HudRenderer("portrait")
-    model = _model(lock_label="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))
+    model = _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))
 
     short = renderer.render(model, video="clip")
     long = renderer.render(
@@ -384,9 +375,9 @@ def test_a_note_after_a_name_shortens_the_name_rather_than_widening_the_panel(th
     corner = HudCell(path="c.mp4", thumb=thumb)
     name = "Example Folder / seed 123456789012345"
 
-    named = renderer.render(_model(lock_label="Unlocked", corner=corner), video=name)
+    named = renderer.render(_model(title="Unlocked", corner=corner), video=name)
     noted = renderer.render(
-        _model(lock_label="Unlocked", corner=corner,
+        _model(title="Unlocked", corner=corner,
                item_note="Enhance 1 — 1 of 2 · Enhancing…"),
         video=name)
 
@@ -397,11 +388,11 @@ def test_a_note_about_a_clip_with_no_name_is_drawn_on_the_kept_name_line(thumb):
     renderer = HudRenderer("portrait")
     corner = HudCell(path="c.mp4", thumb=thumb)
 
-    bare = renderer.render(_model(lock_label="Unlocked", corner=corner))
-    noted = renderer.render(_model(lock_label="Unlocked", corner=corner, item_note="Enhancing…"))
+    bare = renderer.render(_model(title="Unlocked", corner=corner))
+    noted = renderer.render(_model(title="Unlocked", corner=corner, item_note="Enhancing…"))
 
     def name_line_ink(rendered) -> int:
-        line = _rgb(rendered.bgra)[PAD + STATUS_BAND_H:_dividers(rendered)[0], PAD:-PAD]
+        line = _rgb(rendered.bgra)[PAD + TITLE_BAND_H:_dividers(rendered)[0], PAD:-PAD]
         return int((line > 80).any(axis=2).sum())
 
     assert name_line_ink(noted) > name_line_ink(bare) == 0
@@ -414,7 +405,7 @@ def test_the_map_sits_where_it_sits_however_long_the_status_is(thumb):
     does not find its map a line lower than the side that has not."""
     def corner(label: str):
         rendered = HudRenderer("portrait").render(
-            _model(lock_label=label, corner=HudCell(path="c.mp4", thumb=thumb)))
+            _model(title=label, corner=HudCell(path="c.mp4", thumb=thumb)))
         (x, y, _w, _h), _path = rendered.targets.click[0]
         return x, y
 
@@ -440,8 +431,8 @@ def test_render_exposes_the_controls_it_drew(thumb):
 
 def test_a_panel_that_declares_no_buttons_holds_no_band_open_for_them():
     renderer = HudRenderer("landscape")
-    bare = renderer.render(HudModel(funestra="landscape", lock_label="Unlocked"))
-    one_row = renderer.render(HudModel(funestra="landscape", lock_label="Unlocked",
+    bare = renderer.render(HudModel(funestra="landscape", title="Unlocked"))
+    one_row = renderer.render(HudModel(funestra="landscape", title="Unlocked",
                                        rows=(funestra_rows("landscape")[-1],)))
 
     assert _declared(bare) == []
@@ -453,7 +444,7 @@ def test_render_draws_the_sides_own_controls_even_with_no_clip():
     first clip arrives — a satellite that came up empty can still be stepped off
     it, and still narrowed to its favorites."""
     rendered = HudRenderer("landscape").render(
-        _model(funestra="landscape", locked=False, lock_label="Unlocked"))
+        _model(funestra="landscape", locked=False, title="Unlocked"))
 
     assert _names(rendered) == [
         "prev", "next", "lock", "trash", "fmode", "reset", "minimize",
@@ -466,7 +457,7 @@ def test_the_minimize_button_wears_a_bar_rather_than_a_font_glyph():
     drawn: one horizontal run of ink across the middle of the button, wider than it
     is tall, which is what a title bar's minimize looks like everywhere."""
     rendered = HudRenderer("landscape").render(
-        _model(funestra="landscape", lock_label="Unlocked"))
+        _model(funestra="landscape", title="Unlocked"))
     x, y, w, h = _rects(rendered)["minimize"]
     # The button's own outline is its border, so only the interior is the mark --
     # and the interior is the button's ground now, itself gray, so the mark is
@@ -492,7 +483,7 @@ def test_the_state_controls_and_favorite_mark_light_up_when_they_apply():
     the Funestra is in F-mode, the star while the clip is a favorite."""
     def rendered_with(*, locked=False, favorites=False, is_favorite=False):
         return HudRenderer("landscape").render(
-            _model(funestra="landscape", locked=locked, lock_label="Unlocked",
+            _model(funestra="landscape", locked=locked, title="Unlocked",
                    is_favorite=is_favorite,
                    rows=funestra_rows("landscape", locked=locked, favorites=favorites)),
             video="example - scene one")
@@ -508,11 +499,11 @@ def test_the_state_controls_and_favorite_mark_light_up_when_they_apply():
 
 def test_the_star_is_centered_under_the_dot():
     rendered = HudRenderer("landscape").render(
-        HudModel(funestra="landscape", lock_label="Unlocked", active=True, is_favorite=True),
+        HudModel(funestra="landscape", title="Unlocked", active=True, is_favorite=True),
         video="example - scene one")
     rgb = _rgb(rendered.bgra).astype(int)
     _x, star_top, _w, star_h = rendered.targets.favorite
-    left_column = slice(PAD + MINUS_ROOM - 2, MINUS_ROOM + STATUS_TEXT_X - 2)
+    left_column = slice(PAD + MINUS_ROOM - 2, MINUS_ROOM + TITLE_X - 2)
     dot = (rgb[PAD:PAD + 14, left_column] > 200).all(axis=2)
     star_band = rgb[star_top:star_top + star_h, left_column]
     star = star_band[:, :, 1] - np.maximum(star_band[:, :, 0], star_band[:, :, 2]) > 40
@@ -529,7 +520,7 @@ def test_the_bin_draws_red_because_it_takes_something_away():
     appears, so the drawn button is what has to be red — a table saying which
     control is destructive says nothing about what came out on the panel."""
     rendered = HudRenderer("landscape").render(
-        _model(funestra="landscape", lock_label="Unlocked"))
+        _model(funestra="landscape", title="Unlocked"))
     rects = _rects(rendered)
 
     def red_ink(name: str) -> int:
@@ -549,7 +540,7 @@ def test_f_mode_wears_its_own_badge_rather_than_a_typed_letter():
     is beneath it changes."""
     for favorites in (False, True):
         rendered = HudRenderer("landscape").render(_model(
-            funestra="landscape", lock_label="Unlocked",
+            funestra="landscape", title="Unlocked",
             rows=funestra_rows("landscape", favorites=favorites)))
         x, y, w, h = _rects(rendered)["fmode"]
         pixels = _rgb(rendered.bgra)[y:y + h, x:x + w]
@@ -608,7 +599,7 @@ def test_the_playing_cell_is_brighter_than_the_others(tmp_path: Path):
 def _loop_model(thumb: str, playing, *, count: int = 12, loop: str = "seed") -> HudModel:
     """A seed row far longer than the map can draw, at *playing*."""
     return _model(
-        locked=False, lock_label=f"Looping {count + 1} seeds" if loop else "Unlocked",
+        locked=False, title=f"Looping {count + 1} seeds" if loop else "Unlocked",
         corner=HudCell(path="c.mp4", thumb=thumb),
         seeds=tuple(HudCell(path=f"s{i}.mp4", thumb=thumb) for i in range(count)),
         active_loop=loop, playing=playing,
@@ -753,7 +744,7 @@ def test_the_action_column_stands_under_the_lit_cell_mid_loop(thumb):
     """Mid-loop the drawn column is the playing seed's own acts, so it hangs under
     the lit cell — left under the corner it would read as the corner seed's."""
     rendered = HudRenderer("portrait").render(_model(
-        locked=False, lock_label="Looping 13 seeds",
+        locked=False, title="Looping 13 seeds",
         corner=HudCell(path="c.mp4", thumb=thumb),
         seeds=tuple(HudCell(path=f"s{i}.mp4", thumb=thumb) for i in range(12)),
         actions=(HudCell(path="a0.mp4", thumb=thumb, label="Zeta"),),
@@ -1012,7 +1003,7 @@ def test_hovering_a_button_draws_its_tooltip(thumb):
 
 def test_a_panel_with_no_clip_yet_still_names_the_button_under_the_pointer():
     renderer = HudRenderer("landscape")
-    model = _model(funestra="landscape", lock_label="Unlocked")
+    model = _model(funestra="landscape", title="Unlocked")
     x, y, _w, _h = _rects(renderer.render(model))["lock"]
 
     short_tip = renderer.render(model, hover_tip="Lock", hover_pos=(x + 2, y + 2))
@@ -1053,7 +1044,7 @@ def test_the_reset_button_is_never_lit():
     lit would say the Funestra was sitting in one."""
     def rendered_with(**state):
         return HudRenderer("landscape").render(_model(
-            funestra="landscape", lock_label="Locked", rows=funestra_rows("landscape", **state)))
+            funestra="landscape", title="Locked", rows=funestra_rows("landscape", **state)))
 
     resting = rendered_with()
     lit = rendered_with(locked=True, favorites=True)
@@ -1162,7 +1153,7 @@ def _blue_ink(rect, rendered) -> int:
 
 def _order_band(*, newest: bool | None = None, **overrides):
     return HudRenderer("landscape").render(_model(
-        funestra="landscape", lock_label="Unlocked",
+        funestra="landscape", title="Unlocked",
         rows=funestra_rows("landscape", newest=newest), **overrides))
 
 
@@ -1236,7 +1227,7 @@ def test_the_enhanced_switch_wears_amber_and_fills_with_it_when_on():
     would say the wrong thing about what was kept."""
     def rendered_with(on: bool):
         return HudRenderer("landscape").render(_model(
-            funestra="landscape", lock_label="Unlocked",
+            funestra="landscape", title="Unlocked",
             rows=funestra_rows("landscape", enhanced=on)))
 
     off, on = rendered_with(False), rendered_with(True)
@@ -1266,7 +1257,7 @@ class TestTheDeviceOnAHostThatDrivesItself:
     """A host that drives the OSR2 itself wears ONE panel, not two.
 
     Origenerator's shows floated this HUD for the set and the main console
-    underneath it for the device, which put two status lines that disagreed
+    underneath it for the device, which put two titles that disagreed
     and two copies of prev/next/lock/trash on one screen.  So a source that
     has a device to report says so on its own panel: the same line and the
     same readout the main console draws, from the same code.
@@ -1275,7 +1266,7 @@ class TestTheDeviceOnAHostThatDrivesItself:
     @staticmethod
     def _rendered(**extra):
         return HudRenderer("portrait").render(
-            _model(lock_label="Unlocked", **extra))
+            _model(title="Unlocked", **extra))
 
     def test_a_source_that_names_no_driver_grows_no_device_line(self):
         """Every satellite is one: fun_time's Funestras report the set and
@@ -1325,7 +1316,7 @@ class TestTheDeviceOnAHostThatDrivesItself:
 
     def test_the_map_hangs_under_the_device_at_the_outside_of_the_panel(self, thumb):
         rendered = HudRenderer("portrait").render(_model(
-            lock_label="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
+            title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
             seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2,
             osr2=Osr2State.ROBOT_HAND,
             drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND)))
@@ -1339,7 +1330,7 @@ class TestTheDeviceOnAHostThatDrivesItself:
         aim = (Button("robot_hand_toggle_learned", "hi", "Human inspired"),
                Button("robot_hand_park", "P", "Parked"))
         rendered = HudRenderer("portrait").render(_model(
-            lock_label="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
+            title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
             seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2,
             osr2=Osr2State.ROBOT_HAND, osr2_rows=(aim,),
             drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND)))
@@ -1352,7 +1343,7 @@ class TestTheDeviceOnAHostThatDrivesItself:
     def test_the_map_is_set_off_from_the_device_by_a_line(self, thumb):
         drive = DriveHud(driven=DRIVEN_BY_ROBOT_HAND)
         rendered = HudRenderer("portrait").render(_model(
-            lock_label="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
+            title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
             seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2,
             osr2=Osr2State.ROBOT_HAND, drive=drive))
         readout_top = rendered.targets.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
@@ -1464,7 +1455,7 @@ class TestTheBlockASourcePaintsAtTheFoot:
     @staticmethod
     def _rendered(block=None, **extra):
         return HudRenderer("portrait").render(
-            _model(lock_label="Unlocked", foot=block, **extra))
+            _model(title="Unlocked", foot=block, **extra))
 
     def test_a_source_with_no_block_of_its_own_grows_none(self):
         """Every satellite is one, and their panels must not change shape."""
@@ -1530,7 +1521,7 @@ class TestTheBlockASourcePaintsAtTheFoot:
         self._rendered(block)  # no hover: the block is told there is none
         assert block.pointer is None
 
-        HudRenderer("portrait").render(_model(lock_label="Unlocked", foot=block),
+        HudRenderer("portrait").render(_model(title="Unlocked", foot=block),
                                        hover_tip="Cancel this run", hover_pos=(40, 300))
         assert block.pointer == (40, 300)
 
@@ -1555,7 +1546,7 @@ class TestTheRowThePanelCarriesForItsClip:
     @staticmethod
     def _rendered(row=None, **extra):
         return HudRenderer("portrait").render(
-            _model(lock_label="Unlocked", **extra), clip_row=row)
+            _model(title="Unlocked", **extra), clip_row=row)
 
     def test_a_funestra_that_hands_over_no_row_grows_none(self):
         row = RowHud(position_ms=1_000, duration_ms=60_000, volume=VolumeHud(volume=40))
@@ -1610,14 +1601,14 @@ def test_a_band_ends_at_the_right_pad_in_a_right_hand_corner(thumb):
 def test_the_status_block_moves_to_the_corner_the_panel_sits_in(thumb):
     def rendered(corner):
         return HudRenderer("portrait").render(
-            _model(hud_corner=corner, active=True, is_favorite=True, lock_label="Locked",
+            _model(hud_corner=corner, active=True, is_favorite=True, title="Locked",
                    corner=HudCell(path="c.mp4", thumb=thumb)), video="one.mp4")
 
     left = rendered(HudCorner.UPPER_LEFT)
     right = rendered(HudCorner.UPPER_RIGHT)
 
     assert left.targets.favorite is not None and right.targets.favorite is not None
-    assert left.targets.favorite[0] < PAD + MINUS_ROOM + STATUS_DOT
+    assert left.targets.favorite[0] < PAD + MINUS_ROOM + ACTIVE_DOT
     assert right.targets.favorite[0] > left.bgra.shape[1] // 2
 
 
@@ -1812,7 +1803,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
         block = _Block()
         drive = DriveHud(driven=DRIVEN_BY_ROBOT_HAND)
         rendered = HudRenderer("portrait").render(
-            _model(lock_label="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
+            _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
                    playback_speed=1.0, osr2=Osr2State.ROBOT_HAND, drive=drive, foot=block,
                    osr2_rows=((Button("robot_hand_toggle_learned", "hi", "Human inspired"),),)),
             video="example clip one", clip_row=RowHud(duration_ms=60_000))

@@ -5,7 +5,7 @@ Kino's video in kino mode, over Genau's flicks in genau mode.  So the mode switc
 and the drive controls keep their places as you flip between modes — only the
 transport changes, because it steps Kino's video in one and Genau's flicks in the other.
 
-Its top block is Kino's own answer to "what am I playing?" — the status line (the
+Its top block is Kino's own answer to "what am I playing?" — the title (the
 length mode, or the compilation and your place in it) beside the active-Funestra
 dot, with the file on screen as a muted line under it, the same shape each
 satellite's HUD leads with.  Both are empty in genau mode, where there is no Kino
@@ -82,11 +82,11 @@ from .hud_panel import (
 from .hud_placement import HudCorner, PointerReading, block_x
 from .hud_row import ROW_H, RowHud, RowLayout, RowSection, row_layout
 from .hud_sections import blocks_height, stack
-from .hud_status import (
+from .hud_title import (
     LATEST_LABEL,
     SEPARATOR,
     SHUFFLE_LABEL,
-    status_line,
+    hud_title,
 )
 from .modes import LengthMode
 
@@ -120,7 +120,7 @@ _MINUS_INSET = (_PAD, _PAD)
 DOT_GAP = 8  # the room between the active-Funestra dot and the words beside it
 MARGIN = 8    # inset from the window's top-left corner
 _BLOCK_GAP = 4
-_SUBTITLE_GAP = 2  # between the status line and the file name under it
+_SUBTITLE_GAP = 2  # between the title and the file name under it
 
 
 def hud_xy() -> tuple[int, int]:
@@ -155,30 +155,28 @@ class ConsoleHud:
         Genau owns the pace, so it rides its own drive readout rather than the
         console panel Fun Time publishes — and is read back off the readout
         wherever the console needs it, which is both the auto-advance button and
-        the status line.
+        the title.
         """
         if self.drive is not None:
             return self.drive.advance_interval
         return self.console.advance_interval
 
     @property
-    def status_line(self) -> str:
-        """The top line's text — everything selecting what is on the main slot, in
-        the order each satellite's HUD says the same things.
+    def title(self) -> str:
+        """Everything selecting what is on the main slot, in the order each
+        satellite's HUD title says the same things.
 
         The Main Funestra's words in the slots
-        :func:`funestra.hud_status.status_line` lays out, which is where the
+        :func:`funestra.hud_title.hud_title` lays out, which is where the
         grammar and the shared states' wording live — the satellites say the same
         sentence, and a reader glancing between two screens is reading one sentence
         in two places.
 
-        What fills the slots is Kino's own.  The compilation is its playing
-        set — a fixed run it plays through rather than the browse it came from.
-        The order slot carries the browse order under either of the two, and Genau's
-        advance pace beside it.  The length mode is the filter, and "Mixed"
-        prints nothing there: it is every length there is, so it narrows nothing —
-        exactly as a satellite prints nothing where its act filter would go when it
-        has none.
+        The compilation is Kino's playing set — a fixed run it plays through
+        rather than the browse it came from.  The order slot carries the browse
+        order under either of the two, and Genau's advance pace beside it.  The
+        filters are the room's narrowings of the browse; a room publishing none
+        leaves Kino's own length word there instead.
         """
         compilation = (
             f"{compilation_label(self.modes.compilation)}"
@@ -199,12 +197,12 @@ class ConsoleHud:
         if not kino_shows(self.console.main_mode) and not self.console.locked and self.advance_interval:
             pace = f"{self.advance_interval}s"
             order = f"{order}{SEPARATOR}{pace}" if order else pace
-        return status_line(
+        return hud_title(
             playing_set=compilation,
             locked=self.console.locked,
             order=order,
             f_mode=self.modes.scripted_filter,
-            filter_label=_LENGTH_LABELS.get(self.modes.length_mode, ""),
+            filters=self.console.filters or (_LENGTH_LABELS.get(self.modes.length_mode, ""),),
         )
 
 
@@ -392,10 +390,10 @@ class ConsolePainter:
         return block_x(corner, panel_width=panel_width, extent=extent, pad=_PAD,
                        reserve=reserve)
 
-    def _draw_top_block(self, draw, y: int, status: str, filename: str,
+    def _draw_top_block(self, draw, y: int, title: str, filename: str,
                         active: bool, width: int, corner: HudCorner, *,
                         reserve: int) -> None:
-        """The active-Funestra dot and the status line — what is selecting this
+        """The active-Funestra dot and the title — what is selecting this
         playlist — with the file on screen muted under it.
 
         The same shape each satellite's HUD leads with, so a glance between two
@@ -404,12 +402,12 @@ class ConsolePainter:
         """
         ascent, descent = self._body.getmetrics()
         indent = ACTIVE_DOT + DOT_GAP
-        status_x = self._block_x(corner, width,
-                                 indent + text_width(self._body, status), reserve)
-        draw_active_dot(draw, status_x, y + (ascent + descent) // 2 - ACTIVE_DOT // 2,
+        title_x = self._block_x(corner, width,
+                                 indent + text_width(self._body, title), reserve)
+        draw_active_dot(draw, title_x, y + (ascent + descent) // 2 - ACTIVE_DOT // 2,
                         active)
-        if status:
-            draw.text((status_x + indent, y + ascent), status, font=self._body,
+        if title:
+            draw.text((title_x + indent, y + ascent), title, font=self._body,
                       anchor="ls", fill=(*TEXT_PRIMARY, 255))
         if filename:
             name_x = self._block_x(corner, width,
@@ -448,7 +446,7 @@ class ConsolePainter:
         rows = [[self._filled(button, hud) for button in row]
                 for row in (console.rows if whole else ())]
         aim_rows = [[self._filled(button, hud) for button in row] for row in console.osr2_rows]
-        status = hud.status_line if whole else ""
+        title = hud.title if whole else ""
         filename = hud.modes.video if whole else ""
         clip_row = clip_row if whole else None
         drive_w, drive_h = section_size() if drive is not None else (0, 0)
@@ -474,7 +472,7 @@ class ConsolePainter:
         if self._width is None:
             width = 2 * _PAD + max(
                 parts_w,
-                reserves[0] + text_x + text_width(self._body, status),
+                reserves[0] + text_x + text_width(self._body, title),
                 reserves[0] + text_x + text_width(self._tiny, filename),
             )
         else:
@@ -482,7 +480,7 @@ class ConsolePainter:
                        + (minus_room if corner.lower else 0)) if whole else 0
             width = max(self._width, 2 * _PAD + parts_w, 2 * _PAD + any_row)
             room = width - 2 * _PAD - text_x - reserves[0]
-            status = fit_text(self._body, status, room)
+            title = fit_text(self._body, title, room)
             filename = fit_text(self._tiny, filename, room)
         # The clip's own row, under everything the console says about the room:
         # where the video is and how loud it is, drawn here rather than along
@@ -496,7 +494,7 @@ class ConsolePainter:
             row_h,
             HostControlsSection.height if host_controls is not None else 0,
         ])
-        status_top, rows_top, device_top, row_top, host_top = sections.tops
+        title_top, rows_top, device_top, row_top, host_top = sections.tops
         height = sections.end + _PAD
 
         panel = HudPanel(width, height, ground=hud.ground or BG_PRIMARY)
@@ -505,7 +503,7 @@ class ConsolePainter:
         draw = panel.draw
 
         if whole:
-            self._draw_top_block(draw, status_top, status, filename, console.active,
+            self._draw_top_block(draw, title_top, title, filename, console.active,
                                  width, corner, reserve=reserves[0])
         self.buttons = self._draw_rows(panel, rows, rows_top, corner, hover, reserves[1])
         self.tracks = []
