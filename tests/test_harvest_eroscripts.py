@@ -9,8 +9,10 @@ import io
 import json
 import logging
 import urllib.error
+from pathlib import Path
 
 import pytest
+from app_support import haglio_settings
 
 from tools import harvest_eroscripts as harvest
 
@@ -407,3 +409,22 @@ class TestWalkingTheCategory:
         assert "/t/101.json" not in forum.asked
         assert sorted(p.name for p in (tmp_path / "scripts").iterdir()) == [
             "t101_p1_1.funscript", "t103_p1_1.funscript"]
+
+
+class TestWhichCorpusIsWorkedIn:
+    def test_a_corpus_not_named_is_the_folder_the_shared_settings_give(self, monkeypatch):
+        monkeypatch.setenv(haglio_settings.SETTINGS_ENV, haglio_settings.THE_EXAMPLE)
+
+        args = harvest.parse_arguments([])
+
+        assert args.corpus == Path(haglio_settings.EXAMPLE["funscript_corpus_dir"])
+
+    def test_a_corpus_named_is_worked_in_without_asking_the_shared_settings(
+            self, tmp_path, monkeypatch):
+        settings = tmp_path / "settings.json"
+        settings.write_text("{}", encoding="utf-8")
+        monkeypatch.setenv(haglio_settings.SETTINGS_ENV, str(settings))
+
+        args = harvest.parse_arguments(["--corpus", str(tmp_path / "collection")])
+
+        assert args.corpus == tmp_path / "collection"
