@@ -77,7 +77,7 @@ class TestControls:
                 ("robot_hand_speed_down", "robot_hand_amplitude_down", "robot_hand_center_down")} == {"minus"}
 
     def test_the_speed_controls_sit_below_the_trace(self):
-        """Speed is out from between centre and amplitude, under the trace, so the
+        """Speed is out from between center and amplitude, under the trace, so the
         three axes do not crowd one band."""
         by_command = {c.command: c.rect for c in controls(0, 0, _hud())}
         _x, trace_y, _w, trace_h = next(t.rect for t in tracks(0, 0, _hud()) if t.axis == CENTER)
@@ -88,7 +88,7 @@ class TestControls:
 
     def test_a_mark_at_its_limit_is_dimmed(self):
         """The flag on the readout says the axis has run out of range, so the mark
-        that would do nothing is greyed — the console then drops it from the hit
+        that would do nothing is grayed — the console then drops it from the hit
         targets, the same as any dimmed control."""
         by_command = {c.command: c for c in controls(0, 0, _hud(spd_at_max=True, amp_at_min=True))}
 
@@ -96,9 +96,9 @@ class TestControls:
         assert by_command["robot_hand_speed_down"].dim is False
         assert by_command["robot_hand_amplitude_down"].dim is True
 
-    def test_the_centre_marks_follow_the_line(self):
-        """They sit beside the centre's dotted line, so they move up the panel as
-        the centre rises."""
+    def test_the_center_marks_follow_the_line(self):
+        """They sit beside the center's dotted line, so they move up the panel as
+        the center rises."""
         low = {c.command: c.rect for c in controls(0, 0, _hud(center=20))}
         high = {c.command: c.rect for c in controls(0, 0, _hud(center=80))}
 
@@ -106,7 +106,7 @@ class TestControls:
 
     def test_the_marks_it_offers_all_fall_on_the_block_it_draws(self):
         """Drawing and hit-testing place the marks from one geometry, so a press
-        lands on what is on screen — at either end of the centre's travel."""
+        lands on what is on screen — at either end of the center's travel."""
         for center in (0, 50, 100):
             for x, y, w, h in (c.rect for c in controls(PAD, PAD, _hud(center=center))):
                 assert x >= PAD and x + w <= PAD + SECTION_W
@@ -526,7 +526,7 @@ class TestSwitchedOff:
         assert BLUE not in self._colors(_hud(driven=DRIVEN_BY_NOTHING))
         assert BLUE in self._colors(_hud(driven=DRIVEN_BY_ROBOT_HAND))
 
-    def test_the_bars_go_grey_with_everything_else(self):
+    def test_the_bars_go_gray_with_everything_else(self):
         """A live blue level beside a dead control says the level is doing
         something."""
         off = _rendered(_hud(driven=DRIVEN_BY_NOTHING, waveform=()))
@@ -535,13 +535,13 @@ class TestSwitchedOff:
 
         assert not ((row[:, 2] > 150) & (row[:, 0] < 120)).any()
 
-    def test_the_numbers_go_grey_too(self):
+    def test_the_numbers_go_gray_too(self):
         """They read as the live value of a motion otherwise.
 
         Read off the number's own pixels — the ones that move when the number does,
         under the bar that moves with it as well — rather than off the section's set
-        of colours.  At this size the digits are all edge: no pixel of them lands on
-        the ink exactly, so a set of colours never saw them at all.
+        of colors.  At this size the digits are all edge: no pixel of them lands on
+        the ink exactly, so a set of colors never saw them at all.
         """
         _x, bar_y, _w, bar_h = next(track.rect for track in tracks(PAD, PAD, _hud())
                                     if track.axis == SPEED)
@@ -571,7 +571,7 @@ class TestSwitchedOff:
 class TestDimmedForTheScript:
     """A funscript's turn leaves the controls in place — removing them resized
     the panel and shifted the trace at every handoff — but nothing on them may
-    look live: levels, numbers and marks all drop to the faint disabled grey."""
+    look live: levels, numbers and marks all drop to the faint disabled gray."""
 
     @staticmethod
     def _colors(hud: DriveHud) -> set[tuple[int, int, int]]:
@@ -630,7 +630,7 @@ class TestSmoothTrace:
         motion at fixed sample TIMES now — the values compensate the publish's
         own advance — so the painter's one shift is what slides the whole line,
         blue included.  The old per-run exemption, kept after the reads
-        changed, made the blue and its neighbours disagree by the slide at
+        changed, made the blue and its neighbors disagree by the slide at
         every seam between them."""
         still = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND, slide=0.0, edge=0.5))
         slid = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND, slide=0.5, edge=0.5))
@@ -640,7 +640,7 @@ class TestSmoothTrace:
 
 class TestBorder:
     def test_the_trace_s_edge_is_opaque_so_it_reads_the_same_over_anything(self):
-        """At part strength the video showed through it, so one quiet grey line
+        """At part strength the video showed through it, so one quiet gray line
         read as a bright thick one over the picture and a thin dark one over the
         letterbox — the same border looking like two."""
         hud = _hud()

@@ -292,7 +292,7 @@ class GenauRefreshController:
         The frame is a picture of where the device is (:mod:`funestra.flick_scrub`),
         so seeking the picture is moving the device rather than moving the picture
         away from it.  Which half of the loop the fraction falls in says which way
-        the motion is travelling -- the front half runs A to B, the back half back
+        the motion is traveling -- the front half runs A to B, the back half back
         -- and how far into that half says how far up the axis it has to be.  The
         jump is the point: it is what the hand would have had to travel to get the
         picture there.
@@ -304,7 +304,7 @@ class GenauRefreshController:
         back_half = fraction > 0.5
         height = 2 * (1 - fraction) if back_half else 2 * fraction
         self._scrub.back_half = back_half
-        # Not arrived at either end by travelling, so the next tick may not read
+        # Not arrived at either end by traveling, so the next tick may not read
         # this as a turn and swap the half back out from under the seek.
         self._scrub.started = False
         self.tcode_sender.set_motion_phase(phase_for_position_fraction(

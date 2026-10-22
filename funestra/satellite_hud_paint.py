@@ -617,7 +617,7 @@ class HudRenderer:
         """
         def column(cx: int, cw: int, text: str) -> None:
             # Clipped to its own column: a portrait map's columns are barely wider
-            # than the label, and neighbouring "Seed N"s running together is
+            # than the label, and neighboring "Seed N"s running together is
             # illegible.  Drawn into a column-sized scratch, so the overflow is cut.
             strip = Image.new("RGBA", (cw, COL_LABEL_H), (0, 0, 0, 0))
             ImageDraw.Draw(strip).text((cw / 2, COL_LABEL_H / 2), text, font=self._tiny,

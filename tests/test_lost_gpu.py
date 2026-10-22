@@ -16,7 +16,7 @@ class Later:
 
     def __init__(self) -> None:
         self.waits: list[float] = []
-        self.cancelled = 0
+        self.canceled = 0
         self._then = None
 
     def __call__(self, seconds: float, then):
@@ -25,7 +25,7 @@ class Later:
         return self._cancel
 
     def _cancel(self) -> None:
-        self.cancelled += 1
+        self.canceled += 1
 
     def run(self) -> None:
         then, self._then = self._then, None
@@ -147,7 +147,7 @@ def test_a_window_closing_calls_off_the_rebuild_and_builds_nothing_after():
     later.run()
     lost.heard(SUSPENDED)
 
-    assert (later.cancelled, built, later.waits) == (1, [], [FIRST_WAIT_S])
+    assert (later.canceled, built, later.waits) == (1, [], [FIRST_WAIT_S])
 
 
 def test_the_log_says_what_mpv_said_and_whether_each_new_output_came_up(caplog):

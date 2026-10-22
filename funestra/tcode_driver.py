@@ -75,7 +75,7 @@ class FunscriptTCodeDriver:
 
         The first park after a takeover descends over the handoff ramp — the
         device is wherever the other driver left it, most of the range away, and
-        this glide IS the grey ramp the trace draws.  Every later park is the
+        this glide IS the gray ramp the trace draws.  Every later park is the
         plan's own settle.
         """
         if now is None:

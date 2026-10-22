@@ -1005,7 +1005,7 @@ class TestSeekingTheFlick:
         assert self._height(controller) == pytest.approx(0.0, abs=0.01)
 
     def test_the_next_tick_does_not_swap_the_half_back(self):
-        """The seek did not arrive at an end by travelling, and flick_scrub swaps
+        """The seek did not arrive at an end by traveling, and flick_scrub swaps
         halves on arriving at one -- so a seek would otherwise be undone by the
         tick that follows it."""
         controller = self._built()["controller"]
