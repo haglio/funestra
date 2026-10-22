@@ -18,6 +18,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from shared_ui.palette import (
     BG_BUTTON,
+    BG_TERTIARY,
     BLUE,
     GREEN,
     RED,
@@ -121,7 +122,7 @@ from .satellite_hud import (
     wrong_action_rect,
 )
 
-_PLACEHOLDER = (48, 48, 60)  # a thumbnail fun_time has not produced yet
+_PLACEHOLDER = BG_TERTIARY  # a thumbnail fun_time has not produced yet
 
 _DIM = 0.5      # non-playing thumbnails; the one on screen stays full
 _BORDER_W = 2   # the lock ring around the held clip

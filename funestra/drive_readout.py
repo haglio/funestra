@@ -19,14 +19,23 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image, ImageDraw
-from shared_ui.palette import BLUE, GREEN, MAGENTA, RED, TEXT_MUTED, TEXT_PRIMARY, WHITE
+from shared_ui.palette import (
+    BG_BUTTON,
+    BLUE,
+    BORDER_DEFAULT,
+    BORDER_SUBTLE,
+    GREEN,
+    MAGENTA,
+    RED,
+    TEXT_MUTED,
+    TEXT_PRIMARY,
+    WHITE,
+)
 from shared_ui.spacing import BUTTON_RADIUS_HUD
 
 from . import drive_layout
 from .drive_layout import (
-    LESS,
     MAX_INTENSITY,
-    MORE,
     TRACE_SAMPLES,  # noqa: F401 — re-exported: genau reads it from here
     DriveControl,
     DriveTrack,
@@ -64,17 +73,16 @@ DRIVEN_BY_NOTHING = "nothing"
 # Nothing driving is the same muted gray a dead control is drawn in, so the
 # readout reads as one switched-off thing rather than as a live trace
 # surrounded by dead furniture.
-_NEUTRAL_INK = (168, 168, 174)
 _TRACE_INK = {
     DRIVEN_BY_ROBOT_HAND: BLUE,
     DRIVEN_BY_FUNSCRIPT: GREEN,
     DRIVEN_BY_AUTO: MAGENTA,
-    DRIVEN_BY_NEUTRAL: _NEUTRAL_INK,
+    DRIVEN_BY_NEUTRAL: BORDER_DEFAULT,
     DRIVEN_BY_NOTHING: TEXT_MUTED,
 }
 
 
-_TRACK = (56, 56, 62)  # the unfilled part of a bar — a shade off the slab
+_TRACK = BG_BUTTON  # the unfilled part of a bar — a shade off the slab
 
 _LABEL_H = drive_layout.LABEL_H
 _CTRL = drive_layout.CONTROL_SIZE
@@ -88,7 +96,7 @@ _ETCH_PITCH = 4  # between the red lines across a stretch a bar cannot reach
 # unpressable is drawn in this instead.  Dark and opaque on purpose: over a
 # bright video a see-through pixel is a *brighter* pixel, so muted ink at part
 # alpha glows rather than dims.
-DISABLED_INK = (84, 84, 88, 255)
+DISABLED_INK = (*BORDER_SUBTLE, 255)
 
 # The trace is drawn this many times larger and scaled back down, which is what
 # smooths it: Pillow's line has no antialiasing of its own, so drawn at panel
@@ -251,9 +259,6 @@ CONTROL_TIPS = {
 }
 
 
-_MARK_NAMES = {MORE: "plus", LESS: "minus"}
-
-
 def readout_targets(x: int, y: int, hud: DriveHud,
                     ) -> tuple[list[tuple[Rect, Button]], list[DriveTrack]]:
     """What a readout at ``(x, y)`` leaves for a press to land on: its marks as
@@ -384,7 +389,7 @@ class DriveSection:
         ink = DISABLED_INK if control.dim else (*TEXT_PRIMARY, 255)
         draw.rounded_rectangle([x, y, x + w - 1, y + h - 1], radius=BUTTON_RADIUS_HUD,
                                outline=ink, width=1)
-        draw_mark(image, _MARK_NAMES[control.glyph], control.rect, ink)
+        draw_mark(image, control.mark, control.rect, ink)
 
     def _stacked(self, draw, rect: Rect, key: str, value: str, *, anchor: str, ink) -> None:
         x, y, w, h = rect

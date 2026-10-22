@@ -1,26 +1,9 @@
 """A funscript's colors across the scrubber: how fast the script moves in each pixel of the track."""
 from __future__ import annotations
 
-from itertools import pairwise
+from shared_ui.heat import heat_at
 
 from .funscript import Funscript
-
-_GRADIENT: list[tuple[float, tuple[int, int, int]]] = [
-    (0.0, (10, 14, 30)),
-    (100.0, (30, 70, 230)),
-    (200.0, (20, 210, 210)),
-    (300.0, (40, 220, 50)),
-    (400.0, (235, 220, 40)),
-    (500.0, (240, 40, 30)),
-]
-
-
-def _speed_to_color(speed: float) -> tuple[int, int, int]:
-    for (s0, c0), (s1, c1) in pairwise(_GRADIENT):
-        if speed <= s1:
-            frac = (speed - s0) / (s1 - s0)
-            return tuple(round(lo + (hi - lo) * frac) for lo, hi in zip(c0, c1))
-    return _GRADIENT[-1][1]
 
 
 def bin_speeds(
@@ -47,6 +30,5 @@ def bin_speeds(
 def build_heatmap(
     fs: Funscript, buckets: int, *, start_ms: float, end_ms: float,
 ) -> list[tuple[int, int, int]]:
-    return [_speed_to_color(speed)
+    return [heat_at(speed)
             for speed in bin_speeds(fs, buckets, start_ms=start_ms, end_ms=end_ms)]
-

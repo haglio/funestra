@@ -505,6 +505,13 @@ def test_the_speed_buttons_say_what_a_press_does_to_the_video():
         "Play the video slower", "Play the video faster"]
 
 
+def test_the_speed_buttons_wear_the_familys_minus_and_plus():
+    """The marks the main console's own pair wears, drawn rather than typed."""
+    buttons, _rate = speed_row("landscape", 0, 0, label_width=70)
+
+    assert [button.glyph for _rect, button in buttons] == [shared_mark("minus"), shared_mark("plus")]
+
+
 def test_a_name_too_long_for_its_line_is_shortened_so_the_note_after_it_stays_whole():
     line = name_line("folder one / seed 12345", "Enhancing…", room=25, width_of=len)
 

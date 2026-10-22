@@ -14,21 +14,22 @@ are plain numpy arrays (BGRA, mpv's overlay format); no pygame.
 from __future__ import annotations
 
 import numpy as np
+from shared_ui import palette
 
 from funestra.volume import SLOT_W as _VOLUME_SLOT_W
 
-RED = (220, 40, 40, 245)
-AMBER = (235, 180, 60, 245)
+RED = (*palette.RED, 245)
+AMBER = (*palette.AMBER, 245)
 
 # The timeline — heatmap strip or plain bar — is drawn as one shared frame: an
 # inset, floated, bordered track with full-height marks.
 BAR_INSET_Y = 3      # upper/lower margin so the timeline floats off the edge
-BAR_FILL = (34, 34, 38, 165)       # dark translucent fill (plain bar only)
-BAR_BORDER = (215, 215, 220, 235)  # light inner border (reads on the dark fill)
-BAR_EDGE = (8, 8, 10, 235)         # dark outer edge (reads on the bright heatmap)
+BAR_FILL = (*palette.BG_SECONDARY, 165)     # dark translucent fill (plain bar only)
+BAR_BORDER = (*palette.BORDER_DEFAULT, 235)  # light inner border (reads on the dark fill)
+BAR_EDGE = (*palette.BLACK, 235)            # dark outer edge (reads on the bright heatmap)
 HEATMAP_ALPHA = 178  # ~70%: present but unobtrusive under the video
 BORDER_W = 2
-CURSOR = (255, 255, 255, 255)   # prominent white playcursor
+CURSOR = (*palette.WHITE, 255)  # prominent white playcursor
 CURSOR_W = 3
 MARK_W = 4                      # prominent loop in/out and record marks
 

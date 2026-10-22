@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-from shared_ui.palette import BLUE, GREEN, MAGENTA, TEXT_MUTED, TEXT_PRIMARY
+from shared_ui.palette import BLUE, BORDER_DEFAULT, GREEN, MAGENTA, TEXT_MUTED, TEXT_PRIMARY
 
 from funestra.drive_layout import (
     AMPLITUDE,
@@ -13,7 +13,6 @@ from funestra.drive_layout import (
     SPEED,
 )
 from funestra.drive_readout import (
-    _NEUTRAL_INK,
     DISABLED_INK,
     DRIVEN_BY_AUTO,
     DRIVEN_BY_FUNSCRIPT,
@@ -70,12 +69,12 @@ class TestControls:
     def test_every_axis_is_moved_by_the_same_pair_of_marks(self):
         """Triangles on two axes and −/+ on the third read as two kinds of
         control for three things that are the same kind."""
-        by_command = {c.command: c.glyph for c in controls(0, 0, _hud())}
+        by_command = {c.command: c.mark for c in controls(0, 0, _hud())}
 
         assert {by_command[a] for a in
-                ("robot_hand_speed_up", "robot_hand_amplitude_up", "robot_hand_center_up")} == {"+"}
+                ("robot_hand_speed_up", "robot_hand_amplitude_up", "robot_hand_center_up")} == {"plus"}
         assert {by_command[a] for a in
-                ("robot_hand_speed_down", "robot_hand_amplitude_down", "robot_hand_center_down")} == {"−"}
+                ("robot_hand_speed_down", "robot_hand_amplitude_down", "robot_hand_center_down")} == {"minus"}
 
     def test_the_speed_controls_sit_below_the_trace(self):
         """Speed is out from between centre and amplitude, under the trace, so the
@@ -588,8 +587,8 @@ class TestDimmedForTheScript:
     def test_the_dimmed_marks_are_dark_not_translucent(self):
         """"Very dimmed" is the ask, and the first try got it backwards: muted
         ink at part alpha let the video beneath shine through, so the "disabled"
-        controls glowed bright white.  Disabled ink is a dark grey laid down
-        opaque — darker than the muted grey a live readout's key labels wear —
+        controls glowed bright white.  Disabled ink is a dark gray laid down
+        opaque — darker than the muted gray a live readout's key labels wear —
         so it reads as switched off over any video."""
         dimmed = _rendered(_hud(driven=DRIVEN_BY_FUNSCRIPT))
         live = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND))
@@ -673,15 +672,15 @@ class TestRuns:
 
         assert {GREEN, BLUE} <= colors
 
-    def test_the_neutral_buffer_wears_its_own_light_grey(self):
+    def test_the_neutral_buffer_wears_the_family_s_light_gray(self):
         """The stretch belonging to neither driver is neither green nor blue —
-        a light grey between the script's turn and the motion's."""
+        a light gray between the script's turn and the motion's."""
         hud = _hud(segments=((0, DRIVEN_BY_FUNSCRIPT), (30, DRIVEN_BY_NEUTRAL),
                              (50, DRIVEN_BY_ROBOT_HAND)))
         rgb = _rendered(hud).astype(int)[:, :, :3]
         colors = {tuple(pixel) for row in rgb for pixel in row}
 
-        assert _NEUTRAL_INK in colors
+        assert BORDER_DEFAULT in colors
 
 
 class TestPublishedSpan:
