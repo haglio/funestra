@@ -6,7 +6,7 @@ import json
 from shared_ui.icon_geometry import tooltip_for
 
 from funestra.hud_button import Button, rows_from_raw, rows_raw
-from funestra.hud_marks import shared_mark
+from funestra.hud_marks import MINIMIZE_ICON, shared_mark
 
 _A_MARK_THIS_VERSION_LACKS = "a_mark_from_another_version"
 
@@ -37,3 +37,15 @@ def test_a_button_with_a_typed_glyph_or_a_word_keeps_its_own_tooltip():
 
 def test_a_button_wearing_a_real_mark_keeps_its_own_tooltip():
     assert Button("weird", shared_mark("trash"), "Mark weird").tooltip_on_hover == "Mark weird"
+
+
+def test_minimize_wears_the_familys_minus():
+    assert shared_mark("minus") == MINIMIZE_ICON
+
+
+def test_a_minimize_published_before_it_wore_the_minus_reads_back_as_the_minus():
+    """Origenerator publishes its panel from its own funestra, which can be older
+    than the one drawing it, and an older one spelled minimize its own way."""
+    raw = [[{"command": "show_minimize", "glyph": "\0minimize", "tooltip": "Minimize"}]]
+
+    assert rows_from_raw(raw) == ((Button("show_minimize", shared_mark("minus"), "Minimize"),),)

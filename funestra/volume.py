@@ -21,8 +21,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from PIL import Image, ImageDraw
-from shared_ui.palette import RED, TEXT_MUTED, TEXT_PRIMARY
+from PIL import Image
+from shared_ui.icons_pil import paste_glyph
+from shared_ui.palette import TEXT_MUTED, TEXT_PRIMARY
 
 from funestra.hud_panel import KeptBitmap, draw_track, pill
 
@@ -122,29 +123,20 @@ class VolumeHud:
     muted: bool = False
 
 
-_MUTED_BAR = RED   # the slash across a muted speaker
+# The family's speaker as tall as the chip, set in so its cone starts a pad in.
+_SPEAKER_MARK = (PAD // 2, 1, CHIP_H - 2, CHIP_H - 2)
 
 
-def _draw_speaker(draw: ImageDraw.ImageDraw, muted: bool) -> None:
-    """A speaker cone at the left end, struck through while muted.
-
-    Drawn rather than typed: the glyph fonts differ on the trailing waves, and a
-    missing one draws a tofu where the clearest control on the chip should be.
-    """
-    color = TEXT_MUTED if muted else TEXT_PRIMARY
-    mid = CHIP_H // 2
-    x = PAD
-    draw.rectangle([x, mid - 3, x + 4, mid + 3], fill=(*color, 255))
-    draw.polygon([(x + 4, mid - 3), (x + 10, mid - 7), (x + 10, mid + 7), (x + 4, mid + 3)],
-                 fill=(*color, 255))
-    if muted:
-        draw.line([(x, mid + 7), (x + 13, mid - 7)], fill=(*_MUTED_BAR, 255), width=2)
+def _draw_speaker(image: Image.Image, muted: bool) -> None:
+    """The family's speaker at the left end, crossed out while muted."""
+    paste_glyph(image, "speaker_off" if muted else "speaker", _SPEAKER_MARK,
+                TEXT_MUTED if muted else TEXT_PRIMARY)
 
 
 class VolumeHudPainter(KeptBitmap):
     def _paint(self, hud: VolumeHud) -> Image.Image:
         image, draw = pill(CHIP_W, CHIP_H)
-        _draw_speaker(draw, hud.muted)
+        _draw_speaker(image, hud.muted)
         # The fill stays put under a mute: the level is what unmuting returns to,
         # so hiding it would lose the only record of where the speaker was set.
         level = min(MAX_VOLUME, max(MIN_VOLUME, hud.volume))

@@ -13,7 +13,7 @@ from dataclasses import dataclass, fields
 from shared_ui.icon_geometry import tooltip_for
 from shared_ui.spacing import BUTTON_SIZE_HUD
 
-from .hud_marks import SHARED_MARK, shared_mark_name
+from .hud_marks import SHARED_MARK, current_glyph, shared_mark_name
 
 BUTTON = BUTTON_SIZE_HUD  # a square control; the wider ones say their own width
 
@@ -82,6 +82,7 @@ def button_from_raw(raw: object) -> Button | None:
     if not isinstance(raw, dict):
         return None
     words = {name: str(raw.get(name, "") or "") for name in _WORDS}
+    words["glyph"] = current_glyph(words["glyph"])
     flags = {name: bool(raw.get(name, False)) for name in _FLAGS}
     return Button(**words, width=int(raw.get("width", BUTTON) or 0), **flags)
 
