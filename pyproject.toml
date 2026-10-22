@@ -20,8 +20,8 @@ requires-python = ">=3.14"
 # landing in one of them reached every consumer the same minute, and one whose
 # other half had not landed turned all of them red at once.
 dependencies = [
-    "app-support @ git+https://github.com/haglio/app_support@v0.1.247",
-    "shared-ui @ git+https://github.com/haglio/shared_ui@v0.1.222",
+    "app-support @ git+https://github.com/haglio/app_support@v0.1.259",
+    "shared-ui @ git+https://github.com/haglio/shared_ui@v0.1.223",
     "numpy>=2.4,<3",
     "pillow>=12,<13",
     "python-mpv>=1,<2",
