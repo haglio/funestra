@@ -24,9 +24,9 @@ from .geometry import Rect
 AMPLITUDE, CENTER, SPEED = "amp", "center", "speed"
 MAX_INTENSITY = "max_intensity"
 
-# One pair of marks for every axis: speed, amplitude and centre are the same
-# kind of control, so the same − and + step all three.
-LESS, MORE = "−", "+"
+# One pair of the family's marks for every axis: speed, amplitude and center are
+# the same kind of control, so the same minus and plus step all three.
+LESS, MORE = "minus", "plus"
 
 _LABEL_H = 14        # a "key value" line
 _BAR_H = 12          # the speed track's thickness
@@ -64,7 +64,7 @@ def section_size() -> tuple[int, int]:
 class DriveControl:
     rect: Rect
     command: str
-    glyph: str
+    mark: str
     dim: bool
 
 

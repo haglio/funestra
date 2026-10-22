@@ -22,7 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from PIL import Image, ImageDraw
-from shared_ui.palette import TEXT_MUTED, TEXT_PRIMARY
+from shared_ui.palette import RED, TEXT_MUTED, TEXT_PRIMARY
 
 from funestra.hud_panel import KeptBitmap, draw_track, pill
 
@@ -122,7 +122,7 @@ class VolumeHud:
     muted: bool = False
 
 
-_MUTED_BAR = (200, 70, 70)   # the slash across a muted speaker
+_MUTED_BAR = RED   # the slash across a muted speaker
 
 
 def _draw_speaker(draw: ImageDraw.ImageDraw, muted: bool) -> None:

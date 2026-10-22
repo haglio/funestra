@@ -39,6 +39,7 @@ from .drive_readout import (
     DRIVEN_BY_ROBOT_HAND,
     DriveHud,
     draw_level_bar,
+    trace_ink,
 )
 from .geometry import Rect, contains
 from .hud_button import BUTTON, Button
@@ -68,7 +69,7 @@ _MAX_INTENSITY_W = 72
 BUFFER = "buffer"
 # The buffer pill wears the trace's own neutral gray, so the word and the line
 # under the dot are visibly the same state.
-_NEUTRAL_PILL = (168, 168, 174)
+_NEUTRAL_PILL = trace_ink(DRIVEN_BY_NEUTRAL)
 
 LABELS = {
     Osr2State.OFF: "Off", Osr2State.AUTO: "Auto", Osr2State.FUNSCRIPT: "FunScript",

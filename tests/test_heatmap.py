@@ -1,35 +1,19 @@
 from __future__ import annotations
 
+from shared_ui.heat import heat_at
+
 from funestra.funscript import Funscript
-from funestra.heatmap import _speed_to_color, bin_speeds, build_heatmap
+from funestra.heatmap import bin_speeds, build_heatmap
 
 
-class TestSpeedToColor:
-    def test_gradient_anchors_run_from_near_black_through_blue_cyan_green_and_yellow_to_red(self):
-        assert _speed_to_color(0) == (10, 14, 30)
-        assert _speed_to_color(100) == (30, 70, 230)
-        assert _speed_to_color(200) == (20, 210, 210)
-        assert _speed_to_color(300) == (40, 220, 50)
-        assert _speed_to_color(400) == (235, 220, 40)
-        assert _speed_to_color(500) == (240, 40, 30)
-
-    def test_interpolates_linearly_between_anchors(self):
-        assert _speed_to_color(50) == (20, 42, 130)
-        assert _speed_to_color(150) == (25, 140, 220)
-
-    def test_clamps_above_top_anchor_to_red(self):
-        assert _speed_to_color(501) == (240, 40, 30)
-        assert _speed_to_color(10_000) == (240, 40, 30)
-
-
-class TestTheStripIsThePaletteOverTheArithmetic:
-    def test_each_bin_is_its_own_speed_as_a_color(self):
+class TestTheStripIsTheFamilysHeatOverTheArithmetic:
+    def test_each_bin_is_its_own_speed_in_the_familys_heat_colors(self):
         fs = Funscript(actions=[(1000, 0), (1500, 100), (2000, 0)])
 
         colors = build_heatmap(fs, 4, start_ms=0, end_ms=4000)
 
         assert colors == [
-            _speed_to_color(speed)
+            heat_at(speed)
             for speed in bin_speeds(fs, 4, start_ms=0, end_ms=4000)
         ]
 

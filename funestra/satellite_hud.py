@@ -34,6 +34,7 @@ from .console import VALUE_W, max_intensity_from_raw
 from .drive_readout import DriveHud, DriveTrack, TrackGrip
 from .geometry import Rect, contains
 from .hud_button import Button, buttons_from_raw, buttons_raw, rows_from_raw, rows_raw
+from .hud_marks import shared_mark
 from .hud_osr2 import HEIGHT as OSR2_H
 from .hud_panel import ACTIVE_DOT
 from .hud_placement import HudCorner, HudEdge
@@ -434,8 +435,8 @@ def button_row_rects(x: int, y: int, buttons: Sequence[Button],
 # The speed row's two buttons, drawn by the Funestra rather than declared by the
 # source, since only the drawing Funestra knows the rate that sits between them.
 _SPEED_BUTTONS = (
-    ("speed_down", "−", "Play the video slower"),
-    ("speed_up", "+", "Play the video faster"),
+    ("speed_down", shared_mark("minus"), "Play the video slower"),
+    ("speed_up", shared_mark("plus"), "Play the video faster"),
 )
 
 
