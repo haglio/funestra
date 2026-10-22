@@ -1,12 +1,13 @@
 """Harvest the funscripts people attach to their free-script topics on EroScripts.
 
-    python tools/harvest_eroscripts.py --corpus <dir>
+    python tools/harvest_eroscripts.py [--corpus <dir>]
 
 ``<dir>/eroscripts/user_api_key.txt`` and ``user_api_client_id.txt`` hold a
 Discourse user API key with read scope, authorized by the account's owner.
 Scripts land in ``<dir>/eroscripts/scripts/``, named by topic and post rather
 than by title; ``index.jsonl`` beside them says what each one was, and
-``done_topics.txt`` is what a stopped run resumes from.  Standard library only.
+``done_topics.txt`` is what a stopped run resumes from.  Standard library and
+app_support only.
 """
 from __future__ import annotations
 
@@ -23,6 +24,8 @@ import urllib.request
 from collections.abc import Callable
 from pathlib import Path
 from typing import NamedTuple
+
+from app_support import haglio_settings
 
 logger = logging.getLogger(__name__)
 _TIMEOUT_S = 60
@@ -302,13 +305,20 @@ def _forum_for(corpus: Path, pace_s: float) -> Forum:
                  pace_s=pace_s)
 
 
-def main(argv: list[str] | None = None) -> int:
+def parse_arguments(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--corpus", required=True, type=Path)
+    parser.add_argument("--corpus", type=Path)
     parser.add_argument("--category", default=FREE_SCRIPTS)
     parser.add_argument("--pace", type=float, default=1.0, help="seconds between requests")
     parser.add_argument("--max-topics", type=int, default=None)
     args = parser.parse_args(argv)
+    if args.corpus is None:
+        args.corpus = Path(haglio_settings.value("funscript_corpus_dir"))
+    return args
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_arguments(argv)
     root = args.corpus / "eroscripts"
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s",
