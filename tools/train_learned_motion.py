@@ -1,6 +1,6 @@
 """Fit the learned motion's model from a folder of real funscripts.
 
-    python tools/train_learned_motion.py --corpus <dir> [--corpus <dir> ...] --out <model.json.gz>
+    python tools/train_learned_motion.py [--corpus <dir> ...] --out <model.json.gz>
 
 Each ``--corpus`` folder is searched for ``*.funscript``; a folder holding the
 harvester's ``index.jsonl`` also has its topics' tags read: only a script whose
@@ -24,6 +24,7 @@ from itertools import pairwise
 from pathlib import Path
 from typing import NamedTuple
 
+from app_support import haglio_settings
 from app_support.funscript import read_actions
 
 from funestra.learned_model import (
@@ -258,15 +259,22 @@ def _actions_of(path: Path) -> list[tuple[int, int]]:
     return sorted(set(actions))
 
 
-def main(argv: list[str] | None = None) -> int:
+def parse_arguments(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--corpus", action="append", required=True, type=Path)
+    parser.add_argument("--corpus", action="append", type=Path)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--kept", type=int, default=KEPT_PER_CLASS)
     parser.add_argument("--skip-tag", action="append", default=list(SKIPPED_TAGS))
     parser.add_argument("--keep-tag", action="append", default=list(KEPT_TAGS))
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args(argv)
+    if not args.corpus:
+        args.corpus = [Path(haglio_settings.value("funscript_corpus_dir")) / "eroscripts"]
+    return args
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_arguments(argv)
     logging.basicConfig(level=logging.INFO, format="%(message)s", stream=sys.stderr)
 
     scripts = 0

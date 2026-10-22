@@ -7,6 +7,9 @@ from __future__ import annotations
 
 import json
 import random
+from pathlib import Path
+
+from app_support import haglio_settings
 
 from funestra import learned_model
 from funestra.learned_model import Phrase
@@ -180,3 +183,25 @@ class TestReadingTheCorpus:
         (harvested / train.SKIP_TAGS_FILENAME).write_text("# private\ngamma\n", encoding="utf-8")
 
         assert list(train.scripts_in([harvested], skip_tags=set())) == []
+
+
+class TestWhichCorpusFoldersAreTrainedOn:
+    def test_with_none_named_the_harvest_in_the_shared_settings_corpus_is_the_one(
+            self, monkeypatch):
+        monkeypatch.setenv(haglio_settings.SETTINGS_ENV, haglio_settings.THE_EXAMPLE)
+
+        args = train.parse_arguments(["--out", "model.json.gz"])
+
+        assert args.corpus == [Path(haglio_settings.EXAMPLE["funscript_corpus_dir"]) / "eroscripts"]
+
+    def test_folders_named_are_the_only_ones_and_the_shared_settings_are_not_asked(
+            self, tmp_path, monkeypatch):
+        settings = tmp_path / "settings.json"
+        settings.write_text("{}", encoding="utf-8")
+        monkeypatch.setenv(haglio_settings.SETTINGS_ENV, str(settings))
+
+        args = train.parse_arguments(["--corpus", str(tmp_path / "harvest"),
+                                      "--corpus", str(tmp_path / "own"),
+                                      "--out", str(tmp_path / "model.json.gz")])
+
+        assert args.corpus == [tmp_path / "harvest", tmp_path / "own"]
