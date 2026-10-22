@@ -61,7 +61,7 @@ HANDOFF_RAMP_MS = 2000
 # How long the arbiter will wait, past a turn boundary, for a motion whose
 # floor rests ON the park to come down and touch it — the one case where the
 # handoff needs no ramp at all: the blue swings on to its touch-down and the
-# grey runs flat from there, so the device is set down exactly where the line
+# gray runs flat from there, so the device is set down exactly where the line
 # ends.  Long enough for a slow motion's whole cycle, short enough that a
 # motion that never comes down cannot stall the script.  Shared with the trace,
 # which scans the same span for the same touch it draws the blue ending on.

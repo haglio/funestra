@@ -402,7 +402,7 @@ def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it():
 
 def test_act_is_filtered_picks_out_which_of_a_rows_acts_the_filter_named():
     """The row says whether the clip is here; this says which of its acts is why —
-    the rule that whitens one line of a label and leaves its neighbours gray."""
+    the rule that whitens one line of a label and leaves its neighbors gray."""
     def lit(act: str, filter_query: str) -> bool:
         return act_is_filtered(act, filter_query, CAMERA_WORDS)
 
@@ -596,7 +596,7 @@ def test_single_click_switches_and_double_click_locks():
 
     assert clicks.press(targets, 10, 10, now=10.0) == ""
     assert clicks.press(targets, 10, 10, now=10.2) == "landscape_lock_video|C:/v/pick.mp4"
-    assert clicks.due(now=11.0) == ""                         # the single was cancelled
+    assert clicks.due(now=11.0) == ""                         # the single was canceled
 
 
 def test_a_second_click_past_the_window_is_another_single_click():

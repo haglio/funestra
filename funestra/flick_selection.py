@@ -148,7 +148,7 @@ class FlickSelectionController:
         method_of(self.notifier, "notify_flick", old_name="notify_clip")(path)
 
     def _switch_to(self, path: Path) -> None:
-        """Take up an already-cached flick, cancelling any deferred switch."""
+        """Take up an already-cached flick, canceling any deferred switch."""
         self._pending_path = None
         self._show(path)
         self._prepare_active_flick()

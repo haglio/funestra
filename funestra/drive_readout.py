@@ -1,6 +1,6 @@
 """The drive readout itself — the motion being sent, drawn.
 
-Each axis is one object: its controls, its bar and its number together.  Centre
+Each axis is one object: its controls, its bar and its number together.  Center
 sits down the left — its number, then a −/+ pair beside the dotted line it moves.
 Amplitude sits down the right — a −/+ pair at the ends of its bar, then its
 number.  Speed sits under the trace, out of the way of the other two.
@@ -434,7 +434,7 @@ class DriveSection:
 
     def _wave(self, image: Image.Image, rect: Rect, hud: DriveHud) -> None:
         """The motion drawn as a trace, each stretch in the color of whoever
-        drives it, with the centre marked across it and the device's position
+        drives it, with the center marked across it and the device's position
         marked down the left edge.
 
         Rendered at _SUPERSAMPLE scale and resized down, because that is
@@ -456,9 +456,9 @@ class DriveSection:
         # is a ruler across the trace rather than a state of anything, and amber on
         # these HUDs is a warning's color, which this is not.
         if hud.driving:
-            centre_y = round((1 - _fraction(hud.center)) * (h * s - 1))
+            center_y = round((1 - _fraction(hud.center)) * (h * s - 1))
             for dash in range(0, w * s, 6 * s):
-                draw.line([(dash, centre_y), (min(dash + 3 * s, w * s - 1), centre_y)],
+                draw.line([(dash, center_y), (min(dash + 3 * s, w * s - 1), center_y)],
                           fill=(*WHITE, 150), width=s)
         points = hud.waveform
         if len(points) >= 2:
@@ -499,7 +499,7 @@ class DriveSection:
     @staticmethod
     def _amp_bar(draw, rect: Rect, hud: DriveHud, *, color=(*BLUE, 255)) -> None:
         """The motion's extent as a bar: as tall as the amplitude, sitting where
-        the centre puts it, so the pair reads as the range the device travels."""
+        the center puts it, so the pair reads as the range the device travels."""
         x, y, w, h = rect
         draw.rectangle([x, y, x + w - 1, y + h - 1], fill=(*_TRACK, 255))
         bar_h = max(2, round(_fraction(hud.amplitude) * h))

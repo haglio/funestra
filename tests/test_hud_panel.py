@@ -182,7 +182,7 @@ def test_an_app_mark_fits_inside_the_button_it_is_centered_in():
 
 
 def test_a_glyph_with_no_ink_draws_nothing_rather_than_raising():
-    """A space has no ink to centre on; the HUD repaints every frame, so this must
+    """A space has no ink to center on; the HUD repaints every frame, so this must
     be a no-op and not an exception out of the run loop."""
 
     image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))

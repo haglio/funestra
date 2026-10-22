@@ -119,7 +119,7 @@ _INK_OFFSETS: dict[tuple[str, int, str], tuple[float, float] | None] = {}
 
 
 def ink_center_offset(font: ImageFont.FreeTypeFont, glyph: str) -> tuple[float, float] | None:
-    """The centre of *glyph*'s ink, offset from where ``draw.text`` starts it.
+    """The center of *glyph*'s ink, offset from where ``draw.text`` starts it.
 
     Measured by drawing it, because nothing reported is the ink bounds:
     ``textbbox`` gives the layout bounds, whose lower edge is the face's descender line
@@ -266,12 +266,12 @@ class HudPanel:
     Callers draw through :attr:`draw` and :attr:`image` — the panel is a surface,
     not a layout — and finish with :meth:`to_bgra`.
 
-    *ground* is the grey the slab is made of.  It defaults to the canvas colour,
+    *ground* is the gray the slab is made of.  It defaults to the canvas color,
     which is right where the panel floats over a video: the picture beneath it is
-    what it reads against, and a HUD the colour of a dark frame still reads as a
+    what it reads against, and a HUD the color of a dark frame still reads as a
     panel over one.  A host that draws this on its own chrome instead has no
-    picture beneath it, and on a window painted that very grey the slab vanishes
-    and leaves its one-pixel border outlining nothing — so it says which grey it
+    picture beneath it, and on a window painted that very gray the slab vanishes
+    and leaves its one-pixel border outlining nothing — so it says which gray it
     wants, and gets a panel that sits on that window the way the window's own
     panels do.
     """

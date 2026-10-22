@@ -1,6 +1,6 @@
 """Where the drive readout's parts sit, and what a press on one of them asks for.
 
-The readout — the trace of the motion with Centre down its left, Amplitude down
+The readout — the trace of the motion with Center down its left, Amplitude down
 its right and Speed under it — is placed here and painted in
 :mod:`funestra.drive_readout`. This module draws nothing: it says how big the
 block is, where each mark and band lands, which marks are dead at the end of
@@ -113,8 +113,8 @@ def geometry(x: int, y: int, center_frac: float) -> Geometry:
     amp_bar = (amp_x + (_CTRL - _BAR_H) // 2, wave_y, _BAR_H, amp_bar_h)
     amp_down = (amp_x, wave_lower + _MARK_GAP, _CTRL, _CTRL)
 
-    # The centre marks ride its dotted line, kept inside the trace's band so a
-    # centre at either end cannot push one off the block.
+    # The center marks ride its dotted line, kept inside the trace's band so a
+    # center at either end cannot push one off the block.
     center_y = wave_y + round((1 - center_frac) * (_WAVE_H - 1))
     up_y = min(max(wave_y, center_y - _CTRL - _MARK_GAP // 2), wave_lower - 2 * _CTRL - _MARK_GAP)
     center_up = (ctr_ctrl_x, up_y, _CTRL, _CTRL)
@@ -161,7 +161,7 @@ class Limits:
 def controls(x: int, y: int, center: int, limits: Limits, *,
              dim: bool = False) -> list[DriveControl]:
     """The readout's marks at ``(x, y)`` — a −/+ pair for each of speed,
-    amplitude and centre — each carrying the command it posts and whether it is
+    amplitude and center — each carrying the command it posts and whether it is
     dimmed at the end of its range.
 
     The commands are the ones Fun Time routes to the Robot Hand, written out so
@@ -226,9 +226,9 @@ def _level_under(track: DriveTrack, px: int, py: float) -> int:
 
     Read off the drawing rather than merely off the rect, so what you point at
     is what you get: the speed bar fills from its left edge, so a press is how
-    far along it sits; the trace puts the centre's dotted line at its own
+    far along it sits; the trace puts the center's dotted line at its own
     height, so a press is that height; and the amplitude bar is drawn out from
-    the centre in both directions, so a press is how far the motion has to reach
+    the center in both directions, so a press is how far the motion has to reach
     to arrive there — grab either end of the bar and pull.
 
     A point outside the band reads as its nearer end, so a drag that wanders off

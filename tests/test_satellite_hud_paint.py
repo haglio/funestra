@@ -722,7 +722,7 @@ def test_a_loop_just_started_draws_the_clip_on_screen_in_the_corner(thumb):
 
 def test_a_long_loop_lights_the_clip_on_screen_wherever_it_has_got_to(tmp_path: Path):
     """The window is only worth having if the highlight lands on the right cell in
-    it: the clip playing is drawn bright and its neighbours dim."""
+    it: the clip playing is drawn bright and its neighbors dim."""
     bright = tmp_path / "bright.jpg"
     Image.new("RGB", (40, 60), (240, 240, 240)).save(bright)
     rendered = HudRenderer("portrait").render(_loop_model(str(bright), ("seed", 8)))

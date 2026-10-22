@@ -65,7 +65,7 @@ class TestPlacement:
     def test_the_row_it_falls_back_to_is_the_one_the_scrubber_draws(self):
         """ROW_H is restated rather than imported — timeline reads SLOT_W from
         volume, so the dependency cannot run both ways — and a fallback row of a
-        different height would leave the chip off-centre in the real one."""
+        different height would leave the chip off-center in the real one."""
         assert ROW_H == TIMELINE_HEIGHT
 
     def test_a_window_shorter_than_the_chip_still_places_it(self):

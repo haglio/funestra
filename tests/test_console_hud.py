@@ -356,7 +356,7 @@ class TestPainter:
 
     def test_the_dot_does_not_shift_the_words_around(self):
         """The dot is always in the same place and the same size — active only
-        recolours it — so the line beside it cannot jump when the floor moves to
+        recolors it — so the line beside it cannot jump when the floor moves to
         another Funestra."""
         painter = ConsolePainter()
 
@@ -372,7 +372,7 @@ class TestPainter:
         assert painter.bgra(hud) is painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO)))
 
     def test_the_readouts_arrows_are_hit_targets_even_though_it_draws_them(self):
-        """The readout paints its own amplitude/centre/speed arrows; the console
+        """The readout paints its own amplitude/center/speed arrows; the console
         adds them to its hit targets so a press on the trace's controls posts what
         is drawn there."""
         painter = ConsolePainter()
@@ -552,11 +552,11 @@ class TestPainter:
                                    return_counts=True)
         assert tuple(shades[counts.argmax()]) == amber                  # the fill
 
-    def test_the_slab_is_the_canvas_grey_unless_a_host_asks_for_another(self):
+    def test_the_slab_is_the_canvas_gray_unless_a_host_asks_for_another(self):
         """Floating over a video the panel reads against the picture beneath it,
-        so it is the canvas colour. A host drawing it on its own chrome has no
-        picture beneath it — on a window painted that very grey the slab is
-        invisible and only its border shows — so it says which grey it wants."""
+        so it is the canvas color. A host drawing it on its own chrome has no
+        picture beneath it — on a window painted that very gray the slab is
+        invisible and only its border shows — so it says which gray it wants."""
 
         default = _rgb(ConsolePainter().bgra(
             ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU))))
