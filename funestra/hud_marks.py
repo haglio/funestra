@@ -47,6 +47,13 @@ FMODE_ICON = app_mark("F")
 
 MINIMIZE_ICON = shared_mark("minus")
 
+# The transport and the lock every source declares on a Funestra.
+PREVIOUS_ICON = shared_mark("chevron_left")
+BACK_ICON = shared_mark("chevrons_left")
+FORWARD_ICON = shared_mark("chevrons_right")
+NEXT_ICON = shared_mark("chevron_right")
+LOCK_ICON = shared_mark("lock")
+
 # What a funestra from before a control wore the family's mark publishes for it:
 # Origenerator publishes its panel from a funestra of its own, which can be older
 # than the one drawing it.
