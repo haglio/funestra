@@ -45,9 +45,16 @@ def app_mark_letter(glyph: str) -> str:
 BROKER_ICON = app_mark("B")
 FMODE_ICON = app_mark("F")
 
-# A drawn bar rather than a glyph: the minimize mark Windows puts on a title bar
-# is in a face these HUDs do not load, and a painter draws the bar instead.
-MINIMIZE_ICON = "\0minimize"
+MINIMIZE_ICON = shared_mark("minus")
+
+# What a funestra from before a control wore the family's mark publishes for it:
+# Origenerator publishes its panel from a funestra of its own, which can be older
+# than the one drawing it.
+_RETIRED_GLYPHS = {"\0minimize": MINIMIZE_ICON}
+
+
+def current_glyph(glyph: str) -> str:
+    return _RETIRED_GLYPHS.get(glyph, glyph)
 
 # The family's on/off switch, on while its button is lit.
 TOGGLE_SWITCH = "\0switch"

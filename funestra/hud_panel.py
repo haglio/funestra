@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from shared_ui.app_icon import LETTERS
+from shared_ui.app_icon import draw_letter
 from shared_ui.button_pil import slab
 from shared_ui.icons_pil import paste_glyph
 
@@ -28,7 +28,6 @@ from shared_ui.palette import (
     BLUE,
     BORDER_PANEL,
     GREEN,
-    MAGENTA,
     RED,
     TEXT_MUTED,
     TEXT_PRIMARY,
@@ -41,7 +40,6 @@ from shared_ui.toggle_switch_pil import paste_toggle_switch
 
 from .hud_marks import (
     APP_MARK,
-    MINIMIZE_ICON,
     SHARED_MARK,
     TOGGLE_SWITCH,
     app_mark_letter,
@@ -179,42 +177,20 @@ def draw_mark(image: Image.Image, name: str, rect: tuple[int, int, int, int],
 # command lands on this Funestra.  Same size and same corner on all three, because a
 # reader glancing across two screens is looking for one mark in one place.
 ACTIVE_DOT = 10
+# The family's disc keeps the edge of its frame clear, so the frame it is drawn
+# in is a little bigger than the square the dot fills.
+_DISC_FRAME = ACTIVE_DOT + 2
 
 
-def draw_active_dot(draw: ImageDraw.ImageDraw, x: int, y: int, active: bool) -> None:
-    """The active-Funestra dot, its top-left at ``(x, y)``.
+def draw_active_dot(image: Image.Image, x: int, y: int, active: bool) -> None:
+    """The active-Funestra dot, the family's disc, its top-left at ``(x, y)``.
 
     White while a bare command would land on this Funestra, the palette's gray
     otherwise — and always drawn, never hidden.  An absent dot and an idle dot look
     the same, and then only the Funestra that *has* the floor says anything, which is
     half an answer to a question asked of the room.
     """
-    draw.ellipse([x, y, x + ACTIVE_DOT, y + ACTIVE_DOT],
-                 fill=(*(WHITE if active else TEXT_MUTED), 255))
-
-
-# The app marks are the family's five-by-five letters (shared_ui.app_icon), the
-# shape each app's own .ico carries; a HUD draws one from that table rather than
-# loading the file, since the .ico files live in the apps' own repos.  A letter
-# set in the body face is not the same mark: it is a thin letterform where the
-# icon is a chunky one, and it reads as a caption rather than a badge.
-def draw_icon(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int],
-              letter: str) -> None:
-    """Draw the app mark for *letter*, centered in *rect* and sized to fill it.
-
-    The grid's blank cells are left alone rather than painted, so whatever is
-    beneath shows through the letter's counters — exactly as the .ico's own
-    transparent cells let the panel under it through.
-    """
-    x, y, w, h = rect
-    cell = max(1, min(w, h) // 7)
-    left, top = x + (w - 5 * cell) / 2, y + (h - 5 * cell) / 2
-    for row, line in enumerate(LETTERS[letter]):
-        for column, painted in enumerate(line):
-            if painted != "#":
-                continue
-            cx, cy = left + column * cell, top + row * cell
-            draw.rectangle([cx, cy, cx + cell - 1, cy + cell - 1], fill=(*MAGENTA, 255))
+    paste_glyph(image, "disc", (x, y, _DISC_FRAME, _DISC_FRAME), WHITE if active else TEXT_MUTED)
 
 
 TOOLTIP_PAD = 5
@@ -368,12 +344,6 @@ class KeptBitmap:
         raise NotImplementedError
 
 
-# The minimize bar: as wide as the satellite HUD's filter funnel, so the two
-# drawn marks are built to one size, and two pixels deep like a title bar's.
-_MINIMIZE_W = 9
-_MINIMIZE_H = 2
-
-
 def button_ground(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int], fill,
                   *, hovered: bool = False, dim: bool = False,
                   rest_ink=None) -> tuple[int, int, int, int]:
@@ -399,17 +369,6 @@ def button_ground(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int], fi
     return (*WHITE, 255)
 
 
-def draw_minimize_bar(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int],
-                      ink) -> None:
-    """The bar a Windows title bar puts on its minimize button, two pixels deep
-    across the middle: drawn, because the mark Windows uses is in a face these
-    HUDs do not load and Pillow draws tofu for a codepoint a face lacks."""
-    x, y, w, h = rect
-    cx, top = x + w / 2, y + h / 2 - _MINIMIZE_H / 2
-    draw.rectangle([cx - _MINIMIZE_W / 2, top, cx + _MINIMIZE_W / 2, top + _MINIMIZE_H - 1],
-                   fill=ink)
-
-
 def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
                 rect: tuple[int, int, int, int], button, *, hovered: bool,
                 glyph_font: ImageFont.FreeTypeFont,
@@ -420,8 +379,8 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
     filled while lit -- green for a favorites control, amber for an enhanced
     one, the family's blue for the rest; red for a live recording, blue for the
     loop it leaves running, the active gray for a choice held but not applied
-    -- with its face drawn on top: an app mark, one of the family's marks, the
-    minimize bar, a typed glyph out of *glyph_font*, or a word in *word_font*.
+    -- with its face drawn on top: an app mark, one of the family's marks, a
+    typed glyph out of *glyph_font*, or a word in *word_font*.
 
     An item with nothing to post is a READ-OUT, not a control: bare text with no
     button under it, in the readout's own key/value colors -- a muted word names
@@ -455,11 +414,9 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
                         rest_ink=RED if button.danger else AMBER if button.enhanced else None)
     glyph = button.glyph
     if glyph.startswith(APP_MARK):
-        draw_icon(draw, rect, app_mark_letter(glyph))
+        draw_letter(draw, rect, app_mark_letter(glyph))
     elif glyph.startswith(SHARED_MARK):
         draw_mark(image, shared_mark_name(glyph), rect, ink)
-    elif glyph == MINIMIZE_ICON:
-        draw_minimize_bar(draw, rect, ink)
     elif len(glyph) == 1 and not glyph.isalnum():
         draw_glyph(draw, x + w / 2, y + h / 2, glyph, glyph_font, ink)
     else:

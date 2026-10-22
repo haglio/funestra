@@ -9,7 +9,7 @@ from shared_ui.spacing import BUTTON_GAP, BUTTON_GROUP_GAP
 
 from funestra.console import OSR2_PARKED, VALUE_W
 from funestra.hud_button import Button
-from funestra.hud_marks import shared_mark
+from funestra.hud_marks import MINIMIZE_ICON, shared_mark
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.modes import Osr2State
 from funestra.satellite_hud import (
@@ -474,7 +474,7 @@ def test_a_declared_row_is_laid_out_as_wide_as_each_button_says():
     rects = button_row_rects(10, 40, (
         Button("go_kino", "Kino", "Kino mode", width=0),
         Button("go_shows", "Origenerator", "Origenerator mode", width=0),
-        Button("park", "\x00minimize", "Park it", group_break=True),
+        Button("park", MINIMIZE_ICON, "Park it", group_break=True),
     ), [52, 90, CTRL_BTN])
 
     assert [rect for rect, _button in rects] == [
@@ -713,7 +713,7 @@ class TestThePublishedPanelIsWrittenWhereItIsRead:
             seed_count=7, action_count=3, playing=("seed", 1),
             item_note="Enhance 1 — 1 of 2 · Enhancing…", paused=True,
             rows=((Button("origenerator_activate", "Origenerator", "Shows", width=0),
-                   Button("landscape_minimize", "\x00minimize", "Park", group_break=True)),
+                   Button("landscape_minimize", MINIMIZE_ICON, "Park", group_break=True)),
                   (Button("landscape_lock", "🔒", "Hold", lit=True, favorite=True),)),
         )
 

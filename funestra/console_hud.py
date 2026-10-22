@@ -390,7 +390,7 @@ class ConsolePainter:
         return block_x(corner, panel_width=panel_width, extent=extent, pad=_PAD,
                        reserve=reserve)
 
-    def _draw_top_block(self, draw, y: int, title: str, filename: str,
+    def _draw_top_block(self, panel: HudPanel, y: int, title: str, filename: str,
                         active: bool, width: int, corner: HudCorner, *,
                         reserve: int) -> None:
         """The active-Funestra dot and the title — what is selecting this
@@ -400,11 +400,12 @@ class ConsolePainter:
         screens finds the same answer in the same corner.  Both are empty in genau
         mode, and the block is then only the dot.
         """
+        draw = panel.draw
         ascent, descent = self._body.getmetrics()
         indent = ACTIVE_DOT + DOT_GAP
         title_x = self._block_x(corner, width,
                                  indent + text_width(self._body, title), reserve)
-        draw_active_dot(draw, title_x, y + (ascent + descent) // 2 - ACTIVE_DOT // 2,
+        draw_active_dot(panel.image, title_x, y + (ascent + descent) // 2 - ACTIVE_DOT // 2,
                         active)
         if title:
             draw.text((title_x + indent, y + ascent), title, font=self._body,
@@ -503,7 +504,7 @@ class ConsolePainter:
         draw = panel.draw
 
         if whole:
-            self._draw_top_block(draw, title_top, title, filename, console.active,
+            self._draw_top_block(panel, title_top, title, filename, console.active,
                                  width, corner, reserve=reserves[0])
         self.buttons = self._draw_rows(panel, rows, rows_top, corner, hover, reserves[1])
         self.tracks = []

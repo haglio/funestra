@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import numpy as np
+from shared_ui.palette import TEXT_MUTED, TEXT_PRIMARY
 
+from funestra import volume
 from funestra.timeline import TIMELINE_HEIGHT
 from funestra.volume import (
     CHIP_H,
@@ -148,8 +150,22 @@ class TestPainter:
         silenced = self._chip(volume=80, muted=True)
 
         assert not np.array_equal(loud, silenced), "a mute has to look different"
-        track = slice(CHIP_W // 3, CHIP_W)
+        track = slice(SPEAKER_W, CHIP_W)
         assert np.array_equal(loud[:, track], silenced[:, track]), "the level is unchanged"
+
+    def test_the_speaker_is_the_familys_and_crossed_out_while_muted(self, monkeypatch):
+        drawn = []
+        real = volume.paste_glyph
+
+        def spy(image, name, frame, color):
+            drawn.append((name, color))
+            real(image, name, frame, color)
+
+        monkeypatch.setattr(volume, "paste_glyph", spy)
+        self._chip(muted=False)
+        self._chip(muted=True)
+
+        assert drawn == [("speaker", TEXT_PRIMARY), ("speaker_off", TEXT_MUTED)]
 
     def test_an_unchanged_control_is_not_repainted(self):
         """Asked for every frame at 60fps; Pillow is nowhere near that cheap."""

@@ -12,6 +12,7 @@ from shared_ui.app_icon import LETTERS
 from shared_ui.palette import BLUE, BORDER_PANEL, GREEN, TEXT_MUTED, TEXT_PRIMARY, WHITE
 from shared_ui.spacing import BUTTON_GAP
 
+from funestra import satellite_hud_paint
 from funestra.console import OSR2_PARKED
 from funestra.drive_layout import MAX_INTENSITY, SECTION_W
 from funestra.drive_readout import (
@@ -291,10 +292,10 @@ def test_the_dot_lights_up_only_on_the_active_side(thumb):
         rendered = HudRenderer("portrait").render(
             _model(active=active, title="Unlocked · Shuffle",
                    corner=HudCell(path="c.mp4", thumb=thumb)))
-        # The dot's own square, left of where the title starts, past the
-        # minus in the panel's corner.
+        # The middle of the dot, left of where the title starts, past the
+        # minus in the panel's corner: the disc's rim is antialiased into the panel.
         left = PAD + MINUS_ROOM
-        return _rgb(rendered.bgra)[PAD + 2:PAD + 12, left:left + 10]
+        return _rgb(rendered.bgra)[PAD + 5:PAD + 11, left + 3:left + 9]
 
     assert np.allclose(dot(True).reshape(-1, 3).mean(axis=0), WHITE, atol=40)
     assert np.allclose(dot(False).reshape(-1, 3).mean(axis=0), TEXT_MUTED, atol=40)
@@ -653,6 +654,36 @@ def test_the_more_mark_reads_as_three_dots(thumb):
 
     runs = sum(1 for i, on in enumerate(row) if on and not (i and row[i - 1]))
     assert runs == 3
+
+
+def _marks_drawn(monkeypatch, painter: str) -> list[str]:
+    drawn: list[str] = []
+    real = getattr(satellite_hud_paint, painter)
+
+    def spy(image, name, frame, color):
+        drawn.append(name)
+        real(image, name, frame, color)
+
+    monkeypatch.setattr(satellite_hud_paint, painter, spy)
+    return drawn
+
+
+def test_the_more_marks_are_the_familys_dots_along_the_row_and_down_the_column(
+        thumb, monkeypatch):
+    drawn = _marks_drawn(monkeypatch, "paste_glyph")
+
+    HudRenderer("portrait").render(_crowded("portrait", thumb))
+
+    assert {"more", "more_vertical"} <= set(drawn)
+
+
+def test_the_filter_button_wears_the_familys_filter(thumb, monkeypatch):
+    drawn = _marks_drawn(monkeypatch, "draw_mark")
+
+    HudRenderer("portrait").render(
+        _model(corner=HudCell(path="c.mp4", thumb=thumb), current_action="alpha"))
+
+    assert "filter" in drawn
 
 
 def test_the_more_mark_does_not_touch_the_loop_rectangle(thumb):

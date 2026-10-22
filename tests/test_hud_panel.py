@@ -4,17 +4,20 @@ from __future__ import annotations
 import numpy as np
 from PIL import Image, ImageDraw
 from shared_ui import palette
-from shared_ui.app_icon import LETTERS
+from shared_ui.icons_pil import paste_glyph
 from shared_ui.palette import BG_PRIMARY, MAGENTA, TEXT_MUTED, WHITE
 
 from funestra import hud_panel
+from funestra.hud_button import Button
+from funestra.hud_marks import app_mark
 from funestra.hud_panel import (
+    ACTIVE_DOT,
     PANEL_ALPHA,
     TOOLTIP_PAD,
     HudPanel,
     draw_active_dot,
+    draw_button,
     draw_glyph,
-    draw_icon,
     draw_tooltip,
     fit_text,
     load_font,
@@ -31,7 +34,7 @@ def test_the_palette_is_shared_uis_own_read_without_qt():
 
     assert hud_panel.WHITE is palette.WHITE
     assert hud_panel.BG_PRIMARY is palette.BG_PRIMARY
-    assert hud_panel.MAGENTA is palette.MAGENTA
+    assert hud_panel.BLUE is palette.BLUE
 
 
 def test_panel_is_a_translucent_rounded_slab_of_the_asked_size():
@@ -82,11 +85,22 @@ def test_the_active_dot_is_lit_or_gray_but_never_absent():
     learn what one mark should tell them."""
     def dot(active: bool) -> tuple[int, ...]:
         panel = HudPanel(40, 40)
-        draw_active_dot(panel.draw, 10, 10, active)
+        draw_active_dot(panel.image, 10, 10, active)
         return tuple(np.asarray(panel.image)[15, 15][:3])
 
     assert dot(True) == WHITE
     assert dot(False) == TEXT_MUTED
+
+
+def test_the_active_dot_is_the_familys_disc():
+    def drawn(paint) -> np.ndarray:
+        image = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
+        paint(image)
+        return np.asarray(image)
+
+    assert np.array_equal(
+        drawn(lambda image: draw_active_dot(image, 10, 10, True)),
+        drawn(lambda image: paste_glyph(image, "disc", (10, 10, ACTIVE_DOT + 2, ACTIVE_DOT + 2), WHITE)))
 
 
 def test_a_tooltip_wider_than_the_panel_wraps_rather_than_running_off_it():
@@ -154,51 +168,14 @@ def test_a_glyph_is_centered_on_its_ink_not_on_the_fonts_bounds():
         assert by_metrics[1] > centered[1], glyph  # the old way sat lower
 
 
-def _icon_cells(letter: str, size: int = 18) -> list[str]:
-    """The mark *letter* draws, read back off the pixels as its own grid."""
-
-    image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    draw_icon(ImageDraw.Draw(image), (0, 0, size, size), letter)
-    painted = np.asarray(image)[:, :, 3] > 0
-    ys, xs = np.nonzero(painted)
-    cell = (xs.max() - xs.min() + 1) / 5
-    return [
-        "".join(
-            "#" if painted[int(ys.min() + (row + 0.5) * cell),
-                           int(xs.min() + (column + 0.5) * cell)] else "."
-            for column in range(5)
-        )
-        for row in range(5)
-    ]
-
-
-def test_an_app_mark_draws_the_grid_its_icon_carries():
-    """The .ico files live in the apps' own repos, so a HUD in one of them draws
-    the mark from the grid instead of loading another repo's file — which only
-    works if what lands on the pixels is that grid."""
-    for letter in ("B", "F"):
-        assert _icon_cells(letter) == list(LETTERS[letter]), letter
-
-
-def test_an_app_mark_leaves_its_counters_clear_for_the_fill_beneath_it():
-    """The .ico's blank cells are transparent, so the panel color shows through
-    the letter's counters; painting them would make the mark a solid block."""
-
-    image = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
-    draw_icon(ImageDraw.Draw(image), (0, 0, 18, 18), "B")
-    pixels = np.asarray(image)
-
-    assert (pixels[:, :, :3] == MAGENTA).all(axis=2).any()   # the letter is drawn …
-    assert (pixels[:, :, :3] == 0).all(axis=2).any()      # … and its counters are not
-
-
-def test_an_app_mark_fits_inside_the_button_it_is_centred_in():
+def test_an_app_mark_fits_inside_the_button_it_is_centered_in():
     """It has to sit in the same 18px square every other control on these HUDs
     uses, with room left around it rather than running to the button's border."""
 
     image = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
-    draw_icon(ImageDraw.Draw(image), (0, 0, 18, 18), "F")
-    ys, xs = np.nonzero(np.asarray(image)[:, :, 3])
+    draw_button(image, ImageDraw.Draw(image), (0, 0, 18, 18), Button("fmode", app_mark("F"), ""),
+                hovered=False, glyph_font=load_font(11), word_font=load_font(11))
+    ys, xs = np.nonzero((np.asarray(image)[:, :, :3] == MAGENTA).all(axis=2))
 
     assert xs.min() >= 2 and xs.max() <= 15
     assert ys.min() >= 2 and ys.max() <= 15

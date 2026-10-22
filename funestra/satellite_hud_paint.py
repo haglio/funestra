@@ -16,6 +16,7 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+from shared_ui.icons_pil import paste_glyph
 from shared_ui.palette import (
     BG_BUTTON,
     BG_TERTIARY,
@@ -126,21 +127,11 @@ _PLACEHOLDER = BG_TERTIARY  # a thumbnail fun_time has not produced yet
 
 _DIM = 0.5      # non-playing thumbnails; the one on screen stays full
 _BORDER_W = 2   # the lock ring around the held clip
-_DOT = 1        # radius of one dot in a "…" mark — small, so three read as three
-_DOT_GAP = 4    # center-to-center spacing of those dots along the axis
 _COUNT_LINE_H = 11  # line pitch of the axis counts in the map's top-left corner
 
 _ROW_LABEL_PT = 7
 _LOOP_GLYPH = shared_mark(LOOP_MARK)
 _EXPAND_GLYPH = shared_mark(EXPAND_MARK)
-# The filter mark, drawn rather than typed: Segoe UI Symbol — the face the other
-# buttons take their icons from — carries no funnel at any codepoint, and this is
-# the one button whose shape *is* its meaning, so a ".notdef" tofu would say
-# nothing at all.  A mouth _FUNNEL_W wide narrowing to a stem, sized like the
-# glyphs beside it.
-_FUNNEL_W = 9
-_FUNNEL_H = 9
-_FUNNEL_NECK = 3  # width of the stem the mouth narrows to
 
 
 @dataclass(frozen=True)
@@ -423,7 +414,7 @@ class HudRenderer:
         filter_rects = filter_button_rects(corner_rect, action_rects, gutter_x,
                                            model.current_action,
                                            [cell.label for cell in model.actions])
-        self._draw_filter_buttons(draw, filter_rects, model)
+        self._draw_filter_buttons(image, draw, filter_rects, model)
 
         loop_action_rect, loop_seed_rect = loop_button_rects(
             corner_rect, row_end=map_x + map_row_width(model.funestra),
@@ -434,7 +425,7 @@ class HudRenderer:
                                  model.active_loop, hover_loop)
         for axis, window in (("seed", seed_win), ("action", action_win)):
             if window is not None:
-                self._draw_ellipses(draw, corner_rect, column_rect, seed_rects,
+                self._draw_ellipses(image, corner_rect, column_rect, seed_rects,
                                     action_rects, axis, window)
         if expand_rect is not None:
             self._glyph_button(image, draw, expand_rect, _EXPAND_GLYPH)
@@ -496,7 +487,7 @@ class HudRenderer:
         title_x = self._block_x(model, width,
                                 TITLE_INDENT + text_width(title_font, model.title),
                                 reserve=reserve)
-        draw_active_dot(draw, title_x, y + 2, model.active)
+        draw_active_dot(image, title_x, y + 2, model.active)
         draw.text((title_x + TITLE_INDENT, y + TITLE_BASELINE), model.title,
                   font=title_font, anchor="ls", fill=(*TEXT_PRIMARY, 255))
         if not subtitle:
@@ -583,28 +574,21 @@ class HudRenderer:
             draw.text((x, y + _COUNT_LINE_H * line_no), text, font=self._tiny,
                       anchor="ls", fill=(*TEXT_MUTED, 255))
 
-    def _draw_ellipses(self, draw, corner_rect, column_rect, seed_rects, action_rects,
+    def _draw_ellipses(self, image, corner_rect, column_rect, seed_rects, action_rects,
                        axis, window) -> None:
-        """Three dots in the slots kept at each end of *axis*, on whichever side it
-        runs on past what is drawn — along the row, down the column.  They fall inside
-        a running loop's rectangle, so they read as "more of these are in the loop"
-        rather than as something outside it, and a gap in from its border, so they do
-        not read as part of that border either.
-
-        Drawn rather than typed: an "…" glyph hangs off the text baseline, which in a
-        slot this small puts it against the lower edge instead of in the middle.
+        """The family's three dots in the slots kept at each end of *axis*, on
+        whichever side it runs on past what is drawn — along the row, down the
+        column.  They fall inside a running loop's rectangle, so they read as "more
+        of these are in the loop" rather than as something outside it, and a gap in
+        from its border, so they do not read as part of that border either.
         """
         before, after = ellipsis_rects(corner_rect, seed_rects, action_rects, axis,
                                        column_rect=column_rect)
         for rect, show in ((before, window.more_before), (after, window.more_after)):
             if not show:
                 continue
-            bx, by, bw, bh = rect
-            mx, my = bx + bw / 2, by + bh / 2
-            for step in (-1, 0, 1):
-                dx, dy = (step * _DOT_GAP, 0) if axis == "seed" else (0, step * _DOT_GAP)
-                draw.ellipse([mx + dx - _DOT, my + dy - _DOT, mx + dx + _DOT, my + dy + _DOT],
-                             fill=(*TEXT_PRIMARY, 255))
+            paste_glyph(image, "more" if axis == "seed" else "more_vertical", rect,
+                        TEXT_PRIMARY)
 
     def _draw_thumbnails(self, image, model, corner_rect, seed_rects, action_rects,
                          corner_thumb, seed_thumbs, action_thumbs) -> dict[Rect, Rect]:
@@ -741,18 +725,9 @@ class HudRenderer:
         bx, by, bw, bh = rect
         draw_glyph(draw, bx + bw / 2, by + bh / 2, glyph, self._glyph, ink)
 
-    def _filter_button(self, draw, rect: Rect, *, on: bool = False) -> None:
-        """The same square button with a funnel drawn on it, for the act filter."""
-        ink = self._button_square(draw, rect, on=on)
-        bx, by, bw, bh = rect
-        cx, cy = bx + bw / 2, by + bh / 2
-        mouth, neck = _FUNNEL_W / 2, _FUNNEL_NECK / 2
-        upper, lower = cy - _FUNNEL_H / 2, cy + _FUNNEL_H / 2
-        draw.polygon(
-            [(cx - mouth, upper), (cx + mouth, upper), (cx + neck, cy), (cx + neck, lower),
-             (cx - neck, lower), (cx - neck, cy)],
-            fill=ink,
-        )
+    def _filter_button(self, image, draw, rect: Rect, *, on: bool = False) -> None:
+        """The same square button wearing the family's filter, for the act filter."""
+        draw_mark(image, "filter", rect, self._button_square(draw, rect, on=on))
 
     def _strike_button(self, image, draw, rect: Rect) -> None:
         """The strike under the current clip's act: the family's cross, drawn red.
@@ -765,7 +740,7 @@ class HudRenderer:
         self._button_square(draw, rect, on=False, ink=RED)
         draw_mark(image, WRONG_ACTION_MARK, rect, (*RED, 255))
 
-    def _draw_filter_buttons(self, draw, rects: list[tuple[Rect, str]],
+    def _draw_filter_buttons(self, image, draw, rects: list[tuple[Rect, str]],
                              model: HudModel) -> None:
         """The filter button at the head of each row, lit on every row the filter
         keeps — which is more than the row that names it exactly, since fun_time
@@ -776,7 +751,7 @@ class HudRenderer:
         other side's map) shows here too, and pressing a lit one lifts it.
         """
         for rect, name in rects:
-            self._filter_button(draw, rect, on=label_is_filtered(
+            self._filter_button(image, draw, rect, on=label_is_filtered(
                 name, model.filter_query, model.camera_words))
 
     def _draw_loop_controls(self, image, draw, corner_rect, column_rect, loop_action_rect,
