@@ -6,7 +6,15 @@ import json
 from shared_ui.icon_geometry import tooltip_for
 
 from funestra.hud_button import Button, rows_from_raw, rows_raw
-from funestra.hud_marks import MINIMIZE_ICON, shared_mark
+from funestra.hud_marks import (
+    BACK_ICON,
+    FORWARD_ICON,
+    LOCK_ICON,
+    MINIMIZE_ICON,
+    NEXT_ICON,
+    PREVIOUS_ICON,
+    shared_mark,
+)
 
 _A_MARK_THIS_VERSION_LACKS = "a_mark_from_another_version"
 
@@ -49,3 +57,12 @@ def test_a_minimize_published_before_it_wore_the_minus_reads_back_as_the_minus()
     raw = [[{"command": "show_minimize", "glyph": "\0minimize", "tooltip": "Minimize"}]]
 
     assert rows_from_raw(raw) == ((Button("show_minimize", shared_mark("minus"), "Minimize"),),)
+
+
+def test_the_transport_and_the_lock_every_source_declares_wear_the_familys_marks():
+    """Fun Time and Origenerator both declare these on a Funestra, so they take
+    their faces from here rather than each typing its own."""
+    faces = (PREVIOUS_ICON, BACK_ICON, FORWARD_ICON, NEXT_ICON, LOCK_ICON)
+
+    assert faces == tuple(shared_mark(name) for name in
+                          ("chevron_left", "chevrons_left", "chevrons_right", "chevron_right", "lock"))
