@@ -33,7 +33,7 @@ from funestra.radio import radio_file_for, write_radio
 from funestra.satellite_hud import MARGIN, HudModel
 from funestra.session_quit import SESSION_QUIT
 from funestra.timeline import TIMELINE_HEIGHT
-from funestra.volume import CHIP_H, CHIP_W, chip_xy
+from funestra.volume import CHIP_H, CHIP_W, VolumeHud, chip_xy
 
 WINDOW = (640, 480)
 
@@ -1095,12 +1095,24 @@ class TestAUsersOwnPicture:
         assert funestra._panel._item_row.duration_ms == engine.duration_ms
 
 
+class _ARadioOfItsHost:
+    def __init__(self) -> None:
+        self.ticked: tuple | None = None
+        self.closed = False
+
+    def tick(self, *, picture, level, paused) -> None:
+        self.ticked = (picture, level, paused)
+
+    def close(self) -> None:
+        self.closed = True
+
+
 class TestAWindowsOwnPanel:
     """A window handed a panel of its own -- built in its process, as a
     standalone Origenerator builds its Slideshow's -- wears it where a session
     would have published one, and hands its presses to what runs on the window."""
 
-    def _own_panel(self, tmp_path, *, user=Kino, muted=True):
+    def _own_panel(self, tmp_path, *, user=Kino, muted=True, **handed):
         clips = _clips(tmp_path, "v0", "v1")
         channels = _channels(tmp_path, [str(clip) for clip in clips], commands="")
         engine = FakeEngine()
@@ -1113,7 +1125,8 @@ class TestAWindowsOwnPanel:
         panel = [HudModel(funestra="portrait", title="Unlocked",
                           rows=((Button("portrait_next", "N", "Next"),),))]
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                            users={"slideshow": make}, panel=lambda: panel[0], muted=muted)
+                            users={"slideshow": make}, panel=lambda: panel[0], muted=muted,
+                            **handed)
         return funestra, engine, made[0], panel
 
     def test_it_is_drawn_over_the_picture_where_no_session_published_one(self, tmp_path):
@@ -1194,6 +1207,48 @@ class TestAWindowsOwnPanel:
         funestra, _engine, _user, _panel = self._own_panel(tmp_path)
 
         assert funestra._volume.hud.muted is True
+
+    def test_a_radio_its_host_hands_it_hears_a_picture_at_its_level(self, tmp_path):
+        radio = _ARadioOfItsHost()
+        funestra, engine, _user, _panel = self._own_panel(tmp_path, muted=False, radio=radio)
+        _a_picture_up(engine)
+
+        funestra.tick(window=WINDOW)
+
+        assert radio.ticked == (True, 100, False)
+
+    def test_a_radio_its_host_hands_it_goes_with_it(self, tmp_path):
+        radio = _ARadioOfItsHost()
+        funestra, _engine, _user, _panel = self._own_panel(tmp_path, radio=radio)
+
+        funestra.close()
+
+        assert radio.closed is True
+
+    def test_a_press_on_its_speaker_tells_its_host_the_volume_it_moved_to(self, tmp_path):
+        moved = []
+        funestra, engine, _user, _panel = self._own_panel(tmp_path, on_volume_moved=moved.append)
+        funestra.tick(window=WINDOW)
+
+        funestra.press(*_on_the_row(funestra, engine, "speaker"), window=WINDOW)
+
+        assert moved == [VolumeHud(volume=100, muted=False)]
+
+    def test_a_volume_it_is_told_to_take_is_not_told_back_to_its_host(self, tmp_path):
+        moved = []
+        funestra, _engine, _user, _panel = self._own_panel(tmp_path, on_volume_moved=moved.append)
+        (tmp_path / "cmd.txt").write_text("SET_VOLUME 40 0\n", encoding="utf-8")
+
+        funestra.tick(window=WINDOW)
+
+        assert moved == []
+
+    def test_a_volume_its_host_sets_is_the_one_it_plays_at(self, tmp_path):
+        funestra, engine, _user, _panel = self._own_panel(tmp_path)
+
+        funestra.set_volume(VolumeHud(volume=40, muted=False))
+
+        assert (engine.volume, engine.muted) == (40, False)
 
 
 def test_on_a_window_the_way_of_playing_can_be_heard(tmp_path):

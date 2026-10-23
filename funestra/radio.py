@@ -23,6 +23,12 @@ class Station(Protocol):
     def close(self) -> None: ...
 
 
+class Tuner(Protocol):
+    def tick(self, *, picture: bool | None, level: int | None, paused: bool) -> None: ...
+
+    def close(self) -> None: ...
+
+
 READER_HOLD_BUDGET_S = 1.0
 _RETRY_SPACING_S = 0.005
 
@@ -74,13 +80,15 @@ class RadioFile:
 
 class Radio:
     """A Funestra's stations, each playing on out of earshot: a picture coming
-    up after a video tunes the next of them in, and the pictures after it stay
-    on that one, through the moment between each two files."""
+    up after a video tunes the next of them in, or every one when they play
+    together, and the pictures after it stay on that one, through the moment
+    between each two files."""
 
     def __init__(self, open_station: Callable[[list[Path]], Station | None], *,
-                 dealt_in: RadioFile | None = None) -> None:
+                 dealt_in: RadioFile | None = None, together: bool = False) -> None:
         self._open_station = open_station
         self._dealt_in = dealt_in
+        self._together = together
         self._dealt: list[list[Path]] = []
         self._stations: list[Station] = []
         self._tuned = -1
@@ -108,7 +116,8 @@ class Radio:
                 self._tuned = (self._tuned + 1) % len(self._stations)
         for index, station in enumerate(self._stations):
             station.set_paused(paused)
-            station.tune(level if self._on_a_picture and index == self._tuned else None)
+            heard = self._together or index == self._tuned
+            station.tune(level if self._on_a_picture and heard else None)
 
     def _open_what_was_dealt(self) -> None:
         if self._stations or not self._dealt:
