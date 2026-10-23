@@ -12,6 +12,7 @@ from .control_registry import Control, Verb, bind, look_up
 from .funestra_verbs import (
     CLEAR_FRAME,
     HOLD_PICTURE,
+    LET_GO,
     LOCK_OFF,
     LOCK_ON,
     NEXT,
@@ -104,6 +105,11 @@ def _show(controls: FunestraControls, value: str) -> bool:
 
 def _discard(controls: FunestraControls, _value: str) -> bool:
     controls.playback.discard()
+    return True
+
+
+def _let_go(controls: FunestraControls, _value: str) -> bool:
+    controls.playback.let_go()
     return True
 
 
@@ -207,7 +213,7 @@ CONTROLS: tuple[Control, ...] = (
         verbs=(Verb(TOGGLE_LOCK, _toggle_lock), Verb(LOCK_ON, _lock_set(True)),
                Verb(LOCK_OFF, _lock_set(False))),
     ),
-    Control(name="clip", verbs=(Verb(TRASH, _discard),)),
+    Control(name="clip", verbs=(Verb(TRASH, _discard), Verb(LET_GO, _let_go))),
     Control(
         name="version",
         verbs=(

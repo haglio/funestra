@@ -11,6 +11,7 @@ from funestra.funestra_controls import VERBS, FunestraControls, apply_command
 from funestra.funestra_verbs import (
     CLEAR_FRAME,
     HOLD_PICTURE,
+    LET_GO,
     LOCK_OFF,
     LOCK_ON,
     NEXT,
@@ -101,6 +102,13 @@ class TestApplyCommand:
         controls = _controls(tmp_path)
         assert apply_command(TRASH, controls) is True
         assert [p.name for p in controls.playback.playlist] == ["v1.mp4", "v2.mp4"]
+
+    def test_let_go_plays_nothing_so_the_file_on_screen_can_be_moved(self, tmp_path):
+        controls = _controls(tmp_path)
+
+        assert apply_command(LET_GO, controls) is True
+
+        assert controls.playback.idle is True
 
     def test_play_file_plays_the_item_the_line_names(self, tmp_path):
         controls = _controls(tmp_path)
@@ -358,7 +366,7 @@ class TestWhoHasTheWindow:
 
 def test_every_verb_a_funestra_answers_is_spelled_in_the_familys_vocabulary():
     assert set(VERBS) == {
-        NEXT, PREV, LOCK_ON, LOCK_OFF, TOGGLE_LOCK, TRASH, NEXT_VERSION, PREV_VERSION,
+        NEXT, PREV, LOCK_ON, LOCK_OFF, TOGGLE_LOCK, TRASH, LET_GO, NEXT_VERSION, PREV_VERSION,
         SEEK_FWD, SEEK_BACK, SPEED_UP, SPEED_DOWN, SET_SPEED, PLAY_FILE, PLAY_NEXT,
         RELOAD_PLAYLIST, SET_PACE, HOLD_PICTURE, SHOW_FRAME, CLEAR_FRAME, QUIT,
         SET_TCODE_ENABLED,
