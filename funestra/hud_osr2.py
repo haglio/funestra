@@ -26,6 +26,7 @@ from shared_ui.palette import (
     TEXT_MUTED,
     TEXT_PRIMARY,
 )
+from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
 from .console import GAP, HELD_HEIGHT, HOLD_VERB, OSR2_PARKED, OSR2_RETRACTED
 from .device_walk import Walk, the_broker_holding, the_hand_taking_back
@@ -43,7 +44,7 @@ from .drive_readout import (
 )
 from .geometry import Rect, contains
 from .hud_button import BUTTON, Button
-from .hud_panel import BODY_PT, SYMBOL_FONT, TINY_PT, draw_button, load_font, text_width
+from .hud_panel import SYMBOL_FONT, draw_button, load_font, text_width
 from .modes import UNHEARD, Osr2State
 from .robot_hand import FULL_INTENSITY, POSITION_MAX
 
@@ -232,8 +233,8 @@ class Osr2Section:
     """The line itself, drawn into whatever panel is hosting it."""
 
     def __init__(self) -> None:
-        self._tiny = load_font(TINY_PT)
-        self._glyph = load_font(BODY_PT, SYMBOL_FONT)
+        self._tiny = load_font(SIZE_TINY)
+        self._glyph = load_font(SIZE_BODY, SYMBOL_FONT)
 
     def width(self, line: Osr2Line) -> int:
         """How wide the line runs — a floor on the panel holding it."""

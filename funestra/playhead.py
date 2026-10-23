@@ -6,8 +6,9 @@ from functools import cache
 
 from PIL import Image, ImageDraw
 from shared_ui.palette import TEXT_PRIMARY
+from shared_ui.type_scale import SIZE_TINY
 
-from .hud_panel import TINY_PT, KeptBitmap, ink_center_offset, load_font, text_width
+from .hud_panel import KeptBitmap, ink_center_offset, load_font, text_width
 from .hud_title import SEPARATOR
 from .renamed import old_name_getter
 from .volume import CHIP_H, chip_xy
@@ -96,7 +97,7 @@ def on_readout(x: int, y: int, *, win_w: int, win_h: int, timeline_h: int) -> bo
 
 @cache
 def _font():
-    return load_font(TINY_PT)
+    return load_font(SIZE_TINY)
 
 
 def readout_width(hud: PlayheadHud) -> int:

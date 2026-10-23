@@ -17,6 +17,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 from shared_ui.palette import BLACK, WHITE
+from shared_ui.type_scale import SIZE_HEADING
 
 from .hud_panel import load_font, text_width, to_bgra
 from .renamed import answers_to_old_names
@@ -31,7 +32,6 @@ LOADING_OVERLAY_ID = 6
 # without end; past the bound a frame is scaled again rather than kept.
 SCALED_FRAMES_BYTES = 192 * 1024 * 1024
 
-_LOADING_PT = 13
 _LOADING_PAD = 8
 _LOADING_INSET = 8
 _LOADING_GROUND = (*BLACK, 180)
@@ -86,7 +86,7 @@ def scaled_bgra(frame: np.ndarray, size: tuple[int, int]) -> np.ndarray:
 
 
 def loading_notice_bgra(text: str) -> np.ndarray:
-    font = load_font(_LOADING_PT)
+    font = load_font(SIZE_HEADING)
     ascent, descent = font.getmetrics()
     image = Image.new("RGBA", (text_width(font, text) + 2 * _LOADING_PAD,
                                ascent + descent + 2 * _LOADING_PAD), _LOADING_GROUND)

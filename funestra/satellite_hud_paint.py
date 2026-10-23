@@ -28,13 +28,12 @@ from shared_ui.palette import (
     WHITE,
 )
 from shared_ui.spacing import BUTTON_GROUP_GAP
+from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
 from funestra.hud_button import Button
 from funestra.hud_marks import SHARED_MARK, shared_mark, shared_mark_name
 from funestra.hud_panel import (
-    BODY_PT,
     SYMBOL_FONT,
-    TINY_PT,
     HudPanel,
     button_ground,
     draw_active_dot,
@@ -129,7 +128,6 @@ _DIM = 0.5      # non-playing thumbnails; the one on screen stays full
 _BORDER_W = 2   # the lock ring around the held clip
 _COUNT_LINE_H = 11  # line pitch of the axis counts in the map's top-left corner
 
-_ROW_LABEL_PT = 7
 _LOOP_GLYPH = shared_mark(LOOP_MARK)
 _EXPAND_GLYPH = shared_mark(EXPAND_MARK)
 
@@ -167,12 +165,11 @@ class HudRenderer:
 
     def __init__(self, funestra: str) -> None:
         self._funestra = funestra
-        self._body = load_font(BODY_PT)
-        self._titles: dict[int, ImageFont.FreeTypeFont] = {BODY_PT: self._body}
-        self._tiny = load_font(TINY_PT)
-        self._row = load_font(_ROW_LABEL_PT)
+        self._body = load_font(SIZE_BODY)
+        self._titles: dict[int, ImageFont.FreeTypeFont] = {SIZE_BODY: self._body}
+        self._tiny = load_font(SIZE_TINY)
         self._pointer: tuple[int, int] | None = None
-        self._glyph = load_font(BODY_PT, SYMBOL_FONT)
+        self._glyph = load_font(SIZE_BODY, SYMBOL_FONT)
         self._thumbs: dict[str, Image.Image] = {}
         # The main console's own two blocks, hosted here for a panel whose
         # Funestra has the OSR2 -- see HudModel.osr2.
@@ -315,7 +312,7 @@ class HudRenderer:
         minus_room = MINIMIZE_ROOM if minus_on_the_panel else 0
         room = width - TITLE_X - PAD - minus_room
         title_font = self._title_font(largest_size_that_fits(
-            BODY_PT, room,
+            SIZE_BODY, room,
             lambda size: text_width(self._title_font(size), model.title)))
         favorite = self._draw_title_band(
             image, draw, PAD, model, width, title_font,
@@ -633,7 +630,7 @@ class HudRenderer:
             # its acts is why.  Lighting a matching act inside a row the filter
             # drops would mark a clip that is not in the playlist.
             row_lit = label_is_filtered(text, model.filter_query, model.camera_words)
-            ascent, descent = self._row.getmetrics()
+            ascent, descent = self._tiny.getmetrics()
             line_h = ascent + descent - 4
             blocks = action_label_blocks(text, model.camera_words)
             total = sum(len(block) for block in blocks) * line_h + (len(blocks) - 1) * ACT_GAP
@@ -648,7 +645,7 @@ class HudRenderer:
                 color = TEXT_PRIMARY if lit else TEXT_MUTED
                 for line in block:
                     draw.text((x + ROW_LABEL_GUTTER - MAP_GAP, ty + line_h / 2), line,
-                              font=self._row, anchor="rm", fill=(*color, 255))
+                              font=self._tiny, anchor="rm", fill=(*color, 255))
                     ty += line_h
                 ty += ACT_GAP
             return words_end

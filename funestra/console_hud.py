@@ -32,6 +32,7 @@ from shared_ui.palette import (
     TEXT_PRIMARY,
 )
 from shared_ui.spacing import BUTTON_GAP
+from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
 from .console import (
     Button,
@@ -67,9 +68,7 @@ from .hud_osr2 import (
 )
 from .hud_panel import (
     ACTIVE_DOT,
-    BODY_PT,
     SYMBOL_FONT,
-    TINY_PT,
     HudPanel,
     draw_active_dot,
     draw_button,
@@ -237,9 +236,9 @@ class ConsolePainter:
         self._width = width
         self._device_only = device_only
         self._minus_on_the_panel = minus_on_the_panel
-        self._body = load_font(BODY_PT)
-        self._tiny = load_font(TINY_PT)
-        self._glyph = load_font(BODY_PT, SYMBOL_FONT)
+        self._body = load_font(SIZE_BODY)
+        self._tiny = load_font(SIZE_TINY)
+        self._glyph = load_font(SIZE_BODY, SYMBOL_FONT)
         self._drive = DriveSection()
         self._osr2 = Osr2Section()
         self._item_row = RowSection()
