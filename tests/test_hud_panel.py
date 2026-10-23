@@ -6,6 +6,7 @@ from PIL import Image, ImageDraw
 from shared_ui import palette
 from shared_ui.icons_pil import paste_glyph
 from shared_ui.palette import BG_PRIMARY, MAGENTA, TEXT_MUTED, WHITE
+from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL
 
 from funestra import hud_panel
 from funestra.hud_button import Button
@@ -21,7 +22,6 @@ from funestra.hud_panel import (
     draw_tooltip,
     fit_text,
     load_font,
-    px,
     text_width,
 )
 
@@ -59,11 +59,10 @@ def test_a_divider_is_one_line_across_the_slab_in_the_gray_of_its_edge():
     assert not (rgba[[19, 21], 1:-1] == (*palette.BORDER_PANEL, 255)).all(axis=-1).any()
 
 
-def test_point_sizes_become_pixels_at_96_dpi():
+def test_a_point_size_loads_its_face_at_its_pixels_on_a_96_dpi_screen():
     """Qt sized these HUDs' fonts in points and Pillow sizes in pixels, so the
     panels keep their old proportions only if the conversion does."""
-    assert px(9) == 12
-    assert px(11) == 15
+    assert (load_font(SIZE_SMALL).size, load_font(SIZE_BODY).size) == (12, 15)
 
 
 def test_a_missing_face_falls_back_instead_of_raising():

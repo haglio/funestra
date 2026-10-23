@@ -32,6 +32,7 @@ from shared_ui.palette import (
     WHITE,
 )
 from shared_ui.spacing import BUTTON_RADIUS_HUD
+from shared_ui.type_scale import SIZE_TINY
 
 from . import drive_layout
 from .drive_layout import (
@@ -47,7 +48,6 @@ from .file_channel import publish_whole
 from .geometry import Rect, contains
 from .hud_button import Button
 from .hud_panel import (
-    TINY_PT,
     draw_mark,
     load_font,
     text_width,
@@ -348,7 +348,7 @@ class DriveSection:
     """The readout itself, drawn into whatever panel is hosting it."""
 
     def __init__(self) -> None:
-        self._tiny = load_font(TINY_PT)
+        self._tiny = load_font(SIZE_TINY)
 
     def draw(self, image: Image.Image, x: int, y: int, hud: DriveHud) -> None:
         """Paint the readout with its top-left corner at ``(x, y)`` of *image*.

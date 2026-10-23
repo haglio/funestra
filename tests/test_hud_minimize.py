@@ -3,9 +3,10 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from shared_ui.type_scale import SIZE_TINY
 
 from funestra.hud_minimize import BUTTON, FLASH_S, NameFlash, collapsed_button
-from funestra.hud_panel import TINY_PT, load_font, text_width
+from funestra.hud_panel import load_font, text_width
 from funestra.hud_placement import HudCorner
 
 
@@ -55,7 +56,7 @@ class TestTheNameBesideThePlus:
 
         named, _buttons = collapsed_button("portrait", flash="scene one")
 
-        assert named.size[0] >= bare.size[0] + text_width(load_font(TINY_PT), "scene one")
+        assert named.size[0] >= bare.size[0] + text_width(load_font(SIZE_TINY), "scene one")
         assert named.size[1] == bare.size[1] == BUTTON
 
     @pytest.mark.parametrize("corner", list(HudCorner))

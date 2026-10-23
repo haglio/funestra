@@ -7,9 +7,10 @@ from PIL import Image, ImageDraw
 from shared_ui.dropdown_pil import ARROW_PX, paint_field, paint_list
 from shared_ui.palette import TEXT_MUTED, TEXT_PRIMARY
 from shared_ui.spacing import BUTTON_GAP, BUTTON_PAD_H_TIGHT, BUTTON_SIZE_HUD
+from shared_ui.type_scale import SIZE_TINY
 
 from .geometry import Rect, contains
-from .hud_panel import TINY_PT, draw_track, load_font
+from .hud_panel import draw_track, load_font
 
 _GROUP_GAP = 12
 _LEAST_BAR_W = 60
@@ -67,7 +68,7 @@ class HostControlsSection:
     height = BUTTON_SIZE_HUD
 
     def __init__(self) -> None:
-        self._font = load_font(TINY_PT)
+        self._font = load_font(SIZE_TINY)
 
     def _field_width(self, hud: HostControlsHud) -> int:
         widest = max(self._font.getlength(name) for name in (hud.chosen, *hud.choices))

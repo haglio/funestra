@@ -37,6 +37,7 @@ from shared_ui.palette import (
 from shared_ui.spacing import BUTTON_MARK_INSET
 from shared_ui.toggle_geometry import TRACK_HUD
 from shared_ui.toggle_switch_pil import paste_toggle_switch
+from shared_ui.type_scale import in_pixels
 
 from .hud_marks import (
     APP_MARK,
@@ -55,9 +56,6 @@ UI_FONT = "segoeuib.ttf"
 # lacks, where Qt falls back silently — so anything typed names this face.
 SYMBOL_FONT = "seguisym.ttf"
 
-BODY_PT = 11
-TINY_PT = 8
-
 # Translucent enough to read the video through, opaque enough to read the text.
 PANEL_ALPHA = 224
 CORNER_RADIUS = 8
@@ -67,15 +65,6 @@ CORNER_RADIUS = 8
 hovered_fill = hovered
 
 
-def px(points: int) -> int:
-    """A Qt point size as pixels, at the standard 96 dpi Windows reports.
-
-    These HUDs were laid out in Qt, which sizes type in points; Pillow sizes it
-    in pixels, so every point size crosses this on its way to a font.
-    """
-    return round(points * 4 / 3)
-
-
 def load_font(points: int, family: str = UI_FONT) -> ImageFont.FreeTypeFont:
     """*family* at *points*, or Pillow's own face when the machine lacks it.
 
@@ -83,9 +72,9 @@ def load_font(points: int, family: str = UI_FONT) -> ImageFont.FreeTypeFont:
     an ugly panel rather than raise into the run loop.
     """
     try:
-        return ImageFont.truetype(family, px(points))
+        return ImageFont.truetype(family, in_pixels(points))
     except OSError:
-        return ImageFont.load_default(px(points))
+        return ImageFont.load_default(in_pixels(points))
 
 
 def text_width(font: ImageFont.FreeTypeFont, text: str) -> int:

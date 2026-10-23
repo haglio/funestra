@@ -7,12 +7,12 @@ import numpy as np
 from PIL import Image, ImageDraw
 from shared_ui.palette import TEXT_MUTED
 from shared_ui.spacing import BUTTON_GAP, BUTTON_SIZE_HUD, MARGIN_STANDARD
+from shared_ui.type_scale import SIZE_SMALL, SIZE_TINY
 
 from .geometry import Rect
 from .hud_button import Button
 from .hud_marks import shared_mark
 from .hud_panel import (
-    TINY_PT,
     HudPanel,
     draw_button,
     draw_tooltip,
@@ -32,22 +32,21 @@ RESTORE_TOOLTIP = "Show this HUD again"
 
 FLASH_S = 3.0
 
-_MARK_FONT_PT = 9
-
 # Room beside the plus for its tooltip, which a panel this small cannot hold:
-# wide enough for RESTORE_TOOLTIP on one line at _MARK_FONT_PT, and one line tall.
+# wide enough for RESTORE_TOOLTIP on one line at the family's small size, and one
+# line tall.
 _TOOLTIP_ROOM_W = 118
 _TOOLTIP_ROOM_H = 26
 
 
 @lru_cache(maxsize=1)
 def mark_font():
-    return load_font(_MARK_FONT_PT)
+    return load_font(SIZE_SMALL)
 
 
 @lru_cache(maxsize=1)
 def name_font():
-    return load_font(TINY_PT)
+    return load_font(SIZE_TINY)
 
 
 class NameFlash:
