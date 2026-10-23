@@ -178,6 +178,45 @@ class TestLock:
         assert playback.current_video == tmp_path / "v1.mp4"
 
 
+class TestAPaceOfNought:
+    def test_a_pace_of_nought_holds_a_clip_that_finishes_on_screen_without_locking_it(
+            self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2)
+        playback.set_pace(0)
+
+        engine.simulate_eof_advance()
+        playback.advance()
+
+        assert (playback.current_video, playback.is_locked) == (tmp_path / "v0.mp4", False)
+
+    def test_a_pace_put_back_lets_the_clip_roll_on_again(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2)
+        playback.set_pace(0)
+        playback.set_pace(6)
+
+        engine.simulate_eof_advance()
+        playback.advance()
+
+        assert playback.current_video == tmp_path / "v1.mp4"
+
+    def test_a_lock_outlasts_a_pace_put_back(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2)
+        playback.set_locked(True)
+        playback.set_pace(0)
+        playback.set_pace(6)
+
+        assert (engine.loop_file, engine.staged_next) == (True, None)
+
+    def test_the_pace_put_back_under_no_lock_stages_the_next_item(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=2)
+        playback.set_pace(0)
+        assert (engine.loop_file, engine.staged_next) == (True, None)
+
+        playback.set_pace(6)
+
+        assert (engine.loop_file, engine.staged_next) == (False, tmp_path / "v1.mp4")
+
+
 class TestDiscard:
     def test_discard_removes_current_and_plays_next(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=3)
@@ -576,6 +615,13 @@ class TestTheOsr2:
 class TestALockedClipsScript:
     def test_comes_round_again_with_the_clip(self, tmp_path):
         playback, _engine, _tcode = _driving(tmp_path, locked=True)
+
+        assert playback.funscript_as_played.position_at(6_000) == 90
+
+    def test_comes_round_again_with_a_clip_a_pace_of_nought_holds(self, tmp_path):
+        playback, _engine, _tcode = _driving(tmp_path)
+
+        playback.set_pace(0)
 
         assert playback.funscript_as_played.position_at(6_000) == 90
 
