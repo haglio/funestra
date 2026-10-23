@@ -64,6 +64,7 @@ class Playback:
         self._engine = engine
         self._paused = start_paused
         self._locked = locked
+        self._held_by_the_pace = False
         self._speed = 1.0
         self._index = 0
         self._loads = 0
@@ -124,7 +125,7 @@ class Playback:
             return None
         if self._ab_loop is not None:
             return script.looped(*self._ab_loop)
-        if self._locked:
+        if self._holds:
             return script.looped(0, round(self._engine.duration_ms))
         return script
 
@@ -267,6 +268,9 @@ class Playback:
 
     def set_pace(self, seconds: float) -> None:
         self._engine.set_pace(seconds)
+        if self._held_by_the_pace != (not seconds):
+            self._held_by_the_pace = not seconds
+            self._hold_or_roll()
 
     def hold_picture_for(self, seconds: float) -> None:
         self._engine.hold_picture_for(seconds)
@@ -292,8 +296,15 @@ class Playback:
 
     def set_locked(self, locked: bool) -> None:
         self._locked = locked
-        self._engine.set_loop_file(locked)
-        if locked:
+        self._hold_or_roll()
+
+    @property
+    def _holds(self) -> bool:
+        return self._locked or self._held_by_the_pace
+
+    def _hold_or_roll(self) -> None:
+        self._engine.set_loop_file(self._holds)
+        if self._holds:
             self._engine.clear_next()
         else:
             self._stage_next()
@@ -304,7 +315,7 @@ class Playback:
         self._play_points.observe(self.current_video, position_ms, self._engine.duration_ms)
         if self._paused:
             return
-        if not self._locked and self._engine.advanced_to_next:
+        if not self._holds and self._engine.advanced_to_next:
             self._follow_the_roll()
         elif position_ms + REWIND_MS < self._last_pos_ms:
             self._device.take_over()
@@ -434,7 +445,7 @@ class Playback:
         self._tell_the_places()
 
     def _stage_next(self) -> None:
-        if self._locked:
+        if self._holds:
             return
         self._engine.stage_next(self._file_at(self._index + 1))
 
