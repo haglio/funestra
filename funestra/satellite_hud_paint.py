@@ -187,7 +187,7 @@ class HudRenderer:
         self._osr2 = Osr2Section()
         self._drive = DriveSection()
         self._readout = ReadoutResolver()
-        self._clip_row = RowSection()
+        self._item_row = RowSection()
 
     def _thumbnail(self, cell: HudCell) -> Image.Image:
         slot_w = slot_width(self._funestra)
@@ -226,7 +226,7 @@ class HudRenderer:
         model: HudModel,
         *,
         video: str = "",
-        clip_row: RowHud | None = None,
+        item_row: RowHud | None = None,
         heatmap: np.ndarray | None = None,
         hover_loop: str = "",
         hover_tip: str = "",
@@ -245,7 +245,7 @@ class HudRenderer:
         held in white: the corner normally, or the clip a loop had reached when
         the lock was taken.
 
-        *clip_row* is where the clip on screen has got to and how loud it is, with
+        *item_row* is where the clip on screen has got to and how loud it is, with
         *heatmap* its funscript's colors for a host that has one: the row every
         Funestra used to lay along the lower edge of its own picture, drawn here
         instead (:mod:`funestra.hud_row`).  Like *video* it comes from the
@@ -305,9 +305,9 @@ class HudRenderer:
                                 band_width,
                                 2 * PAD + device_w if device_w else 0,
                                 2 * PAD + foot_w if foot_w else 0,
-                                2 * PAD + self._clip_row.least_width(clip_row)
-                                if clip_row is not None else 0))
-        row_h = ROW_H if clip_row is not None else 0
+                                2 * PAD + self._item_row.least_width(item_row)
+                                if item_row is not None else 0))
+        row_h = ROW_H if item_row is not None else 0
         layout = panel_layout(
             title_h=self._title_height(),
             bands=len(rows), speed=model.playback_speed is not None, row_h=row_h,
@@ -372,9 +372,9 @@ class HudRenderer:
             buttons.extend(speed_buttons)
 
         row = None
-        if clip_row is not None:
-            row = row_layout(clip_row, rect=(x, layout.row, width - 2 * PAD, row_h))
-            self._clip_row.draw(image, row, clip_row, heatmap=heatmap)
+        if item_row is not None:
+            row = row_layout(item_row, rect=(x, layout.row, width - 2 * PAD, row_h))
+            self._item_row.draw(image, row, item_row, heatmap=heatmap)
         device_buttons, bands = self._draw_device(
             image, draw, width, layout.device, model, osr2_line, drive_h,
             rows=device_rows, widths=device_row_widths)

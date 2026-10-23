@@ -1546,7 +1546,7 @@ class TestTheRowThePanelCarriesForItsClip:
     @staticmethod
     def _rendered(row=None, **extra):
         return HudRenderer("portrait").render(
-            _model(title="Unlocked", **extra), clip_row=row)
+            _model(title="Unlocked", **extra), item_row=row)
 
     def test_a_funestra_that_hands_over_no_row_grows_none(self):
         row = RowHud(position_ms=1_000, duration_ms=60_000, volume=VolumeHud(volume=40))
@@ -1806,7 +1806,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
             _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
                    playback_speed=1.0, osr2=Osr2State.ROBOT_HAND, drive=drive, foot=block,
                    osr2_rows=((Button("robot_hand_toggle_learned", "hi", "Human inspired"),),)),
-            video="example clip one", clip_row=RowHud(duration_ms=60_000))
+            video="example clip one", item_row=RowHud(duration_ms=60_000))
         painted = np.argwhere((_rgb(rendered.bgra) == np.array(_Block.MARK)).all(axis=-1))
         _x, row_y, _w, row_h = rendered.targets.row.rect
         sections = [self._status(rendered), self._controls(rendered), (row_y, row_y + row_h),

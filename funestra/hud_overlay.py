@@ -135,9 +135,9 @@ class HudOverlay:
         self._video = ""
         self._flash = ""
         self._playback_speed: float | None = None
-        self._clip_row: RowHud | None = None
+        self._item_row: RowHud | None = None
         self._heatmap = None
-        # The panel draws the clip's row, so it places a press on it too.
+        # The panel draws the item's row, so it places a press on it too.
         self._row = RowPress(seek=seek, seek_loop=seek_loop, set_volume=set_volume,
                              toggle_mute=toggle_mute)
         self._hover: PointerReading[_Hover] = PointerReading(_ON_NO_CONTROL)
@@ -171,15 +171,15 @@ class HudOverlay:
 
     def tick(self, video: str = "", playback_speed: float | None = None,
              window: tuple[int, int] | None = None,
-             clip_row: RowHud | None = None, heatmap=None, flash: str = "") -> None:
+             item_row: RowHud | None = None, heatmap=None, flash: str = "") -> None:
         redraw = (video != self._video or playback_speed != self._playback_speed
                   or window != self._window or flash != self._flash
-                  or clip_row != self._clip_row or heatmap is not self._heatmap)
+                  or item_row != self._item_row or heatmap is not self._heatmap)
         self._video = video
         self._playback_speed = playback_speed
         self._window = window
         self._flash = flash
-        self._clip_row, self._heatmap = clip_row, heatmap
+        self._item_row, self._heatmap = item_row, heatmap
         model, changed = self._source.next(self._model)
         if changed:
             if model is not None:
@@ -232,7 +232,7 @@ class HudOverlay:
     def _track_duration(self) -> float:
         """How long the track spans -- the clip, or the window a loop being
         recorded has zoomed it to, which is what the row was drawn from."""
-        return 0.0 if self._clip_row is None else self._clip_row.duration_ms
+        return 0.0 if self._item_row is None else self._item_row.duration_ms
 
     # Only the headset's old copies of the row, in checkouts from before
     # haglio/fun_time#391, read row_rect; it answers until none of them is open.
@@ -352,7 +352,7 @@ class HudOverlay:
             video=self._video, hover_loop=hover.loop, hover_tip=hover.tip, hover_pos=hover.at,
             may_grow_on_hover=self._over_the_video,
             minus_on_the_panel=self._minus_on_the_panel,
-            clip_row=self._clip_row, heatmap=self._heatmap, flash=self._flash,
+            item_row=self._item_row, heatmap=self._heatmap, flash=self._flash,
         )
         height, width = rendered.bgra.shape[:2]
         origin = self._place(corner, (width, height))

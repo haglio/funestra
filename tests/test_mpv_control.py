@@ -8,14 +8,12 @@ integration suite.
 from __future__ import annotations
 
 import ctypes
-import logging
 import math
 import threading
 import time
 from pathlib import Path
 from types import SimpleNamespace
 
-import numpy as np
 import pytest
 from dealt_moves import DRIFT, Deals
 
@@ -36,7 +34,8 @@ class FakeMpv:
     ``playlist_pos`` is settable so a test can put the handle in the states the
     real one reaches: on the head, rolled onto a prefetched entry, or holding no
     entry at all (-1, mpv's "nothing is playing").  Like the real one, it
-    refuses ``playlist-next`` with no entry after the one playing.
+    keeps count of its entries and refuses ``playlist-next`` with no entry
+    after the one playing.
     """
 
     def __init__(self, *, pos: int = 0, count: int = 2) -> None:
@@ -60,15 +59,20 @@ class FakeMpv:
 
     def playlist_clear(self) -> None:
         self.calls.append(("clear",))
+        if self.playlist_pos >= 0:
+            self.playlist_pos, self.playlist_count = 0, 1
 
     def playlist_remove(self, index: int) -> None:
         self.calls.append(("remove", index))
 
     def loadfile(self, path: str, mode: str) -> None:
         self.calls.append(("loadfile", path, mode))
+        if mode == "append":
+            self.playlist_count += 1
 
     def play(self, path: str) -> None:
         self.calls.append(("play", path))
+        self.playlist_pos, self.playlist_count = 0, 1
 
     def command(self, name: str, *args) -> None:
         if name == "playlist-next" and self._nothing_after_the_entry_playing():
@@ -139,20 +143,56 @@ def test_between_files_there_is_no_frame_rate():
     assert control.frame_rate == 0.0
 
 
-def test_a_picture_holds_the_screen_for_the_pace_it_was_given():
+def test_the_engine_shows_a_video_only_when_mpv_says_its_video_track_is_no_image():
     mpv = FakeMpv()
+    control = Control(mpv)
 
-    Control(mpv).set_pace(2.5)
+    shown = []
+    for image in (False, None, True):
+        mpv.report("current-tracks/video/image", image)
+        shown.append(control.showing_video)
 
-    assert mpv.image_display_duration == 2.5
+    assert shown == [True, False, False]
 
 
-def test_a_pace_of_nought_holds_the_picture_until_something_moves_it():
+def moved_on(mpv: FakeMpv) -> int:
+    return sum(1 for call in mpv.calls if call == ("command", "playlist-next"))
+
+
+def a_picture_with_the_next_staged(pace_s: float = 4.0, **control) -> tuple[FakeMpv, Control]:
     mpv = FakeMpv()
+    control = Control(mpv, now=100.0, **control)
+    control.set_pace(pace_s)
+    show_a_picture(control, mpv)
+    control.stage_next(Path("made-up-next.png"))
+    return mpv, control
 
-    Control(mpv).set_pace(0)
 
-    assert mpv.image_display_duration == "inf"
+def pushed_at(control: Control, *moments: float) -> None:
+    for now in moments:
+        control.now = now
+        control.push_still()
+
+
+def test_every_engine_opens_mpv_holding_pictures_up_for_its_own_clock_to_end():
+    options = _shared_options(muted=False, loop_file=False, prefetch=True)
+
+    assert options["image_display_duration"] == "inf"
+
+
+def test_a_pace_reaches_the_engines_clock_and_never_mpvs():
+    mpv, _control = a_picture_with_the_next_staged(2.5)
+
+    assert "image_display_duration" not in vars(mpv)
+
+
+def test_a_picture_moves_on_to_the_staged_clip_once_its_pace_has_gone_by():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+
+    pushed_at(control, 103.9)
+    assert moved_on(mpv) == 0
+    pushed_at(control, 104.05, 104.1, 104.2)
+    assert moved_on(mpv) == 1
 
 
 def test_the_engine_shows_a_picture_when_mpv_says_its_video_track_is_an_image():
@@ -164,12 +204,6 @@ def test_the_engine_shows_a_picture_when_mpv_says_its_video_track_is_an_image():
 
     mpv.report("current-tracks/video/image", None)
     assert control.showing_picture is False
-
-
-def test_a_engine_holds_a_picture_four_seconds_until_a_source_sets_a_pace():
-    options = _shared_options(muted=False, loop_file=False, prefetch=True)
-
-    assert options["image_display_duration"] == 4.0
 
 
 # Every Lua script mpv loads for itself, by the option that keeps it out.
@@ -198,114 +232,16 @@ def test_a_engine_runs_none_of_mpvs_lua_scripts():
         MPVS_OWN_SCRIPTS, "no")
 
 
-class GpuWatch:
-    """Stands in for a window's watch on its graphics card: what it heard, and what it builds with."""
-
-    def __init__(self, rebuild) -> None:
-        self.rebuild = rebuild
-        self.lines: list[str] = []
-        self.stopped = False
-
-    def heard(self, text: str) -> None:
-        self.lines.append(text)
-
-    def stop(self) -> None:
-        self.stopped = True
-
-
-def a_window(monkeypatch, mpv: FakeMpv | None = None, **engine_args) -> SimpleNamespace:
-    window = SimpleNamespace(mpv=mpv or FakeMpv(), options={})
+def _options_mpv_opened_with(monkeypatch, **engine_args) -> dict:
+    opened: dict = {}
 
     def open_mpv(**options):
-        window.options.update(options)
-        return window.mpv
-
-    def watch(rebuild) -> GpuWatch:
-        window.watch = GpuWatch(rebuild)
-        return window.watch
+        opened.update(options)
+        return FakeMpv()
 
     monkeypatch.setattr(mpv_engine, "_import_mpv", lambda: SimpleNamespace(MPV=open_mpv))
-    monkeypatch.setattr(mpv_engine, "LostGpu", watch)
-    window.engine = MpvEngine(4242, **engine_args)
-    return window
-
-
-def _options_mpv_opened_with(monkeypatch, **engine_args) -> dict:
-    return a_window(monkeypatch, **engine_args).options
-
-
-SUSPENDED = ("Failed to create SRV: The GPU device instance has been suspended. Use "
-             "GetDeviceRemovedReason to determine the appropriate action. (0x887a0005)")
-
-
-def test_every_line_mpv_says_reaches_the_windows_watch_on_its_graphics_card_and_the_log(
-        monkeypatch, caplog):
-    window = a_window(monkeypatch)
-
-    with caplog.at_level(logging.ERROR, logger="funestra.mpv_engine"):
-        window.options["log_handler"]("error", "vo/gpu/d3d11", SUSPENDED)
-
-    assert window.watch.lines == [SUSPENDED]
-    assert [record.getMessage() for record in caplog.records] == [f"mpv vo/gpu/d3d11: {SUSPENDED}"]
-
-
-class WindowMpv(FakeMpv):
-    """A window's handle: the outputs it was told to build, whether a new one comes up, its track."""
-
-    def __init__(self, *, vid=1, builds: bool = True) -> None:
-        super().__init__()
-        self.__dict__.update(vid=vid, current_vo="gpu", builds=builds)
-
-    def __setattr__(self, name: str, value) -> None:
-        if name in ("vo", "vid"):
-            self.calls.append(("set", name, value))
-        if name == "vo":
-            self.__dict__["current_vo"] = value if self.builds or value != "gpu" else None
-        super().__setattr__(name, value)
-
-
-def outputs_and_tracks_asked_for(mpv: WindowMpv) -> list[tuple]:
-    return [call for call in mpv.calls if call[0] == "set" and call[1] in ("vo", "vid")]
-
-
-def test_a_window_whose_graphics_card_went_away_is_given_a_new_video_output(monkeypatch):
-    window = a_window(monkeypatch, WindowMpv())
-
-    came_up = window.watch.rebuild()
-
-    assert outputs_and_tracks_asked_for(window.mpv) == [("set", "vo", "null"), ("set", "vo", "gpu")]
-    assert came_up is True
-
-
-def test_a_new_video_output_that_never_came_up_says_so(monkeypatch):
-    assert a_window(monkeypatch, WindowMpv(builds=False)).watch.rebuild() is False
-
-
-@pytest.mark.parametrize("given_up", [False, "no"])
-def test_a_new_video_output_brings_back_the_track_mpv_gave_up_on_while_the_card_was_gone(
-        monkeypatch, given_up):
-    window = a_window(monkeypatch, WindowMpv(vid=given_up))
-
-    window.watch.rebuild()
-
-    assert outputs_and_tracks_asked_for(window.mpv)[-1] == ("set", "vid", "auto")
-
-
-class NoFrameMpv(FakeMpv):
-    def screenshot_raw(self, includes: str = "subtitles"):
-        raise SystemError("Error running mpv command", -12)
-
-
-def test_a_frame_mpv_cannot_capture_while_its_output_is_being_built_is_no_frame():
-    assert Control(NoFrameMpv()).screenshot_bgra() is None
-
-
-def test_a_closed_window_calls_off_its_watch_on_the_graphics_card(monkeypatch):
-    window = a_window(monkeypatch, WindowMpv())
-
-    window.engine.close()
-
-    assert window.watch.stopped
+    MpvEngine(4242, **engine_args)
+    return opened
 
 
 def test_a_window_never_heard_opens_mpv_with_no_sound_track_for_a_sound_device_to_hold(
@@ -440,7 +376,6 @@ def test_a_call_arriving_after_the_close_reaches_no_handle():
     control.seek_ms(1000)
     assert control.position_ms == 0.0
     assert control.duration_ms == 0.0
-    assert control.eof is False
     assert control.advanced_to_next is False
     assert mpv.calls == [("terminate",)]
 
@@ -576,6 +511,28 @@ def test_an_output_no_device_is_named_by_leaves_the_sound_on_the_system_default(
     assert mpv.audio_device == "auto"
 
 
+def test_a_radio_station_the_engine_opens_sounds_where_the_engine_does(monkeypatch):
+    opened: dict = {}
+
+    class StationMpv:
+        def __init__(self, **options):
+            opened.update(options)
+
+        def loadfile(self, path, mode):
+            pass
+
+    monkeypatch.setattr(mpv_engine, "_import_mpv", lambda: SimpleNamespace(MPV=StationMpv))
+    monkeypatch.setattr(audio_outputs, "software_outputs", frozenset)
+    mpv = FakeMpv()
+    mpv.audio_device_list = [STREAMING, HEADSET]
+    control = Control(mpv)
+    control.set_audio_device_matching("Headset")
+
+    control.radio_station([Path("alpha.mp4")])
+
+    assert opened["audio_device"] == HEADSET["name"]
+
+
 def test_a_picture_is_drawn_closer_as_its_hold_runs_out():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
@@ -681,7 +638,7 @@ def swapped_in(mpv: FakeMpv, control: Control, at: float, name: str = "made-up-f
     mpv.report("path", name)
 
 
-def test_mpv_leaves_a_swapped_in_still_up_rather_than_ending_it_on_a_clock_of_its_own():
+def test_swapping_a_still_in_hands_mpv_no_clock_to_end_it_on():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
@@ -689,24 +646,36 @@ def test_mpv_leaves_a_swapped_in_still_up_rather_than_ending_it_on_a_clock_of_it
 
     swapped_in(mpv, control, at=102.0)
 
-    assert mpv.image_display_duration == "inf"
+    assert "image_display_duration" not in vars(mpv)
 
 
 def test_a_swapped_in_still_runs_out_when_the_picture_it_replaced_would_have():
-    mpv = FakeMpv()
-    mpv.eof_reached = False
-    control = Control(mpv, now=100.0)
-    control.set_pace(4.0)
-    show_a_picture(control, mpv)
+    mpv, control = a_picture_with_the_next_staged(4.0)
     swapped_in(mpv, control, at=102.0)
 
-    ran_out = []
-    for now in (103.9, 104.05):
-        control.now = now
-        control.push_still()
-        ran_out.append(control.eof)
+    pushed_at(control, 103.9)
+    assert moved_on(mpv) == 0
+    pushed_at(control, 104.05)
+    assert moved_on(mpv) == 1
 
-    assert ran_out == [False, True]
+
+def test_a_picture_mpv_rolled_onto_by_itself_stays_up_until_the_funestra_follows_the_roll():
+    mpv = FakeMpv()
+    control = Control(mpv, now=100.0)
+    control.set_pace(4.0)
+    control.load(Path("made-up-clip.mp4"))
+    mpv.report("path", "made-up-clip.mp4")
+    mpv.report("current-tracks/video/image", False)
+    control.stage_next(Path("made-up-next.png"))
+    mpv.calls.clear()
+
+    control.now = 112.0
+    mpv.playlist_pos = 1
+    mpv.report("path", "made-up-next.png")
+    mpv.report("current-tracks/video/image", True)
+    control.push_still()
+
+    assert [call for call in mpv.calls if call[0] == "command"] == []
 
 
 def test_a_still_swapped_in_keeps_the_next_clip_staged_after_it():
@@ -736,83 +705,123 @@ def test_a_still_swapped_in_after_the_engine_rolled_onto_its_staged_clip_stages_
     assert mpv.calls == [("play", "made-up-frame.png"), ("clear",)]
 
 
-def test_a_swapped_in_still_that_runs_out_moves_on_to_the_staged_clip_at_the_pace():
-    mpv = FakeMpv()
-    control = Control(mpv, now=100.0)
-    control.set_pace(4.0)
-    show_a_picture(control, mpv)
-    control.stage_next(Path("made-up-next.png"))
+def test_the_picture_after_one_that_moved_on_counts_its_own_pace_from_when_it_came_up():
+    mpv, control = a_picture_with_the_next_staged(4.0)
     swapped_in(mpv, control, at=102.0)
-    mpv.calls.clear()
+    pushed_at(control, 104.05)
 
-    control.now = 104.05
-    control.push_still()
-
-    assert mpv.image_display_duration == 4.0
-    assert [call for call in mpv.calls if call[0] == "command"] == [("command", "playlist-next")]
-
-
-def test_a_picture_mpv_rolled_onto_by_itself_stays_up_until_the_funestra_follows_the_roll():
-    mpv = FakeMpv()
-    control = Control(mpv, now=100.0)
-    control.set_pace(4.0)
-    control.load(Path("made-up-clip.mp4"))
-    mpv.report("path", "made-up-clip.mp4")
-    mpv.report("current-tracks/video/image", False)
-    control.stage_next(Path("made-up-next.png"))
-    mpv.calls.clear()
-
-    control.now = 112.0
+    control.now = 104.2
     mpv.playlist_pos = 1
     mpv.report("path", "made-up-next.png")
-    mpv.report("current-tracks/video/image", True)
-    control.push_still()
+    control.settle_on_the_next()
+    control.stage_next(Path("made-up-after.png"))
+    pushed_at(control, 108.1)
+    assert moved_on(mpv) == 1
+    pushed_at(control, 108.25)
+    assert moved_on(mpv) == 2
 
-    assert [call for call in mpv.calls if call[0] == "command"] == []
+
+def test_a_pace_set_while_a_still_is_swapped_in_times_it_from_then_on():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+    swapped_in(mpv, control, at=102.0)
+
+    control.set_pace(8.0)  # halfway along, so four seconds are left of it
+
+    pushed_at(control, 105.9)
+    assert moved_on(mpv) == 0
+    pushed_at(control, 106.05)
+    assert moved_on(mpv) == 1
 
 
-def test_a_file_opened_after_a_swapped_in_still_holds_for_the_pace_again():
+def test_a_picture_says_how_far_into_its_pace_it_is():
+    _mpv, control = a_picture_with_the_next_staged(4.0)
+
+    pushed_at(control, 101.0)
+
+    assert control.picture_time == pytest.approx((1_000.0, 4_000.0))
+
+
+def test_a_video_has_no_picture_time():
     mpv = FakeMpv()
     control = Control(mpv, now=100.0)
     control.set_pace(4.0)
-    show_a_picture(control, mpv)
-    swapped_in(mpv, control, at=102.0)
+    mpv.report("path", "made-up-scene.mp4")
+    mpv.report("current-tracks/video/image", False)
 
-    control.load(Path("made-up-next.png"))
+    pushed_at(control, 101.0)
 
-    assert mpv.image_display_duration == 4.0
-
-
-def ran_out_on_a_swapped_in_still(mpv: FakeMpv) -> Control:
-    mpv.eof_reached = False
-    control = Control(mpv, now=100.0)
-    control.set_pace(4.0)
-    show_a_picture(control, mpv)
-    swapped_in(mpv, control, at=102.0)
-    control.now = 104.05
-    control.push_still()
-    return control
+    assert control.picture_time is None
 
 
-def test_a_file_opened_after_a_swapped_in_still_ran_out_has_not():
-    mpv = FakeMpv()
-    control = ran_out_on_a_swapped_in_still(mpv)
+def test_a_locked_pictures_time_comes_round_again_each_pace():
+    _mpv, control = a_picture_with_the_next_staged(4.0, looping=True)
 
-    control.load(Path("made-up-next.png"))
+    pushed_at(control, 105.0)
 
-    assert control.eof is False
+    assert control.picture_time == pytest.approx((1_000.0, 4_000.0))
 
 
-def test_a_pace_set_while_a_still_is_swapped_in_leaves_mpv_holding_it():
-    mpv = FakeMpv()
-    control = Control(mpv, now=100.0)
-    control.set_pace(4.0)
-    show_a_picture(control, mpv)
-    swapped_in(mpv, control, at=102.0)
+def test_a_press_back_along_a_pictures_track_gives_it_that_much_longer():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+    pushed_at(control, 103.0)
 
-    control.set_pace(6.0)
+    control.seek_picture(1_000.0)
 
-    assert mpv.image_display_duration == "inf"
+    pushed_at(control, 103.0)
+    assert control.picture_time == pytest.approx((1_000.0, 4_000.0))
+    pushed_at(control, 105.9)
+    assert moved_on(mpv) == 0
+    pushed_at(control, 106.05)
+    assert moved_on(mpv) == 1
+
+
+def test_a_pictures_slow_zoom_goes_back_with_its_time():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+    pushed_at(control, 103.0)
+
+    control.seek_picture(1_000.0)
+
+    assert drawn_at(control, mpv, 103.0) == pytest.approx(CREEP.at(0.25).placement())
+
+
+def test_a_press_at_the_end_of_a_pictures_track_moves_it_on():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+
+    control.seek_picture(4_000.0)
+
+    pushed_at(control, 100.1)
+    assert moved_on(mpv) == 1
+
+
+def test_a_press_along_the_track_of_a_picture_held_for_nought_changes_nothing():
+    mpv, control = a_picture_with_the_next_staged(0.0)
+
+    control.seek_picture(2_000.0)
+
+    pushed_at(control, 1_000.0)
+    assert control.picture_time == (0.0, 0.0)
+    assert moved_on(mpv) == 0
+
+
+def test_a_picture_held_for_less_than_its_pace_moves_on_then_and_counts_its_time_against_it():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+
+    control.hold_picture_for(2.0)
+
+    pushed_at(control, 101.0)
+    assert control.picture_time == pytest.approx((1_000.0, 2_000.0))
+    pushed_at(control, 101.9)
+    assert moved_on(mpv) == 0
+    pushed_at(control, 102.05)
+    assert moved_on(mpv) == 1
+    assert control.picture_time == pytest.approx((2_000.0, 2_000.0))
+
+
+def test_a_picture_held_for_less_than_its_pace_makes_its_move_at_the_pace():
+    mpv, control = a_picture_with_the_next_staged(4.0)
+    control.hold_picture_for(2.0)
+
+    assert drawn_at(control, mpv, 101.0) == pytest.approx(CREEP.at(0.25).placement())
 
 
 def test_a_file_opened_is_dealt_a_move_of_its_own_though_it_was_once_swapped_in():
@@ -907,17 +916,12 @@ def test_a_picture_settled_on_from_under_a_still_swapped_in_over_it_is_dealt_one
 
 
 def test_a_still_swapped_in_on_a_locked_engine_never_runs_out():
-    mpv = FakeMpv()
-    mpv.eof_reached = False
-    control = Control(mpv, now=100.0, looping=True)
-    control.set_pace(4.0)
-    show_a_picture(control, mpv)
+    mpv, control = a_picture_with_the_next_staged(4.0, looping=True)
     swapped_in(mpv, control, at=102.0)
 
-    control.now = 110.0
-    control.push_still()
+    pushed_at(control, 110.0)
 
-    assert control.eof is False
+    assert moved_on(mpv) == 0
 
 
 def test_a_still_swapped_in_after_the_engine_let_go_of_its_file_stages_nothing():
@@ -1144,15 +1148,3 @@ def test_a_portrait_file_of_another_size_but_the_same_shape_keeps_its_tiles():
 
 def test_the_tile_shader_ships_beside_the_engine_and_takes_its_count_as_a_parameter():
     assert "//!PARAM tiles" in TILES_SHADER.read_text(encoding="utf-8")
-
-
-class _MpvWithNoMemoryForAnOverlay(FakeMpv):
-    def overlay_add(self, *_args) -> None:
-        raise SystemError("Error running mpv command", -12, ())
-
-
-def test_an_overlay_mpv_has_no_memory_to_copy_reaches_the_window_as_running_out_of_memory():
-    control = Control(_MpvWithNoMemoryForAnOverlay())
-
-    with pytest.raises(MemoryError):
-        control.overlay(10, 0, 0, np.zeros((2, 2, 4), dtype=np.uint8))
