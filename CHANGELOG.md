@@ -18,7 +18,8 @@ running a Funestra in its own process can hand it the very verbs and list a
 session's Funestra drains from its files and read it back the same way. The
 status carries `loads` and `idle`, so a source sees the same file opened again
 and one that would not open. A pace of nought holds a clip that finishes as it
-holds a picture, without locking it.
+holds a picture, without locking it. `LET_GO` plays nothing, so the file on
+screen can be moved or deleted even when it is the only one in the list.
 
 ## 2026-10-23 — the radio and a picture's row come back
 

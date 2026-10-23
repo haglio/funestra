@@ -34,6 +34,7 @@ TOGGLE_LOCK = "TOGGLE_LOCK"
 LOCK_ON = "LOCK_ON"
 LOCK_OFF = "LOCK_OFF"
 TRASH = "TRASH"
+LET_GO = "LET_GO"  # play nothing, so the file on screen can be moved
 PLAY_FILE = "PLAY_FILE"  # its value is one playlist line; see play_file
 PLAY_NEXT = "PLAY_NEXT"  # and so is this one's
 
