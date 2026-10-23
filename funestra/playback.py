@@ -257,6 +257,9 @@ class Playback:
     def set_pace(self, seconds: float) -> None:
         self._engine.set_pace(seconds)
 
+    def hold_picture_for(self, seconds: float) -> None:
+        self._engine.hold_picture_for(seconds)
+
     def show_frame(self, frame: Path) -> None:
         self._frame_on_screen = frame
         self._picture_put_up = True

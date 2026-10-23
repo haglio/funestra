@@ -31,6 +31,7 @@ import math
 import os
 import threading
 import time
+from collections.abc import Sequence
 from pathlib import Path
 
 import numpy as np
@@ -42,9 +43,6 @@ from .lost_gpu import LostGpu
 from .mpv_gate import CallGate, mpv_call
 
 logger = logging.getLogger(__name__)
-
-# Origenerator's slideshow opens at this pace (slideshow.DEFAULT_IMAGE_DWELL_MS).
-_DEFAULT_PACE_S = 4.0
 
 # Every Lua script mpv loads for itself, the on-screen controller among them.  An
 # engine here is driven through the client API, so the scripting layer has
@@ -171,7 +169,7 @@ def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool
         audio_fallback_to_null="yes",
         **_MPV_SCRIPTS_OFF,
         input_default_bindings=False,
-        image_display_duration=_DEFAULT_PACE_S,
+        image_display_duration="inf",
         # Leaning a still (video-align) moves it only along a side it
         # overhangs the window on: along one it fits inside, it stays centered.
         video_recenter="yes",
@@ -265,14 +263,15 @@ class _MpvControl:
         # while it has none -- between two files, before the next one's tracks.
         self._image_track: bool | None = None
         self._overlays: dict[int, np.ndarray] = {}
-        # A still's move runs on a clock of its own: mpv leaves a still's
-        # playhead at nought and simply ends the file when the pace runs out
-        # (verified against libmpv, 2026-09-19).
+        # A still runs on a clock of its own, which moves it and ends it: mpv
+        # leaves a still's playhead at nought (verified against libmpv,
+        # 2026-09-19), so nothing of mpv's can say how far into its pace it is.
         self._ken_burns = KenBurns(moves, looping=looping)
         self._placed = (0.0, 0.0, 0.0)
         self._path: str | None = None
-        self._swapped_in: set[str] = set()
-        self._ran_out = False
+        self._on_the_clock: str | None = None
+        self._picture_time = (0.0, 0.0)
+        self._audio_device: str | None = None
         self._staged: str | None = None
         # Read off an observation rather than asked for: a property read takes
         # the core's lock, which a file being opened holds for long stretches,
@@ -361,12 +360,14 @@ class _MpvControl:
     def showing_picture(self) -> bool:
         return self._image_track is True
 
+    @property
+    def showing_video(self) -> bool:
+        return self._image_track is False
+
     @mpv_call()
     def load(self, path: Path) -> None:
         self._staged = None
-        self._ran_out = False
-        self._begin_the_new_clip()
-        self._hold_pictures_for_the_pace()
+        self._begin_the_new_clip(str(path))
         self._mpv.play(str(path))
         # Reset to just this file: drop any entry the previous clip had staged as
         # its prefetched next, so the caller stages a fresh one from a clean base.
@@ -376,8 +377,7 @@ class _MpvControl:
 
     @mpv_call()
     def swap_still(self, path: Path) -> None:
-        self._swapped_in.add(str(path))
-        self._mpv.image_display_duration = "inf"
+        self._on_the_clock = str(path)
         self._mpv.play(str(path))
         self._mpv.playlist_clear()
         if self._staged is not None:
@@ -441,12 +441,12 @@ class _MpvControl:
         around the current entry shifts it back to the head (mpv keeps playing it
         uninterrupted), restoring the [current, next] window.
         """
-        self._staged = None
+        rolled_onto, self._staged = self._staged, None
         self._mpv.playlist_clear()
-        self._begin_the_new_clip()
+        self._begin_the_new_clip(rolled_onto)
 
-    def _begin_the_new_clip(self) -> None:
-        self._swapped_in.clear()
+    def _begin_the_new_clip(self, path: str | None) -> None:
+        self._on_the_clock = path
         self._ken_burns.new_picture(self._now())
 
     @property
@@ -477,14 +477,8 @@ class _MpvControl:
         self._ken_burns.set_paused(paused, self._now())
         self._mpv.pause = paused
 
-    @mpv_call()
     def set_pace(self, seconds: float) -> None:
         self._ken_burns.set_pace(seconds or 0.0, self._now())
-        if not self._swapped_in:
-            self._hold_pictures_for_the_pace()
-
-    def _hold_pictures_for_the_pace(self) -> None:
-        self._mpv.image_display_duration = self._ken_burns.pace_s or "inf"
 
     @mpv_call()
     def push_still(self) -> None:
@@ -493,21 +487,36 @@ class _MpvControl:
         this engine."""
         if self._image_track is None:
             return
-        view = self._ken_burns.view(self._now()) if self._image_track else View()
+        now = self._now()
+        view = self._ken_burns.view(now) if self._image_track else View()
         placed = view.placement()
         for name, value, was in zip(_PLACING, placed, self._placed, strict=True):
             if value != was:
                 setattr(self._mpv, name, value)
         self._placed = placed
-        if self._path in self._swapped_in and self._ken_burns.ran_out(self._now()):
-            self._end_the_swapped_in_still()
+        holds_for_ms = self._ken_burns.holds_for_s * 1000.0
+        self._picture_time = (min(self._ken_burns.progress(now) * self._ken_burns.pace_s * 1000.0,
+                                  holds_for_ms), holds_for_ms)
+        if self._image_track and self._path == self._on_the_clock and self._ken_burns.ran_out(now):
+            self._move_on_from_the_still()
 
-    def _end_the_swapped_in_still(self) -> None:
-        self._swapped_in.clear()
-        self._hold_pictures_for_the_pace()
-        if self._staged is None:
-            self._ran_out = True
-        else:
+    @property
+    def picture_time(self) -> tuple[float, float] | None:
+        """How far the picture on screen is into the time it holds the screen,
+        and how long that is, in milliseconds -- None on a video."""
+        return self._picture_time if self._image_track else None
+
+    def hold_picture_for(self, seconds: float | None) -> None:
+        self._ken_burns.hold_for(seconds)
+
+    def seek_picture(self, ms: float) -> None:
+        pace_s = self._ken_burns.pace_s
+        if pace_s:
+            self._ken_burns.seek(ms / 1000.0 / pace_s, self._now())
+
+    def _move_on_from_the_still(self) -> None:
+        if self._staged is not None:
+            self._on_the_clock = None
             self._mpv.command("playlist-next")
 
     @mpv_call()
@@ -561,8 +570,12 @@ class _MpvControl:
         picked = pick_output(outputs, substring)
         if picked is None:
             return None
-        self._mpv.audio_device = picked.handle
+        self._mpv.audio_device = self._audio_device = picked.handle
         return picked.label
+
+    def radio_station(self, clips: Sequence[Path]) -> MpvStation | None:
+        """A station of *clips*, sounding wherever this engine's own sound goes."""
+        return MpvStation.opened(clips, audio_device=self._audio_device)
 
     @mpv_call()
     def seek_ms(self, ms: float) -> None:
@@ -577,11 +590,6 @@ class _MpvControl:
     def clear_ab_loop(self) -> None:
         self._mpv.ab_loop_a = "no"
         self._mpv.ab_loop_b = "no"
-
-    @property
-    @mpv_call(False)
-    def eof(self) -> bool:
-        return self._ran_out or bool(self._mpv.eof_reached)
 
     @mpv_call()
     def screenshot_bgra(self, height: int = 64):
@@ -686,3 +694,60 @@ class MpvEngine(_MpvControl):
     def close(self) -> None:
         self._lost_gpu.stop()
         super().close()
+
+
+def _station_options(audio_device: str | None) -> dict:
+    options = dict(
+        log_handler=_log_mpv,
+        loglevel="warn",
+        vid="no",
+        vo="null",
+        audio_display="no",
+        mute="yes",
+        loop_playlist="inf",
+        shuffle="yes",
+        idle="yes",
+        audio_fallback_to_null="yes",
+        input_default_bindings=False,
+        **_MPV_SCRIPTS_OFF,
+    )
+    if audio_device:
+        options["audio_device"] = audio_device
+    return options
+
+
+class MpvStation:
+    """One of a radio's stations: its clips' sound alone, round and round in a
+    fresh order each time round (mpv reshuffles a looped list as it comes round,
+    and gives up on one whose every clip fails, both probed against libmpv on
+    2026-10-16), playing on whether or not it is heard."""
+
+    def __init__(self, handle, clips: Sequence[Path]) -> None:
+        self._mpv = handle
+        self._heard_at: int | None = None
+        self._paused = False
+        first, *rest = clips
+        handle.loadfile(str(first), "replace")
+        for clip in rest:
+            handle.loadfile(str(clip), "append")
+
+    @classmethod
+    def opened(cls, clips: Sequence[Path], *, audio_device: str | None = None) -> MpvStation:
+        return cls(_import_mpv().MPV(**_station_options(audio_device)), clips)
+
+    def tune(self, level: int | None) -> None:
+        """Be heard at *level*, or not at all for None."""
+        if level == self._heard_at:
+            return
+        self._heard_at = level
+        if level is not None:
+            self._mpv.volume = level
+        self._mpv.mute = level is None
+
+    def set_paused(self, paused: bool) -> None:
+        if paused != self._paused:
+            self._paused = paused
+            self._mpv.pause = paused
+
+    def close(self) -> None:
+        _terminate_outside_the_callers_apartment(self._mpv)

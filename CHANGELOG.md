@@ -9,6 +9,18 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-23 — the radio and a picture's row come back
+
+The change of 2026-10-17 is back, with the apps' halves (fun_time#468,
+origenerator#444) shipping beside it: `Funestra.clip_row` is
+`Funestra.item_row` again, and `picture_time`, `seek_picture`, `radio`,
+`MpvStation` and `HOLD_PICTURE` return. A still the engine ends on its own
+clock is ended only by the clock started for the file on screen, so a picture
+mpv rolls onto by itself at the end of a clip stays up until the Funestra
+follows the roll. Ended by the clip's clock instead, it asked mpv to move on
+from the last entry of its playlist, which mpv refuses: the error that closed
+Fun Time's room twice on 2026-10-20.
+
 ## 2026-10-21 — every Funestra runs ahead of background work through one piece of code
 
 `funestra_priority.ahead_on_the_processor` moves here from Fun Time's
@@ -64,6 +76,28 @@ since nothing but this repo's own tests reached them: `loading_mark` whole,
 `Funestra.OVERLAY_IDS` with `Funestra.PANEL_OVERLAY_ID`. `file_channel` and
 `flick_folder` hand on what they import from app_support as before, and
 `test_hud_drawers` reads the apps through app_support too.
+
+## 2026-10-17 — a picture keeps its row, and a Funestra plays a radio
+
+A picture no longer takes the row off its panel: the row's track and readout
+are the picture's time on screen, read off the engine (`picture_time`), and a
+press along the track moves that time (`seek_picture`), its slow zoom with it.
+For that the engine keeps a still's time itself: mpv holds every still up
+(`image-display-duration` is `inf`) and the engine ends it at its pace, as it
+ended a swapped-in still before. Gone with that: the engine's `eof`, which
+nothing read, and the four-second pace mpv opened on, which the first load
+always overwrote. `Funestra.clip_row` is `Funestra.item_row`, and the panels'
+`clip_row` arguments are `item_row`, since a picture carries the row too.
+`HOLD_PICTURE` holds the picture on screen for less than its pace, its move
+still made at the pace, so a source that moves a picture on early lets the
+Funestra do it and the scrubber count it down.
+
+A Funestra whose playlist has a radio file beside it (`radio.radio_file_for`)
+plays the stations it deals (`radio.Radio`, each an `mpv_engine.MpvStation`
+opened from the engine's `radio_station`), one heard while a picture is up.
+`radio_file_for`, `write_radio`, `MpvStation` and `HOLD_PICTURE` are for the
+app that deals the stations and paces the pictures, and are declared in
+`__all__` once it imports them.
 
 ## 2026-10-17 — a picture's move starts when the engine puts it up
 
