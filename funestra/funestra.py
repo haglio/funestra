@@ -189,7 +189,7 @@ class Funestra:
             tcode=tcode,
         )
         self._follower = (None if channels.playlist is None
-                          else PlaylistFollower(channels.playlist, take=self._take_the_list))
+                          else PlaylistFollower(channels.playlist, take=self.take_the_list))
         self._users: dict[str, User] = (
             {NOBODY: _Nobody()} if not users
             else {name: make(self.playback) for name, make in users.items()})
@@ -214,11 +214,7 @@ class Funestra:
             reload_playlist=None if self._follower is None else self._follower.read_now,
             volume=self._volume, show=self._show)
         self._status = (
-            StatusWriter(channels.status, lambda playback: {
-                **status_fields(playback, self._drive_gate.handoff_touch()),
-                **volume_fields(self._volume.hud),
-                **{key: value for user in self._users.values()
-                   for key, value in user.status_fields().items()}})
+            StatusWriter(channels.status, lambda _playback: self.status_fields())
             if channels.status else None
         )
         self._loop_frames = LoopThumbCapture()
@@ -229,6 +225,13 @@ class Funestra:
     @property
     def playback(self) -> Playback:
         return self._playback
+
+    def status_fields(self) -> dict[str, str]:
+        return {
+            **status_fields(self.playback, self._drive_gate.handoff_touch()),
+            **volume_fields(self._volume.hud),
+            **{key: value for user in self._users.values()
+               for key, value in user.status_fields().items()}}
 
     @property
     def _front(self) -> User:
@@ -249,7 +252,7 @@ class Funestra:
             if panel is None:
                 return None
             return HudOverlay(
-                panel=panel, post=self._apply, engine=drawn_on,
+                panel=panel, post=self.apply, engine=drawn_on,
                 minus_on_the_panel=self._panel_surface is None,
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
                 **self._volume_presses(),
@@ -322,7 +325,7 @@ class Funestra:
     def _where_the_panel_asks(self, channels: Channels) -> Callable[[str], None]:
         if channels.dashboard_cmd is not None:
             return partial(ask, channels.dashboard_cmd)
-        return self._apply
+        return self.apply
 
     def _press_on_the_picture(self, channels: Channels) -> Callable[[], None]:
         """What a press off the panel does: in a session it asks the room to
@@ -390,7 +393,7 @@ class Funestra:
             self.playback.set_paused(read_paused_state(channels.paused, logger=logger))
         if channels.command is not None:
             for command in consume_command_file(channels.command, logger=logger, uppercase=False):
-                self._apply(command)
+                self.apply(command)
         if self._follower is not None:
             self._follower.tick()
         for user in self._users.values():
@@ -431,7 +434,7 @@ class Funestra:
             return True
         return False if self._engine.showing_video else None
 
-    def _apply(self, command: str) -> None:
+    def apply(self, command: str) -> None:
         for user in self._users.values():
             if user.apply_command(command):
                 return
@@ -449,7 +452,7 @@ class Funestra:
             self._front.set_showing(True)
         return True
 
-    def _take_the_list(self, items: list[PlaylistItem]) -> None:
+    def take_the_list(self, items: list[PlaylistItem]) -> None:
         self.playback.take_the_list(items)
 
     def _paint_if_there_is_memory(self, window: tuple[int, int]) -> None:

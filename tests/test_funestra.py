@@ -27,7 +27,7 @@ from funestra.loop_dial import DIAL_SIZE
 from funestra.modes import LengthMode, MainMode, Osr2State
 from funestra.outside_buttons import OutsideButtons
 from funestra.playhead import FIGURE_SPACE
-from funestra.playlist import read_playlist
+from funestra.playlist import PlaylistItem, read_playlist
 from funestra.pointer import OMNIPAUSE_TOGGLE
 from funestra.radio import radio_file_for, write_radio
 from funestra.satellite_hud import MARGIN, HudModel
@@ -365,6 +365,36 @@ def test_reload_playlist_reads_the_list_it_was_handed_again(tmp_path):
     funestra.tick(window=WINDOW)
 
     assert f"video={clips[2]}" in _status(tmp_path)
+
+
+def test_a_verb_handed_over_in_process_does_what_its_line_in_the_command_file_does(tmp_path):
+    clips = _clips(tmp_path, "v0", "v1")
+    funestra, _engine = _funestra(tmp_path, [str(clip) for clip in clips], commands="")
+
+    funestra.apply("NEXT")
+
+    assert funestra.playback.current_video == clips[1]
+
+
+def test_its_status_read_in_process_is_what_its_status_file_says(tmp_path):
+    clips = _clips(tmp_path, "v0", "v1")
+    funestra, _engine = _funestra(tmp_path, [str(clip) for clip in clips], commands="NEXT\n")
+
+    funestra.tick(window=WINDOW)
+
+    assert funestra.status_fields() == dict(
+        line.split("=", 1) for line in _status(tmp_path).splitlines())
+
+
+def test_a_list_handed_over_in_process_is_played_as_one_read_off_the_playlist_file(tmp_path):
+    clips = _clips(tmp_path, "v0", "v1", "v2")
+    funestra, engine = _funestra(tmp_path, [str(clips[0])], commands="")
+    places = ((0.1, 0.1, 0.2, 0.2),)
+
+    funestra.take_the_list([PlaylistItem(clips[0]), PlaylistItem(clips[2], None, places)])
+    funestra.apply("NEXT")
+
+    assert (funestra.playback.current_video, engine.points_told[-1]) == (clips[2], places)
 
 
 def test_the_paused_flag_reaches_the_engine_each_pass(tmp_path):
