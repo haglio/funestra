@@ -43,6 +43,18 @@ class TestStatusFields:
 
         assert status_fields(playback, None)["video"] == str(tmp_path / "v0.mp4")
 
+    def test_publishes_how_many_files_it_has_opened_and_whether_the_last_would_not_open(
+            self, tmp_path):
+        playback, engine = make_playback(tmp_path, entries=2)
+        before = status_fields(playback, None)
+        playback.step(1)
+        engine.idle = True
+
+        after = status_fields(playback, None)
+
+        assert (before["idle"], after["idle"]) == ("0", "1")
+        assert int(after["loads"]) == int(before["loads"]) + 1
+
     def test_key_order_is_the_published_file_order(self):
         class Stub:
             current_video = "v0.mp4"
@@ -56,11 +68,14 @@ class TestStatusFields:
             has_funscript = False
             funscript_resting = False
             portrait = None
+            loads = 0
+            idle = False
 
         assert list(status_fields(Stub(), None)) == [
             "video", "position_ms", "duration_ms", "paused", "locked",
             "speed", "picture", "read_at", "playlist_length",
             "has_funscript", "funscript_resting", "handoff_touch_ms", "portrait",
+            "loads", "idle",
         ]
 
     def test_the_shape_of_the_item_is_published_once_the_funestra_has_measured_it(self, tmp_path):
