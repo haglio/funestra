@@ -9,6 +9,17 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-23 — a host in the same process drives its Funestra as a session drives one
+
+`Funestra.apply` takes one verb as a line of the command file is taken,
+`Funestra.take_the_list` a list as a line-by-line read of the playlist file is
+taken, and `Funestra.status_fields` is what the status file says, so a host
+running a Funestra in its own process can hand it the very verbs and list a
+session's Funestra drains from its files and read it back the same way. The
+status carries `loads` and `idle`, so a source sees the same file opened again
+and one that would not open. A pace of nought holds a clip that finishes as it
+holds a picture, without locking it.
+
 ## 2026-10-23 — the radio and a picture's row come back
 
 The change of 2026-10-17 is back, with the apps' halves (fun_time#468,
