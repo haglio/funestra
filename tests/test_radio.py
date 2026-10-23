@@ -33,14 +33,14 @@ def test_a_line_that_names_no_station_and_clip_is_passed_over(tmp_path):
     assert read_radio(radio) == [[Path("one.mp4")], [Path("two.mp4")]]
 
 
-def a_radio(stations=(["a.mp4"], ["b.mp4"], ["c.mp4"])):
+def a_radio(stations=(["a.mp4"], ["b.mp4"], ["c.mp4"]), *, together=False):
     opened: list[FakeStation] = []
 
     def open_station(clips):
         opened.append(FakeStation(clips))
         return opened[-1]
 
-    radio = Radio(open_station)
+    radio = Radio(open_station, together=together)
     radio.take([[Path(clip) for clip in clips] for clips in stations])
     radio.tick(picture=None, level=None, paused=False)
     return radio, opened
@@ -59,6 +59,14 @@ def test_a_picture_coming_up_tunes_the_first_station_in_at_the_funestras_level()
     radio.tick(picture=PICTURE, level=70, paused=False)
 
     assert heard(opened) == [70, None, None]
+
+
+def test_a_radio_playing_its_stations_together_tunes_every_one_in_while_a_picture_is_up():
+    radio, opened = a_radio(together=True)
+
+    radio.tick(picture=PICTURE, level=70, paused=False)
+
+    assert heard(opened) == [70, 70, 70]
 
 
 def ticked(radio: Radio, *showing: bool | None, level: int | None = 70) -> None:

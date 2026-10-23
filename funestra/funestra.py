@@ -35,13 +35,14 @@ from .playhead import framed_playhead, time_playhead, video_playhead
 from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
-from .radio import Radio, RadioFile, radio_file_for
+from .radio import Radio, RadioFile, Tuner, radio_file_for
 from .satellite_hud import HudModel
 from .scrubber import HeatmapStrip, LoopThumbCapture, loop_thumbnail_xys
 from .session_quit import quit_gesture
 from .status import StatusWriter
 from .tcode import UdpTCodeSink
 from .tcode_driver import FunscriptTCodeDriver
+from .volume import VolumeHud
 from .volume_control import RoomVolume, VolumeControl
 
 logger = logging.getLogger(__name__)
@@ -167,9 +168,12 @@ class Funestra:
         users_picture: UsersPicture | None = None,
         window_verbs: Callable[[str], bool] = _nothing_of_its_own,
         host_controls: HostControls | None = None,
+        radio: Tuner | None = None,
+        on_volume_moved: Callable[[VolumeHud], None] | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._engine = engine
+        self._volume_moved = on_volume_moved
         self._channels = channels
         self._tiles = tiles
         self._panel_surface = panel_surface
@@ -195,8 +199,7 @@ class Funestra:
             RoomVolume(engine, dashboard_cmd_file=channels.dashboard_cmd, live=audible)
             if sound_is_the_rooms else VolumeControl(engine, live=audible, muted=muted)
         )
-        self._radio = None if not audible or channels.playlist is None else Radio(
-            engine.radio_station, dealt_in=RadioFile(radio_file_for(channels.playlist)))
+        self._radio = radio if radio is not None else self._radio_beside(channels, audible)
         self._panel = self._panel_for(channels, panel_surface or engine, panel)
         self._name_flash = NameFlash(clock)
         self._flash = ""
@@ -248,7 +251,7 @@ class Funestra:
                 panel=panel, post=self._apply, engine=drawn_on,
                 minus_on_the_panel=self._panel_surface is None,
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
-                set_volume=self._volume.set_level, toggle_mute=self._volume.toggle_mute,
+                **self._volume_presses(),
             )
         if channels.console is not None:
             return ConsoleOverlay(
@@ -258,7 +261,7 @@ class Funestra:
                 width=None if self._panel_surface is None else self._panel_surface.width,
                 minus_on_the_panel=self._panel_surface is None,
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
-                set_volume=self._volume.set_level, toggle_mute=self._volume.toggle_mute,
+                **self._volume_presses(),
                 host_controls=self._host_controls,
             )
         if channels.hud is not None:
@@ -268,9 +271,20 @@ class Funestra:
                 over_the_video=self._panel_surface is None,
                 minus_on_the_panel=self._panel_surface is None,
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
-                set_volume=self._volume.set_level, toggle_mute=self._volume.toggle_mute,
+                **self._volume_presses(),
             )
         return None
+
+    def _volume_presses(self) -> dict[str, Callable[..., None]]:
+        return {"set_volume": self._told_to_the_host(self._volume.set_level),
+                "toggle_mute": self._told_to_the_host(self._volume.toggle_mute)}
+
+    def _told_to_the_host(self, move: Callable[..., None]) -> Callable[..., None]:
+        def moved(*args) -> None:
+            move(*args)
+            if self._volume_moved is not None:
+                self._volume_moved(self._volume.hud)
+        return moved
 
     def _seek_along_the_track(self, ms: float) -> None:
         """A press on the track names a time in the stretch the track spans,
@@ -347,6 +361,9 @@ class Funestra:
     def set_muted(self, muted: bool) -> None:
         self._volume.set_muted(muted)
 
+    def set_volume(self, volume: VolumeHud) -> None:
+        self._volume.set(volume.volume, volume.muted)
+
     def close_requested(self) -> None:
         if quit_gesture(self._channels.dashboard_cmd):
             self._stop.set()
@@ -392,6 +409,12 @@ class Funestra:
         if self._radio is not None:
             self._radio.close()
         self.playback.close()
+
+    def _radio_beside(self, channels: Channels, audible: bool) -> Radio | None:
+        if not audible or channels.playlist is None:
+            return None
+        return Radio(self._engine.radio_station,
+                     dealt_in=RadioFile(radio_file_for(channels.playlist)))
 
     def _tune_the_radio(self) -> None:
         if self._radio is None:

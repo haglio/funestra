@@ -21,6 +21,13 @@ follows the roll. Ended by the clip's clock instead, it asked mpv to move on
 from the last entry of its playlist, which mpv refuses: the error that closed
 Fun Time's room twice on 2026-10-20.
 
+A host that builds its Funestra in its own process, as standalone Origenerator
+builds its Slideshow's, can hand it the radio it plays (`radio=`, anything a
+`radio.Tuner` describes), be told the volume whenever the viewer moves it on
+the panel (`on_volume_moved=`), and set that volume itself (`set_volume`).
+`Radio(together=True)` tunes every station in while a picture is up, which is
+how Standalone's three play at once.
+
 ## 2026-10-21 — every Funestra runs ahead of background work through one piece of code
 
 `funestra_priority.ahead_on_the_processor` moves here from Fun Time's
