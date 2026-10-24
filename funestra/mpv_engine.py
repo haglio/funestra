@@ -538,6 +538,10 @@ class _MpvControl:
         and how long that is, in milliseconds -- None on a video."""
         return self._picture_time if self._image_track else None
 
+    @property
+    def picture_moves(self) -> int:
+        return 0
+
     def hold_picture_for(self, seconds: float | None) -> None:
         self._ken_burns.hold_for(seconds)
 

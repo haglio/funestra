@@ -82,6 +82,7 @@ class FakeEngine(RefusesSeeks):
         self.showing_video = True
         self.stations: list[FakeStation] = []
         self.picture_time: tuple[float, float] | None = None
+        self.picture_moves = 0
         self.picture_seeks: list[float] = []
         self.held_for: float | None = None
         self.source_dims = (0, 0)

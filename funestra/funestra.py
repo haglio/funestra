@@ -174,6 +174,7 @@ class Funestra:
     ) -> None:
         self._engine = engine
         self._volume_moved = on_volume_moved
+        logger.debug("its engine has made %d moves", engine.picture_moves)
         self._channels = channels
         self._tiles = tiles
         self._panel_surface = panel_surface
