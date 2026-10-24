@@ -397,6 +397,51 @@ def test_a_list_handed_over_in_process_is_played_as_one_read_off_the_playlist_fi
     assert (funestra.playback.current_video, engine.points_told[-1]) == (clips[2], places)
 
 
+def _just_moved_on(tmp_path: Path) -> tuple[Funestra, FakeEngine, list[Path]]:
+    clips = _clips(tmp_path, "v0", "v1", "v2", "v3")
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in clips], commands="")
+    engine.simulate_eof_advance()
+    return funestra, engine, clips
+
+
+class TestAVerbLandingAsThePictureMovesOnByItself:
+    def test_a_lock_holds_the_picture_on_screen(self, tmp_path):
+        funestra, engine, clips = _just_moved_on(tmp_path)
+
+        funestra.apply("LOCK_ON")
+
+        assert engine.playing == funestra.playback.current_video == clips[1]
+
+    def test_a_pace_of_nought_holds_the_picture_on_screen(self, tmp_path):
+        funestra, engine, clips = _just_moved_on(tmp_path)
+
+        funestra.apply("SET_PACE 0")
+
+        assert engine.playing == funestra.playback.current_video == clips[1]
+
+    def test_going_back_goes_to_the_picture_before_the_one_on_screen(self, tmp_path):
+        funestra, engine, clips = _just_moved_on(tmp_path)
+
+        funestra.apply("PREV")
+
+        assert engine.playing == clips[0]
+
+    def test_a_trash_drops_the_picture_on_screen(self, tmp_path):
+        funestra, engine, clips = _just_moved_on(tmp_path)
+
+        funestra.apply("TRASH")
+
+        assert (funestra.playback.playlist, engine.playing) == ([clips[0], *clips[2:]], clips[2])
+
+    def test_an_item_asked_for_next_comes_after_the_picture_on_screen(self, tmp_path):
+        funestra, _engine, clips = _just_moved_on(tmp_path)
+        newcomer, = _clips(tmp_path, "newcomer")
+
+        funestra.apply(f"PLAY_NEXT {newcomer}")
+
+        assert funestra.playback.playlist == [*clips[:2], newcomer, *clips[2:]]
+
+
 def test_the_paused_flag_reaches_the_engine_each_pass(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
     (tmp_path / "paused.txt").write_text("1", encoding="utf-8")
