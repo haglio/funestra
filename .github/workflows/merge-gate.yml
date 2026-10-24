@@ -56,12 +56,15 @@ jobs:
       sdl-video: dummy
 
   # Fun Time and Origenerator, the apps that run this package, installed with the
-  # candidate over their own pins and every module they ship imported. The scan
-  # above checks the names they import, never what they read as they import: on
-  # 2026-10-14 v0.1.507 dropped two entries of a table Fun Time built its commands
-  # from, the scan passed it, and production Fun Time would not start.
+  # candidate over their own pins, every module they ship imported and their whole
+  # suites run. The scan above checks the names they import, never what they read as
+  # they import: on 2026-10-14 v0.1.507 dropped two entries of a table Fun Time built
+  # its commands from, the scan passed it, and production Fun Time would not start.
+  # Nor does an import see what a Funestra asks of the engine an app hands it: #263
+  # asked the engines for more, every module still imported, and for two days no
+  # later release could reach Origenerator, whose tests' engine had no answer.
   apps:
-    uses: haglio/.github/.github/workflows/apps-import.yml@main
+    uses: haglio/.github/.github/workflows/apps-import.yml@claude/apps-suites
 
   # A version for each landing, so the apps that run this one can pin the copy
   # they were built against. The tag is the version: pyproject reads it with
