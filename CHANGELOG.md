@@ -9,6 +9,15 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-24 — the engine imports where Windows' libraries are missing
+
+`mpv_engine` bound user32 while it was being imported (from v0.1.563, to read
+a window's size for the close-ups), so an app whose checks import its modules
+with ctypes' Windows half removed, as fun_time's `test_win32_loader` does, could
+not import Funestra at all. It binds user32 the first time a window's size is
+asked for now, and `tests/test_imports_without_win32.py` imports every module
+that way.
+
 ## 2026-10-23 — every Funestra draws in shared_ui's colors, marks, lettering and spacing
 
 Every color, mark, face, text size and spacing a Funestra draws with is one of
