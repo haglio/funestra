@@ -55,11 +55,12 @@ jobs:
       timeout-minutes: 15
       sdl-video: dummy
 
-  # Fun Time and Origenerator, the apps that run this package, installed with the
-  # candidate over their own pins and every module they ship imported. The scan
-  # above checks the names they import, never what they read as they import: on
-  # 2026-10-14 v0.1.507 dropped two entries of a table Fun Time built its commands
-  # from, the scan passed it, and production Fun Time would not start.
+  # Fun Time's and Origenerator's whole suites, with the candidate installed over their
+  # own pins: haglio/.github's apps-import.yml says how, once for every library. The
+  # scan above reads only the names the apps import: on 2026-10-14 v0.1.507 dropped
+  # two entries of a table Fun Time built its commands from, and on 2026-10-17 #263
+  # asked the engines the apps hand a Funestra for more than Origenerator's tests'
+  # engine answered, and the scan passed both.
   apps:
     uses: haglio/.github/.github/workflows/apps-import.yml@main
 
