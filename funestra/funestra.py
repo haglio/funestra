@@ -435,6 +435,7 @@ class Funestra:
         return False if self._engine.showing_video else None
 
     def apply(self, command: str) -> None:
+        self.playback.follow_a_roll()
         for user in self._users.values():
             if user.apply_command(command):
                 return

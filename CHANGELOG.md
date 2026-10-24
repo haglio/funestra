@@ -9,15 +9,19 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
-## 2026-10-24 — a lock holds the picture that has just moved on, as the one on screen
+## 2026-10-24 — a verb acts on the picture on screen, one that has just moved on included
 
 A Funestra follows a picture that moved on by itself (a still at the end of its
-pace, a clip at its end) at its next tick, and a lock or a pace of nought taken
-before then held the next picture on screen while the Funestra went on counting
-the one before it as current, so going back skipped the picture that had been
-locked, as it did in Origenerator Slideshows on 2026-10-18. A new list taken in
-that moment left the new picture up under the old one's name. `Playback` follows
-such a move before it holds the engine's list or takes a new one. The tests'
+pace, a clip at its end) at its next tick, and a verb taken before then acted on
+the picture before it. A lock or a pace of nought held the next picture on
+screen while the Funestra went on counting the one before it as current, so
+going back skipped the picture that had been locked, as it did in Origenerator
+Slideshows on 2026-10-18; going back went to the picture before that one, a
+trash dropped it, and an item asked for next came up after it. A new list taken
+in that moment left the new picture up under the old one's name. A Funestra
+follows such a move before it takes a verb, from its command file or from a host
+in the same process (`Funestra.apply`, through the new
+`Playback.follow_a_roll`), and `Playback` before it takes a new list. The tests'
 `FakeEngine` keeps only the entry it is playing when its list is trimmed, as
 mpv's `playlist-clear` does, and says which that is (`playing`).
 
