@@ -33,7 +33,7 @@ from funestra.radio import radio_file_for, write_radio
 from funestra.satellite_hud import MARGIN, HudModel
 from funestra.session_quit import SESSION_QUIT
 from funestra.timeline import TIMELINE_HEIGHT
-from funestra.volume import CHIP_H, CHIP_W, VolumeHud, chip_xy
+from funestra.volume import CHIP_H, CHIP_W, PAD, VolumeHud, chip_xy
 
 WINDOW = (640, 480)
 
@@ -51,7 +51,7 @@ def _on_the_row(funestra, engine, part: str = "track", *, along: int | None = No
     if part == "dial":
         return left + x + row.dial + DIAL_SIZE - 3, top + y + PARTS_Y + DIAL_SIZE // 2  # quarter past
     cx, cy = chip_xy(win_w=width, win_h=height, timeline_h=TIMELINE_HEIGHT)
-    across = 4 if part == "speaker" else CHIP_W - 6
+    across = 4 if part == "speaker" else CHIP_W - PAD
     return left + x + cx + across, top + y + cy + CHIP_H // 2
 
 

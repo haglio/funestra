@@ -3,7 +3,9 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-SECTION_GAP = 6
+from shared_ui.spacing import GAP_MEDIUM
+
+SECTION_GAP = GAP_MEDIUM
 DIVIDER_H = 1
 
 

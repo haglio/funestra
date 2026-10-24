@@ -31,7 +31,7 @@ from shared_ui.palette import (
     TEXT_PRIMARY,
     WHITE,
 )
-from shared_ui.spacing import BUTTON_RADIUS_HUD
+from shared_ui.spacing import BUTTON_RADIUS_HUD, GAP_MEDIUM
 from shared_ui.type_scale import SIZE_TINY
 
 from . import drive_layout
@@ -87,7 +87,7 @@ _TRACK = BG_BUTTON  # the unfilled part of a bar — a shade off the slab
 _LABEL_H = drive_layout.LABEL_H
 _CTRL = drive_layout.CONTROL_SIZE
 _GAP = drive_layout.GAP
-_KEY_GAP = 6  # between a key and the value it names
+_KEY_GAP = GAP_MEDIUM  # between a key and the value it names
 _ETCH_PITCH = 4  # between the red lines across a stretch a bar cannot reach
 
 # A disabled part's ink: a dark gray, laid down opaque.  While a funscript has

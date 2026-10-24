@@ -17,6 +17,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 from shared_ui.palette import BLACK, WHITE
+from shared_ui.spacing import MARGIN_STANDARD
 from shared_ui.type_scale import SIZE_HEADING
 
 from .hud_panel import load_font, text_width, to_bgra
@@ -32,8 +33,8 @@ LOADING_OVERLAY_ID = 6
 # without end; past the bound a frame is scaled again rather than kept.
 SCALED_FRAMES_BYTES = 192 * 1024 * 1024
 
-_LOADING_PAD = 8
-_LOADING_INSET = 8
+_LOADING_PAD = MARGIN_STANDARD
+_LOADING_INSET = MARGIN_STANDARD
 _LOADING_GROUND = (*BLACK, 180)
 
 

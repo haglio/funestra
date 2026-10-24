@@ -40,6 +40,7 @@ from funestra.volume import (
     CHIP_W,
     MAX_VOLUME,
     MIN_VOLUME,
+    PAD,
     SLOT_W,
     SPEAKER_W,
     VolumeHud,
@@ -281,7 +282,7 @@ class TestWhatAPressOnTheRowAsksFor:
             x0, x1 = self.LAYOUT.track
             return x + (along or (x0 + x1) // 2), y + height - 4
         cx, cy = chip_xy(win_w=width, win_h=height, timeline_h=TIMELINE_HEIGHT)
-        across = 4 if part == "speaker" else CHIP_W - 6
+        across = 4 if part == "speaker" else CHIP_W - PAD
         return x + cx + across, y + cy + CHIP_H // 2
 
     def _squeeze(self, press, point):
