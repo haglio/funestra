@@ -404,7 +404,7 @@ def _just_moved_on(tmp_path: Path) -> tuple[Funestra, FakeEngine, list[Path]]:
     return funestra, engine, clips
 
 
-class TestAVerbLandingAsThePictureMovesOnByItself:
+class TestWhatLandsAsThePictureMovesOnByItself:
     def test_a_lock_holds_the_picture_on_screen(self, tmp_path):
         funestra, engine, clips = _just_moved_on(tmp_path)
 
@@ -440,6 +440,14 @@ class TestAVerbLandingAsThePictureMovesOnByItself:
         funestra.apply(f"PLAY_NEXT {newcomer}")
 
         assert funestra.playback.playlist == [*clips[:2], newcomer, *clips[2:]]
+
+    def test_a_list_handed_over_keeps_the_picture_on_screen(self, tmp_path):
+        funestra, engine, clips = _just_moved_on(tmp_path)
+
+        funestra.take_the_list([PlaylistItem(clip) for clip in clips])
+
+        assert engine.playing == funestra.playback.current_video == clips[1]
+        assert engine.staged_next == clips[2]
 
 
 def test_the_paused_flag_reaches_the_engine_each_pass(tmp_path):

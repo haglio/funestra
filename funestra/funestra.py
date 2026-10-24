@@ -454,6 +454,7 @@ class Funestra:
         return True
 
     def take_the_list(self, items: list[PlaylistItem]) -> None:
+        self.playback.follow_a_roll()
         self.playback.take_the_list(items)
 
     def _paint_if_there_is_memory(self, window: tuple[int, int]) -> None:

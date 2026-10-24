@@ -400,7 +400,6 @@ class Playback:
     ) -> None:
         if not playlist:
             raise ValueError("playlist must not be empty")
-        self.follow_a_roll()
         current = self.current_video
         chosen = self._versions.get(current)
         self._playlist = list(playlist)
