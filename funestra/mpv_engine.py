@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import ctypes
 import ctypes.wintypes
+import functools
 import importlib
 import logging
 import math
@@ -217,14 +218,19 @@ CLOSE_DRAIN_TIMEOUT_S = 10.0
 _APTTYPEQUALIFIER_IMPLICIT_MTA = 1
 
 _Corners = ctypes.wintypes.LONG * 4
-_user32 = ctypes.WinDLL("user32")
-_user32.GetClientRect.argtypes = (ctypes.wintypes.HWND, ctypes.POINTER(_Corners))
-_user32.GetClientRect.restype = ctypes.wintypes.BOOL
+
+
+@functools.cache
+def _user32():
+    user32 = ctypes.WinDLL("user32")
+    user32.GetClientRect.argtypes = (ctypes.wintypes.HWND, ctypes.POINTER(_Corners))
+    user32.GetClientRect.restype = ctypes.wintypes.BOOL
+    return user32
 
 
 def _client_size(hwnd: int) -> tuple[int, int]:
     corners = _Corners()
-    if not _user32.GetClientRect(hwnd, ctypes.byref(corners)):
+    if not _user32().GetClientRect(hwnd, ctypes.byref(corners)):
         return 0, 0
     x0, y0, x1, y1 = corners
     return x1 - x0, y1 - y0
