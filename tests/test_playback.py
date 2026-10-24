@@ -167,6 +167,14 @@ class TestLock:
         assert engine.loop_file is False
         assert engine.staged_next == tmp_path / "v1.mp4"
 
+    def test_a_lock_landing_as_the_engine_moves_on_holds_what_it_moved_on_to(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=3)
+        engine.simulate_eof_advance()
+
+        playback.set_locked(True)
+
+        assert engine.playing == playback.current_video == tmp_path / "v1.mp4"
+
     def test_an_unlocked_playback_advances_again(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
         playback.set_locked(True)
@@ -188,6 +196,15 @@ class TestAPaceOfNought:
         playback.advance()
 
         assert (playback.current_video, playback.is_locked) == (tmp_path / "v0.mp4", False)
+
+    def test_a_pace_of_nought_landing_as_the_engine_moves_on_holds_what_it_moved_on_to(
+            self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=3)
+        engine.simulate_eof_advance()
+
+        playback.set_pace(0)
+
+        assert engine.playing == playback.current_video == tmp_path / "v1.mp4"
 
     def test_a_pace_put_back_lets_the_clip_roll_on_again(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
@@ -757,6 +774,15 @@ class TestPlaylistReplacement:
 
         assert playback.current_video == x
         assert engine.opened[-1] == x
+
+    def test_a_list_handed_over_as_the_engine_moves_on_keeps_what_it_moved_on_to(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=3)
+        engine.simulate_eof_advance()
+
+        playback.replace_playlist(list(playback.playlist))
+
+        assert engine.playing == playback.current_video == tmp_path / "v1.mp4"
+        assert engine.staged_next == tmp_path / "v2.mp4"
 
 
 class TestPlaybackClock:

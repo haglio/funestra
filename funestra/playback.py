@@ -303,6 +303,7 @@ class Playback:
         return self._locked or self._held_by_the_pace
 
     def _hold_or_roll(self) -> None:
+        self._follow_a_roll()
         self._engine.set_loop_file(self._holds)
         if self._holds:
             self._engine.clear_next()
@@ -315,15 +316,15 @@ class Playback:
         self._play_points.observe(self.current_video, position_ms, self._engine.duration_ms)
         if self._paused:
             return
-        if not self._holds and self._engine.advanced_to_next:
-            self._follow_the_roll()
-        elif position_ms + REWIND_MS < self._last_pos_ms:
+        if not self._follow_a_roll() and position_ms + REWIND_MS < self._last_pos_ms:
             self._device.take_over()
         self._last_pos_ms = position_ms
         if self._the_picture_has_resumed(position_ms):
             self._device.drive(position_ms, self.funscript_as_played, speed=self._speed)
 
-    def _follow_the_roll(self) -> None:
+    def _follow_a_roll(self) -> bool:
+        if not self._engine.advanced_to_next:
+            return False
         self._play_points.ended()
         self._frame_on_screen = None
         self._picture_put_up = False
@@ -336,6 +337,7 @@ class Playback:
         self._owed_seek.owe(self._play_points.point_for(self.current_video) or None)
         self._device.take_over()
         self._tell_the_places()
+        return True
 
     def _the_picture_has_resumed(self, position_ms: float) -> bool:
         """Un-pausing is a request, not a picture: the device waits for the
@@ -399,6 +401,7 @@ class Playback:
     ) -> None:
         if not playlist:
             raise ValueError("playlist must not be empty")
+        self._follow_a_roll()
         current = self.current_video
         chosen = self._versions.get(current)
         self._playlist = list(playlist)

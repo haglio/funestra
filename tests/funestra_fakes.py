@@ -119,11 +119,11 @@ class FakeEngine(RefusesSeeks):
         self.playlist[self.playlist_pos] = path
 
     def stage_next(self, path: Path) -> None:
-        del self.playlist[self.playlist_pos + 1:]
+        self._keep_only_what_is_playing()
         self.playlist.append(path)
 
     def clear_next(self) -> None:
-        del self.playlist[self.playlist_pos + 1:]
+        self._keep_only_what_is_playing()
 
     @property
     def advanced_to_next(self) -> bool:
@@ -131,9 +131,15 @@ class FakeEngine(RefusesSeeks):
 
     def settle_on_the_next(self) -> None:
         self.settled += 1
-        while self.playlist_pos > 0:
-            self.playlist.pop(0)
-            self.playlist_pos -= 1
+        self._keep_only_what_is_playing()
+
+    def _keep_only_what_is_playing(self) -> None:
+        self.playlist = [self.playing]
+        self.playlist_pos = 0
+
+    @property
+    def playing(self) -> Path:
+        return self.playlist[self.playlist_pos]
 
     def set_paused(self, paused: bool) -> None:
         self.paused = paused
