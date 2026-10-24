@@ -6,6 +6,7 @@ import json
 from satellite_rows import band, funestra_rows
 from shared_ui.icon_geometry import GLYPHS, tooltip_for
 from shared_ui.spacing import BUTTON_GAP, BUTTON_GROUP_GAP
+from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL, SIZE_TINY
 
 from funestra.console import OSR2_PARKED, VALUE_W
 from funestra.hud_button import Button
@@ -538,12 +539,12 @@ def test_a_title_that_fits_keeps_its_full_size():
     assert largest_size_that_fits(11, room=100, width_at=lambda size: 5 * size) == 11
 
 
-def test_a_title_too_wide_takes_the_largest_size_that_fits():
-    assert largest_size_that_fits(11, room=40, width_at=lambda size: 5 * size) == 8
+def test_a_title_too_wide_takes_the_largest_of_the_familys_sizes_that_fits():
+    assert largest_size_that_fits(SIZE_BODY, room=50, width_at=lambda size: 5 * size) == SIZE_SMALL
 
 
-def test_a_title_that_fits_at_no_size_takes_the_smallest():
-    assert largest_size_that_fits(11, room=3, width_at=lambda size: 5 * size) == 1
+def test_a_title_that_fits_at_none_of_the_familys_sizes_takes_the_tiny_one():
+    assert largest_size_that_fits(SIZE_BODY, room=3, width_at=lambda size: 5 * size) == SIZE_TINY
 
 
 def test_action_label_blocks_separate_comma_joined_acts():
