@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import queue
 import time
 from dataclasses import replace
 from pathlib import Path
@@ -10,13 +11,15 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
+from app_support.osr2_slot import Osr2Slot
+from app_support.threading_utils import start_daemon_thread
 from console_rows import console_rows
 from funestra_fakes import FakeEngine
 from host_controls_fakes import AHost, middle_of
 
 from funestra.console import ConsoleModel, ModeHud, console_text
 from funestra.flick_picture import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, Picture
-from funestra.funestra import Channels, Funestra, User, _Nobody
+from funestra.funestra import Channels, Funestra, User, _Nobody, osr2_line
 from funestra.hud_button import Button
 from funestra.hud_corners import CORNER_PLUS_OVERLAY_ID
 from funestra.hud_minimize import BUTTON, FLASH_S, collapsed_panel
@@ -1596,3 +1599,25 @@ class TestTheWindowsOwnVerbs:
         assert heard == ["NEXT"]
         assert funestra._users["kino"].commands == ["KINO_THING", "NEXT"]
         assert funestra.playback.index == 1
+
+
+def test_a_funestra_named_for_the_osr2_slot_reaches_the_osr2_through_it():
+    slot = Osr2Slot(port=0, logger=logging.getLogger("test.funestra.osr2_slot"),
+                    start_thread=start_daemon_thread)
+    heard: queue.Queue[tuple[str, str]] = queue.Queue()
+    slot.write_through(lambda sender, line: heard.put((sender, line)))
+    slot.start()
+    line = osr2_line(Channels(osr2_sender="portrait", osr2_port=slot.address[1]))
+    try:
+        line.want(True)
+        deadline = time.monotonic() + 5.0
+        while heard.empty() and time.monotonic() < deadline:
+            line.park()
+            time.sleep(0.005)
+    finally:
+        line.close()
+        slot.close()
+
+    sender, said = heard.get_nowait()
+    assert sender == "portrait"
+    assert said.startswith("L00000I")

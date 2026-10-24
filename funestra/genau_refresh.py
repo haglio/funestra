@@ -139,9 +139,12 @@ class GenauRefreshController:
         # first.
         self.handoff.watch(self.robot_hand.playing)
 
-        if self.tcode_sender is not None and beat.robot_hand_active and self.robot_hand.playing:
-            self.tcode_sender.maybe_send(
-                self.engine.phase, now, output=self.tcode_enabled.on)
+        if self.tcode_sender is not None:
+            self.tcode_sender.want(beat.robot_hand_active and self.robot_hand.playing
+                                   and self.tcode_enabled.on)
+            if beat.robot_hand_active and self.robot_hand.playing:
+                self.tcode_sender.maybe_send(
+                    self.engine.phase, now, output=self.tcode_enabled.on)
 
         if beat.robot_hand_active:
             self.readout.update(now)

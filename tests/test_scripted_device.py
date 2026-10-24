@@ -92,3 +92,13 @@ class TestWithNoWire:
         ScriptedDevice(tcode).close()
 
         assert tcode.closed is True
+
+
+def test_a_device_switched_on_wants_the_osr2_and_switched_off_lets_it_go():
+    tcode = FakeTCode()
+    device = ScriptedDevice(tcode, enabled=False)
+
+    device.set_enabled(True)
+    device.set_enabled(False)
+
+    assert tcode.wanted == [False, True, False]

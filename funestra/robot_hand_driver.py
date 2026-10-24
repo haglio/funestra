@@ -203,6 +203,9 @@ class RobotHandTCodeDriver:
             "L0", position, self._glide.interval_ms(interval_ms, now)))
         self._last_send_time = now
 
+    def want(self, wanted: bool) -> None:
+        self._sink.want(wanted)
+
     def close(self) -> None:
         self._sink.close()
 

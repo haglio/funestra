@@ -94,6 +94,7 @@ def format_tcode_command(axis: str, position: int, interval_ms: int) -> str:
 
 
 class TCodeSink(Protocol):
+    def want(self, wanted: bool) -> None: ...
     def send(self, command: str) -> None: ...
     def close(self) -> None: ...
 
@@ -106,6 +107,9 @@ class UdpTCodeSink:
         self._port = port
         self._closed = False
         self._sock = sock if sock is not None else socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    def want(self, wanted: bool) -> None:
+        pass
 
     def send(self, command: str) -> None:
         """Put one command on the wire; a sink that has been closed sends nothing.

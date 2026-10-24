@@ -21,10 +21,14 @@ from funestra.tcode import HANDOFF_MS
 class FakeTCodeSink:
     def __init__(self):
         self.sent: list[str] = []
+        self.wanted: list[bool] = []
         self.closed = False
 
     def send(self, command: str) -> None:
         self.sent.append(command)
+
+    def want(self, wanted: bool) -> None:
+        self.wanted.append(wanted)
 
     def close(self) -> None:
         self.closed = True
@@ -463,3 +467,13 @@ class TestLearnedMotionOnTheWire:
 
         assert sender.let_go_position == 4000
         assert sender.current_position() == 0
+
+
+def test_the_robot_hand_wants_the_osr2_through_its_slot():
+    sink = FakeTCodeSink()
+    sender = RobotHandTCodeDriver(sink)
+
+    sender.want(True)
+    sender.want(False)
+
+    assert sink.wanted == [True, False]

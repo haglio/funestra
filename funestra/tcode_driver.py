@@ -148,5 +148,8 @@ class FunscriptTCodeDriver:
         self._took_over = True
         self._glide.begin()
 
+    def want(self, wanted: bool) -> None:
+        self._sink.want(wanted)
+
     def close(self) -> None:
         self._sink.close()

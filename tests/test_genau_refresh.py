@@ -92,8 +92,12 @@ class FakeTCodeSender:
         self.hand_overs = 0
         self.let_go_position: int | None = None
         self.closed = False
+        self.wanted: bool | None = None
         self._position = 5000
         self._motion_phase = 0.0
+
+    def want(self, wanted: bool) -> None:
+        self.wanted = wanted
 
     def maybe_send(self, phase: float, now: float, *, output: bool = True) -> None:
         if output:
@@ -402,6 +406,48 @@ def test_direct_mode_calls_tcode_sender():
     assert len(tcode.sends) == 1
     phase, now = tcode.sends[0]
     assert now == 5.0
+
+
+def test_a_hand_that_plays_and_is_heard_wants_the_osr2():
+    tcode = FakeTCodeSender()
+    built = _build_controller(entry={"frames": [object() for _ in range(8)]},
+                              robot_hand=RobotHandState(playing=True, bpm=120.0), tcode_sender=tcode)
+
+    built["controller"].refresh()
+
+    assert tcode.wanted is True
+
+
+def test_a_paused_hand_lets_the_osr2_go():
+    tcode = FakeTCodeSender()
+    built = _build_controller(entry={"frames": [object() for _ in range(8)]},
+                              robot_hand=RobotHandState(playing=False, bpm=120.0), tcode_sender=tcode)
+
+    built["controller"].refresh()
+
+    assert tcode.wanted is False
+
+
+def test_a_hand_whose_output_is_switched_off_lets_the_osr2_go():
+    tcode = FakeTCodeSender()
+    built = _build_controller(entry={"frames": [object() for _ in range(8)]},
+                              robot_hand=RobotHandState(playing=True, bpm=120.0), tcode_sender=tcode,
+                              command="SET_TCODE_ENABLED 0")
+
+    built["controller"].refresh()
+
+    assert tcode.wanted is False
+
+
+def test_the_osr2_running_itself_leaves_the_hand_off_it():
+    tcode = FakeTCodeSender()
+    built = _build_controller(broker=BrokerFeed(auto_active=True, raw_bpm=120.0),
+                              entry={"frames": [object() for _ in range(8)]},
+                              robot_hand=RobotHandState(playing=True, bpm=120.0), tcode_sender=tcode)
+
+    built["controller"].refresh()
+
+    assert tcode.wanted is False
 
 
 def test_direct_mode_paused_does_not_send_tcode():
