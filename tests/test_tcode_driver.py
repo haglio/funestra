@@ -8,9 +8,13 @@ from funestra.tcode_driver import FunscriptTCodeDriver
 class FakeSink:
     def __init__(self):
         self.sent: list[str] = []
+        self.wanted: list[bool] = []
 
     def send(self, command: str) -> None:
         self.sent.append(command)
+
+    def want(self, wanted: bool) -> None:
+        self.wanted.append(wanted)
 
     def close(self) -> None:
         pass
@@ -324,3 +328,13 @@ def test_a_script_past_the_max_intensity_is_aimed_as_shallow_as_the_max_intensit
     FunscriptTCodeDriver(sink).update(0, fs, now=0.0, max_intensity=30)
 
     assert sink.sent[0] == f"L0{to_tcode_position(fs.paced_position_at(1000, 1.0, max_intensity=30)):04d}I1000"
+
+
+def test_a_funscript_driver_wants_the_osr2_through_its_slot():
+    sink = FakeSink()
+    driver = FunscriptTCodeDriver(sink)
+
+    driver.want(True)
+    driver.want(False)
+
+    assert sink.wanted == [True, False]

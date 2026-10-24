@@ -12,6 +12,8 @@ from functools import partial
 from pathlib import Path
 from typing import Protocol, runtime_checkable
 
+from app_support.osr2_slot import Osr2Sender
+
 from .console import ModeHud
 from .console_overlay import ConsoleOverlay
 from .control_registry import look_up
@@ -63,6 +65,8 @@ class Channels:
     drive: Path | None = None
     tcode_host: str | None = None
     tcode_port: int | None = None
+    osr2_sender: str | None = None
+    osr2_port: int | None = None
 
 
 @runtime_checkable
@@ -141,6 +145,8 @@ def _nothing_of_its_own(_command: str) -> bool:
 
 
 def osr2_line(channels: Channels) -> FunscriptTCodeDriver | None:
+    if channels.osr2_sender:
+        return FunscriptTCodeDriver(Osr2Sender(channels.osr2_sender, port=channels.osr2_port))
     if not channels.tcode_host or not channels.tcode_port:
         return None
     return FunscriptTCodeDriver(UdpTCodeSink(channels.tcode_host, channels.tcode_port))

@@ -17,6 +17,9 @@ class _Unconnected:
     def reset(self) -> None:
         pass
 
+    def want(self, wanted: bool) -> None:
+        pass
+
     def close(self) -> None:
         pass
 
@@ -25,12 +28,16 @@ class ScriptedDevice:
     def __init__(self, tcode=None, *, enabled: bool = True) -> None:
         self._tcode = _Unconnected() if tcode is None else tcode
         self._enabled = enabled
+        self._tcode.want(enabled)
         self._max_intensity = FULL_INTENSITY
 
     def set_enabled(self, enabled: bool) -> None:
-        if enabled and not self._enabled:
+        if enabled == self._enabled:
+            return
+        if enabled:
             self.take_over()
         self._enabled = enabled
+        self._tcode.want(enabled)
 
     def take_over(self) -> None:
         self._tcode.reset()

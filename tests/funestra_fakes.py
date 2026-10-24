@@ -13,7 +13,11 @@ class FakeTCode:
         self.max_intensities: list[int] = []
         self.parks = 0
         self.resets = 0
+        self.wanted: list[bool] = []
         self.closed = False
+
+    def want(self, wanted: bool) -> None:
+        self.wanted.append(wanted)
 
     def update(self, position_ms: int, fs: Funscript, *, speed: float = 1.0,
                max_intensity: int = FULL_INTENSITY) -> None:
