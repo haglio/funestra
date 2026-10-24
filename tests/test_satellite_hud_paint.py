@@ -315,7 +315,7 @@ def test_the_title_starts_clear_of_the_dot(thumb):
     assert (gap > 200).all(axis=2).sum() == 0, "text ink in the gap before the text starts"
 
 
-def test_a_status_too_wide_for_the_map_is_drawn_smaller_rather_than_widening_the_panel(thumb):
+def test_a_status_too_wide_for_the_map_is_drawn_smaller_or_cut_short_rather_than_widening_the_panel(thumb):
     def rendered(label: str):
         return HudRenderer("portrait").render(
             _model(title=label, corner=HudCell(path="c.mp4", thumb=thumb)))

@@ -35,6 +35,7 @@ from shared_ui.spacing import (
     MARGIN_DIALOG,
     MARGIN_STANDARD,
 )
+from shared_ui.type_scale import SIZES
 
 from .console import VALUE_W, max_intensity_from_raw
 from .drive_readout import DriveHud, DriveTrack, TrackGrip
@@ -497,7 +498,8 @@ def name_line(name: str, note: str, room: int, width_of: Callable[[str], int]) -
 
 
 def largest_size_that_fits(largest: int, room: int, width_at: Callable[[int], int]) -> int:
-    return next((size for size in range(largest, 1, -1) if width_at(size) <= room), 1)
+    sizes = [size for size in SIZES if size <= largest]
+    return next((size for size in sizes if width_at(size) <= room), sizes[-1])
 
 
 # The strike under the current clip's act: this act is wrong, ask about it again.

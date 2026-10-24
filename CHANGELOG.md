@@ -9,6 +9,23 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-23 — every Funestra draws in shared_ui's colors, marks, lettering and spacing
+
+Every color, mark, face, text size and spacing a Funestra draws with is one of
+shared_ui's, and `tests/test_family_look.py` holds it there. Gone, each replaced
+by the family's own: `hud_panel.BODY_PT`, `TINY_PT` and `px` (shared_ui's
+`SIZE_*` and `in_pixels`), `hud_panel.draw_icon` and `draw_minimize_bar` (the
+family's marks), and `timeline.RED`; `drive_readout.DISABLED_INK` and
+`hud_marks.MINIMIZE_ICON` keep their names over the family's gray and minus.
+
+Numbers that moved: the act labels down a satellite's map 7 to 8 points, a
+flick's loading notice 13 to 14; the console's row gap 5 to 8, a satellite
+panel's inset 12 to 16 and its padding 10 to 8, the satellite map's row gap
+12 to 16, the panels' and tooltips' corners 8 and 4 to the family's 4. A
+satellite's title steps down through the family's four sizes to fit and is cut
+short at the tiny one, where it used to shrink through every point size down
+to 1.
+
 ## 2026-10-23 — a host in the same process drives its Funestra as a session drives one
 
 `Funestra.apply` takes one verb as a line of the command file is taken,

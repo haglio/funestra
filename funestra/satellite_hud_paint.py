@@ -41,6 +41,7 @@ from funestra.hud_panel import (
     draw_glyph,
     draw_mark,
     draw_tooltip,
+    fit_text,
     load_font,
     text_width,
 )
@@ -314,6 +315,7 @@ class HudRenderer:
         title_font = self._title_font(largest_size_that_fits(
             SIZE_BODY, room,
             lambda size: text_width(self._title_font(size), model.title)))
+        model = replace(model, title=fit_text(title_font, model.title, room))
         favorite = self._draw_title_band(
             image, draw, PAD, model, width, title_font,
             name_line(video, model.item_note, room, lambda text: text_width(self._tiny, text)),
