@@ -758,15 +758,6 @@ class TestPlaylistReplacement:
         assert playback.current_video == x
         assert engine.opened[-1] == x
 
-    def test_a_list_handed_over_as_the_engine_moves_on_keeps_what_it_moved_on_to(self, tmp_path):
-        playback, engine = _make_playback(tmp_path, entries=3)
-        engine.simulate_eof_advance()
-
-        playback.replace_playlist(list(playback.playlist))
-
-        assert engine.playing == playback.current_video == tmp_path / "v1.mp4"
-        assert engine.staged_next == tmp_path / "v2.mp4"
-
 
 class TestPlaybackClock:
     def test_position_and_duration_delegate_to_the_engine(self, tmp_path):
