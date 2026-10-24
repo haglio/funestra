@@ -677,10 +677,11 @@ class TestRuns:
         a light gray between the script's turn and the motion's."""
         hud = _hud(segments=((0, DRIVEN_BY_FUNSCRIPT), (30, DRIVEN_BY_NEUTRAL),
                              (50, DRIVEN_BY_ROBOT_HAND)))
-        rgb = _rendered(hud).astype(int)[:, :, :3]
-        colors = {tuple(pixel) for row in rgb for pixel in row}
+        x, y, w, h = next(t.rect for t in tracks(PAD, PAD, hud) if t.axis == CENTER)
+        pitch = (w - 1) / (len(hud.waveform) - 1)
+        neutral = _rendered(hud).astype(int)[y:y + h, x + round(32 * pitch):x + round(48 * pitch), :3]
 
-        assert BORDER_DEFAULT in colors
+        assert (np.abs(neutral - BORDER_DEFAULT).max(axis=2) <= 20).any()
 
 
 class TestPublishedSpan:

@@ -22,6 +22,7 @@ from dataclasses import dataclass
 
 import numpy as np
 from PIL import Image
+from shared_ui.spacing import GAP_SMALL
 
 from .loop_dial import DIAL_SIZE, LoopDialPainter, on_dial, turn_at
 from .playhead import (
@@ -58,14 +59,14 @@ ROW_H = TIMELINE_HEIGHT
 # The readout, the dial and the chip are as tall as each other, centered in the row.
 PARTS_Y = (ROW_H - CHIP_H) // 2
 # Between a readout and the control it reads out.
-GAP = 4
+GAP = GAP_SMALL
 
 # The least track worth pressing, and how long a flick's track is.
 LEAST_TRACK = 60
 FLICK_TRACK_W = 96
 
 # Between the panel's lower edge and the loop's two frames hanging under it.
-UNDER_THE_PANEL_GAP = 2
+UNDER_THE_PANEL_GAP = GAP_SMALL
 
 # The readouts a panel is held wide enough for, so it keeps one width from one
 # flick or video to the next instead of moving with the digits of each: a flick

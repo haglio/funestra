@@ -22,6 +22,7 @@ from pathlib import Path
 from types import MappingProxyType
 
 from app_support import osr2_hold
+from shared_ui.spacing import BUTTON_GAP, BUTTON_GROUP_GAP, BUTTON_ROW_GAP
 from shared_ui.toggle_geometry import TRACK_HUD
 
 from .geometry import Rect, contains
@@ -47,9 +48,9 @@ VALUE_W = 22  # a value read-out between a pair of buttons (the playback rate)
 # sits in the same place whichever row is up; the painter widens a name that
 # outgrows it rather than letting it run under the button beside it.
 ROW_LABEL_W = 84
-GAP = 4       # between buttons along a row
-ROW_GAP = 5   # between rows
-GROUP_GAP = 12  # between groups of buttons that mean different things
+GAP = BUTTON_GAP       # between buttons along a row
+ROW_GAP = BUTTON_ROW_GAP   # between rows
+GROUP_GAP = BUTTON_GROUP_GAP  # between groups of buttons that mean different things
 
 _SHAPE_LABELS = {"rounded_square": "Square"}
 

@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from PIL import Image
 from shared_ui.icons_pil import paste_glyph
 from shared_ui.palette import TEXT_MUTED, TEXT_PRIMARY
+from shared_ui.spacing import GAP_MEDIUM, GAP_SMALL
 
 from funestra.hud_panel import KeptBitmap, draw_track, pill
 
@@ -32,9 +33,9 @@ from funestra.hud_panel import KeptBitmap, draw_track, pill
 # still sets the level by a few per pixel.
 CHIP_W = 64
 CHIP_H = 22
-TRACK_GAP = 6        # between the row's track and the chip
+TRACK_GAP = GAP_MEDIUM        # between the row's track and the chip
 SPEAKER_W = 26       # the left end that toggles the mute
-PAD = 6
+PAD = GAP_SMALL
 
 MIN_VOLUME = 0
 MAX_VOLUME = 100

@@ -6,13 +6,13 @@ from typing import Protocol
 from PIL import Image, ImageDraw
 from shared_ui.dropdown_pil import ARROW_PX, paint_field, paint_list
 from shared_ui.palette import TEXT_MUTED, TEXT_PRIMARY
-from shared_ui.spacing import BUTTON_GAP, BUTTON_PAD_H_TIGHT, BUTTON_SIZE_HUD
+from shared_ui.spacing import BUTTON_GAP, BUTTON_GROUP_GAP, BUTTON_PAD_H_TIGHT, BUTTON_SIZE_HUD
 from shared_ui.type_scale import SIZE_TINY
 
 from .geometry import Rect, contains
 from .hud_panel import draw_track, load_font
 
-_GROUP_GAP = 12
+_GROUP_GAP = BUTTON_GROUP_GAP
 _LEAST_BAR_W = 60
 
 

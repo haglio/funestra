@@ -16,6 +16,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
+from shared_ui.spacing import GAP_MEDIUM, GAP_SMALL
+
 from .geometry import Rect
 
 # The three axes, named as the numeric set commands name them (``robot_hand_amp_57``),
@@ -31,8 +33,8 @@ LESS, MORE = "minus", "plus"
 _LABEL_H = 14        # a "key value" line
 _BAR_H = 12          # the speed track's thickness
 _CTRL = 14           # an integrated control button (square)
-_MARK_GAP = 2
-_GAP = 6
+_MARK_GAP = GAP_SMALL
+_GAP = GAP_MEDIUM
 _WAVE_H = 96         # the trace's own height
 # The side labels stack their number under their word, so each column is only as
 # wide as the wider of the two rather than as wide as both plus a gap.

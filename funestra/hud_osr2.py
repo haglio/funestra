@@ -26,6 +26,7 @@ from shared_ui.palette import (
     TEXT_MUTED,
     TEXT_PRIMARY,
 )
+from shared_ui.spacing import BUTTON_GROUP_GAP, BUTTON_PAD_H_TIGHT, GAP_SMALL
 from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
 from .console import GAP, HELD_HEIGHT, HOLD_VERB, OSR2_PARKED, OSR2_RETRACTED
@@ -56,9 +57,9 @@ from .robot_hand import FULL_INTENSITY, POSITION_MAX
 # The line is as deep as the controls sharing it.
 HEIGHT = BUTTON
 LABEL = "OSR2"
-_LABEL_GAP = 5   # "OSR2" sits right up against the pill it names …
-_GROUP_GAP = 16  # … and well clear of the controls beside them
-_PILL_PAD = 10   # the room the state word keeps either side of itself
+_LABEL_GAP = GAP_SMALL   # "OSR2" sits right up against the pill it names …
+_GROUP_GAP = BUTTON_GROUP_GAP  # … and well clear of the controls beside them
+_PILL_PAD = BUTTON_PAD_H_TIGHT   # the room the state word keeps either side of itself
 
 MAX_INTENSITY_LABEL = "Max intensity"
 MAX_INTENSITY_TIP = ("Max intensity: all the way up puts no limit on the OSR2; lower, "

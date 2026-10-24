@@ -31,7 +31,7 @@ from shared_ui.palette import (
     TEXT_MUTED,
     TEXT_PRIMARY,
 )
-from shared_ui.spacing import BUTTON_GAP
+from shared_ui.spacing import BUTTON_GAP, GAP_MEDIUM, GAP_SMALL, MARGIN_STANDARD
 from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
 from .console import (
@@ -114,12 +114,12 @@ def compilation_label(title: str) -> str:
 
 # --- the panel ---------------------------------------------------------------
 
-_PAD = 10
+_PAD = MARGIN_STANDARD
 _MINUS_INSET = (_PAD, _PAD)
-DOT_GAP = 8  # the room between the active-Funestra dot and the words beside it
-MARGIN = 8    # inset from the window's top-left corner
-_BLOCK_GAP = 4
-_SUBTITLE_GAP = 2  # between the title and the file name under it
+DOT_GAP = GAP_MEDIUM  # the room between the active-Funestra dot and the words beside it
+MARGIN = MARGIN_STANDARD    # inset from the window's top-left corner
+_BLOCK_GAP = GAP_SMALL
+_SUBTITLE_GAP = GAP_SMALL  # between the title and the file name under it
 
 
 def hud_xy() -> tuple[int, int]:

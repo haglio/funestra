@@ -34,7 +34,7 @@ from shared_ui.palette import (
     WHITE,
     hovered,
 )
-from shared_ui.spacing import BUTTON_MARK_INSET
+from shared_ui.spacing import BUTTON_MARK_INSET, BUTTON_RADIUS, GAP_SMALL
 from shared_ui.toggle_geometry import TRACK_HUD
 from shared_ui.toggle_switch_pil import paste_toggle_switch
 from shared_ui.type_scale import in_pixels
@@ -58,7 +58,7 @@ SYMBOL_FONT = "seguisym.ttf"
 
 # Translucent enough to read the video through, opaque enough to read the text.
 PANEL_ALPHA = 224
-CORNER_RADIUS = 8
+CORNER_RADIUS = BUTTON_RADIUS
 
 # The family's own hover step, re-exported under the name this package's
 # painters already call it.
@@ -182,8 +182,8 @@ def draw_active_dot(image: Image.Image, x: int, y: int, active: bool) -> None:
     paste_glyph(image, "disc", (x, y, _DISC_FRAME, _DISC_FRAME), WHITE if active else TEXT_MUTED)
 
 
-TOOLTIP_PAD = 5
-TOOLTIP_RADIUS = 4
+TOOLTIP_PAD = GAP_SMALL
+TOOLTIP_RADIUS = BUTTON_RADIUS
 TOOLTIP_ALPHA = 240
 _TOOLTIP_EDGE = 2           # the gap it keeps from the panel's own edge
 _TOOLTIP_OFFSET = (14, 16)  # right of and below the cursor, clear of the pointer

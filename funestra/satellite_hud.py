@@ -27,7 +27,13 @@ from shared_ui.icon_geometry import tooltip_for
 from shared_ui.spacing import (
     BUTTON_GAP,
     BUTTON_GROUP_GAP,
+    BUTTON_PAD_H_TIGHT,
     BUTTON_SIZE_HUD,
+    GAP_DIALOG,
+    GAP_MEDIUM,
+    GAP_SMALL,
+    MARGIN_DIALOG,
+    MARGIN_STANDARD,
 )
 
 from .console import VALUE_W, max_intensity_from_raw
@@ -51,16 +57,16 @@ if TYPE_CHECKING:
 
 # --- layout constants (px) ---------------------------------------------------
 # Inset of the HUD from the Funestra's top-left corner.
-MARGIN = 12
+MARGIN = MARGIN_DIALOG
 
-PAD = 10
-BLOCK_GAP = 6
+PAD = MARGIN_STANDARD
+BLOCK_GAP = GAP_MEDIUM
 MAP_THUMB_H = 54
-MAP_GAP = 5
-ROW_GAP = 12        # vertical gap between action rows — roomier than the seed gap
-ACT_GAP = 6         # gap between two acts stacked in one row label
+MAP_GAP = GAP_SMALL
+ROW_GAP = GAP_DIALOG        # vertical gap between action rows — roomier than the seed gap
+ACT_GAP = GAP_MEDIUM         # gap between two acts stacked in one row label
 COL_LABEL_H = 13    # header strip above the map for the "Seed N" column labels
-COL_LABEL_GAP = 4   # breathing room between a column label and its thumbnail
+COL_LABEL_GAP = GAP_SMALL   # breathing room between a column label and its thumbnail
 ROW_LABEL_GUTTER = 100
 LOOP_BTN = 18       # loop-button thickness: below the action column, right of the row
 FILTER_BTN = 18     # act-filter button: at the head of each row, in the gutter
@@ -78,7 +84,7 @@ TITLE_BASELINE = 11      # the title's baseline, down from the band's top
 # Funestra's console carries, so the two panels answer "what am I playing?" in the
 # same corner and the same shape.  Its own height comes from the paint module,
 # which has the face; this is only the gap between the two lines.
-SUBTITLE_GAP = 2
+SUBTITLE_GAP = GAP_SMALL
 
 Cell = tuple[str, int]            # ("corner", 0) | ("seed", i) | ("action", i)
 
@@ -407,7 +413,7 @@ CTRL_BTN = BUTTON_SIZE_HUD
 MINUS_INSET = (PAD, PAD + (TITLE_BAND_H - CTRL_BTN) // 2)
 CTRL_BAND_H = CTRL_BTN + BLOCK_GAP
 # Inside a word button, the room either side of its word.
-MODE_LABEL_PAD = 6
+MODE_LABEL_PAD = BUTTON_PAD_H_TIGHT
 
 
 def button_row_width(buttons: Sequence[Button], widths: Sequence[int]) -> int:
@@ -500,7 +506,7 @@ def largest_size_that_fits(largest: int, room: int, width_at: Callable[[int], in
 # place on the panel where that act is named is the only place the strike can
 # say which act it means.
 WRONG_BTN = 14
-WRONG_GAP = 3   # between the act's last line and the strike under it
+WRONG_GAP = GAP_SMALL   # between the act's last line and the strike under it
 
 
 def label_stack_top(row_y: int, row_h: int, label_h: int, extra: int = 0) -> int:
