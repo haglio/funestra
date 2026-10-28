@@ -106,7 +106,8 @@ class Funscript:
     def __post_init__(self) -> None:
         self._times = [a[0] for a in self.actions]
         self._dense_times = self._compute_dense_times()
-        self._onsets = self._compute_onsets()
+        self._clusters = self._compute_clusters()
+        self._onsets = [first for first, _last in self._clusters]
         self._turns = self._compute_turns()
         self._demand = self._compute_demand()
         # The device's plan sampled on a fixed grid, for
@@ -341,20 +342,20 @@ class Funscript:
         i = bisect.bisect_right(self._onsets, position_ms)
         return self._onsets[i] if i < len(self._onsets) else None
 
-    def _compute_onsets(self) -> list[int]:
-        """The start of each dense cluster: a dense time with no dense
-        predecessor inside QUIET_LEAD_IN_MS, i.e. the far side of a quiet
-        stretch.  The first is where the script begins in earnest, which is what
-        first_real_event_ms reports once it is far enough in to be worth parking
-        for; the rest are where it resumes after each interior gap.
-        """
-        onsets: list[int] = []
-        previous: int | None = None
+    def active_ms(self, running_ms: int) -> int:
+        return sum(max(0, min(last, running_ms) - first) for first, last in self._clusters)
+
+    def _compute_clusters(self) -> list[tuple[int, int]]:
+        """Each dense cluster's first and last action: a dense time with no dense
+        predecessor inside QUIET_LEAD_IN_MS opens one, i.e. the far side of a
+        quiet stretch."""
+        clusters: list[list[int]] = []
         for t in self._dense_times:
-            if previous is None or t - previous >= QUIET_LEAD_IN_MS:
-                onsets.append(t)
-            previous = t
-        return onsets
+            if clusters and t - clusters[-1][1] < QUIET_LEAD_IN_MS:
+                clusters[-1][1] = t
+            else:
+                clusters.append([t, t])
+        return [(first, last) for first, last in clusters]
 
     def _compute_dense_times(self) -> list[int]:
         """Times of actions that belong to a dense cluster — those with a
