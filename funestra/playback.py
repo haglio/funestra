@@ -279,17 +279,22 @@ class Playback:
         self._frame_on_screen = frame
         self._picture_put_up = True
         self._engine.swap_still(frame)
+        self._stage_next()
         self._tell_the_places()
 
     def clear_frame(self) -> None:
         if self._frame_on_screen is not None:
             self._frame_on_screen = None
             self._engine.swap_still(self.showing)
+            self._stage_next()
             self._tell_the_places()
 
+    @property
+    def _on_screen(self) -> Path:
+        return self.showing if self._frame_on_screen is None else self._frame_on_screen
+
     def _tell_the_places(self) -> None:
-        on_screen = self.showing if self._frame_on_screen is None else self._frame_on_screen
-        points = self._points_of_interest.get(on_screen, ())
+        points = self._points_of_interest.get(self._on_screen, ())
         if points != self._points_told:
             self._points_told = points
             self._engine.set_points_of_interest(points)
@@ -325,8 +330,9 @@ class Playback:
         if not self._engine.advanced_to_next:
             return False
         self._play_points.ended()
-        self._frame_on_screen = None
-        self._picture_put_up = False
+        if not self._rolls_onto_itself:
+            self._frame_on_screen = None
+            self._picture_put_up = False
         self._mark = None
         self._ab_loop = None
         self._index = (self._index + 1) % len(self._playlist)
@@ -448,7 +454,14 @@ class Playback:
     def _stage_next(self) -> None:
         if self._holds:
             return
-        self._engine.stage_next(self._file_at(self._index + 1))
+        self._engine.stage_next(self._what_the_roll_puts_up())
+
+    def _what_the_roll_puts_up(self) -> Path:
+        return self._on_screen if self._rolls_onto_itself else self._file_at(self._index + 1)
+
+    @property
+    def _rolls_onto_itself(self) -> bool:
+        return len(self._playlist) == 1
 
     def close(self) -> None:
         self._play_points.leave()
