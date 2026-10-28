@@ -13,6 +13,8 @@ import pytest
 from app_support.dead_code import assert_no_dead_code, assert_whitelist_is_live, tracked_python
 from app_support.siblings import checkouts_that_import
 
+pytestmark = pytest.mark.repo_check
+
 ROOT = Path(__file__).resolve().parent.parent
 SCANNED = (ROOT / "funestra", ROOT / "funestra_core", ROOT / "player_core", ROOT / "tools")
 WHITELIST = ROOT / "vulture_whitelist.py"
