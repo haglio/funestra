@@ -17,6 +17,7 @@ from dataclasses import dataclass, replace
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from shared_ui.icons_pil import paste_glyph
+from shared_ui.lettering import fit_text
 from shared_ui.palette import (
     BG_BUTTON,
     BG_TERTIARY,
@@ -41,7 +42,6 @@ from funestra.hud_panel import (
     draw_glyph,
     draw_mark,
     draw_tooltip,
-    fit_text,
     load_font,
     text_width,
 )

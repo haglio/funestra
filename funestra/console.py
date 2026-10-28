@@ -118,11 +118,11 @@ OSR2_CONTROL_BUTTONS: dict[str, str] = _SwitchPresses({
     OSR2_DRIVING: "robot_hand_release",
 })
 _SWITCH_SAYS = {
-    OSR2_DRIVING: "OSR2 control on — the OSR2 follows whatever the motion is doing.  "
+    OSR2_DRIVING: "OSR2 control on — the OSR2 follows whatever the motion is doing. "
                   "Press to switch control off: the OSR2 parks at home",
-    OSR2_PARKED: "OSR2 control off — the OSR2 parked, held still at home.  "
+    OSR2_PARKED: "OSR2 control off — the OSR2 parked, held still at home. "
                  "Press to switch control on",
-    OSR2_RETRACTED: "OSR2 control off — the OSR2 held still at the far end, away from you.  "
+    OSR2_RETRACTED: "OSR2 control off — the OSR2 held still at the far end, away from you. "
                     "Press to switch control on",
 }
 
@@ -155,7 +155,7 @@ def _osr2_switch(control: str) -> tuple[Button, ...]:
         Button("", "OSR2 control", "", width=FIT_THE_WORD),
         Button("", "Off", "", lit=not on),
         Button(OSR2_CONTROL_BUTTONS[OSR2_PARKED if on else OSR2_DRIVING], TOGGLE_SWITCH,
-               _SWITCH_SAYS.get(control, "OSR2 control off.  Press to switch control on"),
+               _SWITCH_SAYS.get(control, "OSR2 control off. Press to switch control on"),
                width=TRACK_HUD[0], lit=on),
         Button("", "On", "", lit=on),
     )

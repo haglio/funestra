@@ -20,7 +20,6 @@ from funestra.hud_panel import (
     draw_button,
     draw_glyph,
     draw_tooltip,
-    fit_text,
     load_font,
     text_width,
 )
@@ -141,6 +140,19 @@ def test_a_tooltip_starts_a_new_line_wherever_its_text_does():
     assert h == 2 * sum(font.getmetrics()) + 2 * TOOLTIP_PAD
 
 
+def test_a_tooltip_keeps_the_spaces_it_was_written_with():
+    """It wraps with the family's one wrapper, which keeps a text's own spaces
+    as the desktop's log does."""
+    panel = HudPanel(300, 200)
+    font = load_font(8)
+
+    _x, _y, single, _h = draw_tooltip(panel.draw, font, "Next clip", (40, 60), panel.image.size)
+    _x, _y, spaced, _h = draw_tooltip(panel.draw, font, "Next    clip", (40, 60),
+                                      panel.image.size)
+
+    assert spaced > single
+
+
 def _ink_center(size: int, paint) -> tuple[float, float]:
     """Where the ink *paint* leaves on a blank square actually sits."""
 
@@ -190,22 +202,3 @@ def test_a_glyph_with_no_ink_draws_nothing_rather_than_raising():
     assert np.asarray(image)[:, :, 3].max() == 0
 
 
-class TestFitText:
-    def test_text_that_fits_is_left_alone(self):
-        font = load_font(8)
-
-        assert fit_text(font, "scene one", text_width(font, "scene one")) == "scene one"
-
-    def test_text_that_does_not_keeps_its_head_and_ends_in_an_ellipsis(self):
-        font = load_font(8)
-        title = "Jane Doe - scene one - the long descriptor"
-        room = text_width(font, "Jane Doe - scene one")
-
-        fitted = fit_text(font, title, room)
-
-        assert fitted.endswith("…") and len(fitted) > 1
-        assert title.startswith(fitted[:-1])
-        assert text_width(font, fitted) <= room
-
-    def test_room_for_not_even_the_ellipsis_leaves_nothing(self):
-        assert fit_text(load_font(8), "scene one", 2) == ""
