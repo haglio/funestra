@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Protocol
 
 from shared_ui.icon_geometry import tooltip_for
+from shared_ui.lettering import fit_text
 from shared_ui.spacing import (
     BUTTON_GAP,
     BUTTON_GROUP_GAP,
@@ -483,18 +484,13 @@ def favorite_mark_rect(x: int, y: int, line_h: int) -> Rect:
     return (x + (ACTIVE_DOT + 1 - line_h) // 2, y, line_h, line_h)
 
 
-SHORTENED_MARK = "…"
-
-
-def name_line(name: str, note: str, room: int, width_of: Callable[[str], int]) -> str:
+def name_line(name: str, note: str, room: int, font) -> str:
     whole = SEPARATOR.join(part for part in (name, note) if part)
-    if not (name and note) or width_of(whole) <= room:
+    if not (name and note) or font.getlength(whole) <= room:
         return whole
-    for kept in range(len(name) - 1, -1, -1):
-        shortened = f"{name[:kept].rstrip()}{SHORTENED_MARK}{SEPARATOR}{note}"
-        if width_of(shortened) <= room:
-            return shortened
-    return note
+    after = f"{SEPARATOR}{note}"
+    shortened = fit_text(font, name, room - font.getlength(after))
+    return f"{shortened}{after}" if shortened else note
 
 
 def largest_size_that_fits(largest: int, room: int, width_at: Callable[[int], int]) -> int:
