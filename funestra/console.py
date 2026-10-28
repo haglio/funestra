@@ -74,9 +74,8 @@ class ModeHud:
     the status.  *length_mode* is the library's filter, empty when there is no
     library backing the playlist; *compilation* is the volume holding the
     playlist, with *position*/*total* placing the current video in it;
-    *scripted_filter* is Fun Time's F-mode over whichever of those runs, keeping
-    the videos that have a funscript.  All empty in genau mode, where there is
-    no Kino playlist to describe.
+    *scripted_filter* is Fun Time's F-mode over whichever of those runs.  All
+    empty in genau mode, where there is no Kino playlist to describe.
     """
 
     video: str = ""
