@@ -5,7 +5,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 from . import learned_motion
-from .drive_readout import TRACE_SAMPLES, DriveHud, publish_drive
+from .drive_readout import TRACE_SAMPLES, DriveHud, DrivePublisher
 from .genau_controls import GenauControls
 from .renamed import answers_to_old_names
 from .robot_hand import (
@@ -16,11 +16,6 @@ from .robot_hand import (
     position_fraction,
     trace_window,
 )
-
-# How often the drive readout goes out for the console to draw.  Its trace
-# scrolls, so it cannot wait on a change the way the status file does -- 25/s is
-# well under Genau's refresh rate and well over what reads as smooth.
-_DRIVE_PUBLISH_INTERVAL_S = 0.04
 
 # The travel the device uses when it runs itself: the whole axis, centered.  Its
 # free mode is firmware, and the only things it says over serial are its tempo
@@ -75,9 +70,8 @@ class GenauReadout:
         self.flick_advance = controls.flick_advance_state
         self.beats_per_loop = beats_per_loop
         self.tcode_sender = tcode_sender
-        self.drive_file = drive_file
+        self._drive_publisher = None if drive_file is None else DrivePublisher(drive_file)
         self.drive: DriveHud | None = None
-        self._last_drive_publish = 0.0
         # The broker's beat, counted up across its wraps: the auto trace's
         # knots stay put only on a phase that never starts round again.
         self._auto_turns = 0
@@ -178,14 +172,5 @@ class GenauReadout:
         return heights[:TRACE_SAMPLES], slide, heights[TRACE_SAMPLES]
 
     def _publish_drive(self, hud: DriveHud, now: float) -> None:
-        """Say the readout for the console to draw, at a fraction of the refresh
-        rate: the trace scrolls, so this cannot wait for a change the way the
-        status file does, and is throttled instead, well under the refresh rate
-        and well over what the eye reads as smooth.
-        """
-        if self.drive_file is None:
-            return
-        if now - self._last_drive_publish < _DRIVE_PUBLISH_INTERVAL_S:
-            return
-        self._last_drive_publish = now
-        publish_drive(self.drive_file, hud)
+        if self._drive_publisher is not None:
+            self._drive_publisher.publish(hud, now)

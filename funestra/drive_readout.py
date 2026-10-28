@@ -547,6 +547,23 @@ def publish_drive(path: Path, hud: DriveHud) -> bool:
     return publish_whole(path, drive_text(hud))
 
 
+# How often a readout goes out for whoever draws it.  Its trace scrolls, so it
+# cannot wait on a change the way a status file does -- 25/s is well under a
+# refresh rate and well over what reads as smooth.
+PUBLISH_INTERVAL_S = 0.04
+
+
+class DrivePublisher:
+    def __init__(self, path: Path) -> None:
+        self._path = Path(path)
+        self._last: float | None = None
+
+    def publish(self, hud: DriveHud, now: float) -> None:
+        if self._last is not None and now - self._last < PUBLISH_INTERVAL_S:
+            return
+        self._last = now
+        publish_drive(self._path, hud)
+
 
 def read_drive(path: Path) -> DriveHud | None:
     """The published readout, or None when there is not a whole one to read.
