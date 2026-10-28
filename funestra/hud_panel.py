@@ -16,7 +16,10 @@ from PIL import Image, ImageDraw, ImageFont
 from shared_ui.app_icon import draw_letter
 from shared_ui.button_pil import slab
 from shared_ui.icons_pil import paste_glyph
-from shared_ui.lettering import wrap_text
+from shared_ui.lettering import (
+    fit_text,  # noqa: F401 -- answered here for Origenerator branches that still import it here
+    wrap_text,
+)
 
 # The palette is shared_ui's, read without Qt: shared_ui.palette imports
 # nothing, and these HUDs are Pillow.  Every HUD painter reads it there too,
