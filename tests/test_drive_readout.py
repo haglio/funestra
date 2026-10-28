@@ -438,6 +438,15 @@ class TestPublishing:
 
         assert (read.slide, read.edge) == (0.0, None)
 
+    def test_who_drives_each_stretch_of_the_line_goes_over_the_wire(self, tmp_path):
+        path = tmp_path / "portrait_osr2_readout.txt"
+        stretches = ((0, DRIVEN_BY_FUNSCRIPT), (40, DRIVEN_BY_ROBOT_HAND))
+        publish_drive(path, _hud(driven=DRIVEN_BY_FUNSCRIPT, segments=stretches))
+
+        read = read_drive(path)
+
+        assert (read.driven, read.segments) == (DRIVEN_BY_FUNSCRIPT, stretches)
+
     def test_a_readout_that_has_been_over_the_wire_survives_going_again(self, tmp_path):
         path = tmp_path / "genau_drive.txt"
         publish_drive(path, _hud())

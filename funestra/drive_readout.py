@@ -144,8 +144,10 @@ class DriveHud:
     # Seconds between auto-advances.  Carried here because Fun Time does not know
     # it — Genau owns the pace — and the console's auto-advance button says it.
     advance_interval: int = 0
-    # What has the device.  Not published — Genau cannot see the handoff; whoever
-    # draws the console knows it from the OSR2 state and folds it in.  Anything
+    # What has the device.  Genau cannot see the handoff, so its publish leaves
+    # this at the default; whoever draws the console knows it from the OSR2
+    # state and folds it in, and a Funestra publishing the line it composed
+    # says it with the stretches below.  Anything
     # but the Robot Hand dims every control here, because a motion it is not
     # sending cannot be adjusted: pressing one during a funscript's turn is what
     # put two drivers on the device at once.
@@ -534,6 +536,8 @@ def drive_text(hud: DriveHud) -> str:
     if hud.edge is not None:
         lines.append(f"edge={hud.edge:.3f}")
     lines.append(f"max_intensity={hud.max_intensity}")
+    lines.append(f"driven={hud.driven}")
+    lines.append("segments=" + ",".join(f"{start}:{who}" for start, who in hud.segments))
     lines.append("waveform=" + ",".join(f"{value:.3f}" for value in hud.waveform))
     return "\n".join(lines) + "\n"
 
@@ -541,6 +545,7 @@ def drive_text(hud: DriveHud) -> str:
 def publish_drive(path: Path, hud: DriveHud) -> bool:
     """Write the readout whole, so a Funestra polling it never reads it half-drawn."""
     return publish_whole(path, drive_text(hud))
+
 
 
 def read_drive(path: Path) -> DriveHud | None:
@@ -570,6 +575,8 @@ def read_drive(path: Path) -> DriveHud | None:
         slide=_let_go(values.get("slide")) or 0.0,
         edge=_let_go(values.get("edge")),
         max_intensity=_max_intensity(values.get("max_intensity", "")),
+        driven=values.get("driven", DriveHud.driven).strip(),
+        segments=_segments(values.get("segments", "")),
     )
 
 
@@ -600,5 +607,13 @@ def _max_intensity(raw: str) -> int:
 def _waveform(raw: str) -> tuple[float, ...]:
     try:
         return tuple(float(value) for value in raw.split(",") if value)
+    except ValueError:
+        return ()
+
+
+def _segments(raw: str) -> tuple[tuple[int, str], ...]:
+    try:
+        return tuple((int(start), who) for start, who in
+                     (stretch.split(":", 1) for stretch in raw.strip().split(",") if stretch))
     except ValueError:
         return ()
