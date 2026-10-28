@@ -18,6 +18,7 @@ from funestra_fakes import FakeEngine
 from host_controls_fakes import AHost, middle_of
 
 from funestra.console import ConsoleModel, ModeHud, console_text
+from funestra.drive_readout import DriveHud, publish_drive, read_drive
 from funestra.flick_picture import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, Picture
 from funestra.funestra import Channels, Funestra, User, _Nobody, osr2_line
 from funestra.hud_button import Button
@@ -686,6 +687,19 @@ def _publish_panel(tmp_path: Path, **panel) -> None:
                                                 encoding="utf-8")
 
 
+def test_a_satellite_handed_a_place_for_the_osr2_readout_hands_on_its_motion(tmp_path):
+    channels = replace(_channels(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 commands="", hud=True),
+                       drive=tmp_path / "drive.txt", osr2_readout=tmp_path / "readout.txt")
+    _publish_panel(tmp_path, osr2=Osr2State.ROBOT_HAND)
+    publish_drive(tmp_path / "drive.txt", DriveHud(speed=40))
+    funestra = Funestra(FakeEngine(), channels=channels, playlist=read_playlist(channels.playlist))
+
+    funestra.tick(window=WINDOW)
+
+    assert read_drive(tmp_path / "readout.txt").speed == 40
+
+
 def _no_memory_to_put_it_up(*_args) -> None:
     raise MemoryError
 
@@ -826,9 +840,10 @@ class Genau(Kino):
 
 
 def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
-          host_controls=None, clock=time.monotonic) -> tuple[Funestra, FakeEngine, Kino]:
-    channels = _console_channels(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0", "v1")],
-                                 commands=commands)
+          host_controls=None, clock=time.monotonic,
+          osr2_readout: Path | None = None) -> tuple[Funestra, FakeEngine, Kino]:
+    channels = replace(_console_channels(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0", "v1")],
+                                         commands=commands), osr2_readout=osr2_readout)
     _publish_console(tmp_path)
     engine = FakeEngine()
     made: list[Kino] = []
@@ -853,6 +868,15 @@ class TestTheMainFunestra:
 
         assert funestra.playback.is_locked is True
         assert engine.loop_file is True
+
+    def test_handed_a_place_for_the_osr2_readout_it_hands_on_the_one_it_composed(self, tmp_path):
+        funestra, _engine, _kino = _main(tmp_path, osr2_readout=tmp_path / "readout.txt")
+        _publish_console(tmp_path, has_osr2=True)
+        publish_drive(tmp_path / "drive.txt", DriveHud(speed=40))
+
+        funestra.tick(window=WINDOW)
+
+        assert read_drive(tmp_path / "readout.txt").speed == 40
 
     def test_it_draws_the_console_the_room_published(self, tmp_path):
         funestra, engine, _kino = _main(tmp_path)

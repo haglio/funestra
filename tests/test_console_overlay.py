@@ -16,7 +16,7 @@ from funestra.console import ConsoleModel, ModeHud, console_text
 from funestra.console_hud import _PAD as PAD
 from funestra.console_hud import MARGIN
 from funestra.console_overlay import ConsoleOverlay
-from funestra.drive_readout import DriveHud, drive_text
+from funestra.drive_readout import DriveHud, DrivePublisher, drive_text, read_drive
 from funestra.hud_corners import HudPlace
 from funestra.hud_minimize import collapsed_panel
 from funestra.hud_overlay import HUD_OVERLAY_ID
@@ -54,7 +54,7 @@ def _drive_file(path: Path, position: int = 4_000) -> Path:
 
 
 def _overlay(tmp_path: Path, *, top_block=None, gate=None, drive: bool = True,
-             host_controls=None) -> tuple[ConsoleOverlay, FakeEngine, SpyGate]:
+             host_controls=None, readout=None) -> tuple[ConsoleOverlay, FakeEngine, SpyGate]:
     engine = FakeEngine()
     gate = gate or SpyGate()
     overlay = ConsoleOverlay(
@@ -62,7 +62,7 @@ def _overlay(tmp_path: Path, *, top_block=None, gate=None, drive: bool = True,
         drive_file=tmp_path / "drive.txt" if drive else None,
         command_file=tmp_path / "dashboard_cmd.txt",
         engine=engine, drive_gate=gate, top_block=top_block or ModeHud,
-        host_controls=host_controls,
+        host_controls=host_controls, readout=readout, clock=lambda: 0.0,
     )
     return overlay, engine, gate
 
@@ -74,6 +74,43 @@ def _tick(overlay: ConsoleOverlay, speed: float = 1.0) -> None:
 def _asked(tmp_path: Path) -> list[str]:
     path = tmp_path / "dashboard_cmd.txt"
     return path.read_text(encoding="utf-8").split() if path.exists() else []
+
+
+class TestAConsoleWhoseHostDrawsTheOsr2:
+    def test_hands_its_host_the_readout_it_composed(self, tmp_path):
+        overlay, _engine, _gate = _overlay(tmp_path, readout=DrivePublisher(tmp_path / "readout.txt"))
+        _console_file(tmp_path / "console.json", has_osr2=True)
+        _drive_file(tmp_path / "drive.txt", position=1234)
+
+        _tick(overlay)
+
+        assert read_drive(tmp_path / "readout.txt").position == 1234
+
+    def test_a_console_without_the_osr2_hands_on_nothing(self, tmp_path):
+        overlay, _engine, _gate = _overlay(tmp_path, readout=DrivePublisher(tmp_path / "readout.txt"))
+        _console_file(tmp_path / "console.json", has_osr2=False)
+        _drive_file(tmp_path / "drive.txt")
+
+        _tick(overlay)
+
+        assert not (tmp_path / "readout.txt").exists()
+
+    def test_draws_its_own_panel_as_one_without_the_osr2(self, tmp_path):
+        plain_dir, handing_dir = tmp_path / "plain", tmp_path / "handing"
+        plain_dir.mkdir()
+        handing_dir.mkdir()
+        plain, plain_engine, _gate = _overlay(plain_dir)
+        handing, handing_engine, _gate = _overlay(
+            handing_dir, readout=DrivePublisher(handing_dir / "readout.txt"))
+        for folder, has_osr2 in ((plain_dir, False), (handing_dir, True)):
+            _console_file(folder / "console.json", has_osr2=has_osr2)
+            _drive_file(folder / "drive.txt")
+
+        _tick(plain)
+        _tick(handing)
+
+        assert np.array_equal(handing_engine.overlays[HUD_OVERLAY_ID][2],
+                              plain_engine.overlays[HUD_OVERLAY_ID][2])
 
 
 class TestReadingTheConsole:

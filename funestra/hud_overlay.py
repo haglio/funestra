@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from .dashboard import ask
-from .drive_readout import DriveHud, read_drive
+from .drive_readout import DriveHud, DrivePublisher, read_drive
 from .hud_corners import HudPlace
 from .hud_placement import HudCorner, HudEdge, PointerReading
 from .hud_row import RowHud, RowLayout, RowPress, track_on_screen
@@ -111,6 +111,7 @@ class HudOverlay:
         clock=time.monotonic,
         drive_file: Path | None = None,
         drive_gate=None,
+        readout: DrivePublisher | None = None,
         over_the_video: bool = True,
         minus_on_the_panel: bool = True,
         seek=None,
@@ -122,6 +123,7 @@ class HudOverlay:
                         else _PublishedPanel(hud_file, command_file))
         self._drive_file = None if drive_file is None else Path(drive_file)
         self._drive_gate = drive_gate
+        self._readout = readout
         self._published_drive: DriveHud | None = None
         self._drive: DriveHud | None = None
         self._engine = engine
@@ -191,7 +193,9 @@ class HudOverlay:
             self._model = model
             redraw = True
         drive = self._motion()
-        if drive != self._drive:
+        if drive is not None and self._readout is not None:
+            self._readout.publish(drive, self._clock())
+        elif drive != self._drive:
             self._drive = drive
             redraw = True
         if redraw or self._draw_owed:
@@ -345,10 +349,13 @@ class HudOverlay:
             return
         corner = self._model.hud_corner if self._over_the_video else HudCorner.UPPER_LEFT
         drive = self._model.drive if self._drive_file is None else self._drive
+        model = replace(self._model, playback_speed=self._playback_speed, drive=drive,
+                        drive_composed=self._drive_gate is not None, hud_corner=corner)
+        if self._readout is not None:
+            model = replace(model, osr2="", drive=None)
         self._draw_owed = True
         rendered = self._renderer.render(
-            replace(self._model, playback_speed=self._playback_speed, drive=drive,
-                    drive_composed=self._drive_gate is not None, hud_corner=corner),
+            model,
             video=self._video, hover_loop=hover.loop, hover_tip=hover.tip, hover_pos=hover.at,
             may_grow_on_hover=self._over_the_video,
             minus_on_the_panel=self._minus_on_the_panel,

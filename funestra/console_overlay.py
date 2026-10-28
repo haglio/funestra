@@ -9,13 +9,15 @@ the pill and the drawn line describe the frame before this one.
 """
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
+from dataclasses import replace
 from pathlib import Path
 
 from .console import ConsoleModel, ModeHud, kino_shows, read_console
 from .console_hud import ConsoleHud, ConsolePainter, with_playback_speed
 from .dashboard import ask
-from .drive_readout import DriveHud, read_drive
+from .drive_readout import DriveHud, DrivePublisher, read_drive
 from .host_controls import HostControls, HostControlsPress
 from .hud_corners import HudPlace
 from .hud_overlay import HUD_OVERLAY_ID
@@ -41,12 +43,16 @@ class ConsoleOverlay:
         set_volume=None,
         toggle_mute=None,
         host_controls: HostControls | None = None,
+        readout: DrivePublisher | None = None,
+        clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._console_file = Path(console_file)
         self._drive_file = None if drive_file is None else Path(drive_file)
         self._command_file = command_file
         self._engine = engine
         self._drive_gate = drive_gate
+        self._readout = readout
+        self._clock = clock
         self._top_block = top_block
         self.overlay_id = overlay_id
         self._painter = ConsolePainter(width=width, minus_on_the_panel=minus_on_the_panel)
@@ -86,13 +92,18 @@ class ConsoleOverlay:
         drive = self._drive_gate.readout(
             self._drive, device_drives_itself=self._console.device_drives_itself,
             video_shows=kino_shows(self._console.main_mode))
+        if self._readout is not None and self._console.has_osr2:
+            self._readout.publish(drive, self._clock())
         self._item_row = item_row
         if self.minimized and not self._minus_on_the_panel:
             self.close()
             return
+        console = with_playback_speed(self._console, playback_speed)
+        if self._readout is not None:
+            console = replace(console, has_osr2=False)
         bgra = self._painter.bgra(ConsoleHud(
             modes=self._top_block(),
-            console=with_playback_speed(self._console, playback_speed),
+            console=console,
             drive=drive,
             flash=flash,
         ), item_row=item_row, heatmap=heatmap, host_controls=self._host_controls.drawing())
