@@ -935,6 +935,36 @@ class TestAFrameInThePicturesPlace:
 
         assert engine.swapped == [tmp_path / "frame.png"]
 
+    def test_a_frame_is_still_up_once_a_list_of_one_has_run_out_onto_its_own_picture(
+            self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=1)
+        playback.show_frame(tmp_path / "frame.png")
+
+        engine.simulate_eof_advance()
+        playback.advance()
+
+        assert engine.playing == tmp_path / "frame.png"
+
+    def test_a_frame_stays_up_through_every_roll_of_a_list_of_one(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=1)
+        playback.show_frame(tmp_path / "frame.png")
+
+        for _ in range(2):
+            engine.simulate_eof_advance()
+            playback.advance()
+
+        assert engine.playing == tmp_path / "frame.png"
+
+    def test_a_list_of_one_whose_frame_is_cleared_rolls_onto_its_own_picture(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=1)
+        playback.show_frame(tmp_path / "frame.png")
+
+        playback.clear_frame()
+        engine.simulate_eof_advance()
+        playback.advance()
+
+        assert engine.playing == tmp_path / "v0.mp4"
+
     def test_a_frame_going_up_is_a_picture_while_the_engine_opens_it(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
         engine.showing_picture = True
