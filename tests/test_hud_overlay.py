@@ -11,7 +11,7 @@ from funestra_fakes import FakeEngine
 from PIL import Image
 from shared_ui.spacing import BUTTON_SIZE_HUD
 
-from funestra.drive_readout import DriveHud, publish_drive
+from funestra.drive_readout import DriveHud, DrivePublisher, publish_drive, read_drive
 from funestra.hud_button import Button
 from funestra.hud_corners import HudPlace
 from funestra.hud_minimize import collapsed_panel
@@ -608,6 +608,57 @@ class TestAPanelWithTheOsr2:
         assert _commands(tmp_path) == ["robot_hand_speed_1", "robot_hand_speed_99"]
         assert dragged == "robot_hand_speed_99"
         assert overlay.holding is False
+
+
+def _overlay_handing_on_the_motion(tmp_path: Path, panel: Path, engine) -> HudOverlay:
+    return HudOverlay(hud_file=panel, command_file=tmp_path / "dashboard_cmd.txt",
+                      engine=engine, clock=lambda: 0.0, drive_file=tmp_path / "drive.txt",
+                      readout=DrivePublisher(tmp_path / "readout.txt"))
+
+
+class TestAPanelWhoseHostDrawsTheOsr2:
+    def test_hands_its_host_the_motion_it_would_have_drawn(self, tmp_path: Path, panel: Path):
+        _give_it_the_osr2(panel)
+        _publish_motion(tmp_path / "drive.txt", 0.0)
+        overlay = _overlay_handing_on_the_motion(tmp_path, panel, FakeEngine())
+
+        overlay.tick()
+
+        assert read_drive(tmp_path / "readout.txt") == read_drive(tmp_path / "drive.txt")
+
+    def test_a_panel_without_the_osr2_hands_on_nothing(self, tmp_path: Path, panel: Path):
+        _publish_motion(tmp_path / "drive.txt", 0.0)
+        overlay = _overlay_handing_on_the_motion(tmp_path, panel, FakeEngine())
+
+        overlay.tick()
+
+        assert not (tmp_path / "readout.txt").exists()
+
+    def test_draws_its_own_panel_as_one_without_the_osr2(self, tmp_path: Path, panel: Path):
+        plain_engine, handing_engine = FakeEngine(), FakeEngine()
+        plain = _overlay(tmp_path, panel, plain_engine)
+        plain.tick()
+        _give_it_the_osr2(panel)
+        _publish_motion(tmp_path / "drive.txt", 0.0)
+        handing = _overlay_handing_on_the_motion(tmp_path, panel, handing_engine)
+
+        handing.tick()
+
+        assert np.array_equal(handing_engine.overlays[handing.overlay_id][2],
+                              plain_engine.overlays[plain.overlay_id][2])
+
+    def test_does_not_redraw_its_panel_as_the_motion_moves(self, tmp_path: Path, panel: Path):
+        _give_it_the_osr2(panel)
+        _publish_motion(tmp_path / "drive.txt", 0.0)
+        engine = FakeEngine()
+        overlay = _overlay_handing_on_the_motion(tmp_path, panel, engine)
+        overlay.tick()
+        engine.overlays[overlay.overlay_id] = "drawn before"
+
+        _publish_motion(tmp_path / "drive.txt", 3.0)
+        overlay.tick()
+
+        assert engine.overlays[overlay.overlay_id] == "drawn before"
 
 
 class _Gate:

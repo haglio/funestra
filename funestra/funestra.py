@@ -19,6 +19,7 @@ from .console_overlay import ConsoleOverlay
 from .control_registry import look_up
 from .dashboard import ask
 from .drive_gate import DriveGate
+from .drive_readout import DrivePublisher
 from .file_channel import consume_command_file, read_paused_state
 from .flick_picture import FlickPicture, Picture
 from .funestra_controls import VERBS, FunestraControls
@@ -67,6 +68,7 @@ class Channels:
     tcode_port: int | None = None
     osr2_sender: str | None = None
     osr2_port: int | None = None
+    osr2_readout: Path | None = None
 
 
 @runtime_checkable
@@ -179,6 +181,7 @@ class Funestra:
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._engine = engine
+        self._clock = clock
         self._volume_moved = on_volume_moved
         self._channels = channels
         self._tiles = tiles
@@ -273,17 +276,23 @@ class Funestra:
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
                 **self._volume_presses(),
                 host_controls=self._host_controls,
+                readout=self._readout_for(channels), clock=self._clock,
             )
         if channels.hud is not None:
             return HudOverlay(
                 hud_file=channels.hud, command_file=channels.dashboard_cmd, engine=drawn_on,
                 drive_file=channels.drive, drive_gate=self._drive_gate,
+                readout=self._readout_for(channels), clock=self._clock,
                 over_the_video=self._panel_surface is None,
                 minus_on_the_panel=self._panel_surface is None,
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
                 **self._volume_presses(),
             )
         return None
+
+    @staticmethod
+    def _readout_for(channels: Channels) -> DrivePublisher | None:
+        return None if channels.osr2_readout is None else DrivePublisher(channels.osr2_readout)
 
     def _volume_presses(self) -> dict[str, Callable[..., None]]:
         return {"set_volume": self._told_to_the_host(self._volume.set_level),
