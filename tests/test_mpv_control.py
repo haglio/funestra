@@ -284,6 +284,17 @@ def test_staging_holds_up_when_mpv_says_nothing_is_playing():
     assert mpv.calls[-1] == ("loadfile", "beta.mp4", "append")
 
 
+def test_staging_the_clip_already_staged_asks_mpv_nothing():
+    mpv = FakeMpv(pos=0, count=2)
+    control = Control(mpv)
+    control.stage_next(Path("alpha.mp4"))
+    mpv.calls.clear()
+
+    control.stage_next(Path("alpha.mp4"))
+
+    assert mpv.calls == []
+
+
 def test_clearing_the_staged_entry_keeps_the_clip_on_screen():
     """A lock drops the prefetched next; the clip being held must not go with it."""
     mpv = FakeMpv(pos=0, count=2)

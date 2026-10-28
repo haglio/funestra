@@ -435,6 +435,8 @@ class _MpvControl:
         current clip ends, so the end-of-file auto-advance onto it is seamless.
         Any previously-staged entry is replaced.
         """
+        if str(path) == self._staged:
+            return
         self._mpv.playlist_clear()
         self._mpv.loadfile(str(path), "append")
         self._staged = str(path)
