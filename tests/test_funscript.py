@@ -240,6 +240,37 @@ class TestNextActiveMs:
         assert fs.next_active_ms(0) is None
 
 
+def _cycles(first_ms: int, last_ms: int) -> list[tuple[int, int]]:
+    return [(at, 100 * (index % 2)) for index, at in enumerate(range(first_ms, last_ms + 1, 500))]
+
+
+class TestActiveMs:
+    def test_a_run_is_in_action_from_its_first_action_to_its_last(self):
+        fs = Funscript(actions=_cycles(10_000, 40_000))
+
+        assert fs.active_ms(100_000) == 30_000
+
+    def test_the_quiet_stretch_between_two_runs_is_not_in_action(self):
+        fs = Funscript(actions=_cycles(0, 10_000) + _cycles(10_000 + QUIET_LEAD_IN_MS, 20_000))
+
+        assert fs.active_ms(100_000) == 15_000
+
+    def test_only_the_action_inside_the_running_time_counts(self):
+        fs = Funscript(actions=_cycles(0, 10_000) + _cycles(30_000, 60_000))
+
+        assert fs.active_ms(40_000) == 20_000
+
+    def test_a_pause_shorter_than_the_quiet_lead_in_is_still_part_of_its_run(self):
+        fs = Funscript(actions=_cycles(0, 10_000) + _cycles(10_000 + QUIET_LEAD_IN_MS - 1000, 20_000))
+
+        assert fs.active_ms(100_000) == 20_000
+
+    def test_a_stray_blip_is_not_action(self):
+        fs = Funscript(actions=[*_cycles(0, 10_000), (50_000, 50)])
+
+        assert fs.active_ms(100_000) == 10_000
+
+
 class TestSnapLoop:
     def _make_fs(self):
         return Funscript(actions=[
