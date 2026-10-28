@@ -9,6 +9,7 @@ import pytest
 from shared_ui.icon_geometry import glyph_names
 
 from funestra.console import (
+    BROKER_PRESS,
     BUTTON,
     GAP,
     GROUP_GAP,
@@ -25,6 +26,7 @@ from funestra.console import (
     console_text,
     hit_test,
     kino_shows,
+    osr2_controls,
     parse_console,
     place_rows,
     read_console,
@@ -169,6 +171,27 @@ class TestTheRowThatAimsTheDevice:
 
     def test_a_waveform_this_version_does_not_know_wears_the_plain_wave(self):
         assert _waveform_face("half_moon") == shared_mark("wave")
+
+
+class TestTheBrokerButton:
+    """The device's own control: the Broker that talks to the OSR2 at all."""
+
+    def test_it_says_which_way_a_press_goes(self):
+        (running,), (down,) = (osr2_controls(broker_running=True),
+                               osr2_controls(broker_running=False))
+
+        assert running.command == down.command == BROKER_PRESS
+        assert running.lit is True
+        assert down.lit is False and down.warn is True
+        assert (running.tooltip, down.tooltip) == (
+            "Broker is running — press to stop it",
+            "Broker is not running — press to start it",
+        )
+
+    def test_it_asks_for_its_own_icon_rather_than_the_word(self):
+        (button,) = osr2_controls(broker_running=True)
+
+        assert button.glyph == BROKER_ICON
 
 
 class TestTheDeviceRunningItself:

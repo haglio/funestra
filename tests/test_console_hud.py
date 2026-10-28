@@ -5,7 +5,7 @@ from dataclasses import replace
 
 import numpy as np
 import pytest
-from console_rows import console_rows, motion_rows, osr2_controls
+from console_rows import console_rows, motion_rows
 from host_controls_fakes import a_hud
 from shared_ui import colors
 from shared_ui.app_icon import LETTERS
@@ -19,6 +19,7 @@ from funestra.console import (
     OSR2_RETRACTED,
     ConsoleModel,
     aim_row,
+    osr2_controls,
 )
 from funestra.console_hud import (
     _PAD,
@@ -487,7 +488,7 @@ class TestPainter:
                              ("main_fmode", LETTERS["F"])):
             pixels = self._button_pixels(action, ConsoleModel(
                 main_mode=MainMode.KINO, rows=console_rows(favorites=True),
-                osr2_controls=osr2_controls()))
+                osr2_controls=osr2_controls(broker_running=True)))
             magenta = (pixels == np.array((200, 80, 160), dtype=pixels.dtype)).all(axis=2)
             ys, xs = np.nonzero(magenta)
             cell = (xs.max() - xs.min() + 1) / 5
@@ -525,7 +526,7 @@ class TestPainter:
 
     def _broker_pixels(self, broker: bool) -> np.ndarray:
         return self._button_pixels("broker_panel", ConsoleModel(
-            main_mode=MainMode.KINO, osr2_controls=osr2_controls(broker=broker)))
+            main_mode=MainMode.KINO, osr2_controls=osr2_controls(broker_running=broker)))
 
     def test_f_mode_is_the_one_lit_control_that_stays_green(self):
         """It narrows the playlist to the videos that have a funscript, and green
@@ -1039,7 +1040,7 @@ class TestEveryConsolePaints:
                     modes=ModeHud(video="clip one"),
                     console=ConsoleModel(main_mode=mode, osr2=Osr2State.ROBOT_HAND,
                                          rows=console_rows(mode),
-                                         osr2_controls=osr2_controls()),
+                                         osr2_controls=osr2_controls(broker_running=True)),
                     drive=DriveHud(waveform=wave, driven=driven,
                                    segments=segments))
                 ConsolePainter().rgba(hud)
@@ -1580,7 +1581,7 @@ class TestWhereTheConsoleSits:
         return ConsoleHud(
             modes=ModeHud(video="scene one"),
             console=ConsoleModel(hud_corner=corner, rows=console_rows(),
-                                 osr2_controls=osr2_controls(), **console))
+                                 osr2_controls=osr2_controls(broker_running=True), **console))
 
     def _painted(self, corner, **console):
         painter = ConsolePainter(width=420)
@@ -1593,7 +1594,7 @@ class TestWhereTheConsoleSits:
 
         The device line's controls sit inside that line rather than along the
         panel's edge, so they are not one of these rows."""
-        on_the_line = {button.command for button in osr2_controls()}
+        on_the_line = {button.command for button in osr2_controls(broker_running=True)}
         bands: dict[int, tuple[int, int]] = {}
         for (x, y, w, _h), button in _declared(painter):
             if button.command in on_the_line:
@@ -1716,7 +1717,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
             modes=ModeHud(video="scene one"),
             console=ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND,
                                  rows=console_rows(), osr2_rows=motion_rows(),
-                                 osr2_controls=osr2_controls()),
+                                 osr2_controls=osr2_controls(broker_running=True)),
             drive=drive), item_row=RowHud(duration_ms=60_000))
         controls = _span(rect for rect, button in _declared(painter)
                          if button.command.startswith(("main_", "genau_")))
@@ -1742,7 +1743,7 @@ class TestADeviceOnlyConsole:
             modes=ModeHud(video="scene one"),
             console=ConsoleModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
                                  rows=console_rows("genau"), osr2_rows=motion_rows(),
-                                 osr2_controls=osr2_controls()),
+                                 osr2_controls=osr2_controls(broker_running=True)),
             drive=_drive()), item_row=RowHud(duration_ms=60_000))
         return painter, bgra
 
@@ -1769,7 +1770,7 @@ class TestADeviceOnlyConsole:
             modes=ModeHud(video="scene one"),
             console=ConsoleModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
                                  hud_corner=HudCorner.LOWER_LEFT, osr2_rows=motion_rows(),
-                                 osr2_controls=osr2_controls()),
+                                 osr2_controls=osr2_controls(broker_running=True)),
             drive=_drive()))
 
         assert _button_rect(painter, "robot_hand_toggle_learned")[0] == PAD

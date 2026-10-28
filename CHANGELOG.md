@@ -34,6 +34,18 @@ radio an app hands it by its old name where it lacks the new one (`picture()`,
 `tick(picture=...)`), through the new `renamed.value_of` and `renamed.keyword_of`
 beside `method_of`.
 
+## 2026-10-28 — the Broker button, and what a press on it does
+
+Fun Time put a Broker button on the OSR2 line and answered its press, and
+Origenerator, which draws the same line, had none. Both now take it from here:
+`console.osr2_controls(broker_running=...)` is the button and `BROKER_PRESS` its
+verb, and the new `broker` module says whether the Broker is running
+(`is_running`) and answers the press (`press`): it starts the Broker's tray from
+its launcher, or asks the Broker to stop through the file its
+`broker_contract.json` names. The reader of that document came from Fun Time
+too (`read_contract`, `BrokerContract`), with `tray_launcher_in` for a host that
+knows only the Broker's checkout.
+
 ## 2026-10-24 — a verb or a list acts on the picture on screen, one that has just moved on included
 
 A Funestra follows a picture that moved on by itself (a still at the end of its
