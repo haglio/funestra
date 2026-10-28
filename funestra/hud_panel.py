@@ -16,6 +16,7 @@ from PIL import Image, ImageDraw, ImageFont
 from shared_ui.app_icon import draw_letter
 from shared_ui.button_pil import slab
 from shared_ui.icons_pil import paste_glyph
+from shared_ui.lettering import wrap_text
 
 # The palette is shared_ui's, read without Qt: shared_ui.palette imports
 # nothing, and these HUDs are Pillow.  Every HUD painter reads it there too,
@@ -80,25 +81,6 @@ def load_font(points: int, family: str = UI_FONT) -> ImageFont.FreeTypeFont:
 def text_width(font: ImageFont.FreeTypeFont, text: str) -> int:
     """How wide *text* draws in *font* — what a panel sizes itself against."""
     return int(font.getlength(text))
-
-
-ELLIPSIS = "…"
-
-
-def fit_text(font: ImageFont.FreeTypeFont, text: str, max_width: int) -> str:
-    """*text* if it draws inside *max_width*, else as much of its head as does
-    with an ellipsis after it — "" when not even the ellipsis fits."""
-    if text_width(font, text) <= max_width:
-        return text
-    fits, over = 0, len(text)  # the longest head known to fit; the shortest known not to
-    while over - fits > 1:
-        cut = (fits + over) // 2
-        if text_width(font, text[:cut].rstrip() + ELLIPSIS) <= max_width:
-            fits = cut
-        else:
-            over = cut
-    head = text[:fits].rstrip() + ELLIPSIS
-    return head if text_width(font, head) <= max_width else ""
 
 
 # Where each glyph's ink sits relative to the origin ``draw.text`` draws from,
@@ -189,28 +171,6 @@ _TOOLTIP_EDGE = 2           # the gap it keeps from the panel's own edge
 _TOOLTIP_OFFSET = (14, 16)  # right of and below the cursor, clear of the pointer
 
 
-def _wrap(font: ImageFont.FreeTypeFont, text: str, available: int) -> list[str]:
-    return [line for paragraph in text.split("\n")
-            for line in _wrap_paragraph(font, paragraph, available)]
-
-
-def _wrap_paragraph(font: ImageFont.FreeTypeFont, paragraph: str,
-                    available: int) -> list[str]:
-    """*paragraph* broken on spaces into lines of at most *available* px.
-
-    A word wider than *available* keeps its own line and overhangs — breaking
-    mid-word would read as two words, and nothing named on these HUDs has one
-    that long.
-    """
-    lines: list[str] = []
-    for word in paragraph.split():
-        if lines and text_width(font, f"{lines[-1]} {word}") <= available:
-            lines[-1] = f"{lines[-1]} {word}"
-        else:
-            lines.append(word)
-    return lines
-
-
 def draw_tooltip(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: str,
                  pos: tuple[int, int], bounds: tuple[int, int]) -> tuple[int, int, int, int]:
     """Name a control in a tooltip near *pos*, inside a panel *bounds* big, and
@@ -225,7 +185,7 @@ def draw_tooltip(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: 
     inward instead of off it.
     """
     room = max(1, bounds[0] - 2 * (_TOOLTIP_EDGE + TOOLTIP_PAD))
-    lines = _wrap(font, text, room)
+    lines = wrap_text(font, text, room)
     if not lines:
         return (0, 0, 0, 0)
     ascent, descent = font.getmetrics()

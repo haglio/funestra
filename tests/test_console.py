@@ -369,3 +369,11 @@ def test_the_published_console_carries_where_it_sits_and_whether_it_is_minimized
     assert read_back.hud_edge is HudEdge.UPPER
     assert read_back.hud_minimized is True
     assert read_back.funestra == "main"
+
+
+def test_the_osr2_switch_says_its_sentences_one_space_apart():
+    """The family's wrapper shows a tooltip's spaces as they are written, so
+    these say theirs with the one space they have always shown."""
+    for control in (OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED, "an unknown control"):
+        for button in _aim_row(control=control):
+            assert "  " not in button.tooltip, (control, button.tooltip)

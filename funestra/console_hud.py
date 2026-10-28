@@ -26,6 +26,7 @@ from dataclasses import dataclass, field, replace
 
 import numpy as np
 from PIL import Image
+from shared_ui.lettering import fit_text
 from shared_ui.palette import (
     BG_PRIMARY,
     TEXT_MUTED,
@@ -73,7 +74,6 @@ from .hud_panel import (
     draw_active_dot,
     draw_button,
     draw_tooltip,
-    fit_text,
     load_font,
     text_width,
     to_bgra,
