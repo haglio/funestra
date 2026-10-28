@@ -319,7 +319,7 @@ class HudRenderer:
         model = replace(model, title=fit_text(title_font, model.title, room))
         favorite = self._draw_title_band(
             image, draw, PAD, model, width, title_font,
-            name_line(video, model.item_note, room, lambda text: text_width(self._tiny, text)),
+            name_line(video, model.item_note, room, self._tiny),
             reserve=0 if model.hud_corner.lower else minus_room)
         y = layout.bands
         buttons: list[tuple[Rect, Button]] = []

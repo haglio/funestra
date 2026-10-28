@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import math
 
 from satellite_rows import band, funestra_rows
 from shared_ui.icon_geometry import GLYPHS, tooltip_for
@@ -11,6 +12,7 @@ from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL, SIZE_TINY
 from funestra.console import OSR2_PARKED, VALUE_W
 from funestra.hud_button import Button
 from funestra.hud_marks import MINIMIZE_ICON, shared_mark
+from funestra.hud_panel import load_font
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.modes import Osr2State
 from funestra.satellite_hud import (
@@ -513,26 +515,35 @@ def test_the_speed_buttons_wear_the_familys_minus_and_plus():
     assert [button.glyph for _rect, button in buttons] == [shared_mark("minus"), shared_mark("plus")]
 
 
-def test_a_name_too_long_for_its_line_is_shortened_so_the_note_after_it_stays_whole():
-    line = name_line("folder one / seed 12345", "Enhancing…", room=25, width_of=len)
+_NOTE = "Enhancing…"
 
-    assert line == "folder one…" + " · Enhancing…"
+
+def test_a_name_too_long_for_its_line_is_shortened_so_the_note_after_it_stays_whole():
+    """Shortened by the family's one cut, which keeps a space it lands just after."""
+    font = load_font(SIZE_TINY)
+    shortened = f"folder one … · {_NOTE}"
+
+    line = name_line("folder one / seed 12345", _NOTE, math.ceil(font.getlength(shortened)), font)
+
+    assert line == shortened
 
 
 def test_a_name_and_a_note_that_fit_their_line_are_left_whole():
-    assert name_line("clip", "Enhancing…", room=100, width_of=len) == "clip · Enhancing…"
+    assert name_line("clip", _NOTE, 1000, load_font(SIZE_TINY)) == f"clip · {_NOTE}"
 
 
 def test_a_name_with_no_note_after_it_is_left_whole_however_long():
-    assert name_line("a long name " * 5, "", room=10, width_of=len) == "a long name " * 5
+    assert name_line("a long name " * 5, "", 10, load_font(SIZE_TINY)) == "a long name " * 5
 
 
 def test_a_note_with_no_name_before_it_stands_alone():
-    assert name_line("", "Enhancing…", room=100, width_of=len) == "Enhancing…"
+    assert name_line("", _NOTE, 1000, load_font(SIZE_TINY)) == _NOTE
 
 
 def test_a_note_too_long_to_leave_any_of_the_name_stands_alone():
-    assert name_line("clip", "Enhancing…", room=12, width_of=len) == "Enhancing…"
+    font = load_font(SIZE_TINY)
+
+    assert name_line("clip", _NOTE, math.floor(font.getlength(_NOTE)), font) == _NOTE
 
 
 def test_a_title_that_fits_keeps_its_full_size():
