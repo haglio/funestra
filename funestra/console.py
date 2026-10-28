@@ -35,7 +35,7 @@ from .hud_button import (
     rows_from_raw,
     rows_raw,
 )
-from .hud_marks import TOGGLE_SWITCH, shared_mark
+from .hud_marks import BROKER_ICON, TOGGLE_SWITCH, shared_mark
 from .hud_placement import HudCorner, HudEdge
 from .modes import LengthMode, MainMode, Osr2State, read_mode
 from .renamed import answers_to_old_names, drops_retired_arguments
@@ -158,6 +158,18 @@ def _osr2_switch(control: str) -> tuple[Button, ...]:
                _SWITCH_SAYS.get(control, "OSR2 control off. Press to switch control on"),
                width=TRACK_HUD[0], lit=on),
         Button("", "On", "", lit=on),
+    )
+
+
+BROKER_PRESS = "broker_panel"
+
+
+def osr2_controls(*, broker_running: bool) -> tuple[Button, ...]:
+    return (
+        Button(BROKER_PRESS, BROKER_ICON,
+               "Broker is running — press to stop it" if broker_running
+               else "Broker is not running — press to start it",
+               lit=broker_running, warn=not broker_running),
     )
 
 
