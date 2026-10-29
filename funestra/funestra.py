@@ -39,7 +39,7 @@ from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
 from .radio import Radio, RadioFile, Tuner, radio_file_for
-from .renamed import answers_to_old_names, keyword_of, method_of, old_name_getter, value_of
+from .renamed import keyword_of, method_of, old_name_getter, value_of
 from .satellite_hud import HudModel
 from .scrubber import HeatmapStrip, LoopThumbCapture, loop_thumbnail_xys
 from .session_quit import quit_gesture
@@ -85,8 +85,6 @@ class User(Protocol):
     def top_block(self) -> ModeHud: ...
 
     def set_showing(self, showing: bool) -> None: ...
-
-    def own_frame(self) -> FlickFrame | None: ...
 
     def close(self) -> None: ...
 
@@ -155,7 +153,6 @@ def osr2_line(channels: Channels) -> FunscriptTCodeDriver | None:
     return FunscriptTCodeDriver(UdpTCodeSink(channels.tcode_host, channels.tcode_port))
 
 
-@answers_to_old_names({"users_picture": "users_frames"})
 class Funestra:
     IN_FRAME_OVERLAY_ID = 8
     OUT_FRAME_OVERLAY_ID = 9
@@ -181,6 +178,7 @@ class Funestra:
         radio: Tuner | None = None,
         on_volume_moved: Callable[[VolumeHud], None] | None = None,
         clock: Callable[[], float] = time.monotonic,
+        users_picture: UsersFrames | None = None,
     ) -> None:
         self._engine = engine
         self._clock = clock
@@ -215,7 +213,7 @@ class Funestra:
         self._panel = self._panel_for(channels, panel_surface or engine, panel)
         self._name_flash = NameFlash(clock)
         self._flash = ""
-        self._users_frames = users_frames or FlickOverlay(engine)
+        self._users_frames = users_frames or users_picture or FlickOverlay(engine)
         self._corners = None if self._panel is None or panel_surface is not None else HudCorners(
             self._panel, engine, post=self._where_the_panel_asks(channels))
         self._pointer = Pointer(hud=self._panel, corners=self._corners,

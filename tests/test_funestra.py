@@ -1660,6 +1660,23 @@ class TestAUsersOwnFrameElsewhere:
     """A window may show a User's own frame somewhere other than over the
     engine's: it is handed the frame whenever one is up and told when none is."""
 
+    def test_a_place_handed_under_its_old_keyword_is_handed_the_frame(self, tmp_path):
+        surface = _AFramesSurface()
+        channels = _console_channels(
+            tmp_path, [str(clip) for clip in _clips(tmp_path, "v0", "v1")], commands="SHOW genau\n")
+        _publish_console(tmp_path)
+        funestra = Funestra(FakeEngine(), channels=channels, playlist=read_playlist(channels.playlist),
+                            locked=True, sound_is_the_rooms=True, users={"kino": Kino, "genau": Genau},
+                            panel_surface=_ASurface(), users_picture=surface)
+
+        funestra.tick(window=WINDOW)
+        funestra.tick(window=WINDOW)
+
+        assert surface.shown
+
+    def test_a_user_from_before_images_is_still_a_thing_a_funestra_runs(self):
+        assert isinstance(_AUserFromBeforeImages.__new__(_AUserFromBeforeImages), User)
+
     def test_the_frame_is_handed_over_and_the_video_is_left_alone(self, tmp_path):
         surface = _AFramesSurface()
         funestra, engine = TestAPanelBesideTheItem()._main_beside(
