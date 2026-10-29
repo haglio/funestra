@@ -53,16 +53,6 @@ def heard(opened: list[FakeStation]) -> list[int | None]:
     return [station.heard_at for station in opened]
 
 
-def test_a_radio_ticked_by_its_old_keyword_hears_an_image_as_it_would_by_the_new_one():
-    by_the_old, opened_by_the_old = a_radio()
-    by_the_new, opened_by_the_new = a_radio()
-
-    by_the_old.tick(picture=IMAGE, level=70, paused=False)
-    by_the_new.tick(image=IMAGE, level=70, paused=False)
-
-    assert heard(opened_by_the_old) == heard(opened_by_the_new)
-
-
 def test_an_image_coming_up_tunes_the_first_station_in_at_the_funestras_level():
     radio, opened = a_radio()
 

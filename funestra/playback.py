@@ -18,7 +18,7 @@ from .funscript import load as load_funscript
 from .play_points import PlayPoints
 from .playback_rate import clamp_rate
 from .playlist import PlaylistItem
-from .renamed import answers_to_old_names, method_of, value_of
+from .renamed import answers_to_old_names
 from .scripted_device import REWIND_MS, ScriptedDevice
 from .seeking import OwedSeek, seek_if_taken
 from .up_next import put_up_next
@@ -207,7 +207,7 @@ class Playback:
 
     @property
     def showing_image(self) -> bool:
-        return self._still_put_up or value_of(self._engine, "showing_image", old_name="showing_picture")
+        return self._still_put_up or self._engine.showing_image
 
     def step(self, delta: int) -> None:
         self.load(self._index + delta)
@@ -273,7 +273,7 @@ class Playback:
             self._hold_or_roll()
 
     def hold_image_for(self, seconds: float) -> None:
-        method_of(self._engine, "hold_image_for", old_name="hold_picture_for")(seconds)
+        self._engine.hold_image_for(seconds)
 
     def show_frame(self, frame: Path) -> None:
         self._frame_on_screen = frame
@@ -349,7 +349,7 @@ class Playback:
         first frame after it, a still counting as there at once."""
         if self._held_at is None:
             return True
-        if position_ms == self._held_at and not value_of(self._engine, "showing_image", old_name="showing_picture"):
+        if position_ms == self._held_at and not self._engine.showing_image:
             return False
         self._held_at = None
         return True

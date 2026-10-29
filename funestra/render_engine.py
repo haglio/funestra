@@ -89,8 +89,6 @@ class MpvRenderEngine(_MpvControl):
             self._drawn_file.announced()
         return self._drawn_file.owed
 
-    has_picture_to_draw = has_frame_to_draw
-
     @mpv_call()
     def render(self, fbo: int, width: int, height: int, *, flip_y: bool = False) -> str | None:
         """Draw the current frame (video + OSD overlays) into *fbo* at width x height,

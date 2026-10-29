@@ -20,24 +20,6 @@ class TestStatusFields:
         assert fields["paused"] == "0"
         assert fields["locked"] == "1"
 
-    def test_a_playback_from_before_images_says_it_shows_one(self):
-        class FromBeforeImages:
-            current_video = "v0.png"
-            position_ms = 0.0
-            duration_ms = 0.0
-            is_paused = False
-            is_locked = False
-            showing_picture = True
-            playlist_length = 1
-            speed = 1.0
-            has_funscript = False
-            funscript_resting = False
-            portrait = None
-            loads = 0
-            idle = False
-
-        assert status_fields(FromBeforeImages(), None)["picture"] == "1"
-
     def test_a_funestra_showing_an_image_says_so(self, tmp_path):
         playback, engine = make_playback(tmp_path)
         engine.showing_image = True

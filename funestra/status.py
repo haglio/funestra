@@ -23,14 +23,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .file_channel import publish_whole
-from .renamed import answers_to_old_names, old_name_getter
+from .renamed import old_name_getter
 
 _RENAMED = {"PlayerStatus": "FunestraStatus"}
 
 __getattr__ = old_name_getter(__name__, _RENAMED)
 
 
-@answers_to_old_names({"picture": "image"})
 @dataclass(frozen=True)
 class FunestraStatus:
     """What every Funestra says about itself: the item on screen, where the
