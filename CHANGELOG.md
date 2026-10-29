@@ -34,6 +34,16 @@ radio an app hands it by its old name where it lacks the new one (`picture()`,
 `tick(picture=...)`), through the new `renamed.value_of` and `renamed.keyword_of`
 beside `method_of`.
 
+## 2026-10-28 — a block painted at the foot by a source in another program
+
+A source that paints a block at a panel's foot (Origenerator's Job Queue) could
+hand it over only to a Funestra in its own program, so a panel Fun Time
+publishes for a Satellite could carry none. `satellite_hud.PictureFoot` is such
+a block painted to a picture file: the panel's text carries it, the panel draws
+the picture where the block goes and names its buttons on hover, and a press on
+it is said to the panel's side (`portrait_foot_press|x|y`), which is how a
+published panel's presses find their way back to whatever drew it.
+
 ## 2026-10-28 — the Broker button, and what a press on it does
 
 Fun Time put a Broker button on the OSR2 line and answered its press, and
