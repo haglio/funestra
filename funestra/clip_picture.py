@@ -1,4 +1,4 @@
-"""What :mod:`funestra.flick_picture` was called before Genau's clips became
+"""What :mod:`funestra.flick_overlay` was called before Genau's clips became
 flicks, kept for the checkouts that still import it."""
 from __future__ import annotations
 
@@ -6,10 +6,10 @@ from .renamed import old_name_getter
 
 _RENAMED = {
     "BACKDROP_OVERLAY_ID": "BACKDROP_OVERLAY_ID",
-    "ClipPicture": "FlickPicture",
+    "ClipPicture": "FlickOverlay",
     "FIRST_TILE_OVERLAY_ID": "FIRST_TILE_OVERLAY_ID",
     "LOADING_OVERLAY_ID": "LOADING_OVERLAY_ID",
-    "Picture": "Picture",
+    "Picture": "FlickFrame",
     "SCALED_FRAMES_BYTES": "SCALED_FRAMES_BYTES",
     "black_bgra": "black_bgra",
     "loading_notice_bgra": "loading_notice_bgra",
@@ -17,4 +17,4 @@ _RENAMED = {
     "tile_rects": "tile_rects",
 }
 
-__getattr__ = old_name_getter("funestra.flick_picture", _RENAMED)
+__getattr__ = old_name_getter("funestra.flick_overlay", _RENAMED)

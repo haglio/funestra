@@ -8,7 +8,7 @@ device belongs to neither driver.
 
 Who holds the device travels inside Genau's own publish: ``let_go`` is None
 while Genau drives and the height it handed over at once it has — the one
-number the picture cannot recompute, latched at the source.
+number the trace cannot recompute, latched at the source.
 """
 from __future__ import annotations
 
@@ -147,7 +147,7 @@ class TestOneLineTwoDrivers:
 
     def test_with_nothing_published_the_gap_is_nobody_s_and_rests_on_the_park(self):
         """Nothing published yet, and the script's own driver rests the device
-        — so past the buffer the picture is the park, not a motion that is not
+        — so past the buffer the trace is the park, not a motion that is not
         coming."""
         hud = drive_readout(None, script=_script(until_ms=2_000), position_ms=0)
         gap_start = hud.runs[-1][0]
@@ -162,7 +162,7 @@ class TestTheRampDownOntoThePark:
     — and the device walks from wherever that leaves it down onto the park.
 
     It used to end on the motion's next floor-touch instead, which only the
-    live motion knew and which moved under the picture every frame: the final
+    live motion knew and which moved under the trace every frame: the final
     cycle flickered in and out, and vanished outright the moment Genau paused.
     """
 
@@ -188,7 +188,7 @@ class TestTheRampDownOntoThePark:
 
         assert hud.runs[1][2] == DRIVEN_BY_NEUTRAL
 
-    def test_it_holds_still_as_the_picture_slides(self):
+    def test_it_holds_still_as_the_trace_slides(self):
         """Two whole steps on, everything is exactly two columns left — no
         recomputed moment to move under it."""
         script = _script_ahead()
@@ -273,7 +273,7 @@ class TestTheClimbBackOut:
     def test_a_motion_opening_on_the_park_needs_no_climb(self):
         """Full amplitude: the park already IS the motion's floor.  The sender
         skips its rise there and the blue begins the moment Genau's turn does —
-        drawn any other way, the picture waited two seconds the device did not."""
+        drawn any other way, the trace waited two seconds the device did not."""
         published = _parked_motion(
             amplitude=100,
             waveform=tuple(0.5 - 0.5 * np.cos(i / 6) for i in range(TRACE_SAMPLES)))
@@ -448,7 +448,7 @@ class TestTheDescentTopIsSelectedOnce:
         assert moved.waveform[opens] != first.waveform[opens]
 
 
-class TestStillPicture:
+class TestStillTrace:
     """He watched the line boil, twitch and flicker in turn.  Every one of
     those was a value that depended on something other than the playhead."""
 
@@ -487,7 +487,7 @@ class TestStillPicture:
 
         assert later[:-2] == first[2:]
 
-    def test_a_playhead_between_two_samples_slides_the_stable_picture(self):
+    def test_a_playhead_between_two_samples_slides_the_stable_trace(self):
         """Between two knots the values stay the knot-before's — blending them
         morphed the wave's shape at fixed columns every frame — and the leftover
         fraction rides along for the painter to shift the whole line by."""
@@ -512,13 +512,13 @@ class TestStillPicture:
         # Column 0's sample time sits a fraction of a knot BEFORE the playhead,
         # where a forward-window publish has nothing; it clamps to now and is
         # drawn off the block's left edge — so the invariant starts at column 1.
-        pictures = [
+        traces = [
             _read(script, at=at, published=_motion_at(at)).waveform[1:20]
             for at in (0, 40, 80)
         ]
 
-        for later in pictures[1:]:
-            for a, b in zip(pictures[0], later):
+        for later in traces[1:]:
+            for a, b in zip(traces[0], later):
                 assert abs(a - b) < 0.005
 
 
@@ -666,7 +666,7 @@ class TestThePillFollowsTheLine:
 
 
 class TestThePublishedTouch:
-    """The picture tells the arbiter which touch-down it drew the blue ending on, so
+    """The trace tells the arbiter which touch-down it drew the blue ending on, so
     the device is set down exactly there — one chooser.  When each side chose
     from its own read of the wave, the arbiter could take an earlier touch,
     and the leftover drawn blue vanished the moment the dot reached it."""
@@ -690,8 +690,8 @@ class TestThePublishedTouch:
         """The trace keys its choice by a turn found from the playhead snapped
         to its 40 ms grid; the status looked one up from the raw playhead
         (bug 66).  Across a turn's end that sits off the grid, the raw read
-        left the turn up to a quantum before the trace's picture did, and
-        the field went empty while the picture still showed the descent it
+        left the turn up to a quantum before the trace's drawing did, and
+        the field went empty while the trace still showed the descent it
         had chosen.  Read at every millisecond around both ends of such a
         turn, the raw read must say what the grid read says."""
         # One cluster whose turn runs 3005..12005: both ends off the grid.
@@ -752,7 +752,7 @@ class TestNothingToFoldIn:
 
         assert hud.segments == ((0, DRIVEN_BY_FUNSCRIPT),)
 
-    def test_an_unchanging_picture_still_compares_equal_to_itself(self):
+    def test_an_unchanging_trace_still_compares_equal_to_itself(self):
         script = _script(until_ms=120_000)
 
         assert _read(script, at=0) == _read(script, at=0)

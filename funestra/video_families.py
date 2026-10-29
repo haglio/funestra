@@ -19,7 +19,7 @@ VIDEO_BASE_FIELDS = (
     "aspect_ratio",
     "quality",
 )
-_PICTURE_FAMILY_FIELDS = tuple(field for field in IMAGE_IDENTITY_FIELDS if field != "seed")
+_IMAGE_FAMILY_FIELDS = tuple(field for field in IMAGE_IDENTITY_FIELDS if field != "seed")
 _VIDEO_FAMILY_FIELDS = (*VIDEO_BASE_FIELDS, "action")
 
 
@@ -32,9 +32,9 @@ def _field_key(prefix: str, block: dict, fields: tuple[str, ...]) -> str:
 
 
 def action_group_key(record: dict) -> str | None:
-    picture = record.get("source_image")
-    if picture:
-        return _field_key("img", picture, IMAGE_IDENTITY_FIELDS)
+    image = record.get("source_image")
+    if image:
+        return _field_key("img", image, IMAGE_IDENTITY_FIELDS)
     video = record.get("video") or {}
     if not video.get("prompt"):
         return None
@@ -55,7 +55,7 @@ def seed_group_key(record: dict) -> tuple[str, str] | None:
 
 
 def _what_made(record: dict) -> tuple[dict, str, str, tuple[str, ...]]:
-    picture = record.get("source_image")
-    if picture:
-        return picture, "img", "positive_prompt", _PICTURE_FAMILY_FIELDS
+    image = record.get("source_image")
+    if image:
+        return image, "img", "positive_prompt", _IMAGE_FAMILY_FIELDS
     return record.get("video") or {}, "t2v", "prompt", _VIDEO_FAMILY_FIELDS

@@ -153,7 +153,7 @@ class ReadoutResolver:
             # The device is running its own firmware, and that wins over
             # everything the room does to it: a hold, a handoff
             # between two drivers.  None of those reaches it, so none is the
-            # picture — one line, the device's own, in its own color.
+            # drawing — one line, the device's own, in its own color.
             drive = replace(drive, driven=DRIVEN_BY_AUTO, segments=())
         elif unheard:
             drive = replace(drive, driven=DRIVEN_BY_NOTHING, segments=())

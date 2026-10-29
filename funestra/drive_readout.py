@@ -8,7 +8,7 @@ number.  Speed sits under the trace, out of the way of the other two.
 Origenerator floats this over its slideshows: the painter is shared and the
 toolkit is not — a caller with no Pillow surface of its own renders this into
 one (:class:`funestra.hud_panel.HudPanel`) and blits the result, so a second
-app shows this picture instead of its own idea of it.
+app shows this drawing instead of its own idea of it.
 
 It is a block, not a panel: it hosts inside whatever slab is showing it rather
 than carrying one of its own, so a console is one HUD and not two stacked.
@@ -54,7 +54,7 @@ from .hud_panel import (
 )
 from .robot_hand import FULL_INTENSITY, POSITION_MAX, amplitude_ceiling, speed_ceiling
 
-# What has the device, which is what the trace is a picture of.  The Robot
+# What has the device, which is what the trace is a drawing of.  The Robot
 # Hand's motion and a video's funscript take turns in kino mode; in auto mode
 # the OSR2 runs its own firmware and neither of them is sending; and with the
 # device off nothing is moving at all.
@@ -127,7 +127,7 @@ class DriveHud:
 
     ``waveform`` is the motion sampled left to right as 0-1 positions — the same
     samples the device is being sent, so the trace is the thing itself rather than a
-    picture of it — spanning ``trace_seconds`` from now.  Whoever is driving
+    drawing of it — spanning ``trace_seconds`` from now.  Whoever is driving
     supplies them: the Robot Hand's motion while it runs, the funscript's shape
     while a funscript has the device (the Main Funestra samples that; Genau cannot see it), and
     the last shape drawn, held still, while nothing is being sent at all.  The
@@ -172,7 +172,7 @@ class DriveHud:
     segments: tuple[tuple[int, str], ...] = ()
     # How far the drawn line is shifted left, as a fraction of one sample.  The
     # script's samples sit on knots the playhead moves between; shifting the
-    # whole polyline by the leftover fraction slides a stable picture, where
+    # whole polyline by the leftover fraction slides a stable drawing, where
     # re-reading values at the shifted positions morphed the shape at fixed
     # columns as it moved.  edge is the knot just past the right border,
     # so the shifted line still reaches it; None when nothing is shifted.
@@ -199,7 +199,7 @@ class DriveHud:
     def live(self) -> bool:
         """Whether the device is moving at all.
 
-        It is not with the OSR2 off, and then the whole readout is a picture of
+        It is not with the OSR2 off, and then the whole readout is a drawing of
         a motion nobody is making: it holds still and every part of it goes the
         muted gray of a dead control, the trace and the bars and the numbers
         alike.  In auto mode the device IS moving, to its own firmware rather
@@ -527,7 +527,7 @@ def drive_text(hud: DriveHud) -> str:
     lines += [f"{name}={'1' if getattr(hud, name) else '0'}" for name in _FLAGS]
     lines.append(f"shape={hud.shape}")
     # How much time the trace spans, so a funscript sampled to replace it covers
-    # the same stretch: Genau's motion and the script have to be the same picture
+    # the same stretch: Genau's motion and the script have to be the same drawing
     # for a handoff between them to read as one line changing color.
     lines.append(f"trace_seconds={hud.trace_seconds:.3f}")
     if hud.let_go is not None:

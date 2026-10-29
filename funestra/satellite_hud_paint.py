@@ -113,13 +113,13 @@ from .satellite_hud import (
     name_line,
     panel_layout,
     panel_width,
-    picture_rect,
     playing_rect,
     seed_column_label,
     slot_rects,
     slot_width,
     speed_row,
     speed_row_width,
+    thumbnail_rect,
     wrong_action_rect,
 )
 
@@ -237,7 +237,7 @@ class HudRenderer:
 
         *item_row* is where the clip on screen has got to and how loud it is, with
         *heatmap* its funscript's colors for a host that has one: the row every
-        Funestra used to lay along the lower edge of its own picture, drawn here
+        Funestra used to lay along the lower edge of its own item, drawn here
         instead (:mod:`funestra.hud_row`).  Like *video* it comes from the
         Funestra rather than from *model*, being what is decoding rather than what
         the source published.
@@ -401,11 +401,11 @@ class HudRenderer:
             seeds=len(seed_thumbs), actions=len(action_thumbs), playing=model.playing)
         column_rect = column_anchor_rect(model.playing, corner_rect, seed_rects)
 
-        pictures = self._draw_thumbnails(image, model, corner_rect, seed_rects, action_rects,
-                                         corner_thumb, seed_thumbs, action_thumbs)
+        thumbnails = self._draw_thumbnails(image, model, corner_rect, seed_rects, action_rects,
+                                           corner_thumb, seed_thumbs, action_thumbs)
         held = playing_rect(model.playing, corner_rect, seed_rects, action_rects)
         if model.locked and held is not None:
-            hx, hy, hw, hh = pictures[held]
+            hx, hy, hw, hh = thumbnails[held]
             draw.rectangle([hx, hy, hx + hw - 1, hy + hh - 1],
                            outline=(*WHITE, 255), width=_BORDER_W)
         wrong_rect = self._draw_labels(image, draw, model, gutter_x, top,
@@ -598,14 +598,14 @@ class HudRenderer:
                   for i, (slot, thumb) in enumerate(zip(seed_rects, seed_thumbs))]
         drawn += [(slot, thumb, bucket == "action" and index == i)
                   for i, (slot, thumb) in enumerate(zip(action_rects, action_thumbs))]
-        pictures: dict[Rect, Rect] = {}
+        thumbnails: dict[Rect, Rect] = {}
         for slot, thumb, bright in drawn:
-            pictures[slot] = picture_rect(slot, thumb.size)
+            thumbnails[slot] = thumbnail_rect(slot, thumb.size)
             if not bright:
                 thumb = thumb.copy()
                 thumb.putalpha(thumb.getchannel("A").point(lambda a: int(a * _DIM)))
-            image.alpha_composite(thumb, pictures[slot][:2])
-        return pictures
+            image.alpha_composite(thumb, thumbnails[slot][:2])
+        return thumbnails
 
     def _draw_labels(self, image, draw, model, x, y, corner_rect, seed_rects,
                      action_rects, *, seed_offset: int = 0) -> Rect | None:

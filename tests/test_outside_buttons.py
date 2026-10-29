@@ -23,7 +23,7 @@ class TestThePlusBesideASide:
         (HudEdge.UPPER, HudCorner.LOWER_LEFT),
         (HudEdge.LOWER, HudCorner.UPPER_LEFT),
     ])
-    def test_sits_nearest_the_picture_with_its_name_running_away_from_it(
+    def test_sits_nearest_the_item_with_its_name_running_away_from_it(
             self, edge, corner_plus_drawn_alike):
         drawn_alike = plus_bgra(plus_button("portrait", edge, minimized=False),
                                 corner_plus_drawn_alike)
@@ -37,7 +37,7 @@ class TestThePlusBesideASide:
         assert np.array_equal(MINIMIZED.plus_beside(HudEdge.LEFT).bgra, shows_it_there)
 
 
-class TestTheButtonBetweenThePictureAndTheHud:
+class TestTheButtonBetweenTheItemAndTheHud:
     def test_is_one_button_square(self):
         assert OPEN.toggle(pointed=False).bgra.shape == (BUTTON, BUTTON, 4)
 

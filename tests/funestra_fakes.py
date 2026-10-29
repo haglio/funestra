@@ -82,11 +82,11 @@ class FakeEngine(RefusesSeeks):
         self.seeks: list[float] = []
         self.speed = 1.0
         self.pace_s: float | None = None
-        self.showing_picture = False
+        self.showing_image = False
         self.showing_video = True
         self.stations: list[FakeStation] = []
-        self.picture_time: tuple[float, float] | None = None
-        self.picture_seeks: list[float] = []
+        self.image_time: tuple[float, float] | None = None
+        self.image_seeks: list[float] = []
         self.held_for: float | None = None
         self.source_dims = (0, 0)
         self.ab_loop: tuple[float, float] | None = None
@@ -157,10 +157,10 @@ class FakeEngine(RefusesSeeks):
     def push_still(self) -> None:
         self.pushes += 1
 
-    def seek_picture(self, ms: float) -> None:
-        self.picture_seeks.append(ms)
+    def seek_image(self, ms: float) -> None:
+        self.image_seeks.append(ms)
 
-    def hold_picture_for(self, seconds: float | None) -> None:
+    def hold_image_for(self, seconds: float | None) -> None:
         self.held_for = seconds
 
     def radio_station(self, clips) -> FakeStation:

@@ -288,7 +288,7 @@ class ConsolePainter:
         moving has to compare equal: the trace held still while nothing is being
         sent arrives as a fresh scroll of Genau's phase every publish, and folded
         after the comparison it would repaint the whole panel forty times a
-        second to draw the same still picture.
+        second to draw the same still image.
         """
         console = hud.console
         return replace(hud, drive=self._readout.resolve(
@@ -484,7 +484,7 @@ class ConsolePainter:
             filename = fit_text(self._tiny, filename, room)
         # The item's own row, under everything the console says about the room:
         # where the video is and how loud it is, drawn here rather than along
-        # the lower edge of the picture (:mod:`funestra.hud_row`).
+        # the lower edge of the item (:mod:`funestra.hud_row`).
         row_h = ROW_H if item_row is not None else 0
         sections = stack(_PAD, [
             top_h + filename_h,

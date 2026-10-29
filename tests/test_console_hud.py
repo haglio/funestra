@@ -232,7 +232,7 @@ class TestPainter:
 
     def test_held_to_a_width_it_keeps_one_width_whatever_row_it_carries(self):
         """The rows a held console carries come and go: a flick's, a video's,
-        and none while a picture is up.  A screen in a scene that changes size
+        and none while an image is up.  A screen in a scene that changes size
         is a screen that moves, so it is as wide as the widest row would make
         it whichever it carries."""
         painter = ConsolePainter(width=300)
@@ -539,7 +539,7 @@ class TestPainter:
         assert tuple(shades[counts.argmax()]) == (48, 160, 48)
 
     def test_the_enhanced_filter_wears_yellow_off_and_on(self):
-        """An enhanced picture wears a yellow plus in its corner, so the switch
+        """An enhanced image wears a yellow plus in its corner, so the switch
         that keeps only those is yellow wherever you find it: the mark at rest,
         and the whole button once it is on."""
         amber = (255, 200, 120)
@@ -554,9 +554,9 @@ class TestPainter:
         assert tuple(shades[counts.argmax()]) == amber                  # the fill
 
     def test_the_slab_is_the_canvas_gray_unless_a_host_asks_for_another(self):
-        """Floating over a video the panel reads against the picture beneath it,
+        """Floating over a video the panel reads against the item beneath it,
         so it is the canvas color. A host drawing it on its own chrome has no
-        picture beneath it — on a window painted that very gray the slab is
+        item beneath it — on a window painted that very gray the slab is
         invisible and only its border shows — so it says which gray it wants."""
 
         default = _rgb(ConsolePainter().bgra(
@@ -957,7 +957,7 @@ def _rgb(bgra: np.ndarray) -> np.ndarray:
 
 class TestTraceSources:
     """The trace is on the console in every mode, because in every mode something
-    may be driving the device — and what it is a picture of is whoever that is."""
+    may be driving the device — and what it is a drawing of is whoever that is."""
 
     @staticmethod
     def _painted(mode: MainMode, osr2: Osr2State, drive: DriveHud | None = None) -> ConsolePainter:
@@ -982,7 +982,7 @@ class TestTraceSources:
         assert not any(t.dim for t in painter.tracks)
 
     def test_a_funscript_driving_dims_every_control_but_keeps_the_trace(self):
-        """A motion Genau is not sending cannot be adjusted; the picture of the
+        """A motion Genau is not sending cannot be adjusted; the drawing of the
         one that *is* being sent is still worth drawing."""
         painter = self._painted(MainMode.KINO, Osr2State.FUNSCRIPT)
 
@@ -1453,7 +1453,7 @@ class TestARowsNameLinesUpWithItsControls:
 
 class TestTheRowTheConsoleCarriesForItsVideo:
     """Where the video is and how loud it is, on the console rather than along
-    the lower edge of the picture — the row the headset already draws here for a
+    the lower edge of the item — the row the headset already draws here for a
     wrapped video, drawn here for every video."""
 
     @staticmethod

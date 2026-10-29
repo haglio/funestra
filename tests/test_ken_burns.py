@@ -27,21 +27,21 @@ def assert_view(view: View, zoom: float, x: float, y: float) -> None:
     assert (view.zoom, view.align_x, view.align_y) == pytest.approx((zoom, x, y))
 
 
-def test_a_zoom_in_starts_on_the_whole_picture_and_ends_closer_about_its_spot():
+def test_a_zoom_in_starts_on_the_whole_image_and_ends_closer_about_its_spot():
     move = zoom_in(-0.5, 0.25)
 
     assert_view(move.at(0.0), 1.0, -0.5, 0.25)
     assert_view(move.at(1.0), ZOOMED_IN, -0.5, 0.25)
 
 
-def test_a_zoom_out_starts_close_about_its_spot_and_ends_on_the_whole_picture():
+def test_a_zoom_out_starts_close_about_its_spot_and_ends_on_the_whole_image():
     move = zoom_out(0.75, -1.0)
 
     assert_view(move.at(0.0), ZOOMED_IN, 0.75, -1.0)
     assert_view(move.at(1.0), 1.0, 0.75, -1.0)
 
 
-def test_a_pan_holds_the_picture_closer_and_crosses_it_to_the_opposite_corner():
+def test_a_pan_holds_the_image_closer_and_crosses_it_to_the_opposite_corner():
     move = pan(1.0, -1.0)
 
     assert_view(move.at(0.0), ZOOMED_IN, 1.0, -1.0)
@@ -49,7 +49,7 @@ def test_a_pan_holds_the_picture_closer_and_crosses_it_to_the_opposite_corner():
     assert_view(move.at(1.0), ZOOMED_IN, -1.0, 1.0)
 
 
-def test_a_move_grows_the_picture_by_the_same_factor_in_every_equal_stretch_of_it():
+def test_a_move_grows_the_image_by_the_same_factor_in_every_equal_stretch_of_it():
     move = Move(View(zoom=1.0), View(zoom=4.0))
 
     assert move.at(0.5).zoom == pytest.approx(2.0)
@@ -68,14 +68,14 @@ def dealt(count: int, seed: int = 7) -> list[Move]:
     return [moves.deal() for _ in range(count)]
 
 
-def test_no_two_pictures_in_a_row_get_the_same_kind_of_move():
+def test_no_two_images_in_a_row_get_the_same_kind_of_move():
     kinds = [kind_of(move) for move in dealt(300)]
 
     assert all(one != next_one for one, next_one in itertools.pairwise(kinds))
     assert set(kinds) == {"in", "out", "pan"}
 
 
-def test_a_picture_set_off_from_rest_zooms_in_and_the_next_one_moves_another_way():
+def test_an_image_set_off_from_rest_zooms_in_and_the_next_one_moves_another_way():
     moves = Moves(random.Random(7))
 
     for _ in range(50):
@@ -83,7 +83,7 @@ def test_a_picture_set_off_from_rest_zooms_in_and_the_next_one_moves_another_way
         assert kind_of(moves.deal()) != "in"
 
 
-def test_a_zoom_is_about_a_spot_anywhere_in_the_picture_not_only_its_middle():
+def test_a_zoom_is_about_a_spot_anywhere_in_the_image_not_only_its_middle():
     spots = [(move.start.align_x, move.start.align_y) for move in dealt(300) if kind_of(move) != "pan"]
 
     assert all(-1.0 <= x <= 1.0 and -1.0 <= y <= 1.0 for x, y in spots)
@@ -91,7 +91,7 @@ def test_a_zoom_is_about_a_spot_anywhere_in_the_picture_not_only_its_middle():
     assert max(abs(y) for _, y in spots) > 0.9
 
 
-def test_a_pan_sets_off_from_a_corner_so_it_crosses_whichever_way_the_picture_has_room():
+def test_a_pan_sets_off_from_a_corner_so_it_crosses_whichever_way_the_image_has_room():
     pans = [move for move in dealt(300) if kind_of(move) == "pan"]
 
     assert {(move.start.align_x, move.start.align_y) for move in pans} == {
@@ -101,7 +101,7 @@ def test_a_pan_sets_off_from_a_corner_so_it_crosses_whichever_way_the_picture_ha
 def paced(seconds: float = 4.0, *, now_s: float = 100.0, deals: Deals | None = None) -> KenBurns:
     still = KenBurns(deals or Deals(DRIFT))
     still.set_pace(seconds, now_s=now_s)
-    still.new_picture(now_s=now_s)
+    still.new_image(now_s=now_s)
     return still
 
 
@@ -110,7 +110,7 @@ def assert_along(view: View, move: Move, progress: float) -> None:
     assert_view(view, expected.zoom, expected.align_x, expected.align_y)
 
 
-def test_a_picture_arrives_at_the_start_of_its_move():
+def test_an_image_arrives_at_the_start_of_its_move():
     still = paced()
 
     assert_along(still.view(now_s=100.0), DRIFT, 0.0)
@@ -122,13 +122,13 @@ def test_halfway_through_the_hold_it_is_halfway_along_its_move():
     assert_along(still.view(now_s=102.0), DRIFT, 0.5)
 
 
-def test_a_picture_with_no_pace_is_held_whole_and_still():
-    still = paced(0.0)  # a pace of nought holds the picture
+def test_an_image_with_no_pace_is_held_whole_and_still():
+    still = paced(0.0)  # a pace of nought holds the image
 
     assert still.view(now_s=1000.0) == View()
 
 
-def test_a_frozen_room_holds_the_picture_where_its_move_had_got_to():
+def test_a_frozen_room_holds_the_image_where_its_move_had_got_to():
     still = paced()
 
     still.set_paused(True, now_s=101.0)
@@ -154,7 +154,7 @@ def test_turning_the_pace_up_slows_the_move_instead_of_jumping_it_on():
     assert_along(still.view(now_s=104.0), DRIFT, 0.75)
 
 
-def test_a_room_told_again_that_it_is_frozen_holds_the_picture_from_the_first_time():
+def test_a_room_told_again_that_it_is_frozen_holds_the_image_from_the_first_time():
     still = paced()
     still.set_paused(True, now_s=101.0)
 
@@ -163,18 +163,18 @@ def test_a_room_told_again_that_it_is_frozen_holds_the_picture_from_the_first_ti
     assert_along(still.view(now_s=107.0), DRIFT, 0.25)
 
 
-def test_a_picture_stepped_to_while_the_room_is_frozen_waits_at_the_start_of_its_move():
+def test_an_image_stepped_to_while_the_room_is_frozen_waits_at_the_start_of_its_move():
     still = paced()
     still.set_paused(True, now_s=101.0)
 
-    still.new_picture(now_s=106.0)
+    still.new_image(now_s=106.0)
 
     assert_along(still.view(now_s=108.0), DRIFT, 0.0)
     still.set_paused(False, now_s=110.0)
     assert_along(still.view(now_s=111.0), DRIFT, 0.25)
 
 
-def test_holding_a_moving_picture_keeps_it_where_its_move_had_got_to():
+def test_holding_a_moving_image_keeps_it_where_its_move_had_got_to():
     still = paced()
 
     still.set_pace(0.0, now_s=102.0)
@@ -182,7 +182,7 @@ def test_holding_a_moving_picture_keeps_it_where_its_move_had_got_to():
     assert_along(still.view(now_s=110.0), DRIFT, 0.5)
 
 
-def test_letting_a_held_picture_go_carries_its_move_on_from_there():
+def test_letting_a_held_image_go_carries_its_move_on_from_there():
     still = paced()
     still.set_pace(0.0, now_s=102.0)
 
@@ -191,7 +191,7 @@ def test_letting_a_held_picture_go_carries_its_move_on_from_there():
     assert_along(still.view(now_s=111.0), DRIFT, 0.75)
 
 
-def test_a_picture_held_since_it_came_up_sets_off_zooming_in_from_the_whole_picture():
+def test_an_image_held_since_it_came_up_sets_off_zooming_in_from_the_whole_image():
     still = paced(0.0, deals=Deals(DRIFT, from_rest=CREEP))
 
     still.set_pace(4.0, now_s=110.0)
@@ -200,33 +200,33 @@ def test_a_picture_held_since_it_came_up_sets_off_zooming_in_from_the_whole_pict
     assert_along(still.view(now_s=112.0), CREEP, 0.5)
 
 
-def test_a_new_picture_is_dealt_its_own_move_from_the_start():
+def test_a_new_image_is_dealt_its_own_move_from_the_start():
     deals = Deals(DRIFT)
     still = paced(deals=deals)
 
-    still.new_picture(now_s=102.0)
+    still.new_image(now_s=102.0)
 
     assert_along(still.view(now_s=102.0), DRIFT, 0.0)
     assert deals.dealt == 2
 
 
-def test_a_picture_whose_hold_has_run_out_waits_at_the_end_of_its_move_for_the_next():
+def test_an_image_whose_hold_has_run_out_waits_at_the_end_of_its_move_for_the_next():
     still = paced()
 
     assert_along(still.view(now_s=104.05), DRIFT, 1.0)
 
 
-def test_a_picture_has_run_out_once_its_pace_has_gone_by():
+def test_an_image_has_run_out_once_its_pace_has_gone_by():
     still = paced()
 
     assert (still.ran_out(now_s=103.9), still.ran_out(now_s=104.0)) == (False, True)
 
 
-def test_a_held_picture_never_runs_out():
+def test_a_held_image_never_runs_out():
     assert paced(0.0).ran_out(now_s=1000.0) is False
 
 
-def test_a_locked_picture_never_runs_out():
+def test_a_locked_image_never_runs_out():
     still = paced()
 
     still.set_looping(True, now_s=100.0)
@@ -234,7 +234,7 @@ def test_a_locked_picture_never_runs_out():
     assert still.ran_out(now_s=1000.0) is False
 
 
-def test_a_locked_picture_makes_the_next_move_dealt_each_time_it_comes_round():
+def test_a_locked_image_makes_the_next_move_dealt_each_time_it_comes_round():
     still = paced(deals=Deals(DRIFT, CREEP))
 
     still.set_looping(True, now_s=100.0)
@@ -242,7 +242,7 @@ def test_a_locked_picture_makes_the_next_move_dealt_each_time_it_comes_round():
     assert_along(still.view(now_s=106.0), CREEP, 0.5)
 
 
-def test_a_locked_picture_keeps_one_move_the_whole_way_round():
+def test_a_locked_image_keeps_one_move_the_whole_way_round():
     still = paced(deals=Deals(DRIFT, CREEP, DRIFT))
     still.set_looping(True, now_s=100.0)
 
@@ -252,14 +252,14 @@ def test_a_locked_picture_keeps_one_move_the_whole_way_round():
         assert_along(view, CREEP, progress)
 
 
-def test_a_locked_picture_counts_its_rounds_from_when_it_came_up():
+def test_a_locked_image_counts_its_rounds_from_when_it_came_up():
     still = paced(deals=Deals(DRIFT, CREEP))
     still.set_looping(True, now_s=100.0)
 
     assert_along(still.view(now_s=113.0), CREEP, 0.25)
 
 
-def test_a_picture_let_go_of_its_lock_finishes_the_round_it_is_in():
+def test_an_image_let_go_of_its_lock_finishes_the_round_it_is_in():
     still = paced(deals=Deals(DRIFT, CREEP))
     still.set_looping(True, now_s=100.0)
 
@@ -269,7 +269,7 @@ def test_a_picture_let_go_of_its_lock_finishes_the_round_it_is_in():
     assert_along(still.view(now_s=109.0), CREEP, 1.0)
 
 
-def test_a_picture_sent_back_along_its_hold_is_drawn_back_along_its_move():
+def test_an_image_sent_back_along_its_hold_is_drawn_back_along_its_move():
     still = paced()
 
     still.seek(0.25, now_s=103.0)
@@ -278,7 +278,7 @@ def test_a_picture_sent_back_along_its_hold_is_drawn_back_along_its_move():
     assert still.progress(now_s=104.0) == pytest.approx(0.5)
 
 
-def test_a_locked_picture_sent_back_in_a_later_round_keeps_that_rounds_move():
+def test_a_locked_image_sent_back_in_a_later_round_keeps_that_rounds_move():
     still = paced(deals=Deals(DRIFT, CREEP))
     still.set_looping(True, now_s=100.0)
 
@@ -287,7 +287,7 @@ def test_a_locked_picture_sent_back_in_a_later_round_keeps_that_rounds_move():
     assert_along(still.view(now_s=106.0), CREEP, 0.25)
 
 
-def test_a_held_picture_sent_along_its_hold_stays_where_it_was_held():
+def test_a_held_image_sent_along_its_hold_stays_where_it_was_held():
     still = paced()
     still.set_pace(0.0, now_s=102.0)
 
@@ -296,7 +296,7 @@ def test_a_held_picture_sent_along_its_hold_stays_where_it_was_held():
     assert_along(still.view(now_s=110.0), DRIFT, 0.5)
 
 
-def test_a_frozen_picture_sent_back_waits_there_until_the_room_thaws():
+def test_a_frozen_image_sent_back_waits_there_until_the_room_thaws():
     still = paced()
     still.set_paused(True, now_s=103.0)
 
@@ -310,7 +310,7 @@ def test_a_frozen_picture_sent_back_waits_there_until_the_room_thaws():
 WIDE = (1920, 1080)
 
 
-def test_the_whole_picture_reaches_mpv_unzoomed_and_centered():
+def test_the_whole_image_reaches_mpv_unzoomed_and_centered():
     assert View().placement() == (0.0, 0.0, 0.0)
 
 
@@ -318,7 +318,7 @@ def test_a_view_reaches_mpv_as_its_zoom_and_how_far_it_leans_each_way():
     assert View(ZOOMED_IN, 1.0, -0.5).placement() == (math.log2(ZOOMED_IN), 1.0, -0.5)
 
 
-# mpv's own arithmetic for where a picture is drawn: aspect_calc_panscan and
+# mpv's own arithmetic for where an image is drawn: aspect_calc_panscan and
 # src_dst_split_scaling in video/out/aspect.c at the build the engines load
 # (v0.41.0-724-g71ebd0840), with video-recenter on, single precision and
 # truncated to whole pixels as mpv does it.
@@ -356,7 +356,7 @@ CORNERS = [(-1.0, -1.0), (-1.0, 1.0), (1.0, -1.0), (1.0, 1.0)]
 @pytest.mark.parametrize("shown", SHAPES)
 @pytest.mark.parametrize("corner", CORNERS)
 @pytest.mark.parametrize("zoom", [1.01, ZOOMED_IN, 3.0, 8.0])
-def test_no_view_draws_an_edge_of_the_picture_inside_the_window(shown, corner, zoom):
+def test_no_view_draws_an_edge_of_the_image_inside_the_window(shown, corner, zoom):
     centered = drawn(WIDE, shown, View(zoom))
 
     for (window, start, end), (_, centered_start, _) in zip(
@@ -367,13 +367,13 @@ def test_no_view_draws_an_edge_of_the_picture_inside_the_window(shown, corner, z
 
 @pytest.mark.parametrize("shown", SHAPES)
 @pytest.mark.parametrize("corner", CORNERS)
-def test_a_view_at_the_end_of_its_reach_brings_the_pictures_edge_up_to_the_windows(shown, corner):
+def test_a_view_at_the_end_of_its_reach_brings_the_images_edge_up_to_the_windows(shown, corner):
     for window, start, end in drawn(WIDE, shown, View(8.0, *corner)):
         assert start <= 0 and end >= window
         assert min(-start, end - window) == 0
 
 
-def test_a_picture_held_for_less_than_its_pace_runs_out_then_on_the_move_of_the_whole_pace():
+def test_an_image_held_for_less_than_its_pace_runs_out_then_on_the_move_of_the_whole_pace():
     still = paced()
 
     still.hold_for(2.0)
@@ -382,16 +382,16 @@ def test_a_picture_held_for_less_than_its_pace_runs_out_then_on_the_move_of_the_
     assert_along(still.view(now_s=101.0), DRIFT, 0.25)
 
 
-def test_a_new_picture_holds_for_its_whole_pace_again():
+def test_a_new_image_holds_for_its_whole_pace_again():
     still = paced()
     still.hold_for(2.0)
 
-    still.new_picture(now_s=103.0)
+    still.new_image(now_s=103.0)
 
     assert (still.holds_for_s, still.ran_out(now_s=106.9)) == (4.0, False)
 
 
-def test_a_locked_picture_held_for_less_than_its_pace_still_never_runs_out():
+def test_a_locked_image_held_for_less_than_its_pace_still_never_runs_out():
     still = paced()
     still.hold_for(2.0)
 
@@ -417,7 +417,7 @@ def test_a_close_up_fits_its_place_in_the_window_and_puts_it_in_the_middle():
 
 @pytest.mark.parametrize("shown", SHAPES)
 @pytest.mark.parametrize("part", [(0.75, 0.0, 1.0, 0.25), (0.0, 0.8, 0.3, 1.0), (0.4, 0.3, 0.6, 0.5)])
-def test_a_place_anywhere_in_the_picture_is_drawn_whole_inside_the_window(shown, part):
+def test_a_place_anywhere_in_the_image_is_drawn_whole_inside_the_window(shown, part):
     for window, start, end in part_drawn(WIDE, shown, Fit(WIDE, shown).framing(part), part):
         assert start >= -1
         assert end <= window + 1
@@ -427,19 +427,19 @@ def test_a_close_up_on_a_sliver_comes_no_closer_than_any_close_up_comes():
     assert Fit(WIDE, WIDE).framing((0.5, 0.2, 0.5, 0.3)).zoom == CLOSEST
 
 
-def test_a_place_reaching_past_the_picture_is_framed_by_what_of_it_lies_inside():
+def test_a_place_reaching_past_the_image_is_framed_by_what_of_it_lies_inside():
     fit = Fit(WIDE, WIDE)
 
     assert fit.framing((-0.5, 0.25, 0.5, 0.75)) == fit.framing((0.0, 0.25, 0.5, 0.75))
 
 
-def test_a_close_up_before_the_window_is_known_frames_as_if_it_had_the_pictures_shape():
+def test_a_close_up_before_the_window_is_known_frames_as_if_it_had_the_images_shape():
     part = (0.0, 0.0, 0.5, 0.5)
 
     assert Fit((0, 0), WIDE).framing(part) == Fit(WIDE, WIDE).framing(part)
 
 
-def test_a_close_up_on_a_picture_laid_out_in_tiles_frames_the_middle_tile():
+def test_a_close_up_on_an_image_laid_out_in_tiles_frames_the_middle_tile():
     strip = (1920, 1080)
 
     assert Fit(WIDE, strip, tiles=3).framing((0.25, 0.25, 0.75, 0.75)) == Fit(
@@ -457,7 +457,7 @@ def locked_with_places(*places, deals: Deals | None = None) -> KenBurns:
     return still
 
 
-def test_a_locked_picture_comes_round_to_whichever_stop_its_moves_pick():
+def test_a_locked_image_comes_round_to_whichever_stop_its_moves_pick():
     deals = Deals(DRIFT, CREEP, stops=(HAND, None, FACE))
     still = locked_with_places(FACE, HAND, deals=deals)
     framed = Fit((0, 0), (0, 0)).framing
@@ -478,18 +478,18 @@ def test_places_that_arrive_partway_round_are_the_ones_the_next_round_picks_amon
     assert deals.offered[-1] == (HAND,)
 
 
-def test_a_new_picture_starts_its_round_of_places_on_the_whole_picture():
+def test_a_new_image_starts_its_round_of_places_on_the_whole_image():
     deals = Deals(DRIFT, CREEP)
     still = locked_with_places(FACE, deals=deals)
     still.view(now_s=104.0)
 
-    still.new_picture(now_s=105.0)
+    still.new_image(now_s=105.0)
 
     assert still.view(now_s=105.0) == CREEP.at(0.0)
     assert still.view(now_s=109.0) == Fit((0, 0), (0, 0)).framing(FACE)
 
 
-def test_a_picture_let_go_of_its_lock_makes_its_ordinary_move_and_no_close_up():
+def test_an_image_let_go_of_its_lock_makes_its_ordinary_move_and_no_close_up():
     deals = Deals(DRIFT)
     still = paced(deals=deals)
 
@@ -499,11 +499,11 @@ def test_a_picture_let_go_of_its_lock_makes_its_ordinary_move_and_no_close_up():
     assert deals.closed_up_on == []
 
 
-def test_a_close_up_is_framed_for_the_window_the_picture_is_in_when_it_comes_round():
+def test_a_close_up_is_framed_for_the_window_the_image_is_in_when_it_comes_round():
     window = Fit(WIDE, (832, 1216))
     still = KenBurns(Deals(DRIFT), fit=lambda: window)
     still.set_pace(4.0, now_s=100.0)
-    still.new_picture(now_s=100.0)
+    still.new_image(now_s=100.0)
     still.set_points_of_interest((FACE,), now_s=100.0)
     still.set_looping(True, now_s=100.0)
 
@@ -519,7 +519,7 @@ def closed_up(count: int, seed: int = 7) -> list[Move]:
     return [moves.close_up(SQUARE.framing, PLACE) for _ in range(count)]
 
 
-def picture_edges_in_a_square_window(view: View) -> tuple[float, float]:
+def image_edges_in_a_square_window(view: View) -> tuple[float, float]:
     return (view.align_x + 1.0) / 2.0 * (1.0 - view.zoom), (view.align_y + 1.0) / 2.0 * (1.0 - view.zoom)
 
 
@@ -543,20 +543,20 @@ def test_a_close_up_zooms_from_its_places_framing_by_the_ordinary_zoom():
     assert {kind_of(move) for move in zooms} == {"in", "out"}
 
 
-def test_a_close_up_pan_moves_the_picture_across_the_window_as_far_as_a_pan_of_the_whole_picture():
+def test_a_close_up_pan_moves_the_image_across_the_window_as_far_as_a_pan_of_the_whole_image():
     whole = pan(1.0, 1.0)
     whole_shift = [abs(after - before) for before, after in zip(
-        picture_edges_in_a_square_window(whole.start), picture_edges_in_a_square_window(whole.end), strict=True)]
+        image_edges_in_a_square_window(whole.start), image_edges_in_a_square_window(whole.end), strict=True)]
     pans = [move for move in closed_up(300) if kind_of(move) == "pan"]
 
     for move in pans:
         shift = [abs(after - before) for before, after in zip(
-            picture_edges_in_a_square_window(move.start), picture_edges_in_a_square_window(move.end), strict=True)]
+            image_edges_in_a_square_window(move.start), image_edges_in_a_square_window(move.end), strict=True)]
         assert shift == pytest.approx(whole_shift)
     assert pans
 
 
-def test_a_close_up_framed_at_the_closest_zoom_still_zooms_as_far_as_the_whole_picture_does():
+def test_a_close_up_framed_at_the_closest_zoom_still_zooms_as_far_as_the_whole_image_does():
     window = Fit((1000, 1000), (1000, 1000))
     moves = Moves(random.Random(7))
     speck = (0.5, 0.5, 0.52, 0.52)
@@ -570,7 +570,7 @@ def test_a_close_up_framed_at_the_closest_zoom_still_zooms_as_far_as_the_whole_p
             ZOOMED_IN)
 
 
-def test_the_whole_picture_comes_round_as_often_as_all_the_places_together():
+def test_the_whole_image_comes_round_as_often_as_all_the_places_together():
     moves = Moves(random.Random(7))
     places = (FACE, HAND, PLACE)
 

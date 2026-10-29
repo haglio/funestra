@@ -1,4 +1,4 @@
-"""The console kept on the picture: the panel the room publishes for the main slot,
+"""The console kept on the item: the panel the room publishes for the main slot,
 read every frame, composited, pressed.
 
 The room's two files -- the console, and the motion whoever drives the OSR2

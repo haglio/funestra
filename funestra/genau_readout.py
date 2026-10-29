@@ -19,7 +19,7 @@ from .robot_hand import (
 
 # The travel the device uses when it runs itself: the whole axis, centered.  Its
 # free mode is firmware, and the only things it says over serial are its tempo
-# and its downbeat -- nothing about how far it swings -- so a picture of it is a
+# and its downbeat -- nothing about how far it swings -- so a drawing of it is a
 # plain swing end to end.
 _AUTO_AMPLITUDE = 100
 _AUTO_CENTER = 50
@@ -31,7 +31,7 @@ class AutoMotion:
 
     ``phase`` is where the broker's beat has reached and ``bpm`` how fast it is
     going round -- the same beat the flick's own frames are scrubbed by while the
-    device has the room, so the line and the picture move together.
+    device has the room, so the line and the drawing move together.
     """
 
     phase: float
@@ -81,7 +81,7 @@ class GenauReadout:
         """Build the drive readout and publish it for the console.
 
         *auto* is the device running itself, and None while the Robot Hand
-        drives.  Either way there is a line: a picture of whatever is actually
+        drives.  Either way there is a line: a drawing of whatever is actually
         reaching the device.  The numbers beside it stay the hand's -- what its
         controls will move when it takes the device back -- and whoever draws
         them dims them, exactly as while a funscript drives.
@@ -157,7 +157,7 @@ class GenauReadout:
         border.
 
         Both sources are read on knots a fixed stretch of their own clock
-        apart, so the picture holds still between knots and slides by the
+        apart, so the drawing holds still between knots and slides by the
         fraction, rather than being redrawn at fixed columns every frame: the
         wave on its phase, the learned motion on its script.
         """

@@ -2,7 +2,7 @@
 
 Speech recognition only finalizes a phrase once the speaker stops, so a spoken
 "lock portrait" arrives a second or two after the speaker began saying it, by
-which time an advancing Funestra may already be on the next video or picture.
+which time an advancing Funestra may already be on the next video or image.
 Sampling what each Funestra shows into this history lets the word be resolved
 to what was on screen when the utterance *started*, which is the one meant.
 """

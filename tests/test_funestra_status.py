@@ -20,9 +20,9 @@ class TestStatusFields:
         assert fields["paused"] == "0"
         assert fields["locked"] == "1"
 
-    def test_a_funestra_showing_a_picture_says_so(self, tmp_path):
+    def test_a_funestra_showing_an_image_says_so(self, tmp_path):
         playback, engine = make_playback(tmp_path)
-        engine.showing_picture = True
+        engine.showing_image = True
 
         assert status_fields(playback, None)["picture"] == "1"
 
@@ -62,7 +62,7 @@ class TestStatusFields:
             duration_ms = 0.0
             is_paused = False
             is_locked = False
-            showing_picture = False
+            showing_image = False
             playlist_length = 1
             speed = 1.0
             has_funscript = False

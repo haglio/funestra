@@ -1,4 +1,4 @@
-"""A Funestra's radio: stations of sound playing out of sight, one tuned in while a picture is up."""
+"""A Funestra's radio: stations of sound playing out of sight, one tuned in while an image is up."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -42,63 +42,63 @@ def a_radio(stations=(["a.mp4"], ["b.mp4"], ["c.mp4"]), *, together=False):
 
     radio = Radio(open_station, together=together)
     radio.take([[Path(clip) for clip in clips] for clips in stations])
-    radio.tick(picture=None, level=None, paused=False)
+    radio.tick(image=None, level=None, paused=False)
     return radio, opened
 
 
-PICTURE, VIDEO, BETWEEN = True, False, None
+IMAGE, VIDEO, BETWEEN = True, False, None
 
 
 def heard(opened: list[FakeStation]) -> list[int | None]:
     return [station.heard_at for station in opened]
 
 
-def test_a_picture_coming_up_tunes_the_first_station_in_at_the_funestras_level():
+def test_an_image_coming_up_tunes_the_first_station_in_at_the_funestras_level():
     radio, opened = a_radio()
 
-    radio.tick(picture=PICTURE, level=70, paused=False)
+    radio.tick(image=IMAGE, level=70, paused=False)
 
     assert heard(opened) == [70, None, None]
 
 
-def test_a_radio_playing_its_stations_together_tunes_every_one_in_while_a_picture_is_up():
+def test_a_radio_playing_its_stations_together_tunes_every_one_in_while_an_image_is_up():
     radio, opened = a_radio(together=True)
 
-    radio.tick(picture=PICTURE, level=70, paused=False)
+    radio.tick(image=IMAGE, level=70, paused=False)
 
     assert heard(opened) == [70, 70, 70]
 
 
 def ticked(radio: Radio, *showing: bool | None, level: int | None = 70) -> None:
     for kind in showing:
-        radio.tick(picture=kind, level=level, paused=False)
+        radio.tick(image=kind, level=level, paused=False)
 
 
 def test_the_radio_is_out_of_earshot_while_a_video_plays():
     radio, opened = a_radio()
 
-    ticked(radio, PICTURE, VIDEO)
+    ticked(radio, IMAGE, VIDEO)
 
     assert heard(opened) == [None, None, None]
 
 
-def test_a_picture_after_a_video_tunes_the_next_station_in_and_the_last_comes_round_to_the_first():
+def test_an_image_after_a_video_tunes_the_next_station_in_and_the_last_comes_round_to_the_first():
     radio, opened = a_radio()
 
     tuned = []
     for _ in range(4):
-        ticked(radio, PICTURE)
+        ticked(radio, IMAGE)
         tuned.append(heard(opened))
         ticked(radio, VIDEO)
 
     assert tuned == [[70, None, None], [None, 70, None], [None, None, 70], [70, None, None]]
 
 
-def test_pictures_one_after_another_stay_on_the_one_station_through_the_gap_between_them():
+def test_images_one_after_another_stay_on_the_one_station_through_the_gap_between_them():
     radio, opened = a_radio()
-    ticked(radio, PICTURE, VIDEO)
+    ticked(radio, IMAGE, VIDEO)
 
-    for kind in (PICTURE, BETWEEN, PICTURE, BETWEEN, PICTURE):
+    for kind in (IMAGE, BETWEEN, IMAGE, BETWEEN, IMAGE):
         ticked(radio, kind)
         assert heard(opened) == [None, 70, None]
 
@@ -106,7 +106,7 @@ def test_pictures_one_after_another_stay_on_the_one_station_through_the_gap_betw
 def test_a_muted_funestra_hears_no_station():
     radio, opened = a_radio()
 
-    ticked(radio, PICTURE, level=None)
+    ticked(radio, IMAGE, level=None)
 
     assert heard(opened) == [None, None, None]
 
@@ -114,9 +114,9 @@ def test_a_muted_funestra_hears_no_station():
 def test_every_station_holds_still_with_the_room_and_goes_on_after():
     radio, opened = a_radio()
 
-    radio.tick(picture=VIDEO, level=70, paused=True)
+    radio.tick(image=VIDEO, level=70, paused=True)
     assert [station.paused for station in opened] == [True, True, True]
-    radio.tick(picture=VIDEO, level=70, paused=False)
+    radio.tick(image=VIDEO, level=70, paused=False)
     assert [station.paused for station in opened] == [False, False, False]
 
 
@@ -151,11 +151,11 @@ def test_stations_that_cannot_be_opened_yet_open_once_they_can():
 
     radio = Radio(open_station)
     radio.take([[Path("a.mp4")], [Path("b.mp4")]])
-    ticked(radio, PICTURE)
+    ticked(radio, IMAGE)
     assert opened == []
 
     sound["live"] = True
-    ticked(radio, PICTURE)
+    ticked(radio, IMAGE)
 
     assert heard(opened) == [70, None]
 
@@ -170,7 +170,7 @@ def test_a_station_that_will_not_open_leaves_the_radio_quiet_and_is_asked_for_on
     radio = Radio(open_station)
     radio.take([[Path("a.mp4")], [Path("b.mp4")]])
 
-    ticked(radio, PICTURE, VIDEO, PICTURE)
+    ticked(radio, IMAGE, VIDEO, IMAGE)
 
     assert asked == [[Path("a.mp4")]]
     assert "could not be loaded" in caplog.text
@@ -204,6 +204,6 @@ def test_the_stations_that_did_open_beside_one_that_would_not_are_let_go():
     radio = Radio(open_station)
     radio.take([[Path("a.mp4")], [Path("b.mp4")]])
 
-    ticked(radio, PICTURE)
+    ticked(radio, IMAGE)
 
     assert [station.closed for station in opened] == [True]

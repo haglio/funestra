@@ -2,7 +2,7 @@
 
 Every control a Funestra draws for the room asks rather than acts -- a console
 button posts the room's verb, the room's volume chip posts the level it wants,
-a press on the picture asks for the room's pause -- and all of it goes out on
+a press on the item asks for the room's pause -- and all of it goes out on
 the one file the dashboard's own buttons write to.  With no file there is no
 room to ask: a Funestra opened by hand, or by a test, drops the ask.
 """

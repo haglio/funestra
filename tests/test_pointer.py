@@ -1,7 +1,7 @@
-"""Where a press on a Funestra's window lands: the panel, or the picture under it.
+"""Where a press on a Funestra's window lands: the panel, or the item under it.
 
 The track, the time and the volume are a block of the panel, which places a
-press on them itself (test_hud_overlay.py), so nothing over the picture takes
+press on them itself (test_hud_overlay.py), so nothing over the item takes
 one any more.
 """
 from __future__ import annotations
@@ -49,11 +49,11 @@ class _StubHud:
 def _pointer(*, hud: bool = True, hud_takes: bool = True):
     stub = _StubHud(takes=hud_takes) if hud else None
     asked: list[str] = []
-    return Pointer(hud=stub, picture=lambda: asked.append("pause")), stub, asked
+    return Pointer(hud=stub, item=lambda: asked.append("pause")), stub, asked
 
 
-class TestThePicture:
-    """A press the panel does not take is a press on the picture, which asks
+class TestTheItem:
+    """A press the panel does not take is a press on the item, which asks
     whoever built the window -- the room, or the program running on it -- to
     pause."""
 
@@ -65,7 +65,7 @@ class TestThePicture:
         assert hud.presses == [ON_THE_VIDEO]
         assert asked == ["pause"]
 
-    def test_a_window_with_no_panel_asks_from_the_whole_picture(self):
+    def test_a_window_with_no_panel_asks_from_the_whole_item(self):
         pointer, _hud, asked = _pointer(hud=False)
 
         pointer.press(*ON_THE_VIDEO)
@@ -79,8 +79,8 @@ class TestThePicture:
 
         assert asked == []
 
-    def test_the_lower_edge_is_the_picture_now_that_no_row_is_drawn_there(self):
-        """The track used to span it; a press there is a press on the picture."""
+    def test_the_lower_edge_is_the_item_now_that_no_row_is_drawn_there(self):
+        """The track used to span it; a press there is a press on the item."""
         pointer, _hud, asked = _pointer(hud_takes=False)
 
         pointer.press(*LOWER_EDGE)

@@ -21,7 +21,7 @@ from .dashboard import ask
 from .drive_gate import DriveGate
 from .drive_readout import DrivePublisher
 from .file_channel import consume_command_file, read_paused_state
-from .flick_picture import FlickPicture, Picture
+from .flick_overlay import FlickFrame, FlickOverlay
 from .funestra_controls import VERBS, FunestraControls
 from .funestra_status import status_fields, volume_fields
 from .host_controls import HostControls
@@ -39,6 +39,7 @@ from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
 from .radio import Radio, RadioFile, Tuner, radio_file_for
+from .renamed import answers_to_old_names, keyword_of, method_of, old_name_getter, value_of
 from .satellite_hud import HudModel
 from .scrubber import HeatmapStrip, LoopThumbCapture, loop_thumbnail_xys
 from .session_quit import quit_gesture
@@ -85,7 +86,7 @@ class User(Protocol):
 
     def set_showing(self, showing: bool) -> None: ...
 
-    def picture(self) -> Picture | None: ...
+    def own_frame(self) -> FlickFrame | None: ...
 
     def close(self) -> None: ...
 
@@ -93,7 +94,7 @@ class User(Protocol):
 @runtime_checkable
 class PanelSurface(Protocol):
     """A screen of the window's own that the panel is drawn on, beside the
-    picture rather than over it, held to one width or sized to its contents."""
+    item rather than over it, held to one width or sized to its contents."""
 
     width: int | None
 
@@ -103,11 +104,11 @@ class PanelSurface(Protocol):
 
 
 @runtime_checkable
-class UsersPicture(Protocol):
-    """Where a User's own picture goes up: over the engine's picture, as
-    :class:`FlickPicture` tiles it, or wherever else the window shows one."""
+class UsersFrames(Protocol):
+    """Where a User's own frame goes up: over the engine's item, as
+    :class:`FlickOverlay` tiles it, or wherever else the window shows one."""
 
-    def show(self, picture: Picture, window: tuple[int, int]) -> None: ...
+    def show(self, frame: FlickFrame, window: tuple[int, int]) -> None: ...
 
     def hide(self) -> None: ...
 
@@ -130,7 +131,7 @@ class _Nobody:
     def set_showing(self, showing: bool) -> None:
         pass
 
-    def picture(self) -> Picture | None:
+    def own_frame(self) -> FlickFrame | None:
         return None
 
     def close(self) -> None:
@@ -154,6 +155,7 @@ def osr2_line(channels: Channels) -> FunscriptTCodeDriver | None:
     return FunscriptTCodeDriver(UdpTCodeSink(channels.tcode_host, channels.tcode_port))
 
 
+@answers_to_old_names({"users_picture": "users_frames"})
 class Funestra:
     IN_FRAME_OVERLAY_ID = 8
     OUT_FRAME_OVERLAY_ID = 9
@@ -173,7 +175,7 @@ class Funestra:
         panel: Callable[[], HudModel | None] | None = None,
         muted: bool = True,
         panel_surface: PanelSurface | None = None,
-        users_picture: UsersPicture | None = None,
+        users_frames: UsersFrames | None = None,
         window_verbs: Callable[[str], bool] = _nothing_of_its_own,
         host_controls: HostControls | None = None,
         radio: Tuner | None = None,
@@ -213,11 +215,11 @@ class Funestra:
         self._panel = self._panel_for(channels, panel_surface or engine, panel)
         self._name_flash = NameFlash(clock)
         self._flash = ""
-        self._users_picture = users_picture or FlickPicture(engine)
+        self._users_frames = users_frames or FlickOverlay(engine)
         self._corners = None if self._panel is None or panel_surface is not None else HudCorners(
             self._panel, engine, post=self._where_the_panel_asks(channels))
         self._pointer = Pointer(hud=self._panel, corners=self._corners,
-                                picture=self._press_on_the_picture(channels))
+                                item=self._press_on_the_item(channels))
         self._controls = FunestraControls(
             self.playback, stop_event=self._stop,
             reload_playlist=None if self._follower is None else self._follower.read_now,
@@ -308,21 +310,21 @@ class Funestra:
     def _seek_along_the_track(self, ms: float) -> None:
         """A press on the track names a time in the stretch the track spans,
         which is the whole clip until a loop being recorded zooms it in -- or,
-        under a picture, how far into its time on screen that picture is."""
-        picture = self._front.picture()
-        if picture is not None:
-            picture.seek_time(ms)
+        under an image, how far into its time on screen that image is."""
+        frame = method_of(self._front, "own_frame", old_name="picture")()
+        if frame is not None:
+            frame.seek_time(ms)
             return
-        if self.playback.showing_picture:
-            self._engine.seek_picture(ms)
+        if self.playback.showing_image:
+            method_of(self._engine, "seek_image", old_name="seek_picture")(ms)
             return
         start_ms, _end_ms = self._strip.window
         self.playback.seek_to(start_ms + ms)
 
     def _seek_round_the_dial(self, turn: float) -> None:
-        picture = self._front.picture()
-        if picture is not None:
-            picture.seek_loop(turn)
+        frame = method_of(self._front, "own_frame", old_name="picture")()
+        if frame is not None:
+            frame.seek_loop(turn)
 
     @classmethod
     def on_window(cls, wid: int, *, channels: Channels, playlist: list[PlaylistItem],
@@ -342,7 +344,7 @@ class Funestra:
             return partial(ask, channels.dashboard_cmd)
         return self.apply
 
-    def _press_on_the_picture(self, channels: Channels) -> Callable[[], None]:
+    def _press_on_the_item(self, channels: Channels) -> Callable[[], None]:
         """What a press off the panel does: in a session it asks the room to
         pause everything; on a window with no room to ask, what runs on the
         window is asked instead."""
@@ -439,13 +441,13 @@ class Funestra:
         if self._radio is None:
             return
         volume = self._volume.hud
-        self._radio.tick(picture=self._a_picture_on_screen(),
+        self._radio.tick(**{keyword_of(self._radio.tick, "image", old_name="picture"): self._an_image_on_screen()},
                          level=None if volume.muted else volume.volume,
                          paused=self.playback.is_paused)
 
-    def _a_picture_on_screen(self) -> bool | None:
-        """True for a picture, False for a video, None between two files."""
-        if self.playback.showing_picture:
+    def _an_image_on_screen(self) -> bool | None:
+        """True for an image, False for a video, None between two files."""
+        if self.playback.showing_image:
             return True
         return False if self._engine.showing_video else None
 
@@ -477,30 +479,30 @@ class Funestra:
             self._paint(window)
         except MemoryError:
             if not self._short_of_memory:
-                logger.warning("Out of memory drawing over the picture; drawing it again on "
+                logger.warning("Out of memory drawing over the item; drawing it again on "
                                "the next frame")
             self._short_of_memory = True
         else:
             self._short_of_memory = False
 
     def _paint(self, window: tuple[int, int]) -> None:
-        picture = self._front.picture()
-        if picture is None:
-            self._users_picture.hide()
+        frame = method_of(self._front, "own_frame", old_name="picture")()
+        if frame is None:
+            self._users_frames.hide()
             self._paint_panel(window, self.item_row(), self._strip.colors, self.playback.speed)
             if self._panel_surface is None:
                 self._paint_loop_frames(window)
         else:
-            self._users_picture.show(picture, window)
-            self._paint_panel(window, picture_row(picture, self._volume.hud), None, 1.0)
+            self._users_frames.show(frame, window)
+            self._paint_panel(window, frame_row(frame, self._volume.hud), None, 1.0)
             self._take_the_loop_frames_down()
         if self._corners is not None:
             self._corners.paint(window=window)
 
     def item_row(self) -> RowHud:
         """Where the item on screen has got to, how long it runs, how loud it
-        is and where its loop ends -- the row the panel carries at its foot.  A
-        picture runs for the time it holds the screen.  A video is timed
+        is and where its loop ends -- the row the panel carries at its foot.  An
+        image runs for the time it holds the screen.  A video is timed
         against the stretch the track spans, which is the whole video until a
         loop being recorded zooms it in.
         """
@@ -508,8 +510,8 @@ class Funestra:
         self._strip.update(playback.showing, playback.current_funscript,
                            playback.duration_ms, self._track_width(),
                            mark_in_ms=playback.mark, position_ms=playback.position_ms)
-        if playback.showing_picture:
-            elapsed_ms, pace_ms = engine.picture_time or (0.0, 0.0)
+        if playback.showing_image:
+            elapsed_ms, pace_ms = value_of(engine, "image_time", old_name="picture_time") or (0.0, 0.0)
             return RowHud(position_ms=elapsed_ms, duration_ms=pace_ms, volume=self._volume.hud,
                           playhead=time_playhead(elapsed_ms, pace_ms))
         start_ms, end_ms = self._strip.window
@@ -577,14 +579,17 @@ class Funestra:
         self._engine.remove_overlay(self.OUT_FRAME_OVERLAY_ID)
 
 
-def picture_row(picture: Picture, volume) -> RowHud | None:
-    """The row for a picture a User put up itself: its time on screen on the
+def frame_row(frame: FlickFrame, volume) -> RowHud | None:
+    """The row for a frame a User put up itself: its time on screen on the
     track, its loop on the dial, and the frame and the time read out between
     them, or None while there is none up."""
-    if picture.count <= 0:
+    if frame.count <= 0:
         return None
-    return RowHud(position_ms=picture.elapsed_ms, duration_ms=picture.interval_ms,
+    return RowHud(position_ms=frame.elapsed_ms, duration_ms=frame.interval_ms,
                   volume=volume,
-                  playhead=framed_playhead(picture.played, picture.count,
-                                           picture.elapsed_ms, picture.interval_ms),
-                  loop=(picture.played, picture.count))
+                  playhead=framed_playhead(frame.played, frame.count,
+                                           frame.elapsed_ms, frame.interval_ms),
+                  loop=(frame.played, frame.count))
+
+
+__getattr__ = old_name_getter(__name__, {"UsersPicture": "UsersFrames"})

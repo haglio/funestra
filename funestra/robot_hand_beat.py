@@ -6,7 +6,7 @@ the phase toward the downbeat by a fraction of the error — but only ever forwa
 A pulse that arrives while the loop is already past the downbeat catches it up;
 one that arrives while the loop leads the beat holds rather than dragging the
 phase back, because the phase is what a clip is scrubbed by and the cursor must
-never run backwards.  The phase is the one clock the hand and the picture share.
+never run backwards.  The phase is the one clock the hand and the drawing share.
 
 Where the beat comes from is the caller's question, and :class:`Beat` is its
 answer for one tick.  Under the broker it is a BPM and a pulse published over

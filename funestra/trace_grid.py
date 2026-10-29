@@ -1,7 +1,7 @@
 """The 40 ms grid the trace reads the playhead on.
 
 :mod:`funestra.drive_trace` snaps the playhead onto it before it finds the
-turn in play, so the stable picture slides under a fixed set of knots at the
+turn in play, so the stable trace slides under a fixed set of knots at the
 cadence Genau's own publishes repaint at.  :func:`funestra.drive_gate.next_handoff_touch`
 snaps the same way before it looks up what the trace chose: read raw, the
 status crossed a boundary up to a quantum before the trace did and asked for a

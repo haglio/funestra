@@ -5,7 +5,7 @@ loop is one action and back: through its front half the flick travels from A to
 B, through its back half from B to A, and the two ends are the one place a jump
 between halves is invisible, because the frame there serves both.
 
-The frame is a picture of where the device is: parked shows A, fully retracted
+The frame shows where the device is: parked shows A, fully retracted
 shows B, and everything between shows the frame that far through the half that
 is showing. A motion that only works the middle of the axis therefore only
 shows the middle of a half — the extent of what you watch is the extent of what

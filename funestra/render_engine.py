@@ -84,15 +84,17 @@ class MpvRenderEngine(_MpvControl):
 
     @property
     @mpv_call(False)
-    def has_picture_to_draw(self) -> bool:
+    def has_frame_to_draw(self) -> bool:
         if self._render_context.update():
             self._drawn_file.announced()
         return self._drawn_file.owed
 
+    has_picture_to_draw = has_frame_to_draw
+
     @mpv_call()
     def render(self, fbo: int, width: int, height: int, *, flip_y: bool = False) -> str | None:
         """Draw the current frame (video + OSD overlays) into *fbo* at width x height,
-        and say which file the picture shows: None while it is not one to show.
+        and say which file the frame shows: None while it is not one to show.
 
         mpv scales to the target preserving aspect, so a target sized to the
         video's own aspect (see :attr:`video_dims`) fills edge to edge.

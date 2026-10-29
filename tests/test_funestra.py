@@ -19,7 +19,7 @@ from host_controls_fakes import AHost, middle_of
 
 from funestra.console import ConsoleModel, ModeHud, console_text
 from funestra.drive_readout import DriveHud, publish_drive, read_drive
-from funestra.flick_picture import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, Picture
+from funestra.flick_overlay import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, FlickFrame
 from funestra.funestra import Channels, Funestra, User, _Nobody, osr2_line
 from funestra.hud_button import Button
 from funestra.hud_corners import CORNER_PLUS_OVERLAY_ID
@@ -133,9 +133,9 @@ def test_a_level_and_mute_it_is_handed_are_its_own_from_then_on(tmp_path):
             if line.startswith(("volume=", "muted="))] == ["volume=60", "muted=0"]
 
 
-def test_a_window_wearing_no_panel_draws_nothing_over_its_picture(tmp_path):
+def test_a_window_wearing_no_panel_draws_nothing_over_its_item(tmp_path):
     """The track, the time and the volume are a block of the panel, so a window
-    with no panel to wear has nowhere to put them -- and the picture comes
+    with no panel to wear has nowhere to put them -- and the item comes
     through untouched instead of carrying a row along its lower edge."""
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
 
@@ -172,12 +172,12 @@ def test_a_scripted_clips_track_is_filled_across_the_width_the_panel_drew_it_at(
     assert len(funestra._strip.colors) == x1 - x0
 
 
-def test_a_picture_on_screen_keeps_the_row_saying_how_far_into_its_time_it_is(tmp_path):
+def test_an_image_on_screen_keeps_the_row_saying_how_far_into_its_time_it_is(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
                                  hud=True)
     _publish_panel(tmp_path)
-    engine.showing_picture = True
-    engine.picture_time = (1_000.0, 4_000.0)
+    engine.showing_image = True
+    engine.image_time = (1_000.0, 4_000.0)
 
     funestra.tick(window=WINDOW)
 
@@ -187,60 +187,60 @@ def test_a_picture_on_screen_keeps_the_row_saying_how_far_into_its_time_it_is(tm
     assert funestra._panel.row is not None
 
 
-def _a_picture_up(engine: FakeEngine, elapsed_ms: float = 1_000.0, pace_ms: float = 4_000.0) -> None:
-    engine.showing_picture = True
-    engine.picture_time = (elapsed_ms, pace_ms)
+def _an_image_up(engine: FakeEngine, elapsed_ms: float = 1_000.0, pace_ms: float = 4_000.0) -> None:
+    engine.showing_image = True
+    engine.image_time = (elapsed_ms, pace_ms)
 
 
-def test_the_panel_keeps_its_size_when_a_picture_comes_up_after_a_video(tmp_path):
+def test_the_panel_keeps_its_size_when_an_image_comes_up_after_a_video(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
                                  hud=True)
     _publish_panel(tmp_path)
     funestra.tick(window=WINDOW)
     on_the_video = engine.overlays[HUD_OVERLAY_ID][2].shape
 
-    _a_picture_up(engine)
+    _an_image_up(engine)
     funestra.tick(window=WINDOW)
 
     assert engine.overlays[HUD_OVERLAY_ID][2].shape == on_the_video
 
 
-def test_the_panel_keeps_its_size_on_a_picture_held_until_something_moves_it(tmp_path):
+def test_the_panel_keeps_its_size_on_an_image_held_until_something_moves_it(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
                                  hud=True)
     _publish_panel(tmp_path)
     funestra.tick(window=WINDOW)
     on_the_video = engine.overlays[HUD_OVERLAY_ID][2].shape
 
-    _a_picture_up(engine, 0.0, 0.0)
+    _an_image_up(engine, 0.0, 0.0)
     funestra.tick(window=WINDOW)
 
     assert funestra.item_row().playhead is None
     assert engine.overlays[HUD_OVERLAY_ID][2].shape == on_the_video
 
 
-def test_a_pictures_row_reads_out_the_time_it_has_had_of_its_time(tmp_path):
+def test_an_images_row_reads_out_the_time_it_has_had_of_its_time(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
                                  hud=True)
     _publish_panel(tmp_path)
-    _a_picture_up(engine, 1_000.0, 4_000.0)
+    _an_image_up(engine, 1_000.0, 4_000.0)
 
     funestra.tick(window=WINDOW)
 
     assert funestra.item_row().playhead.text == "0:01 / 0:04"
 
 
-def test_a_press_along_a_pictures_track_puts_it_that_far_into_its_time(tmp_path):
+def test_a_press_along_an_images_track_puts_it_that_far_into_its_time(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
                                  hud=True)
     _publish_panel(tmp_path)
-    _a_picture_up(engine, 3_000.0, 4_000.0)
+    _an_image_up(engine, 3_000.0, 4_000.0)
     funestra.tick(window=WINDOW)
     x0, x1 = funestra._panel.row.track
 
     funestra.press(*_on_the_row(funestra, engine, along=x0 + (x1 - x0) // 4), window=WINDOW)
 
-    assert engine.picture_seeks == [pytest.approx(1_000.0, abs=40.0)]
+    assert engine.image_seeks == [pytest.approx(1_000.0, abs=40.0)]
     assert engine.seeks == []
 
 
@@ -253,14 +253,30 @@ def _heard(engine: FakeEngine) -> list[int | None]:
     return [station.heard_at for station in engine.stations]
 
 
-def test_a_funestras_radio_is_tuned_in_while_a_picture_is_up_at_its_own_level(tmp_path):
+def test_an_engine_from_before_images_still_times_and_seeks_the_image_on_screen(tmp_path):
+    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+                                 hud=True)
+    _publish_panel(tmp_path)
+    del engine.showing_image, engine.image_time
+    engine.showing_picture, engine.picture_time = True, (3_000.0, 4_000.0)
+    engine.seek_image, engine.seek_picture = None, engine.image_seeks.append
+    funestra.tick(window=WINDOW)
+    x0, x1 = funestra._panel.row.track
+
+    funestra.press(*_on_the_row(funestra, engine, along=x0 + (x1 - x0) // 4), window=WINDOW)
+
+    assert funestra.item_row().position_ms == 3_000.0
+    assert engine.image_seeks == [pytest.approx(1_000.0, abs=40.0)]
+
+
+def test_a_funestras_radio_is_tuned_in_while_an_image_is_up_at_its_own_level(tmp_path):
     _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"], ["c.mp4"])
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
                                  commands="SET_VOLUME 60 0\n")
     funestra.tick(window=WINDOW)
     assert _heard(engine) == [None, None, None]
 
-    _a_picture_up(engine)
+    _an_image_up(engine)
     funestra.tick(window=WINDOW)
 
     assert _heard(engine) == [60, None, None]
@@ -270,7 +286,7 @@ def test_a_funestra_left_muted_hears_none_of_its_radio(tmp_path):
     _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
                                  commands="")
-    _a_picture_up(engine)
+    _an_image_up(engine)
 
     funestra.tick(window=WINDOW)
 
@@ -281,7 +297,7 @@ def test_a_funestra_that_can_never_be_heard_opens_no_radio(tmp_path):
     _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
                                  audible=False)
-    _a_picture_up(engine)
+    _an_image_up(engine)
 
     funestra.tick(window=WINDOW)
 
@@ -341,7 +357,7 @@ def test_a_list_written_under_the_window_is_taken_with_no_verb_sent(tmp_path):
     assert f"video={clips[2]}" in _status(tmp_path)
 
 
-def test_a_picture_the_list_opens_on_brings_its_places_to_the_engine(tmp_path):
+def test_an_image_the_list_opens_on_brings_its_places_to_the_engine(tmp_path):
     clips = _clips(tmp_path, "v0", "v1")
 
     _opened, engine = _funestra(tmp_path, [f"{clips[0]}\t\t0.25,0.25,0.5,0.5", str(clips[1])])
@@ -349,7 +365,7 @@ def test_a_picture_the_list_opens_on_brings_its_places_to_the_engine(tmp_path):
     assert engine.points_told == [((0.25, 0.25, 0.5, 0.5),)]
 
 
-def test_a_list_taken_while_its_picture_is_on_screen_brings_that_pictures_places(tmp_path):
+def test_a_list_taken_while_its_image_is_on_screen_brings_that_images_places(tmp_path):
     clips = _clips(tmp_path, "v0", "v1")
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in clips], commands="")
     (tmp_path / "playlist.tsv").write_text(f"{clips[0]}\t\t0.1,0.1,0.2,0.2\n{clips[1]}\n",
@@ -408,36 +424,36 @@ def _just_moved_on(tmp_path: Path) -> tuple[Funestra, FakeEngine, list[Path]]:
     return funestra, engine, clips
 
 
-class TestWhatLandsAsThePictureMovesOnByItself:
-    def test_a_lock_holds_the_picture_on_screen(self, tmp_path):
+class TestWhatLandsAsTheImageMovesOnByItself:
+    def test_a_lock_holds_the_image_on_screen(self, tmp_path):
         funestra, engine, clips = _just_moved_on(tmp_path)
 
         funestra.apply("LOCK_ON")
 
         assert engine.playing == funestra.playback.current_video == clips[1]
 
-    def test_a_pace_of_nought_holds_the_picture_on_screen(self, tmp_path):
+    def test_a_pace_of_nought_holds_the_image_on_screen(self, tmp_path):
         funestra, engine, clips = _just_moved_on(tmp_path)
 
         funestra.apply("SET_PACE 0")
 
         assert engine.playing == funestra.playback.current_video == clips[1]
 
-    def test_going_back_goes_to_the_picture_before_the_one_on_screen(self, tmp_path):
+    def test_going_back_goes_to_the_image_before_the_one_on_screen(self, tmp_path):
         funestra, engine, clips = _just_moved_on(tmp_path)
 
         funestra.apply("PREV")
 
         assert engine.playing == clips[0]
 
-    def test_a_trash_drops_the_picture_on_screen(self, tmp_path):
+    def test_a_trash_drops_the_image_on_screen(self, tmp_path):
         funestra, engine, clips = _just_moved_on(tmp_path)
 
         funestra.apply("TRASH")
 
         assert (funestra.playback.playlist, engine.playing) == ([clips[0], *clips[2:]], clips[2])
 
-    def test_an_item_asked_for_next_comes_after_the_picture_on_screen(self, tmp_path):
+    def test_an_item_asked_for_next_comes_after_the_image_on_screen(self, tmp_path):
         funestra, _engine, clips = _just_moved_on(tmp_path)
         newcomer, = _clips(tmp_path, "newcomer")
 
@@ -445,7 +461,7 @@ class TestWhatLandsAsThePictureMovesOnByItself:
 
         assert funestra.playback.playlist == [*clips[:2], newcomer, *clips[2:]]
 
-    def test_a_list_handed_over_keeps_the_picture_on_screen(self, tmp_path):
+    def test_a_list_handed_over_keeps_the_image_on_screen(self, tmp_path):
         funestra, engine, clips = _just_moved_on(tmp_path)
 
         funestra.take_the_list([PlaylistItem(clip) for clip in clips])
@@ -666,7 +682,7 @@ def test_each_pass_carries_a_still_s_move_a_little_further(tmp_path):
     assert engine.pushes == 1
 
 
-def test_a_tiling_funestra_lays_its_picture_out_across_its_window(tmp_path):
+def test_a_tiling_funestra_lays_its_item_out_across_its_window(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")], tiles=True)
 
     funestra.tick(window=WINDOW)
@@ -717,7 +733,7 @@ def test_a_frame_there_is_no_memory_to_draw_is_dropped_and_said_once_while_it_pl
 
     assert [record.getMessage() for record in caplog.records
             if record.name == "funestra.funestra"] == [
-        "Out of memory drawing over the picture; drawing it again on the next frame"]
+        "Out of memory drawing over the item; drawing it again on the next frame"]
 
 
 def test_a_panel_there_was_no_memory_for_is_drawn_once_there_is(tmp_path):
@@ -733,7 +749,7 @@ def test_a_panel_there_was_no_memory_for_is_drawn_once_there_is(tmp_path):
     assert list(engine.overlays) == [HUD_OVERLAY_ID]
 
 
-def test_the_panel_its_source_publishes_is_the_one_thing_over_the_picture(tmp_path):
+def test_the_panel_its_source_publishes_is_the_one_thing_over_the_item(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")], hud=True)
     _publish_panel(tmp_path)
 
@@ -742,7 +758,7 @@ def test_the_panel_its_source_publishes_is_the_one_thing_over_the_picture(tmp_pa
     assert list(engine.overlays) == [HUD_OVERLAY_ID]
 
 
-def test_a_panel_over_the_picture_carries_its_own_minus_so_none_hangs_outside_it(tmp_path):
+def test_a_panel_over_the_item_carries_its_own_minus_so_none_hangs_outside_it(tmp_path):
     funestra, _engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")], hud=True)
     _publish_panel(tmp_path)
 
@@ -801,7 +817,7 @@ class Kino:
     def set_showing(self, showing: bool) -> None:
         self.showing.append(showing)
 
-    def picture(self) -> Picture | None:
+    def own_frame(self) -> FlickFrame | None:
         return None
 
     def close(self) -> None:
@@ -809,7 +825,7 @@ class Kino:
 
 
 class Genau(Kino):
-    """A User that puts its own picture up: frames it decoded itself, counted
+    """A User that puts its own frame up: frames it decoded itself, counted
     in frames, which the Funestra shows in place of the video."""
 
     def __init__(self, playback) -> None:
@@ -832,11 +848,11 @@ class Genau(Kino):
     def top_block(self) -> ModeHud:
         return ModeHud(video=self.video)
 
-    def picture(self) -> Picture | None:
-        return Picture(frame=self.frame, played=self.played, count=self.count,
-                       elapsed_ms=self.elapsed_ms, interval_ms=self.interval_ms,
-                       seek_time=self.sought_times.append, seek_loop=self.sought_turns.append,
-                       flick=self.flick)
+    def own_frame(self) -> FlickFrame | None:
+        return FlickFrame(frame=self.frame, played=self.played, count=self.count,
+                          elapsed_ms=self.elapsed_ms, interval_ms=self.interval_ms,
+                          seek_time=self.sought_times.append, seek_loop=self.sought_turns.append,
+                          flick=self.flick)
 
 
 def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
@@ -1130,7 +1146,7 @@ class TestWhoHasTheWindow:
         assert (kino.closed, funestra._users["genau"].closed) == (True, True)
 
 
-class TestAUsersOwnPicture:
+class TestAUsersOwnFrame:
     """Genau shows frames it decoded itself, so with the window it puts them up
     over the video, and the row and the track answer for them."""
 
@@ -1171,7 +1187,7 @@ class TestAUsersOwnPicture:
 
         assert engine.overlays[HUD_OVERLAY_ID][2] is not before
 
-    def test_the_row_runs_its_pictures_time_on_screen_and_turns_its_dial(self, tmp_path):
+    def test_the_row_runs_its_frames_time_on_screen_and_turns_its_dial(self, tmp_path):
         """A flick has two senses of time: the track runs how long it has been
         up of the seconds it gets, and the dial beside it goes round with the
         loop of the clip itself."""
@@ -1184,7 +1200,7 @@ class TestAUsersOwnPicture:
         assert row.loop == (genau.played, genau.count)
         assert row.volume is funestra._volume.hud
 
-    def test_a_press_on_the_track_puts_its_picture_that_far_into_its_time_rather_than_the_video(
+    def test_a_press_on_the_track_puts_its_frame_that_far_into_its_time_rather_than_the_video(
             self, tmp_path):
         funestra, engine, genau = self._genau_in_front(tmp_path)
         x0, x1 = funestra._panel.row.track
@@ -1196,7 +1212,7 @@ class TestAUsersOwnPicture:
         assert abs(genau.sought_times[0] - genau.interval_ms / 2) <= genau.interval_ms / (x1 - x0)
         assert genau.sought_turns == []
 
-    def test_a_press_on_the_dial_turns_its_pictures_loop(self, tmp_path):
+    def test_a_press_on_the_dial_turns_its_frames_loop(self, tmp_path):
         funestra, engine, genau = self._genau_in_front(tmp_path)
 
         funestra.press(*_on_the_row(funestra, engine, "dial"), window=WINDOW)
@@ -1214,7 +1230,7 @@ class TestAUsersOwnPicture:
 
         assert not {Funestra.IN_FRAME_OVERLAY_ID, Funestra.OUT_FRAME_OVERLAY_ID} & set(engine.overlays)
 
-    def test_handing_the_window_back_takes_its_picture_down_and_the_videos_row_returns(self, tmp_path):
+    def test_handing_the_window_back_takes_its_frame_down_and_the_videos_row_returns(self, tmp_path):
         funestra, engine, _genau = self._genau_in_front(tmp_path)
         (tmp_path / "cmd.txt").write_text("SHOW kino\n", encoding="utf-8")
 
@@ -1229,11 +1245,23 @@ class _ARadioOfItsHost:
         self.ticked: tuple | None = None
         self.closed = False
 
-    def tick(self, *, picture, level, paused) -> None:
-        self.ticked = (picture, level, paused)
+    def tick(self, *, image, level, paused) -> None:
+        self.ticked = (image, level, paused)
 
     def close(self) -> None:
         self.closed = True
+
+
+class _ARadioFromBeforeImages(_ARadioOfItsHost):
+    def tick(self, *, picture, level, paused) -> None:
+        self.ticked = (picture, level, paused)
+
+
+class _AUserFromBeforeImages(Genau):
+    own_frame = None
+
+    def picture(self) -> FlickFrame | None:
+        return Genau.own_frame(self)
 
 
 class TestAWindowsOwnPanel:
@@ -1258,7 +1286,7 @@ class TestAWindowsOwnPanel:
                             **handed)
         return funestra, engine, made[0], panel
 
-    def test_it_is_drawn_over_the_picture_where_no_session_published_one(self, tmp_path):
+    def test_it_is_drawn_over_the_item_where_no_session_published_one(self, tmp_path):
         funestra, engine, _user, _panel = self._own_panel(tmp_path)
 
         funestra.tick(window=WINDOW)
@@ -1277,7 +1305,7 @@ class TestAWindowsOwnPanel:
         assert user.commands == ["portrait_next"]
         assert _asked(tmp_path) == []
 
-    def test_a_press_on_the_picture_asks_what_runs_on_the_window_to_pause(self, tmp_path):
+    def test_a_press_on_the_item_asks_what_runs_on_the_window_to_pause(self, tmp_path):
         funestra, engine, user, _panel = self._own_panel(tmp_path)
         funestra.tick(window=WINDOW)
         left, top, panel = engine.overlays[HUD_OVERLAY_ID]
@@ -1337,14 +1365,31 @@ class TestAWindowsOwnPanel:
 
         assert funestra._volume.hud.muted is True
 
-    def test_a_radio_its_host_hands_it_hears_a_picture_at_its_level(self, tmp_path):
+    def test_a_radio_its_host_hands_it_hears_an_image_at_its_level(self, tmp_path):
         radio = _ARadioOfItsHost()
         funestra, engine, _user, _panel = self._own_panel(tmp_path, muted=False, radio=radio)
-        _a_picture_up(engine)
+        _an_image_up(engine)
 
         funestra.tick(window=WINDOW)
 
         assert radio.ticked == (True, 100, False)
+
+    def test_a_radio_from_before_images_still_hears_an_image_at_its_level(self, tmp_path):
+        radio = _ARadioFromBeforeImages()
+        funestra, engine, _user, _panel = self._own_panel(tmp_path, muted=False, radio=radio)
+        _an_image_up(engine)
+
+        funestra.tick(window=WINDOW)
+
+        assert radio.ticked == (True, 100, False)
+
+    def test_a_user_from_before_images_still_puts_its_own_frame_up(self, tmp_path):
+        funestra, engine, _user, _panel = self._own_panel(tmp_path, user=_AUserFromBeforeImages)
+
+        funestra.tick(window=WINDOW)
+
+        assert FIRST_TILE_OVERLAY_ID in engine.overlays
+
 
     def test_a_radio_its_host_hands_it_goes_with_it(self, tmp_path):
         radio = _ARadioOfItsHost()
@@ -1414,7 +1459,7 @@ def test_a_window_told_to_fall_silent_mutes_its_engine_and_its_chip(tmp_path):
 
 
 class _ASurface:
-    """A screen of the window's own beside the picture: what a headset gives
+    """A screen of the window's own beside the item: what a headset gives
     its panel, which hangs there rather than lying over the video."""
 
     def __init__(self, width: int | None = None) -> None:
@@ -1428,9 +1473,9 @@ class _ASurface:
         self.overlays.pop(ident, None)
 
 
-class TestAPanelBesideThePicture:
-    """A headset hangs the panel as a screen of its own beside the picture, so
-    a Funestra on such a window draws it there and leaves the picture alone."""
+class TestAPanelBesideTheItem:
+    """A headset hangs the panel as a screen of its own beside the item, so
+    a Funestra on such a window draws it there and leaves the item alone."""
 
     def _wearing_a_panel_beside(self, tmp_path, surface=None):
         surface = surface or _ASurface()
@@ -1443,16 +1488,16 @@ class TestAPanelBesideThePicture:
         funestra.tick(window=WINDOW)
         return funestra, engine, surface
 
-    def test_the_panel_is_drawn_on_the_surface_and_nothing_on_the_picture(self, tmp_path):
+    def test_the_panel_is_drawn_on_the_surface_and_nothing_on_the_item(self, tmp_path):
         _funestra, engine, surface = self._wearing_a_panel_beside(tmp_path)
 
         assert list(surface.overlays) == [HUD_OVERLAY_ID]
         assert engine.overlays == {}
 
     def test_it_fills_its_surface_from_the_corner_whatever_corner_the_room_published(self, tmp_path):
-        """The room's corner places a panel over the picture; a screen of its
-        own has no picture to be placed on, so the panel starts at its edge the
-        way test_hud_overlay says a panel beside the picture does."""
+        """The room's corner places a panel over the item; a screen of its
+        own has no item to be placed on, so the panel starts at its edge the
+        way test_hud_overlay says a panel beside the item does."""
         (tmp_path / "portrait_hud.json").write_text(
             json.dumps({"funestra": "portrait", "hud_corner": "lower_right"}), encoding="utf-8")
         clips = _clips(tmp_path, "v0")
@@ -1466,7 +1511,7 @@ class TestAPanelBesideThePicture:
         assert surface.overlays[HUD_OVERLAY_ID][:2] == (MARGIN, MARGIN)
 
     def _main_beside(self, tmp_path, surface, *, genau: bool = False, commands: str = "",
-                     users_picture=None):
+                     users_frames=None):
         channels = _console_channels(
             tmp_path, [str(clip) for clip in _clips(tmp_path, "v0", "v1")], commands=commands)
         _publish_console(tmp_path)
@@ -1474,7 +1519,7 @@ class TestAPanelBesideThePicture:
         users = {"kino": Kino, **({"genau": Genau} if genau else {})}
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
                             locked=True, sound_is_the_rooms=True, users=users,
-                            panel_surface=surface, users_picture=users_picture)
+                            panel_surface=surface, users_frames=users_frames)
         funestra.tick(window=WINDOW)
         return funestra, engine
 
@@ -1488,9 +1533,9 @@ class TestAPanelBesideThePicture:
 
         assert surface.overlays[HUD_OVERLAY_ID][2].shape[1] == 600
 
-    def test_the_window_is_told_which_edge_of_the_picture_the_panel_hangs_along(self, tmp_path):
-        """The room moves the panel between the picture's edges; a window that
-        hangs the panel beside the picture has to hear which one."""
+    def test_the_window_is_told_which_edge_of_the_item_the_panel_hangs_along(self, tmp_path):
+        """The room moves the panel between the item's edges; a window that
+        hangs the panel beside the item has to hear which one."""
         funestra, _engine = self._main_beside(tmp_path, _ASurface())
         assert funestra.panel_edge is HudEdge.LOWER
 
@@ -1508,7 +1553,7 @@ class TestAPanelBesideThePicture:
 
         assert funestra.panel_edge is HudEdge.UPPER
 
-    def test_minimized_beside_the_picture_the_panel_leaves_its_plus_to_the_window(self, tmp_path):
+    def test_minimized_beside_the_item_the_panel_leaves_its_plus_to_the_window(self, tmp_path):
         funestra, _engine, surface = self._wearing_a_panel_beside(tmp_path)
         _publish_panel(tmp_path, hud_minimized=True)
 
@@ -1517,7 +1562,7 @@ class TestAPanelBesideThePicture:
         assert HUD_OVERLAY_ID not in surface.overlays
         assert funestra.panel_minimized
 
-    def test_minimized_beside_the_picture_the_console_leaves_its_plus_to_the_window(self, tmp_path):
+    def test_minimized_beside_the_item_the_console_leaves_its_plus_to_the_window(self, tmp_path):
         surface = _ASurface(width=380)
         funestra, _engine = self._main_beside(tmp_path, surface)
         _publish_console(tmp_path, hud_minimized=True)
@@ -1554,7 +1599,7 @@ class TestAPanelBesideThePicture:
         assert np.array_equal(funestra.outside_buttons.name_flash(),
                               OutsideButtons("portrait", minimized=True, flash="v0").name_flash())
 
-    def test_the_console_beside_the_picture_hands_the_window_its_minus_too(self, tmp_path):
+    def test_the_console_beside_the_item_hands_the_window_its_minus_too(self, tmp_path):
         funestra, _engine = self._main_beside(tmp_path, _ASurface(width=380))
 
         assert funestra.outside_buttons.toggle(pointed=False).command == "main_hud_minimize"
@@ -1570,7 +1615,7 @@ class TestAPanelBesideThePicture:
     def test_a_press_is_placed_by_the_surfaces_own_pixels_and_where_the_panel_was_drawn(self, tmp_path):
         """A squeeze on the hanging screen lands in the panel's own pixels; the
         window adds where the panel was drawn and the row answers as it would
-        over the picture."""
+        over the item."""
         funestra, engine, surface = self._wearing_a_panel_beside(tmp_path)
         funestra.tick(window=WINDOW)
         left, top, _bgra = surface.overlays[HUD_OVERLAY_ID]
@@ -1582,9 +1627,9 @@ class TestAPanelBesideThePicture:
         assert len(engine.seeks) == 1
         assert abs(engine.seeks[0] - engine.duration_ms / 2) <= engine.duration_ms / (x1 - x0)
 
-    def test_the_loops_frames_stay_off_a_picture_the_panel_does_not_lie_on(self, tmp_path):
+    def test_the_loops_frames_stay_off_an_item_the_panel_does_not_lie_on(self, tmp_path):
         """They hang under the panel's track in the window; a panel on a screen
-        of its own has no stretch of the picture under it to hang them from."""
+        of its own has no stretch of the item under it to hang them from."""
         funestra, engine = self._main_beside(tmp_path, _ASurface())
         funestra.playback.set_ab_loop(1_000, 3_000)
         engine.screenshot = np.zeros((10, 20, 4), dtype=np.uint8)
@@ -1596,42 +1641,42 @@ class TestAPanelBesideThePicture:
         assert engine.screenshots == 0
 
 
-class _APictureSurface:
-    """Where a headset puts a User's own picture: a texture of its own, wrapped
+class _AFramesSurface:
+    """Where a headset puts a User's own frame: a texture of its own, wrapped
     the way the clip is, rather than tiles over the video."""
 
     def __init__(self) -> None:
-        self.shown: list[tuple[Picture, tuple[int, int]]] = []
+        self.shown: list[tuple[FlickFrame, tuple[int, int]]] = []
         self.hidden = 0
 
-    def show(self, picture: Picture, window: tuple[int, int]) -> None:
-        self.shown.append((picture, window))
+    def show(self, frame: FlickFrame, window: tuple[int, int]) -> None:
+        self.shown.append((frame, window))
 
     def hide(self) -> None:
         self.hidden += 1
 
 
-class TestAUsersOwnPictureElsewhere:
-    """A window may show a User's own picture somewhere other than over the
-    engine's: it is handed the picture whenever one is up and told when none is."""
+class TestAUsersOwnFrameElsewhere:
+    """A window may show a User's own frame somewhere other than over the
+    engine's: it is handed the frame whenever one is up and told when none is."""
 
-    def test_the_picture_is_handed_over_and_the_video_is_left_alone(self, tmp_path):
-        surface = _APictureSurface()
-        funestra, engine = TestAPanelBesideThePicture()._main_beside(
-            tmp_path, _ASurface(), genau=True, commands="SHOW genau\n", users_picture=surface)
+    def test_the_frame_is_handed_over_and_the_video_is_left_alone(self, tmp_path):
+        surface = _AFramesSurface()
+        funestra, engine = TestAPanelBesideTheItem()._main_beside(
+            tmp_path, _ASurface(), genau=True, commands="SHOW genau\n", users_frames=surface)
         genau = funestra._users["genau"]
 
         funestra.tick(window=WINDOW)
 
-        picture, window = surface.shown[-1]
-        assert (picture.frame, picture.played, picture.count, picture.flick, window) == (
+        frame, window = surface.shown[-1]
+        assert (frame.frame, frame.played, frame.count, frame.flick, window) == (
             genau.frame, genau.played, genau.count, genau.flick, WINDOW)
         assert engine.overlays == {}
 
-    def test_it_is_told_when_no_picture_is_up(self, tmp_path):
-        surface = _APictureSurface()
-        funestra, _engine = TestAPanelBesideThePicture()._main_beside(
-            tmp_path, _ASurface(), genau=True, commands="SHOW genau\n", users_picture=surface)
+    def test_it_is_told_when_no_frame_is_up(self, tmp_path):
+        surface = _AFramesSurface()
+        funestra, _engine = TestAPanelBesideTheItem()._main_beside(
+            tmp_path, _ASurface(), genau=True, commands="SHOW genau\n", users_frames=surface)
         (tmp_path / "cmd.txt").write_text("SHOW kino\n", encoding="utf-8")
 
         funestra.tick(window=WINDOW)

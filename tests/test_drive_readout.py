@@ -418,7 +418,7 @@ class TestPublishing:
     def test_the_knot_slide_and_the_edge_go_over_the_wire_too(self, tmp_path):
         """A trace read on knots (the learned motion's) is published with how
         far the line is shifted and the knot past the border, so the Funestra
-        drawing it slides the same stable picture Genau does."""
+        drawing it slides the same stable drawing Genau does."""
         path = tmp_path / "genau_drive.txt"
         publish_drive(path, _hud(slide=0.4, edge=0.75))
 
@@ -476,7 +476,7 @@ class TestLabelPair:
 
 
 class TestWhoseMotion:
-    """The trace is a picture of what the device is being sent, so it is drawn in
+    """The trace is a drawing of what the device is being sent, so it is drawn in
     the color of whoever is sending it — and drawn still when nobody is."""
 
     @staticmethod
@@ -627,7 +627,7 @@ class TestSmoothTrace:
         assert len(blue_family) > 5
 
     def test_the_knot_shift_slides_the_scripts_line(self):
-        """The script's picture is fixed; the fraction of a knot the playhead
+        """The script's drawing is fixed; the fraction of a knot the playhead
         sits past its grid point translates the drawn line."""
         still = _rendered(_hud(driven=DRIVEN_BY_FUNSCRIPT, slide=0.0, edge=0.5))
         slid = _rendered(_hud(driven=DRIVEN_BY_FUNSCRIPT, slide=0.5, edge=0.5))
@@ -650,7 +650,7 @@ class TestSmoothTrace:
 class TestBorder:
     def test_the_trace_s_edge_is_opaque_so_it_reads_the_same_over_anything(self):
         """At part strength the video showed through it, so one quiet gray line
-        read as a bright thick one over the picture and a thin dark one over the
+        read as a bright thick one over the drawing and a thin dark one over the
         letterbox — the same border looking like two."""
         hud = _hud()
         x, y, w, _h = next(t.rect for t in tracks(PAD, PAD, hud) if t.axis == CENTER)

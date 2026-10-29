@@ -45,7 +45,7 @@ another application's internals to get it. By what it is:
   vocabulary and so never in source. `flick_folder`,
   `flick_decode`, `flick_cache`, `flick_loader`, `flick_sequence`,
   `flick_selection`, `flick_advance`, `flick_flip`, `flick_renderer`,
-  `flick_scrub` and `flick_picture` get a flick from a folder to the frame the
+  `flick_scrub` and `flick_overlay` get a flick from a folder to the frame the
   motion is at, and `genau_controls`, `genau_refresh`, `genau_readout`,
   `genau_status`, `genau_notifier` and `genau_arrival` are its verbs, its tick,
   and what it publishes. A shell — Fun Time's Main Funestra, its headset —
@@ -99,12 +99,12 @@ and a reader in one module — so the two sides cannot spell a thing differently
 
 | The source hands the Funestra… | …through | …and reads back |
 | --- | --- | --- |
-| a playlist: one `PlaylistItem` per line, a video and its funscript, or a picture | `playlist` (`write_playlist` / `read_playlist`; `item_line` / `item_from_line` is the line, and `PLAY_FILE`'s value) | |
+| a playlist: one `PlaylistItem` per line, a video and its funscript, or an image | `playlist` (`write_playlist` / `read_playlist`; `item_line` / `item_from_line` is the line, and `PLAY_FILE`'s value) | |
 | verbs on its command file, spelled in `funestra_verbs` | `file_channel` (`append_command` / `consume_command_file`); the Funestra answers the ones it declares in a `control_registry` | |
-| the pace a picture holds the screen for: `SET_PACE <seconds>`, 0 holding it | `funestra_verbs.pace_seconds` reads the value, `set_pace` hands it to mpv | |
+| the pace an image holds the screen for: `SET_PACE <seconds>`, 0 holding it | `funestra_verbs.pace_seconds` reads the value, `set_pace` hands it to mpv | |
 | the paused flag | `app_support.file_channel.write_flag` / `file_channel.read_paused_state` | |
 | its HUD: a `HudModel` for a satellite, a `ConsoleModel` for the main slot, each carrying the buttons the source declares — rows of `hud_button.Button`: the verb a press posts, the face, the tooltip, lit or dim, where a group starts | `satellite_hud` (`hud_text` / `parse_hud`), `console` (`console_text` / `parse_console`) | |
-| | `status` (`status_fields` / `parse_status`, published by `StatusWriter`) | a `FunestraStatus`: the item on screen, the playhead, paused, locked, the rate it plays at, whether the item is a picture — and after those seven lines, whatever that Funestra adds of its own |
+| | `status` (`status_fields` / `parse_status`, published by `StatusWriter`) | a `FunestraStatus`: the item on screen, the playhead, paused, locked, the rate it plays at, whether the item is an image — and after those seven lines, whatever that Funestra adds of its own |
 
 A Funestra answers the verbs it can (`TRASH` is a satellite's, `TOGGLE_LOCK` the
 main slot's) and refuses the rest on its log. It draws the buttons its source
@@ -113,17 +113,17 @@ whose number only the drawing host knows (the video's rate, a flick's pace)
 names it in `host_value` and the painter fills it in. A panel declaring no
 buttons is drawn with none.
 
-A picture is shown by libmpv itself: it holds the frame for the pace and then
-ends the file the way a finished video ends, so a picture moves on, holds under
+An image is shown by libmpv itself: it holds the frame for the pace and then
+ends the file the way a finished video ends, so an image moves on, holds under
 a lock and waits out a pause exactly as a video does, and a Funestra opens at 4
-seconds until a source sets a pace. Whether an item is a picture is mpv's to
-say once the file is open (`showing_picture`), so a playlist line carries no
+seconds until a source sets a pace. Whether an item is an image is mpv's to
+say once the file is open (`showing_image`), so a playlist line carries no
 kind; the still a HUD map draws for one is its cell's `thumb`, as for a video.
-While it holds, a picture makes one slow move, carried on a frame at a time by
+While it holds, an image makes one slow move, carried on a frame at a time by
 `push_still`: a zoom in toward a spot, a zoom out from one, or a pan across it
 held a little closer -- never the same kind twice in a row, and never showing
-the window past the picture's edge. `aim_still(part, seconds)` takes it onto a
-part of the picture instead and holds it there until the next file.
+the window past the image's edge. `aim_still(part, seconds)` takes it onto a
+part of the image instead and holds it there until the next file.
 
 `flick_decode` reaches `app_support.subprocess_utils` for the one Windows fact
 about launching ffmpeg (no console window), so `../app_support` has to be

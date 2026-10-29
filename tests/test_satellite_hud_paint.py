@@ -1253,7 +1253,7 @@ def _amber_ink(rect, rendered) -> int:
 
 
 def test_the_enhanced_switch_wears_amber_and_fills_with_it_when_on():
-    """Amber is what an enhanced picture is marked with across this family, so
+    """Amber is what an enhanced image is marked with across this family, so
     the switch that keeps only those wears its mark in amber at rest and its
     whole ground in amber while it is on — never the favorites' green, which
     would say the wrong thing about what was kept."""
@@ -1590,9 +1590,9 @@ class TestTheBlockASourcePaintsAtTheFoot:
 
 class TestTheRowThePanelCarriesForItsClip:
     """Where in the video you are, and how loud it is, on the panel rather than
-    along the lower edge of the picture.
+    along the lower edge of the item.
 
-    A row over the picture is a second panel on a screen that already carries
+    A row over the item is a second panel on a screen that already carries
     one -- and on a wrapped video it is smeared round the nadir, which is why
     the headset put it on the console first.
     """

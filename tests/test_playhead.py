@@ -57,7 +57,7 @@ class TestWhatAVideosReadoutSays:
 
 class TestWhatAClipsReadoutSays:
     def test_a_clip_has_frames_and_no_clock(self):
-        """Genau's clips are pictures the Robot Hand scrubs through, with no time in them."""
+        """Genau's clips are frames the Robot Hand scrubs through, with no time in them."""
         playhead = flick_playhead(7, 20)
 
         assert (playhead.text, playhead.widest) == (f"frame {FIGURE_SPACE}7 / 20", "frame 20 / 20")

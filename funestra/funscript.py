@@ -164,7 +164,7 @@ class Funscript:
         through the quiet stretches, and a straight climb between them — from
         park at the foot of the rise to the cluster's opening action as it
         fires.  This is the line the waypoint driver walks, so a trace drawn
-        from it is the device's coming motion rather than a picture the device
+        from it is the device's coming motion rather than a drawing the device
         contradicts (:meth:`position_at` holds the last position across gaps
         the device spends parked).
         """
@@ -190,23 +190,23 @@ class Funscript:
     def planned_trace_window(self, start_ms: int, span_ms: int, count: int,
                              speed: float = 1.0, *, max_intensity: int = FULL_INTENSITY,
                              ) -> tuple[tuple[float, ...], float]:
-        """The device's plan as a picture: *count* + 1 knot samples covering
+        """The device's plan as a drawing: *count* + 1 knot samples covering
         *span_ms* from the knot at or before *start_ms*, as 0-1 heights, and how
         far past that knot *start_ms* sits as a fraction of one.
 
         The plan rather than the script's own interpolated line — parked through
         the quiet stretches, rising to meet each cluster, the script's shape
         inside one — so a trace drawn from it is the device's coming motion
-        rather than a picture the device contradicts.
+        rather than a drawing the device contradicts.
 
         The values are the fixed grid's own, never resampled and never blended:
-        the script does not change while it plays, so its picture is computed
+        the script does not change while it plays, so its drawing is computed
         once and reread, and the fraction goes to the drawer, which shifts the
         whole polyline left by it.  Reading the grid *at* the shifted positions
         instead morphed the heights at fixed columns every frame, so the shape
         changed while it moved.  The extra trailing sample is the knot just past
         the span's far edge, so the shifted line still reaches the border.  Past
-        the end of the script the device rests at its park, so the picture does
+        the end of the script the device rests at its park, so the drawing does
         too."""
         if count <= 0 or not self.actions:
             return (), 0.0
@@ -406,7 +406,7 @@ class Funscript:
         classification: a ramp that walks the device between the park and a
         motion has to be anchored to the moment the device changed hands, and
         anchored to anything recomputed per frame it slides around under its
-        own picture.
+        own drawing.
         """
         index = bisect.bisect_right(self._turns, (position_ms, _MS_MAX)) - 1
         if index >= 0 and position_ms <= self._turns[index][1]:

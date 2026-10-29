@@ -1,4 +1,4 @@
-"""Scrubbing the flick with the motion — the picture being *of* the device, and
+"""Scrubbing the flick with the motion — the frame being *of* the device, and
 the cursor only ever going forward.
 
 The frame shown is where the device is: parked shows A, fully retracted shows B,

@@ -175,7 +175,7 @@ class TestTheDeviceRunningItself:
     """Auto mode is the OSR2 on its own firmware: the broker stops forwarding
     the script's T-Code and Genau is not sending either.  Asked of the model
     rather than compared against the word, because two apps outside this
-    package draw a picture that depends on the answer."""
+    package draw a drawing that depends on the answer."""
 
     def test_auto_is_the_device_driving_itself(self):
         assert ConsoleModel(osr2=Osr2State.AUTO).device_drives_itself is True

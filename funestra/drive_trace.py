@@ -15,13 +15,13 @@ Every boundary is a time the script fixes: a turn opens QUIET_LEAD_IN_MS before
 its cluster, closes QUIET_LEAD_OUT_MS after it, and the funscript does not
 change while it plays.  The devices walk the same ramps — the Main Funestra's driver parks
 over the handoff ramp when it takes the device, Genau climbs back out of the
-park over the same one — so the picture and the wire share one schedule.
+park over the same one — so the trace and the wire share one schedule.
 
-Two disciplines keep the picture still while it slides:
+Two disciplines keep the trace still while it slides:
 
 * The motion is only ever asked WHAT HEIGHT, never WHEN.  A live motion asked
   *when* something happens — its next floor-touch, its own let-go — answers
-  differently every publish, and the picture would move with it.
+  differently every publish, and the trace would move with it.
 * Every read is anchored to something that does not move.  The one number that
   cannot be recomputed — the height Genau was at when it let go — arrives
   latched in Genau's own publish (``DriveHud.let_go``), captured at the source
@@ -29,7 +29,7 @@ Two disciplines keep the picture still while it slides:
 
 Shared by every Funestra that hangs the console over a video — the Main Funestra's window on
 the desktop, FunTimeVR's panel in the headset — so both draw one line by one
-set of rules, and free of Pillow, so the shape of the picture is testable
+set of rules, and free of Pillow, so the shape of the trace is testable
 without a window or a font.
 """
 from __future__ import annotations
@@ -54,12 +54,12 @@ from .trace_grid import on_the_grid
 # A resumed motion opening this close to the park needs no climb: the sender
 # skips its rise there (the park already IS the motion's floor, full amplitude)
 # and the blue begins the moment Genau's turn does.  The same two percent the
-# sender uses, so the picture and the device skip together.
+# sender uses, so the trace and the device skip together.
 _PARK_EPSILON = 0.02
 
 # How far past a turn boundary the touch-down scan starts.  The arbiter only
 # learns the boundary through the status file and its own tick, so it cannot
-# stop the device at a touch inside that lag — a touch the picture chose there
+# stop the device at a touch inside that lag — a touch the trace chose there
 # would be one the device sails past.  Both sides skip the lag window and take
 # the first touch after it, so they take the same one.
 _TOUCH_LAG_MS = 350
@@ -127,8 +127,8 @@ def drive_readout(
     # The device's *plan*, not the script's interpolated line: through the quiet
     # the driver rests the device at its park and rises only to meet the next
     # cluster, and a green line that held the last position across those
-    # stretches was a picture the device visibly contradicted.  The window sits
-    # on whole knots — the script never changes while it plays, so its picture is
+    # stretches was a trace the device visibly contradicted.  The window sits
+    # on whole knots — the script never changes while it plays, so its trace is
     # computed once and only reread — and the leftover fraction of a knot rides
     # along as ``slide`` for the painter to shift the stable shape by.
     scripted, slide = script.planned_trace_window(
@@ -373,7 +373,7 @@ def drive_readout(
         # an empty ``segments`` is the OSR2 state, and that state trails the
         # arbiter by a beat at every handoff, so an empty one would flash the
         # script's green over the whole motion as the device changes hands.
-        # The marks are stable while the picture is, so the readout still
+        # The marks are stable while the trace is, so the readout still
         # compares equal to itself between repaints.
         segments=tuple(marks),
         position=marker,

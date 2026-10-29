@@ -99,12 +99,12 @@ class TestLettingGo:
         assert painter.calls == [("leave",)]
 
 
-class TestThePicture:
+class TestTheDrawing:
     def test_is_the_painter_s_drawing_of_the_console_it_is_handed(self):
         painter = _Painter()
         panel, _posted = _panel(painter)
         hud = ConsoleHud()
 
-        drawn = panel.picture(hud)
+        drawn = panel.drawing(hud)
 
         assert (drawn, painter.calls) == ((b"\x00" * 16, (2, 2)), [("rgba", hud)])

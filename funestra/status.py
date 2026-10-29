@@ -23,19 +23,20 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .file_channel import publish_whole
-from .renamed import old_name_getter
+from .renamed import answers_to_old_names, old_name_getter
 
 _RENAMED = {"PlayerStatus": "FunestraStatus"}
 
 __getattr__ = old_name_getter(__name__, _RENAMED)
 
 
+@answers_to_old_names({"picture": "image"})
 @dataclass(frozen=True)
 class FunestraStatus:
     """What every Funestra says about itself: the item on screen, where the
     playhead is in it and when that was read, whether the Funestra is paused or
     holding it, the rate it plays at, and whether what is on screen is a still
-    picture."""
+    image."""
 
     video: str = ""
     position_ms: int = 0
@@ -43,7 +44,7 @@ class FunestraStatus:
     paused: bool = False
     locked: bool = False
     speed: float = 1.0
-    picture: bool = False
+    image: bool = False
     read_at: float = 0.0
 
 
@@ -60,7 +61,7 @@ def status_fields(status: FunestraStatus) -> dict[str, str]:
         "paused": _flag(status.paused),
         "locked": _flag(status.locked),
         "speed": f"{status.speed:g}",
-        "picture": _flag(status.picture),
+        "picture": _flag(status.image),
         "read_at": f"{status.read_at:.3f}",
     }
 
@@ -104,7 +105,7 @@ def parse_status(fields: Mapping[str, str], *, default: FunestraStatus | None = 
         paused=_bool(fields.get("paused"), default.paused),
         locked=_bool(fields.get("locked"), default.locked),
         speed=_rate(fields.get("speed"), default.speed),
-        picture=_bool(fields.get("picture"), default.picture),
+        image=_bool(fields.get("picture"), default.image),
         read_at=_rate(fields.get("read_at"), default.read_at),
     )
 

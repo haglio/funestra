@@ -197,7 +197,7 @@ class GenauRefreshController:
 
     def _tick_the_hand(self, now: float) -> None:
         """The two things that move the hand on their own: the learned motion
-        replacing it, and the flick advance letting the picture move on."""
+        replacing it, and the flick advance letting the frame move on."""
         if self.learned is not None:
             # Where the device is, read on the tick that lays out the first
             # phrase, so it begins from there and taking over cannot be felt.
@@ -248,13 +248,13 @@ class GenauRefreshController:
     def _show_the_frame(self, beat: Beat, now: float) -> None:
         """Which frame of the decoded flick to put up.
 
-        Driving its own hand, the frame is the picture of where the device is;
+        Driving its own hand, the frame shows where the device is;
         under the broker it is where the engine's phase has reached.
         """
         active_entry = self.renderer.current_flick_entry()
         if not (active_entry and active_entry["frames"]):
             return
-        if beat.robot_hand_active and self._the_picture_holds_still:
+        if beat.robot_hand_active and self._the_frame_holds_still:
             return
         frame_count = len(active_entry["frames"])
         display_phase = self.flip.applied_to(
@@ -264,7 +264,7 @@ class GenauRefreshController:
         self.renderer.show_frame_at(display_index_for_phase(display_phase, frame_count))
 
     @property
-    def _the_picture_holds_still(self) -> bool:
+    def _the_frame_holds_still(self) -> bool:
         return (not self.robot_hand.playing and self._held is None
                 and self.renderer.current_frame_index is not None)
 
@@ -292,13 +292,13 @@ class GenauRefreshController:
         """Put the flick *fraction* of the way round its loop, and the device where
         that is.
 
-        The frame is a picture of where the device is (:mod:`funestra.flick_scrub`),
-        so seeking the picture is moving the device rather than moving the picture
+        The frame shows where the device is (:mod:`funestra.flick_scrub`),
+        so seeking the frame is moving the device rather than moving the frame
         away from it.  Which half of the loop the fraction falls in says which way
         the motion is traveling -- the front half runs A to B, the back half back
         -- and how far into that half says how far up the axis it has to be.  The
         jump is the point: it is what the hand would have had to travel to get the
-        picture there.
+        frame there.
         """
         entry = self.renderer.current_flick_entry()
         if self.tcode_sender is None or not (entry and entry["frames"]):
