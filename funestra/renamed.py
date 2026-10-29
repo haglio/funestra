@@ -11,7 +11,6 @@ import functools
 import importlib
 import importlib.abc
 import importlib.util
-import inspect
 import sys
 from collections.abc import Callable, Mapping
 from types import ModuleType
@@ -107,13 +106,3 @@ def drops_retired_arguments(*retired: str) -> Callable[[Any], Any]:
 def method_of(obj: object, name: str, *, old_name: str) -> Callable[..., Any]:
     """*obj*'s method *name*, or *old_name* on a collaborator from before the rename."""
     return getattr(obj, name, None) or getattr(obj, old_name)
-
-
-def value_of(obj: object, name: str, *, old_name: str) -> Any:
-    """*obj*'s attribute *name*, or *old_name* on a collaborator from before the rename."""
-    return getattr(obj, name) if hasattr(obj, name) else getattr(obj, old_name)
-
-
-def keyword_of(call: Callable[..., Any], name: str, *, old_name: str) -> str:
-    """The keyword *call* takes for *name*: *old_name* on a collaborator from before the rename."""
-    return name if name in inspect.signature(call).parameters else old_name

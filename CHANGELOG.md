@@ -9,6 +9,19 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-29 — the old picture names no longer answer
+
+No open branch of an app spells them any more, so the names a checkout from
+before the rename above was answered by are gone: `funestra.flick_picture` and
+`funestra.clip_picture` with their `Picture`, `FlickPicture` and `ClipPicture`,
+`UsersPicture`, `Funestra(users_picture=...)`, `FunestraStatus(picture=...)` and
+`.picture`, `DevicePanel.picture` and `MpvRenderEngine.has_picture_to_draw`. A
+Funestra asks a User, an engine or a radio by the new names alone (`own_frame()`,
+`showing_image`, `image_time`, `seek_image`, `hold_image_for`,
+`tick(image=...)`), so `renamed.value_of` and `renamed.keyword_of` went with
+them. A status still says `picture` and the verb is still `HOLD_PICTURE`: those
+go between processes.
+
 ## 2026-10-29 — an image, the item on screen, and a User's own frame, where the package said picture
 
 An item is an image or a video, so nothing here says picture any more. A still a

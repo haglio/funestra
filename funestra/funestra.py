@@ -41,7 +41,6 @@ from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
 from .radio import Radio, RadioFile, Tuner, radio_file_for
-from .renamed import keyword_of, method_of, old_name_getter, value_of
 from .satellite_hud import HudModel
 from .scrubber import HeatmapStrip, LoopThumbCapture, loop_thumbnail_xys
 from .session_quit import quit_gesture
@@ -181,7 +180,6 @@ class Funestra:
         radio: Tuner | None = None,
         on_volume_moved: Callable[[VolumeHud], None] | None = None,
         clock: Callable[[], float] = time.monotonic,
-        users_picture: UsersFrames | None = None,
     ) -> None:
         self._engine = engine
         self._clock = clock
@@ -216,7 +214,7 @@ class Funestra:
         self._panel = self._panel_for(channels, panel_surface or engine, panel)
         self._name_flash = NameFlash(clock)
         self._flash = ""
-        self._users_frames = users_frames or users_picture or FlickOverlay(engine)
+        self._users_frames = users_frames or FlickOverlay(engine)
         self._corners = None if self._panel is None or panel_surface is not None else HudCorners(
             self._panel, engine, post=self._where_the_panel_asks(channels))
         self._pointer = Pointer(hud=self._panel, corners=self._corners,
@@ -313,18 +311,18 @@ class Funestra:
         """A press on the track names a time in the stretch the track spans,
         which is the whole clip until a loop being recorded zooms it in -- or,
         under an image, how far into its time on screen that image is."""
-        frame = method_of(self._front, "own_frame", old_name="picture")()
+        frame = self._front.own_frame()
         if frame is not None:
             frame.seek_time(ms)
             return
         if self.playback.showing_image:
-            method_of(self._engine, "seek_image", old_name="seek_picture")(ms)
+            self._engine.seek_image(ms)
             return
         start_ms, _end_ms = self._strip.window
         self.playback.seek_to(start_ms + ms)
 
     def _seek_round_the_dial(self, turn: float) -> None:
-        frame = method_of(self._front, "own_frame", old_name="picture")()
+        frame = self._front.own_frame()
         if frame is not None:
             frame.seek_loop(turn)
 
@@ -443,7 +441,7 @@ class Funestra:
         if self._radio is None:
             return
         volume = self._volume.hud
-        self._radio.tick(**{keyword_of(self._radio.tick, "image", old_name="picture"): self._an_image_on_screen()},
+        self._radio.tick(image=self._an_image_on_screen(),
                          level=None if volume.muted else volume.volume,
                          paused=self.playback.is_paused)
 
@@ -488,7 +486,7 @@ class Funestra:
             self._short_of_memory = False
 
     def _paint(self, window: tuple[int, int]) -> None:
-        frame = method_of(self._front, "own_frame", old_name="picture")()
+        frame = self._front.own_frame()
         if frame is None:
             self._users_frames.hide()
             self._paint_panel(window, self.item_row(), self._strip.colors, self.playback.speed)
@@ -513,7 +511,7 @@ class Funestra:
                            playback.duration_ms, self._track_width(),
                            mark_in_ms=playback.mark, position_ms=playback.position_ms)
         if playback.showing_image:
-            elapsed_ms, pace_ms = value_of(engine, "image_time", old_name="picture_time") or (0.0, 0.0)
+            elapsed_ms, pace_ms = engine.image_time or (0.0, 0.0)
             return RowHud(position_ms=elapsed_ms, duration_ms=pace_ms, volume=self._volume.hud,
                           playhead=time_playhead(elapsed_ms, pace_ms))
         start_ms, end_ms = self._strip.window
@@ -592,6 +590,3 @@ def frame_row(frame: FlickFrame, volume) -> RowHud | None:
                   playhead=framed_playhead(frame.played, frame.count,
                                            frame.elapsed_ms, frame.interval_ms),
                   loop=(frame.played, frame.count))
-
-
-__getattr__ = old_name_getter(__name__, {"UsersPicture": "UsersFrames"})

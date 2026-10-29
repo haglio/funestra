@@ -289,22 +289,6 @@ def _heard(engine: FakeEngine) -> list[int | None]:
     return [station.heard_at for station in engine.stations]
 
 
-def test_an_engine_from_before_images_still_times_and_seeks_the_image_on_screen(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
-                                 hud=True)
-    _publish_panel(tmp_path)
-    del engine.showing_image, engine.image_time
-    engine.showing_picture, engine.picture_time = True, (3_000.0, 4_000.0)
-    engine.seek_image, engine.seek_picture = None, engine.image_seeks.append
-    funestra.tick(window=WINDOW)
-    x0, x1 = funestra._panel.row.track
-
-    funestra.press(*_on_the_row(funestra, engine, along=x0 + (x1 - x0) // 4), window=WINDOW)
-
-    assert funestra.item_row().position_ms == 3_000.0
-    assert engine.image_seeks == [pytest.approx(1_000.0, abs=40.0)]
-
-
 def test_a_funestras_radio_is_tuned_in_while_an_image_is_up_at_its_own_level(tmp_path):
     _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"], ["c.mp4"])
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
@@ -1288,18 +1272,6 @@ class _ARadioOfItsHost:
         self.closed = True
 
 
-class _ARadioFromBeforeImages(_ARadioOfItsHost):
-    def tick(self, *, picture, level, paused) -> None:
-        self.ticked = (picture, level, paused)
-
-
-class _AUserFromBeforeImages(Genau):
-    own_frame = None
-
-    def picture(self) -> FlickFrame | None:
-        return Genau.own_frame(self)
-
-
 class TestAWindowsOwnPanel:
     """A window handed a panel of its own -- built in its process, as a
     standalone Origenerator builds its Slideshow's -- wears it where a session
@@ -1409,23 +1381,6 @@ class TestAWindowsOwnPanel:
         funestra.tick(window=WINDOW)
 
         assert radio.ticked == (True, 100, False)
-
-    def test_a_radio_from_before_images_still_hears_an_image_at_its_level(self, tmp_path):
-        radio = _ARadioFromBeforeImages()
-        funestra, engine, _user, _panel = self._own_panel(tmp_path, muted=False, radio=radio)
-        _an_image_up(engine)
-
-        funestra.tick(window=WINDOW)
-
-        assert radio.ticked == (True, 100, False)
-
-    def test_a_user_from_before_images_still_puts_its_own_frame_up(self, tmp_path):
-        funestra, engine, _user, _panel = self._own_panel(tmp_path, user=_AUserFromBeforeImages)
-
-        funestra.tick(window=WINDOW)
-
-        assert FIRST_TILE_OVERLAY_ID in engine.overlays
-
 
     def test_a_radio_its_host_hands_it_goes_with_it(self, tmp_path):
         radio = _ARadioOfItsHost()
@@ -1695,23 +1650,6 @@ class _AFramesSurface:
 class TestAUsersOwnFrameElsewhere:
     """A window may show a User's own frame somewhere other than over the
     engine's: it is handed the frame whenever one is up and told when none is."""
-
-    def test_a_place_handed_under_its_old_keyword_is_handed_the_frame(self, tmp_path):
-        surface = _AFramesSurface()
-        channels = _console_channels(
-            tmp_path, [str(clip) for clip in _clips(tmp_path, "v0", "v1")], commands="SHOW genau\n")
-        _publish_console(tmp_path)
-        funestra = Funestra(FakeEngine(), channels=channels, playlist=read_playlist(channels.playlist),
-                            locked=True, sound_is_the_rooms=True, users={"kino": Kino, "genau": Genau},
-                            panel_surface=_ASurface(), users_picture=surface)
-
-        funestra.tick(window=WINDOW)
-        funestra.tick(window=WINDOW)
-
-        assert surface.shown
-
-    def test_a_user_from_before_images_is_still_a_thing_a_funestra_runs(self):
-        assert isinstance(_AUserFromBeforeImages.__new__(_AUserFromBeforeImages), User)
 
     def test_the_frame_is_handed_over_and_the_video_is_left_alone(self, tmp_path):
         surface = _AFramesSurface()

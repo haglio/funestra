@@ -104,9 +104,7 @@ class Radio:
             station.close()
         self._stations, self._dealt = [], []
 
-    def tick(self, *, image: bool | None = None, level: int | None, paused: bool,
-             picture: bool | None = None) -> None:
-        image = picture if image is None else image
+    def tick(self, *, image: bool | None, level: int | None, paused: bool) -> None:
         dealt = None if self._dealt_in is None else self._dealt_in.changed()
         if dealt is not None:
             self.take(dealt)
