@@ -50,7 +50,7 @@ from funestra.satellite_hud import (
     HudCell,
     HudClicks,
     HudModel,
-    PictureFoot,
+    PaintedFoot,
     button_tooltip,
     ellipsis_rects,
     looped_group_rect,
@@ -1594,13 +1594,13 @@ class TestABlockASourceInAnotherProgramPainted:
     so it paints it to a picture and the panel draws that picture at its foot."""
 
     @staticmethod
-    def _picture(tmp_path, color=_Block.MARK, size=(120, 30)):
+    def _painted(tmp_path, color=_Block.MARK, size=(120, 30)):
         path = tmp_path / "portrait_foot.png"
         Image.new("RGBA", size, (*color, 255)).save(path)
         return path
 
-    def test_the_picture_is_painted_where_the_block_goes(self, tmp_path):
-        foot = PictureFoot(picture=str(self._picture(tmp_path)), width=120, height=30)
+    def test_the_file_is_painted_where_the_block_goes(self, tmp_path):
+        foot = PaintedFoot(file=str(self._painted(tmp_path)), width=120, height=30)
 
         rendered = HudRenderer("portrait").render(_model(title="Unlocked", foot=foot))
         painted = np.argwhere((_rgb(rendered.bgra) == np.array(_Block.MARK)).all(axis=-1))
@@ -1611,7 +1611,7 @@ class TestABlockASourceInAnotherProgramPainted:
 
     def test_its_controls_are_named_where_the_source_painted_them(self, tmp_path):
         cancel = Button("cancel|j1", "Cancel", "Cancel this run")
-        foot = PictureFoot(picture=str(self._picture(tmp_path)), width=120, height=30,
+        foot = PaintedFoot(file=str(self._painted(tmp_path)), width=120, height=30,
                            targets=(((4, 6, 40, 18), cancel),))
 
         rendered = HudRenderer("portrait").render(_model(title="Unlocked", foot=foot))
@@ -1619,8 +1619,8 @@ class TestABlockASourceInAnotherProgramPainted:
 
         assert button_tooltip(rendered.targets, x + 10, y + 10) == "Cancel this run"
 
-    def test_a_picture_that_cannot_be_read_leaves_its_room_empty(self, tmp_path):
-        foot = PictureFoot(picture=str(tmp_path / "gone.png"), width=120, height=30)
+    def test_a_file_that_cannot_be_read_leaves_its_room_empty(self, tmp_path):
+        foot = PaintedFoot(file=str(tmp_path / "gone.png"), width=120, height=30)
 
         rendered = HudRenderer("portrait").render(_model(title="Unlocked", foot=foot))
 

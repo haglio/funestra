@@ -1022,9 +1022,9 @@ class TestTheBlockAtTheFoot:
 
     def test_a_press_on_a_published_panels_block_is_said_to_that_side(
             self, tmp_path: Path, panel: Path):
-        picture = tmp_path / "portrait_foot.png"
-        Image.new("RGBA", (120, 40), (10, 20, 30, 255)).save(picture)
-        _publish(panel, foot={"picture": str(picture), "width": 120, "height": 40})
+        painted = tmp_path / "portrait_foot.png"
+        Image.new("RGBA", (120, 40), (10, 20, 30, 255)).save(painted)
+        _publish(panel, foot={"file": str(painted), "width": 120, "height": 40})
         overlay = _overlay(tmp_path, panel, FakeEngine())
         overlay.tick(window=(1200, 800))
         left, top = self._foot_at(overlay)

@@ -114,8 +114,8 @@ class HudSection(Protocol):
 
 
 @dataclass(frozen=True)
-class PictureFoot:
-    picture: str
+class PaintedFoot:
+    file: str
     width: int
     height: int
     stamp: str = ""
@@ -127,29 +127,29 @@ class PictureFoot:
     def paint(self, image: Image.Image, x: int, y: int, width: int,
               pointer: tuple[int, int] | None) -> list[tuple[Rect, Button]]:
         try:
-            image.alpha_composite(_picture_at(self.picture, self.stamp), (x, y))
+            image.alpha_composite(_painted_at(self.file, self.stamp), (x, y))
         except OSError:
             pass
         return [((x + left, y + top, w, h), button)
                 for (left, top, w, h), button in self.targets]
 
     def raw(self) -> dict:
-        return {"picture": self.picture, "width": self.width, "height": self.height,
+        return {"file": self.file, "width": self.width, "height": self.height,
                 "stamp": self.stamp, "rects": [list(rect) for rect, _button in self.targets],
                 "buttons": buttons_raw(tuple(button for _rect, button in self.targets))}
 
     @classmethod
-    def from_raw(cls, raw: object) -> PictureFoot | None:
+    def from_raw(cls, raw: object) -> PaintedFoot | None:
         if not isinstance(raw, dict):
             return None
         rects = [tuple(int(side) for side in rect) for rect in raw.get("rects") or ()]
-        return cls(picture=str(raw.get("picture", "") or ""), width=int(raw.get("width", 0) or 0),
+        return cls(file=str(raw.get("file", "") or ""), width=int(raw.get("width", 0) or 0),
                    height=int(raw.get("height", 0) or 0), stamp=str(raw.get("stamp", "") or ""),
                    targets=tuple(zip(rects, buttons_from_raw(raw.get("buttons")), strict=False)))
 
 
 @lru_cache(maxsize=4)
-def _picture_at(path: str, _stamp: str) -> Image.Image:
+def _painted_at(path: str, _stamp: str) -> Image.Image:
     with Image.open(path) as opened:
         return opened.convert("RGBA")
 
@@ -966,7 +966,7 @@ def hud_text(model: HudModel) -> str:
         "osr2_rows": rows_raw(model.osr2_rows),
         "osr2_controls": buttons_raw(model.osr2_controls),
         "max_intensity": model.max_intensity,
-        "foot": model.foot.raw() if isinstance(model.foot, PictureFoot) else None,
+        "foot": model.foot.raw() if isinstance(model.foot, PaintedFoot) else None,
     })
 
 
@@ -1012,5 +1012,5 @@ def parse_hud(text: str) -> HudModel | None:
         osr2_rows=rows_from_raw(raw.get("osr2_rows")),
         osr2_controls=buttons_from_raw(raw.get("osr2_controls")),
         max_intensity=max_intensity_from_raw(raw.get("max_intensity")),
-        foot=PictureFoot.from_raw(raw.get("foot")),
+        foot=PaintedFoot.from_raw(raw.get("foot")),
     )
