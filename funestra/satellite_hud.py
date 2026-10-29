@@ -21,8 +21,10 @@ from __future__ import annotations
 import json
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
+from functools import lru_cache
 from typing import TYPE_CHECKING, Protocol
 
+from PIL import Image
 from shared_ui.icon_geometry import tooltip_for
 from shared_ui.lettering import fit_text
 from shared_ui.spacing import (
@@ -52,8 +54,6 @@ from .modes import read_mode
 from .renamed import answers_to_old_names
 
 if TYPE_CHECKING:
-    from PIL import Image
-
     from .hud_row import RowLayout
 
 
@@ -111,6 +111,47 @@ class HudSection(Protocol):
 
     def paint(self, image: Image.Image, x: int, y: int, width: int,
               pointer: tuple[int, int] | None) -> list[tuple[Rect, Button]]: ...
+
+
+@dataclass(frozen=True)
+class PictureFoot:
+    picture: str
+    width: int
+    height: int
+    stamp: str = ""
+    targets: tuple[tuple[Rect, Button], ...] = ()
+
+    def size(self) -> tuple[int, int]:
+        return self.width, self.height
+
+    def paint(self, image: Image.Image, x: int, y: int, width: int,
+              pointer: tuple[int, int] | None) -> list[tuple[Rect, Button]]:
+        try:
+            image.alpha_composite(_picture_at(self.picture, self.stamp), (x, y))
+        except OSError:
+            pass
+        return [((x + left, y + top, w, h), button)
+                for (left, top, w, h), button in self.targets]
+
+    def raw(self) -> dict:
+        return {"picture": self.picture, "width": self.width, "height": self.height,
+                "stamp": self.stamp, "rects": [list(rect) for rect, _button in self.targets],
+                "buttons": buttons_raw(tuple(button for _rect, button in self.targets))}
+
+    @classmethod
+    def from_raw(cls, raw: object) -> PictureFoot | None:
+        if not isinstance(raw, dict):
+            return None
+        rects = [tuple(int(side) for side in rect) for rect in raw.get("rects") or ()]
+        return cls(picture=str(raw.get("picture", "") or ""), width=int(raw.get("width", 0) or 0),
+                   height=int(raw.get("height", 0) or 0), stamp=str(raw.get("stamp", "") or ""),
+                   targets=tuple(zip(rects, buttons_from_raw(raw.get("buttons")), strict=False)))
+
+
+@lru_cache(maxsize=4)
+def _picture_at(path: str, _stamp: str) -> Image.Image:
+    with Image.open(path) as opened:
+        return opened.convert("RGBA")
 
 
 @answers_to_old_names({"player": "funestra", "lock_label": "title"})
@@ -925,6 +966,7 @@ def hud_text(model: HudModel) -> str:
         "osr2_rows": rows_raw(model.osr2_rows),
         "osr2_controls": buttons_raw(model.osr2_controls),
         "max_intensity": model.max_intensity,
+        "foot": model.foot.raw() if isinstance(model.foot, PictureFoot) else None,
     })
 
 
@@ -970,4 +1012,5 @@ def parse_hud(text: str) -> HudModel | None:
         osr2_rows=rows_from_raw(raw.get("osr2_rows")),
         osr2_controls=buttons_from_raw(raw.get("osr2_controls")),
         max_intensity=max_intensity_from_raw(raw.get("max_intensity")),
+        foot=PictureFoot.from_raw(raw.get("foot")),
     )

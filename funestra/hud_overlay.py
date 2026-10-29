@@ -26,6 +26,7 @@ from .satellite_hud import (
     HudClicks,
     HudModel,
     HudTargets,
+    PictureFoot,
     button_tooltip,
     hit_test_targets,
     parse_hud,
@@ -320,6 +321,8 @@ class HudOverlay:
     def _post_on_the_foot(self, verb: str, *values: int) -> None:
         x, y, _width, _height = self.targets.foot
         px, py = self._pointer_at
+        if isinstance(self._model.foot, PictureFoot):
+            verb = f"{self._model.funestra}_{verb}"
         self._post("|".join(str(part) for part in (verb, *values, px - x, py - y)))
 
     def _local(self, x: int, y: int) -> tuple[int, int]:

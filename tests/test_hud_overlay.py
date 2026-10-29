@@ -1020,6 +1020,20 @@ class TestTheBlockAtTheFoot:
         assert overlay.wheel(2000, 2000, 1) is False
         assert posted == []
 
+    def test_a_press_on_a_published_panels_block_is_said_to_that_side(
+            self, tmp_path: Path, panel: Path):
+        picture = tmp_path / "portrait_foot.png"
+        Image.new("RGBA", (120, 40), (10, 20, 30, 255)).save(picture)
+        _publish(panel, foot={"picture": str(picture), "width": 120, "height": 40})
+        overlay = _overlay(tmp_path, panel, FakeEngine())
+        overlay.tick(window=(1200, 800))
+        left, top = self._foot_at(overlay)
+
+        overlay.press(left + 30, top + 7)
+        overlay.release()
+
+        assert _commands(tmp_path) == ["portrait_foot_press|30|7", "portrait_foot_release|30|7"]
+
     def test_a_panel_without_a_block_has_nothing_at_its_foot_to_press(self):
         overlay, posted = _a_windows_own_panel(FakeEngine())
 

@@ -30,6 +30,7 @@ from funestra.satellite_hud import (
     HudClicks,
     HudModel,
     HudTargets,
+    PictureFoot,
     act_is_filtered,
     action_label_blocks,
     build_click_targets,
@@ -738,6 +739,13 @@ class TestThePublishedPanelIsWrittenWhereItIsRead:
                         Button("robot_hand_release", "\x00release", "Drive")),),
             osr2_controls=(Button("broker_panel", "\x00broker", "Broker", warn=True),),
         )
+
+        assert parse_hud(hud_text(model)) == model
+
+    def test_a_foot_a_source_in_another_program_painted_survives_the_round_trip(self):
+        model = HudModel(funestra="portrait", foot=PictureFoot(
+            picture="C:/state/portrait_foot.png", width=120, height=40, stamp="a1",
+            targets=(((4, 2, 18, 18), Button("cancel|job-one", "Cancel", "Drop it")),)))
 
         assert parse_hud(hud_text(model)) == model
 
