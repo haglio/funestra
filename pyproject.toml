@@ -21,7 +21,7 @@ requires-python = ">=3.14"
 # other half had not landed turned all of them red at once.
 dependencies = [
     "app-support @ git+https://github.com/haglio/app_support@v0.1.292",
-    "shared-ui @ git+https://github.com/haglio/shared_ui@v0.1.267",
+    "shared-ui @ git+https://github.com/haglio/shared_ui@v0.1.270",
     "numpy>=2.4,<3",
     "pillow>=12,<13",
     "python-mpv>=1,<2",
