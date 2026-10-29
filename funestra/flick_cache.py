@@ -2,7 +2,7 @@
 
 Two caches, both bounded and both least-recently-used: the flicks that have been
 taken up on screen, and frames decoded ahead of being taken up.  The flick on
-screen is protected from trimming, whatever its age -- the picture must not
+screen is protected from trimming, whatever its age -- the frame must not
 vanish under the viewer to make room for its neighbor.
 """
 from __future__ import annotations

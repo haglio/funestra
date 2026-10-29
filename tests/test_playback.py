@@ -384,22 +384,22 @@ FACE = ((0.4, 0.1, 0.6, 0.3),)
 HANDS = ((0.1, 0.6, 0.3, 0.8), (0.7, 0.6, 0.9, 0.8))
 
 
-class TestThePlacesOfThePictureOnScreen:
-    def test_a_picture_brings_the_places_its_playlist_line_named(self, tmp_path):
+class TestThePlacesOfTheImageOnScreen:
+    def test_an_image_brings_the_places_its_playlist_line_named(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2, points_of_interest={1: FACE})
 
         playback.step(1)
 
         assert engine.points_told == [FACE]
 
-    def test_a_picture_with_none_takes_the_places_of_the_one_before_away(self, tmp_path):
+    def test_an_image_with_none_takes_the_places_of_the_one_before_away(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2, points_of_interest={0: FACE})
 
         playback.step(1)
 
         assert engine.points_told == [FACE, ()]
 
-    def test_no_place_is_ever_spoken_of_where_no_picture_has_one(self, tmp_path):
+    def test_no_place_is_ever_spoken_of_where_no_image_has_one(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
 
         playback.step(1)
@@ -407,7 +407,7 @@ class TestThePlacesOfThePictureOnScreen:
 
         assert engine.points_told == []
 
-    def test_a_picture_played_from_outside_the_playlist_brings_its_places(self, tmp_path):
+    def test_an_image_played_from_outside_the_playlist_brings_its_places(self, tmp_path):
         playback, engine = _make_playback(tmp_path)
         newcomer = tmp_path / "brought back.png"
 
@@ -423,14 +423,14 @@ class TestThePlacesOfThePictureOnScreen:
 
         assert engine.points_told == [FACE]
 
-    def test_a_frame_put_up_over_a_picture_has_none_of_the_pictures_places(self, tmp_path):
+    def test_a_frame_put_up_over_an_image_has_none_of_the_images_places(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2, points_of_interest={0: FACE})
 
         playback.show_frame(tmp_path / "frame.png")
 
         assert engine.points_told == [FACE, ()]
 
-    def test_a_finished_picture_put_up_brings_its_places_once_the_list_names_them(self, tmp_path):
+    def test_a_finished_image_put_up_brings_its_places_once_the_list_names_them(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
         finished = tmp_path / "v0 finished.png"
         playback.show_frame(finished)
@@ -440,7 +440,7 @@ class TestThePlacesOfThePictureOnScreen:
 
         assert engine.points_told == [HANDS]
 
-    def test_a_picture_rolled_onto_by_itself_brings_its_places(self, tmp_path):
+    def test_an_image_rolled_onto_by_itself_brings_its_places(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2, points_of_interest={1: FACE})
 
         engine.simulate_eof_advance()
@@ -551,9 +551,9 @@ class TestTheOsr2:
 
         assert tcode.resets == before + 1
 
-    def test_resuming_holds_the_device_until_the_picture_moves(self, tmp_path):
-        """Un-pausing is a request, not a picture: mpv takes frames to start
-        presenting, and the device led the picture by that much on every reveal
+    def test_resuming_holds_the_device_until_the_video_moves(self, tmp_path):
+        """Un-pausing is a request, not what is on screen: mpv takes frames to start
+        presenting, and the device led the video by that much on every reveal
         -- which is what he felt as the OSR2 starting before the video."""
         playback, engine, tcode = _driving(tmp_path)
         playback.set_tcode_enabled(True)
@@ -572,7 +572,7 @@ class TestTheOsr2:
         it is shown, so it is on screen the moment it is unpaused."""
         playback, engine, tcode = _driving(tmp_path, scripted=())
         playback.set_tcode_enabled(True)
-        engine.showing_picture = True
+        engine.showing_image = True
         playback.set_paused(True)
         playback.set_paused(False)
 
@@ -580,7 +580,7 @@ class TestTheOsr2:
 
         assert tcode.parks == 1
 
-    def test_a_picture_that_has_moved_once_is_not_asked_again(self, tmp_path):
+    def test_an_image_that_has_moved_once_is_not_asked_again(self, tmp_path):
         """The gate is the resume's own edge, not a per-tick liveness check: a
         video legitimately still between frames must not stop the device."""
         playback, engine, tcode = _driving(tmp_path)
@@ -893,15 +893,15 @@ class TestWhereAClipWasLeft:
         assert PlayPoints(file).point_for(tmp_path / "v0.mp4") == 2_048
 
 
-class TestAFrameInThePicturesPlace:
-    def test_a_frame_goes_up_on_the_engine_in_place_of_the_picture(self, tmp_path):
+class TestAFrameInTheImagesPlace:
+    def test_a_frame_goes_up_on_the_engine_in_place_of_the_image(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
 
         playback.show_frame(tmp_path / "frame one.png")
 
         assert engine.swapped == [tmp_path / "frame one.png"]
 
-    def test_clearing_the_frame_puts_the_picture_itself_back(self, tmp_path):
+    def test_clearing_the_frame_puts_the_image_itself_back(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
         playback.show_frame(tmp_path / "frame one.png")
 
@@ -909,7 +909,7 @@ class TestAFrameInThePicturesPlace:
 
         assert engine.swapped == [tmp_path / "frame one.png", tmp_path / "v0.mp4"]
 
-    def test_clearing_with_no_frame_up_leaves_the_picture_alone(self, tmp_path):
+    def test_clearing_with_no_frame_up_leaves_the_image_alone(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
 
         playback.clear_frame()
@@ -925,7 +925,7 @@ class TestAFrameInThePicturesPlace:
 
         assert engine.swapped == [tmp_path / "frame.png"]
 
-    def test_a_frame_is_over_once_the_picture_has_run_out_onto_the_next(self, tmp_path):
+    def test_a_frame_is_over_once_the_image_has_run_out_onto_the_next(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
         playback.show_frame(tmp_path / "frame.png")
 
@@ -935,7 +935,7 @@ class TestAFrameInThePicturesPlace:
 
         assert engine.swapped == [tmp_path / "frame.png"]
 
-    def test_a_frame_is_still_up_once_a_list_of_one_has_run_out_onto_its_own_picture(
+    def test_a_frame_is_still_up_once_a_list_of_one_has_run_out_onto_its_own_image(
             self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=1)
         playback.show_frame(tmp_path / "frame.png")
@@ -955,7 +955,7 @@ class TestAFrameInThePicturesPlace:
 
         assert engine.playing == tmp_path / "frame.png"
 
-    def test_a_list_of_one_whose_frame_is_cleared_rolls_onto_its_own_picture(self, tmp_path):
+    def test_a_list_of_one_whose_frame_is_cleared_rolls_onto_its_own_image(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=1)
         playback.show_frame(tmp_path / "frame.png")
 
@@ -965,26 +965,26 @@ class TestAFrameInThePicturesPlace:
 
         assert engine.playing == tmp_path / "v0.mp4"
 
-    def test_a_frame_going_up_is_a_picture_while_the_engine_opens_it(self, tmp_path):
+    def test_a_frame_going_up_is_an_image_while_the_engine_opens_it(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
-        engine.showing_picture = True
+        engine.showing_image = True
 
         playback.show_frame(tmp_path / "frame.png")
-        engine.showing_picture = False
+        engine.showing_image = False
 
-        assert playback.showing_picture is True
+        assert playback.showing_image is True
 
-    def test_the_picture_put_back_from_under_a_frame_is_a_picture_while_the_engine_opens_it(
+    def test_the_image_put_back_from_under_a_frame_is_an_image_while_the_engine_opens_it(
             self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
         playback.show_frame(tmp_path / "frame.png")
 
         playback.clear_frame()
-        engine.showing_picture = False
+        engine.showing_image = False
 
-        assert playback.showing_picture is True
+        assert playback.showing_image is True
 
-    def test_a_clip_the_picture_runs_out_onto_after_a_frame_is_what_the_engine_says(
+    def test_a_clip_the_image_runs_out_onto_after_a_frame_is_what_the_engine_says(
             self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
         playback.show_frame(tmp_path / "frame.png")
@@ -992,7 +992,7 @@ class TestAFrameInThePicturesPlace:
         engine.simulate_eof_advance()
         playback.advance()
 
-        assert playback.showing_picture is False
+        assert playback.showing_image is False
 
     def test_a_clip_stepped_to_after_a_frame_is_what_the_engine_says(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
@@ -1000,9 +1000,9 @@ class TestAFrameInThePicturesPlace:
 
         playback.step(1)
 
-        assert playback.showing_picture is False
+        assert playback.showing_image is False
 
-    def test_a_reloaded_list_naming_the_picture_put_up_keeps_it_on_its_move(self, tmp_path):
+    def test_a_reloaded_list_naming_the_image_put_up_keeps_it_on_its_move(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
         finished = tmp_path / "v0 finished.png"
         playback.show_frame(finished)

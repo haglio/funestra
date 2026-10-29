@@ -190,8 +190,8 @@ class TestWhatEveryFunestraPublishes:
 
         assert parse_status(status_fields(status)) == status
 
-    def test_a_status_that_says_a_picture_is_on_screen_reads_back_saying_so(self):
-        status = FunestraStatus(video="C:/pictures/one.png", locked=True, picture=True)
+    def test_a_status_that_says_an_image_is_on_screen_reads_back_saying_so(self):
+        status = FunestraStatus(video="C:/images/one.png", locked=True, image=True)
 
         assert parse_status(status_fields(status)) == status
 

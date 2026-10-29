@@ -59,7 +59,7 @@ def test_the_two_browse_orders_are_named_once_for_every_funestra():
 
 
 def test_the_enhanced_narrowing_has_a_slot_of_its_own_after_f_mode():
-    """Origenerator's shows keep only the pictures they have enhanced the way a
+    """Origenerator's shows keep only the images they have enhanced the way a
     Funestra keeps only its favorites — the same kind of cut, said in the same
     sentence — so the slot is a flag here, and the HUD carrying the switch never
     has to own the word for it.  Coarse before fine: F-mode, then this, then

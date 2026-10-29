@@ -1,11 +1,11 @@
-"""Which file each picture an offscreen engine draws shows, across a switch of file.
+"""Which file each frame an offscreen engine draws shows, across a switch of file.
 
-mpv opens the next file while the last one's picture is still up, redraws that
-picture along the way, and may hand over one last frame of it after the switch
+mpv opens the next file while the last one's frame is still up, redraws that
+frame along the way, and may hand over one last frame of it after the switch
 was asked for; it says it has started the new file at about the moment it hands
 over that file's first frame, and a host can draw the frame first.  A host that
-wraps a picture by its file -- a headset wrapping a VR video round the viewer --
-must never show one file's picture as another's.
+wraps a frame by its file -- a headset wrapping a VR video round the viewer --
+must never show one file's frame as another's.
 """
 from __future__ import annotations
 

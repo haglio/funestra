@@ -66,7 +66,7 @@ def hud_title(*, locked: bool, playing_set: str = "", order: str = "",
     compilation), whether it is being held (*locked*), how it moves on (*order* —
     Latest/Shuffle, or the seconds an unheld flick stays up), and what has been cut
     out of it — *f_mode* first, cutting the whole library to the funscripted
-    videos, then *enhanced*, keeping only the pictures Origenerator has enhanced
+    videos, then *enhanced*, keeping only the images Origenerator has enhanced
     (a slot of its own, so the HUD that carries the switch for it has the word
     for it too without owning the label), then *filters*, each narrowing what is
     left.

@@ -5,7 +5,7 @@ where a video player has always put it — and where, in this family, it keeps
 turning out to be the wrong place.  A wrapped video smears it into a ring round
 the nadir, out of the controller's reach, so the headset draws it on the console
 instead.  Everything else has the same defect in slower form: a row over the
-picture is a second panel, on a screen that already carries one.
+item is a second panel, on a screen that already carries one.
 
 So the row is a block a panel hosts, the way the device line and the drive
 readout are: one line, laid out from what is on it against the block's own
@@ -212,7 +212,7 @@ def fitting(heatmap, track: tuple[int, int]):
     answer only a render gives: a host measures one panel and fills the next.
     Between those two the panel can change width, and a fill of the wrong
     length raises out of the track painter rather than stretching -- which
-    takes the window's drawing down with it and leaves it showing no picture at
+    takes the window's drawing down with it and leaves it showing no item at
     all.  Dropping the stale fill costs one frame of plain track instead.
     """
     if heatmap is None or not len(heatmap):

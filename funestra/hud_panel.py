@@ -219,10 +219,10 @@ class HudPanel:
     not a layout — and finish with :meth:`to_bgra`.
 
     *ground* is the gray the slab is made of.  It defaults to the canvas color,
-    which is right where the panel floats over a video: the picture beneath it is
+    which is right where the panel floats over a video: the item beneath it is
     what it reads against, and a HUD the color of a dark frame still reads as a
     panel over one.  A host that draws this on its own chrome instead has no
-    picture beneath it, and on a window painted that very gray the slab vanishes
+    item beneath it, and on a window painted that very gray the slab vanishes
     and leaves its one-pixel border outlining nothing — so it says which gray it
     wants, and gets a panel that sits on that window the way the window's own
     panels do.

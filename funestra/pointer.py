@@ -1,9 +1,9 @@
 """What the mouse does to a Funestra's window: the panel, a corner the panel
-can be sent to, or the picture.
+can be sent to, or the item.
 
 The track, the time and the volume are a block of the panel now
 (:mod:`funestra.hud_row`), and the panel places a press on them itself, so
-what is left here is the panel first and the picture under it.
+what is left here is the panel first and the item under it.
 """
 from __future__ import annotations
 
@@ -33,17 +33,17 @@ def _nothing() -> None:
 
 class Pointer:
     def __init__(self, *, hud=None, corners=None,
-                 picture: Callable[[], None] = _nothing) -> None:
+                 item: Callable[[], None] = _nothing) -> None:
         self._hud = hud
         self._corners = corners
-        self._picture = picture
+        self._item = item
 
     def press(self, mx: int, my: int) -> None:
         if self._hud is not None and self._hud.press(mx, my):
             return
         if self._corners is not None and self._corners.press(mx, my):
             return
-        self._picture()
+        self._item()
 
     def wheel(self, mx: int, my: int, steps: int) -> None:
         if self._hud is not None:

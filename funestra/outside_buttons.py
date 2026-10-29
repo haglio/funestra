@@ -12,7 +12,7 @@ from .hud_minimize import BUTTON, mark_font, minimize_button, name_slab, restore
 from .hud_panel import draw_button, draw_tooltip, to_bgra
 from .hud_placement import HudCorner, HudEdge
 
-_PLUS_NEAREST_THE_PICTURE = {
+_PLUS_NEAREST_THE_ITEM = {
     HudEdge.LEFT: HudCorner.UPPER_RIGHT,
     HudEdge.RIGHT: HudCorner.UPPER_LEFT,
     HudEdge.UPPER: HudCorner.LOWER_LEFT,
@@ -44,7 +44,7 @@ class OutsideButtons:
 
     def plus_beside(self, edge: HudEdge) -> PaintedButton:
         button = plus_button(self.funestra, edge, minimized=self.minimized)
-        return PaintedButton(button.command, plus_bgra(button, _PLUS_NEAREST_THE_PICTURE[edge]))
+        return PaintedButton(button.command, plus_bgra(button, _PLUS_NEAREST_THE_ITEM[edge]))
 
     def _toggle_button(self) -> Button:
         opens = restore_button if self.minimized else minimize_button

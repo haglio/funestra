@@ -14,10 +14,21 @@ from pathlib import Path
 import pytest
 from funestra_fakes import FakeEngine
 
-from funestra import cruise_control, flick_folder, mpv_engine, playhead, status
+from funestra import (
+    clip_picture,
+    cruise_control,
+    flick_folder,
+    flick_picture,
+    mpv_engine,
+    playhead,
+    status,
+)
+from funestra import funestra as funestra_module
 from funestra.console import OSR2_DRIVING, ConsoleModel, aim_row, console_text, parse_console
+from funestra.device_panel import DevicePanel
 from funestra.flag import Flag
 from funestra.flick_cache import FlickCacheStore
+from funestra.flick_overlay import FlickFrame, FlickOverlay
 from funestra.flick_picture import Picture
 from funestra.flick_renderer import FlickRenderController
 from funestra.genau_controls import GenauControls, apply_runtime_command
@@ -225,3 +236,49 @@ def test_a_console_takes_and_publishes_its_funestra_the_old_way_too():
     assert model.funestra == "main"
     assert json.loads(console_text(model))["player"] == "main"
     assert parse_console('{"main_mode": "kino", "player": "main"}').funestra == "main"
+
+
+def test_the_flick_overlays_old_module_and_names_give_the_frame_and_the_overlay():
+    assert (flick_picture.Picture, flick_picture.FlickPicture) == (FlickFrame, FlickOverlay)
+    assert (clip_picture.Picture, clip_picture.ClipPicture) == (FlickFrame, FlickOverlay)
+
+
+def test_where_a_users_own_frames_go_answers_to_its_old_name():
+    assert funestra_module.UsersPicture is funestra_module.UsersFrames
+
+
+def test_a_status_takes_and_answers_to_its_old_word_for_an_image_on_screen():
+    shown = status.FunestraStatus(picture=True)
+
+    assert (shown.image, shown.picture) == (True, True)
+
+
+def test_a_device_panel_still_draws_under_its_old_name():
+    assert DevicePanel.picture is DevicePanel.drawing
+
+
+def test_the_offscreen_engine_still_says_it_has_a_frame_to_draw_under_its_old_name():
+    assert MpvRenderEngine.has_picture_to_draw is MpvRenderEngine.has_frame_to_draw
+
+
+class _AnEngineFromBeforeImages(FakeEngine):
+    hold_image_for = None
+
+    def __init__(self) -> None:
+        super().__init__()
+        del self.showing_image
+        self.showing_picture = True
+        self.held_for: list[float] = []
+
+    def hold_picture_for(self, seconds: float | None) -> None:
+        self.held_for.append(seconds)
+
+
+def test_a_playback_holds_and_reads_the_image_on_an_engine_from_before_images(tmp_path):
+    engine = _AnEngineFromBeforeImages()
+    playback = Playback([tmp_path / "v0.mp4"], engine=engine)
+
+    playback.hold_image_for(2.0)
+
+    assert (playback.showing_image, engine.held_for) == (True, [2.0])
+

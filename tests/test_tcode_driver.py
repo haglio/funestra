@@ -259,7 +259,7 @@ class TestLeadInPark:
         # A resend carries the descent's REMAINING time, not a fresh interval:
         # re-issued whole, each resend retargeted the in-flight glide from
         # wherever the device was, and every drawn straight ramp became a fast
-        # exponential the picture never showed.
+        # exponential the drawing never showed.
         assert sink.sent == ["L00000I2000", "L00000I1850"]
 
 

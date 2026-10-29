@@ -30,7 +30,7 @@ def ahead_on_the_processor(kernel32=None,
     if not raised:
         logger.warning(
             "Windows would not put this Funestra ahead of background work (error %d), so a "
-            "busy computer can make its pictures and the OSR2's motion uneven",
+            "busy computer can make what it shows and the OSR2's motion uneven",
             (last_error or ctypes.get_last_error)())
     try:
         yield

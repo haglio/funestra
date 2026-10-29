@@ -319,7 +319,7 @@ def phase_for_position_fraction(
     inversions -- a seek asks for this once, and half a degree of phase is finer
     than the frame a flick can show for it.  With the amplitude turned down the
     wave never reaches the ends, and the nearest phase to an unreachable height
-    is the peak or the trough, which is where the motion would put the picture.
+    is the peak or the trough, which is where the motion would put the drawing.
     """
     fraction = min(1.0, max(0.0, fraction))
     heights = [

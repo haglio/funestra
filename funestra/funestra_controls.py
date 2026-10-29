@@ -179,11 +179,11 @@ def _set_pace(controls: FunestraControls, value: str) -> bool:
     return True
 
 
-def _hold_picture(controls: FunestraControls, value: str) -> bool:
+def _hold_image(controls: FunestraControls, value: str) -> bool:
     seconds = pace_seconds(value)
     if seconds is None:
         return False
-    controls.playback.hold_picture_for(seconds)
+    controls.playback.hold_image_for(seconds)
     return True
 
 
@@ -239,7 +239,7 @@ CONTROLS: tuple[Control, ...] = (
         ),
     ),
     Control(name="pace", verbs=(Verb(SET_PACE, _set_pace, takes_a_value=True),
-                                Verb(HOLD_PICTURE, _hold_picture, takes_a_value=True))),
+                                Verb(HOLD_PICTURE, _hold_image, takes_a_value=True))),
     Control(
         name="frame",
         verbs=(Verb(SHOW_FRAME, _show_frame, takes_a_value=True),

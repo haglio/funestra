@@ -140,7 +140,7 @@ class TestTheTraceHoldsStillAndSlides:
     clock at every publish, and with a few samples to a swing the heights at
     fixed columns changed every frame.  Every mode is read on knots now."""
 
-    def test_the_wave_holds_its_picture_between_knots(self):
+    def test_the_wave_holds_its_drawing_between_knots(self):
         sender = FakeSender()
         readout = _readout(tcode_sender=sender)
         readout.update(1.0)

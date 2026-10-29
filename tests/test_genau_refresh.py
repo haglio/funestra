@@ -268,7 +268,7 @@ def test_under_the_broker_the_line_is_the_device_s_own_swing():
 
     assert len(first.waveform) == 80
     # Every trace slides on knots: between two the heights hold and the
-    # shift moves, so the picture is the pair.
+    # shift moves, so the drawing is the pair.
     assert (second.waveform, second.slide) != (first.waveform, first.slide)
 
 
@@ -699,7 +699,7 @@ def test_the_flick_is_heard_again_once_it_takes_the_main_screen_back():
 
 
 def test_the_frame_shown_is_where_the_device_is():
-    # The flick is the picture of the device: half way up the axis is half way
+    # The flick shows the device: half way up the axis is half way
     # through the half of the flick that is showing. Eight frames, so the front
     # half is the last four of them and 5000 of 9999 lands in the middle of it.
     dc = RobotHandState(playing=True, bpm=120.0)
@@ -763,7 +763,7 @@ def _switched_back_on(tick, _hand, at):
 _FRAMES = 1000
 
 
-def _height_pictured(index: int) -> float:
+def _height_framed(index: int) -> float:
     phase = ((_FRAMES - 1) - index + 0.5) / _FRAMES
     return 2 * phase if phase <= 0.5 else 2 * (1 - phase)
 
@@ -793,11 +793,11 @@ class TestTheRoomHoldingTheDevice:
         def tick(at: float, *said: str) -> float:
             clock[0], commands[:] = at, list(said)
             built["controller"].refresh()
-            return _height_pictured(built["renderer"].current_frame_index)
+            return _height_framed(built["renderer"].current_frame_index)
 
         return tick, hand, tcode
 
-    def test_the_picture_goes_home_with_the_device(self):
+    def test_the_frame_goes_home_with_the_device(self):
         tick, _hand, _tcode = self._room(position=5000)
 
         shown = [tick(5.0), tick(self.ASKED, "PAUSE", "PARK"),
@@ -806,7 +806,7 @@ class TestTheRoomHoldingTheDevice:
 
         assert shown == _heights(0.5, 0.5, 0.5, 0.25, 0.0)
 
-    def test_the_picture_goes_to_the_far_end_with_the_device(self):
+    def test_the_frame_goes_to_the_far_end_with_the_device(self):
         tick, _hand, _tcode = self._room(position=5000)
 
         shown = [tick(5.0), tick(self.ASKED, "PAUSE", "RETRACT"),
@@ -815,7 +815,7 @@ class TestTheRoomHoldingTheDevice:
 
         assert shown == _heights(0.5, 0.5, 0.5, 0.75, 1.0)
 
-    def test_a_hold_the_hand_plays_on_under_unheard_keeps_the_picture_with_the_device(self):
+    def test_a_hold_the_hand_plays_on_under_unheard_keeps_the_frame_with_the_device(self):
         tick, hand, tcode = self._room(position=5000)
         tick(5.0)
         tick(self.ASKED, "RESUME", "SET_TCODE_ENABLED 0", "PARK")
@@ -830,7 +830,7 @@ class TestTheRoomHoldingTheDevice:
         (("PAUSE", "RETRACT"), _resumed_by_the_room, 1.0),
         (("RESUME", "SET_TCODE_ENABLED 0", "PARK"), _switched_back_on, 0.0),
     ])
-    def test_the_picture_eases_back_onto_the_hand_as_the_device_does(
+    def test_the_frame_eases_back_onto_the_hand_as_the_device_does(
             self, held_by, taken_back_by, held_at):
         tick, hand, _tcode = self._room(position=5000)
         tick(5.0)
@@ -842,7 +842,7 @@ class TestTheRoomHoldingTheDevice:
 
         assert shown == _heights(held_at, (held_at + 0.5) / 2, 0.5)
 
-    def test_after_a_pause_with_no_hold_the_picture_eases_on_from_where_it_stopped(self):
+    def test_after_a_pause_with_no_hold_the_frame_eases_on_from_where_it_stopped(self):
         tick, _hand, tcode = self._room(position=5000)
         tick(5.0)
         tick(5.05, "PAUSE")
@@ -854,7 +854,7 @@ class TestTheRoomHoldingTheDevice:
 
         assert shown == _heights(0.5, 0.35, 0.2)
 
-    def test_a_hold_moved_to_the_other_end_walks_there_from_where_the_picture_is(self):
+    def test_a_hold_moved_to_the_other_end_walks_there_from_where_the_frame_is(self):
         tick, _hand, _tcode = self._room(position=5000)
         tick(5.0)
         tick(self.ASKED, "PAUSE", "PARK")
@@ -886,7 +886,7 @@ class TestTheRoomHoldingTheDevice:
 
         assert [tick(self.SETTLED + 5.0)] == _heights(0.5)
 
-    def test_a_pause_without_a_park_leaves_the_picture_where_the_hand_let_go(self):
+    def test_a_pause_without_a_park_leaves_the_frame_where_the_hand_let_go(self):
         tick, _hand, tcode = self._room(position=5000)
         tick(5.0)
         tick(5.05, "PAUSE")
@@ -894,7 +894,7 @@ class TestTheRoomHoldingTheDevice:
 
         assert [tick(self.SETTLED)] == _heights(0.5)
 
-    def test_a_park_asked_after_the_picture_stopped_starts_where_the_picture_stopped(self):
+    def test_a_park_asked_after_the_frame_stopped_starts_where_the_frame_stopped(self):
         tick, _hand, tcode = self._room(position=5000)
         tick(5.0)
         tick(5.05, "PAUSE")
@@ -995,8 +995,8 @@ class TestTheOrderTheTickDoesThingsIn:
 
 
 class TestSeekingTheFlick:
-    """A press on the flick's bar. The frame is a picture of where the device is,
-    so putting the picture somewhere is putting the DEVICE somewhere -- and its
+    """A press on the flick's bar. The frame shows where the device is,
+    so putting the frame somewhere is putting the DEVICE somewhere -- and its
     sudden move along the axis is the point, not a side effect."""
 
     def _built(self, *, frames=20):

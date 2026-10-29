@@ -191,7 +191,7 @@ def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool
 TILES_SHADER = Path(__file__).with_name("tiles.glsl")
 
 # How a still's view reaches mpv: its zoom, and how far it leans each way
-# between the picture's two edges (video/out/aspect.c places a picture that
+# between the image's two edges (video/out/aspect.c places an image that
 # overhangs the window from flush with one edge at -1 to flush with the other
 # at +1, so every lean keeps it covering the window).
 _PLACING = ("video_zoom", "video_align_x", "video_align_y")
@@ -291,7 +291,7 @@ class _MpvControl:
         self._placed = (0.0, 0.0, 0.0)
         self._path: str | None = None
         self._on_the_clock: str | None = None
-        self._picture_time = (0.0, 0.0)
+        self._image_time = (0.0, 0.0)
         self._audio_device: str | None = None
         self._staged: str | None = None
         # Read off an observation rather than asked for: a property read takes
@@ -357,11 +357,11 @@ class _MpvControl:
 
     @property
     def video_dims(self) -> tuple[int, int]:
-        """The picture's shape as mpv puts it out, tiles included -- (0, 0)
+        """The item's shape as mpv puts it out, tiles included -- (0, 0)
         until it knows, and between files.
 
         What a host measures its own chrome against: where to float the stills
-        either side of the picture, where to seat a panel under it.  Callers
+        either side of the item, where to seat a panel under it.  Callers
         keep their last size through the gap between files, which is what keeps
         the previous clip's final frame on screen during a transition instead
         of a teardown flicker.
@@ -370,7 +370,7 @@ class _MpvControl:
 
     def _now(self) -> float:
         """The clock a still's move is paced by, in one call a test can wind on
-        by hand -- mpv leaves a picture's own playhead at nought."""
+        by hand -- mpv leaves an image's own playhead at nought."""
         return time.monotonic()
 
     @property
@@ -378,7 +378,7 @@ class _MpvControl:
         return self._frame_rate
 
     @property
-    def showing_picture(self) -> bool:
+    def showing_image(self) -> bool:
         return self._image_track is True
 
     @property
@@ -470,7 +470,7 @@ class _MpvControl:
 
     def _begin_the_new_clip(self, path: str | None) -> None:
         self._on_the_clock = path
-        self._ken_burns.new_picture(self._now())
+        self._ken_burns.new_image(self._now())
 
     @property
     @mpv_call(False)
@@ -504,8 +504,8 @@ class _MpvControl:
         self._ken_burns.set_pace(seconds or 0.0, self._now())
 
     def set_points_of_interest(self, places: tuple) -> None:
-        """The places in the picture on screen a lock punches in on, as
-        ``(x0, y0, x1, y1)`` fractions of it -- none for a picture that has none."""
+        """The places in the image on screen a lock punches in on, as
+        ``(x0, y0, x1, y1)`` fractions of it -- none for an image that has none."""
         self._ken_burns.set_points_of_interest(places, self._now())
 
     def _fit(self) -> Fit:
@@ -516,7 +516,7 @@ class _MpvControl:
 
     @mpv_call()
     def push_still(self) -> None:
-        """Carry the picture on screen one frame further along its move; a video
+        """Carry the image on screen one frame further along its move; a video
         is drawn as it comes.  Called once a frame by whichever loop is driving
         this engine."""
         if self._image_track is None:
@@ -529,21 +529,21 @@ class _MpvControl:
                 setattr(self._mpv, name, value)
         self._placed = placed
         holds_for_ms = self._ken_burns.holds_for_s * 1000.0
-        self._picture_time = (min(self._ken_burns.progress(now) * self._ken_burns.pace_s * 1000.0,
-                                  holds_for_ms), holds_for_ms)
+        self._image_time = (min(self._ken_burns.progress(now) * self._ken_burns.pace_s * 1000.0,
+                                holds_for_ms), holds_for_ms)
         if self._image_track and self._path == self._on_the_clock and self._ken_burns.ran_out(now):
             self._move_on_from_the_still()
 
     @property
-    def picture_time(self) -> tuple[float, float] | None:
-        """How far the picture on screen is into the time it holds the screen,
+    def image_time(self) -> tuple[float, float] | None:
+        """How far the image on screen is into the time it holds the screen,
         and how long that is, in milliseconds -- None on a video."""
-        return self._picture_time if self._image_track else None
+        return self._image_time if self._image_track else None
 
-    def hold_picture_for(self, seconds: float | None) -> None:
+    def hold_image_for(self, seconds: float | None) -> None:
         self._ken_burns.hold_for(seconds)
 
-    def seek_picture(self, ms: float) -> None:
+    def seek_image(self, ms: float) -> None:
         pace_s = self._ken_burns.pace_s
         if pace_s:
             self._ken_burns.seek(ms / 1000.0 / pace_s, self._now())

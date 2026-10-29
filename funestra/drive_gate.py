@@ -1,4 +1,4 @@
-"""What of Genau's publish this video's picture is allowed to believe.
+"""What of Genau's publish this video's trace is allowed to believe.
 
 :mod:`funestra.drive_trace` draws one line out of two drivers, and two of
 the things it needs cannot be read off a single publish:
@@ -62,10 +62,10 @@ def next_handoff_touch(script, position_ms: int, latch: DescentLatch) -> int | N
     just crossed), in media ms — None when there is none (a raised floor, no
     script, nothing latched yet).
 
-    Published so the arbiter can END Genau's turn exactly where the picture
+    Published so the arbiter can END Genau's turn exactly where the trace
     drew the blue ending.  Two readers of the same wave can pick different
     troughs, and then the device stops a touch short of the line still drawn on
-    screen.  One chooser, the picture; the arbiter follows it.
+    screen.  One chooser, the trace; the arbiter follows it.
     """
     if script is None:
         return None
@@ -88,7 +88,7 @@ def next_handoff_touch(script, position_ms: int, latch: DescentLatch) -> int | N
 class DriveGate:
     """The forecasts this trace is holding, and the rules that void them.
 
-    *session* is the Funestra drawing the picture, read for where it is
+    *session* is the Funestra drawing the trace, read for where it is
     (``position_ms``), in what (``current_video``), with which script as it
     will play it (``funscript_as_played``), how fast (``speed``) and how hard
     the OSR2 may work (``max_intensity``).
@@ -167,7 +167,7 @@ class DriveGate:
         """The touch-down the trace has chosen for the boundary in play.
 
         Published with every status so the arbiter ends Genau's turn where the
-        picture drew it ending; see :func:`next_handoff_touch` for why there is
+        trace drew it ending; see :func:`next_handoff_touch` for why there is
         one chooser rather than two.
         """
         return next_handoff_touch(

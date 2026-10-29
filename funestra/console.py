@@ -221,7 +221,7 @@ class ConsoleModel:
         """Whether the OSR2 is in auto mode, running its own firmware.
 
         Neither driver reaches it there: the broker stops forwarding the
-        script's T-Code and Genau is not sending.  So the picture is the
+        script's T-Code and Genau is not sending.  So the drawing is the
         device's own motion rather than a handoff between the two, which is
         what every Funestra hanging this console over a video asks before it
         lets the gate fold a script in.

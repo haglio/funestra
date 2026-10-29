@@ -18,7 +18,7 @@ from .funscript import load as load_funscript
 from .play_points import PlayPoints
 from .playback_rate import clamp_rate
 from .playlist import PlaylistItem
-from .renamed import answers_to_old_names
+from .renamed import answers_to_old_names, method_of, value_of
 from .scripted_device import REWIND_MS, ScriptedDevice
 from .seeking import OwedSeek, seek_if_taken
 from .up_next import put_up_next
@@ -206,8 +206,8 @@ class Playback:
         return self._engine.duration_ms
 
     @property
-    def showing_picture(self) -> bool:
-        return self._picture_put_up or self._engine.showing_picture
+    def showing_image(self) -> bool:
+        return self._still_put_up or value_of(self._engine, "showing_image", old_name="showing_picture")
 
     def step(self, delta: int) -> None:
         self.load(self._index + delta)
@@ -272,12 +272,12 @@ class Playback:
             self._held_by_the_pace = not seconds
             self._hold_or_roll()
 
-    def hold_picture_for(self, seconds: float) -> None:
-        self._engine.hold_picture_for(seconds)
+    def hold_image_for(self, seconds: float) -> None:
+        method_of(self._engine, "hold_image_for", old_name="hold_picture_for")(seconds)
 
     def show_frame(self, frame: Path) -> None:
         self._frame_on_screen = frame
-        self._picture_put_up = True
+        self._still_put_up = True
         self._engine.swap_still(frame)
         self._stage_next()
         self._tell_the_places()
@@ -323,7 +323,7 @@ class Playback:
         if not self.follow_a_roll() and position_ms + REWIND_MS < self._last_pos_ms:
             self._device.take_over()
         self._last_pos_ms = position_ms
-        if self._the_picture_has_resumed(position_ms):
+        if self._playback_has_resumed(position_ms):
             self._device.drive(position_ms, self.funscript_as_played, speed=self._speed)
 
     def follow_a_roll(self) -> bool:
@@ -332,7 +332,7 @@ class Playback:
         self._play_points.ended()
         if not self._rolls_onto_itself:
             self._frame_on_screen = None
-            self._picture_put_up = False
+            self._still_put_up = False
         self._mark = None
         self._ab_loop = None
         self._index = (self._index + 1) % len(self._playlist)
@@ -344,12 +344,12 @@ class Playback:
         self._tell_the_places()
         return True
 
-    def _the_picture_has_resumed(self, position_ms: float) -> bool:
-        """Un-pausing is a request, not a picture: the device waits for the
+    def _playback_has_resumed(self, position_ms: float) -> bool:
+        """Un-pausing is a request, not what is on screen: the device waits for the
         first frame after it, a still counting as there at once."""
         if self._held_at is None:
             return True
-        if position_ms == self._held_at and not self._engine.showing_picture:
+        if position_ms == self._held_at and not value_of(self._engine, "showing_image", old_name="showing_picture"):
             return False
         self._held_at = None
         return True
@@ -437,7 +437,7 @@ class Playback:
         self._play_points.leave()
         self._switching_versions = False
         self._frame_on_screen = None
-        self._picture_put_up = False
+        self._still_put_up = False
         self._index = index % len(self._playlist)
         self._loads += 1
         video = self.showing

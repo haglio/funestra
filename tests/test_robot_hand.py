@@ -594,7 +594,7 @@ class TestThePhaseForAHeight:
 
     def test_a_height_the_amplitude_never_reaches_lands_on_the_nearest(self):
         """Turned down to the middle of the axis, the motion cannot be sent to
-        the top; the top of its own travel is where the picture would be."""
+        the top; the top of its own travel is where the drawing would be."""
         phase = phase_for_position_fraction(1.0, amplitude=40, center=50, rising=True)
 
         assert position_fraction(phase, amplitude=40, center=50) == pytest.approx(0.7, abs=0.01)
@@ -620,7 +620,7 @@ def test_the_two_held_ends_are_the_ends_of_the_travel():
 
 
 class TestTheWaveTracedOnKnots:
-    """The single wave's picture for the readout: read on knots a fixed stretch
+    """The single wave's drawing for the readout: read on knots a fixed stretch
     of phase apart, anchored to a phase that never wraps, so it holds still
     between knots and slides rather than being redrawn at fixed columns."""
 

@@ -1,4 +1,4 @@
-"""A Funestra's radio: stations of sound playing out of sight, one of them tuned in while a picture is up.
+"""A Funestra's radio: stations of sound playing out of sight, one of them tuned in while an image is up.
 
 A Funestra's stations are written beside its playlist by whoever deals them, as
 one line per clip: the station's number, a TAB, the clip.
@@ -24,7 +24,7 @@ class Station(Protocol):
 
 
 class Tuner(Protocol):
-    def tick(self, *, picture: bool | None, level: int | None, paused: bool) -> None: ...
+    def tick(self, *, image: bool | None, level: int | None, paused: bool) -> None: ...
 
     def close(self) -> None: ...
 
@@ -79,9 +79,9 @@ class RadioFile:
 
 
 class Radio:
-    """A Funestra's stations, each playing on out of earshot: a picture coming
+    """A Funestra's stations, each playing on out of earshot: an image coming
     up after a video tunes the next of them in, or every one when they play
-    together, and the pictures after it stay on that one, through the moment
+    together, and the images after it stay on that one, through the moment
     between each two files."""
 
     def __init__(self, open_station: Callable[[list[Path]], Station | None], *,
@@ -92,7 +92,7 @@ class Radio:
         self._dealt: list[list[Path]] = []
         self._stations: list[Station] = []
         self._tuned = -1
-        self._on_a_picture = False
+        self._on_an_image = False
 
     def take(self, stations: list[list[Path]]) -> None:
         self.close()
@@ -104,20 +104,20 @@ class Radio:
             station.close()
         self._stations, self._dealt = [], []
 
-    def tick(self, *, picture: bool | None, level: int | None, paused: bool) -> None:
+    def tick(self, *, image: bool | None, level: int | None, paused: bool) -> None:
         dealt = None if self._dealt_in is None else self._dealt_in.changed()
         if dealt is not None:
             self.take(dealt)
         self._open_what_was_dealt()
-        if picture is not None:
-            arriving = picture and not self._on_a_picture
-            self._on_a_picture = picture
-            if self._stations and (arriving or (picture and self._tuned < 0)):
+        if image is not None:
+            arriving = image and not self._on_an_image
+            self._on_an_image = image
+            if self._stations and (arriving or (image and self._tuned < 0)):
                 self._tuned = (self._tuned + 1) % len(self._stations)
         for index, station in enumerate(self._stations):
             station.set_paused(paused)
             heard = self._together or index == self._tuned
-            station.tune(level if self._on_a_picture and heard else None)
+            station.tune(level if self._on_an_image and heard else None)
 
     def _open_what_was_dealt(self) -> None:
         if self._stations or not self._dealt:

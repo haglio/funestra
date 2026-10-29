@@ -132,7 +132,7 @@ class TestTurnBoundsAt:
     ends.  Whoever draws the handoff needs the boundary itself: a ramp walking
     the device between the park and a motion has to be anchored to the moment
     the device changed hands, and anchored to anything recomputed per frame it
-    slides around under its own picture."""
+    slides around under its own drawing."""
 
     def _two_clusters(self):
         return Funscript(actions=[
@@ -355,7 +355,7 @@ class TestPositionAt:
     def test_between_two_actions_it_reads_the_move_the_device_is_making(self):
         """The driver sends "be at the next one in this long", so between two
         actions the device really is on its way — a value that stepped would be
-        a picture of something else."""
+        a drawing of something else."""
         fs = Funscript(actions=[(0, 0), (400, 80)])
 
         assert fs.position_at(200) == 40.0
@@ -440,11 +440,11 @@ class TestPlan:
         assert fs.is_parked_at(10_000) is True
 
 
-class TestThePlanAsAPicture:
+class TestThePlanAsADrawing:
     """The plan sampled for a HUD to draw — whole knots off a grid fixed to the
     script, and the fraction of a knot the playhead sits past the first of them."""
 
-    def test_the_picture_slides_rather_than_being_resampled(self):
+    def test_the_drawing_slides_rather_than_being_resampled(self):
         """Sampling from the playhead put the points at a new offset every frame,
         so every peak landed somewhere slightly different and the line boiled in
         place.  On a grid fixed to the script, moving along it is a window
@@ -457,7 +457,7 @@ class TestThePlanAsAPicture:
         assert stepped[:3] == first[1:4]
 
     def test_a_playhead_between_two_knots_reads_the_knot_before_it(self):
-        """The script does not change while it plays, so its picture is computed
+        """The script does not change while it plays, so its drawing is computed
         once and reread, and the leftover fraction goes to the drawer to shift the
         stable shape by.  Reading blended values instead morphed the heights at
         fixed columns every frame — the shape changed while it moved."""
@@ -487,12 +487,12 @@ class TestThePlanAsAPicture:
 
         assert fs.planned_trace_window(50_000, 500, 3)[0] == (0.0, 0.0, 0.0, 0.0)
 
-    def test_an_unscripted_video_has_no_picture_at_all(self):
+    def test_an_unscripted_video_has_no_drawing_at_all(self):
         assert Funscript(actions=[]).planned_trace_window(0, 1000, 4) == ((), 0.0)
 
     def test_a_span_of_no_time_is_all_park_rather_than_a_division_by_zero(self):
         """A Funestra stopped dead publishes a span of nothing — the trace's seconds
-        scaled by a playback speed of zero — and asks for a picture of it anyway."""
+        scaled by a playback speed of zero — and asks for a drawing of it anyway."""
         assert _gapped().planned_trace_window(0, 0, 3) == ((0.0,) * 4, 0.0)
 
 

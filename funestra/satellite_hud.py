@@ -320,7 +320,7 @@ def slot_rects(
     return corner, seed_rects, action_rects
 
 
-def picture_rect(slot: Rect, size: tuple[int, int]) -> Rect:
+def thumbnail_rect(slot: Rect, size: tuple[int, int]) -> Rect:
     x, y, w, h = slot
     width, height = size
     return (x + (w - width) // 2, y + (h - height) // 2, width, height)

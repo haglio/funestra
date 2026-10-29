@@ -1,4 +1,4 @@
-"""The HUD a Funestra composites over its picture: the published panel, and its clicks."""
+"""The HUD a Funestra composites over its item: the published panel, and its clicks."""
 from __future__ import annotations
 
 import json
@@ -79,7 +79,7 @@ class TestTheClipsRowAtItsFoot:
 
         assert overlay.targets.row is not None
 
-    def test_a_picture_puts_no_row_on_the_panel(self, tmp_path, panel):
+    def test_an_image_puts_no_row_on_the_panel(self, tmp_path, panel):
         engine = FakeEngine()
         overlay = _overlay(tmp_path, panel, engine)
 
@@ -168,7 +168,7 @@ class TestTheClipsRowAtItsFoot:
         fills the next, and between the two the panel can change width.  The
         wrong length raises out of the track painter rather than stretching --
         which took the window's drawing down with it and left the Main Funestra
-        showing no picture at all."""
+        showing no item at all."""
         plain, mismatched = FakeEngine(), FakeEngine()
         _overlay(tmp_path, panel, plain).tick(item_row=self._ROW)
         overlay = _overlay(tmp_path, panel, mismatched)
@@ -193,7 +193,7 @@ class TestTheClipsRowAtItsFoot:
         assert overlay.row_track == (left + x + x0, left + x + x1,
                                      top + panel_h + UNDER_THE_PANEL_GAP)
 
-    def test_a_picture_leaves_nothing_for_the_frames_to_hang_under(self, tmp_path, panel):
+    def test_an_image_leaves_nothing_for_the_frames_to_hang_under(self, tmp_path, panel):
         overlay = _overlay(tmp_path, panel, FakeEngine())
 
         overlay.tick(item_row=None)
@@ -443,7 +443,7 @@ def test_a_loop_button_click_posts_at_once(tmp_path: Path, panel: Path):
 def test_a_press_outside_the_panel_posts_nothing_and_is_refused(
         tmp_path: Path, panel: Path):
     """Refused rather than merely silent: what the HUD does not take is a press
-    on the picture, and the run loop has its own answer for one."""
+    on the item, and the run loop has its own answer for one."""
     engine = FakeEngine()
     overlay = _overlay(tmp_path, panel, engine)
     overlay.tick()
@@ -459,7 +459,7 @@ def test_a_press_outside_the_panel_posts_nothing_and_is_refused(
 
 def test_a_press_on_the_panel_s_own_background_is_the_hud_s(tmp_path: Path, panel: Path):
     """The slab is one surface: a press between its controls posts nothing and
-    is still the HUD's, not the picture's."""
+    is still the HUD's, not the item's."""
     engine = FakeEngine()
     overlay = _overlay(tmp_path, panel, engine)
     overlay.tick()
@@ -750,7 +750,7 @@ def test_a_press_in_a_lower_corner_reaches_the_button_drawn_there(
     assert _commands(tmp_path) == ["portrait_next"]
 
 
-def test_the_plus_names_itself_where_the_panel_floats_over_a_picture(
+def test_the_plus_names_itself_where_the_panel_floats_over_an_item(
         tmp_path: Path, panel: Path):
     """The panel takes the tooltip's room only while the pointer is on the plus,
     so a press beside a collapsed HUD still reaches the video under it."""
@@ -785,7 +785,7 @@ def test_a_panel_on_its_own_screen_holds_the_tooltips_room_from_the_start(
 
 
 class TestAPanelWhoseMinusHangsOutsideIt:
-    """In the headset the minus hangs on its own between the picture and the
+    """In the headset the minus hangs on its own between the item and the
     panel, where the plus hangs once the panel is minimized, so the panel
     carries neither."""
 
@@ -905,7 +905,7 @@ class TestANameFlashingWhileMinimized:
 def test_a_panel_hanging_on_its_own_screen_keeps_its_default_justification(
         tmp_path: Path, panel: Path):
     """In the headset the panel is a screen of its own rather than a slab over a
-    corner of the picture, so the corner the session moved it to says which side
+    corner of the item, so the corner the session moved it to says which side
     of the Funestra it hangs against and nothing about how it is laid out."""
     engine = FakeEngine()
     _publish(panel, hud_corner="lower_right", hud_edge="right",

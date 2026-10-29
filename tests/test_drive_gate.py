@@ -1,4 +1,4 @@
-"""What of Genau's publish this video's picture believes, and for how long.
+"""What of Genau's publish this video's trace believes, and for how long.
 
 Two things the gate holds across frames: the descent forecasts, chosen once and
 held, and whether Genau has been seen live in *this* video yet.
@@ -98,7 +98,7 @@ class TestChoosingAForecast:
 class TestTheDeviceRunningItself:
     """In auto mode the OSR2 drives on its own firmware: the funscript's T-Code is
     dropped at the broker and Genau is not sending either, so the handoff this
-    gate exists to draw is not happening.  What the picture must show is the one
+    gate exists to draw is not happening.  What the trace must show is the one
     motion there is -- the device's own, as Genau publishes it -- and folding a
     script into that draws a plan for a device nothing here has.
     """
@@ -200,7 +200,7 @@ class TestAChoiceThatIsHeld:
 
     def test_a_pause_still_running_does_not_move_it(self):
         """The choice goes when the playhead moves again, not while it waits:
-        the picture on a paused Funestra is the one it was already showing."""
+        the trace on a paused Funestra is the one it was already showing."""
         gate, _session = _gate_holding_a_forecast()
 
         for _ in range(40):
@@ -280,7 +280,7 @@ class TestExactlyWhereTheseRulesBegin:
 
     def test_a_step_back_the_width_of_the_window_is_still_playing(self):
         """-250ms: the trace's own quantum makes some real frames read oddly,
-        and a picture that voided its forecasts on one would flicker."""
+        and a trace that voided its forecasts on one would flicker."""
         gate, session = _gate_holding_a_forecast()
 
         session.position_ms = -250
@@ -473,7 +473,7 @@ class TestAFunestraThatDoesNotSayHowItPlaysItsScript:
 class TestTheTouchTheTraceChose:
     """``next_handoff_touch`` reads the choice out of the trace's own latch.
 
-    One chooser, the picture, and the arbiter follows it: when each side chose
+    One chooser, the trace, and the arbiter follows it: when each side chose
     its own touch from its own read of the wave they could pick different
     troughs, the arbiter stopped the device one touch early, and the leftover
     drawn blue vanished the moment the dot reached it.
@@ -503,7 +503,7 @@ class TestTheTouchTheTraceChose:
 
     def test_inside_a_turn_it_takes_the_boundary_just_crossed(self):
         """The arbiter is still ending that turn, so the touch it needs is the
-        one the picture drew the ending on."""
+        one the trace drew the ending on."""
         assert next_handoff_touch(_script(), 5_000, self._latched()) == 3_600
 
     def test_a_rest_with_no_turn_after_it_has_no_boundary_at_all(self):

@@ -12,8 +12,10 @@ class DevicePanel:
         self._post = post
         self._painter = painter if painter is not None else ConsolePainter(device_only=True)
 
-    def picture(self, hud: ConsoleHud) -> tuple[bytes, tuple[int, int]]:
+    def drawing(self, hud: ConsoleHud) -> tuple[bytes, tuple[int, int]]:
         return self._painter.rgba(hud)
+
+    picture = drawing
 
     def press(self, x: int, y: int) -> None:
         self._ask(self._painter.press_at(*_on_the_painter(x, y)))

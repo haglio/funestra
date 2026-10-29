@@ -85,7 +85,7 @@ class TestAPress:
 
         assert (taken, asked) == (True, ["portrait_hud_restore_at|lower_right"])
 
-    def test_in_the_huds_own_corner_is_left_to_the_picture(self):
+    def test_in_the_huds_own_corner_is_left_to_the_item(self):
         asked: list[str] = []
         corners, _engine = _corners(_Panel(corner=HudCorner.LOWER_RIGHT), asked)
         corners.paint(window=WINDOW)

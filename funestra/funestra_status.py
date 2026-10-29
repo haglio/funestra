@@ -15,7 +15,7 @@ def status_fields(playback, handoff_touch_ms: int | None) -> dict[str, str]:
             paused=playback.is_paused,
             locked=playback.is_locked,
             speed=playback.speed,
-            picture=playback.showing_picture,
+            image=playback.showing_image,
         )),
         "playlist_length": str(playback.playlist_length),
         "has_funscript": "1" if playback.has_funscript else "0",

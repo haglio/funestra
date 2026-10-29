@@ -1,4 +1,4 @@
-"""The panel kept on the picture: taken from its source, rendered when it changes, composited, pressed.
+"""The panel kept on the item: taken from its source, rendered when it changes, composited, pressed.
 
 Two sources.  A session in another process publishes the panel to a file and
 takes its presses back on the dashboard's command file; a window's own
@@ -225,7 +225,7 @@ class HudOverlay:
     def wheel(self, x: int, y: int, steps: int) -> bool:
         """The wheel turned *steps* notches over the panel: the block at the
         foot takes it, and the rest of the panel is a surface with nothing to
-        turn, which is still the panel's and not the picture's."""
+        turn, which is still the panel's and not the item's."""
         if self._clicks is None or not self.covers(x, y):
             return False
         self._pointer_at = self._local(x, y)

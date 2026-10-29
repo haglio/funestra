@@ -121,7 +121,7 @@ def trace_window(state: LearnedMotionState, robot_hand: RobotHandState | None,
     on knots a fixed stretch of script apart, the last one just past the far
     edge, and how far past the first knot the clock sits as a fraction of one.
 
-    Read on knots rather than from the clock itself so the picture holds
+    Read on knots rather than from the clock itself so the drawing holds
     still: the values only change when the clock crosses a knot, when the
     window moves on by one sample, and between knots the painter slides the
     whole line left by the fraction.  Sampled from the clock instead, the

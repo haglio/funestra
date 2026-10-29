@@ -69,7 +69,7 @@ class TestAnItemIsAlsoThePairItWas:
     def test_the_funscript_is_optional(self):
         assert PlaylistItem(Path("C:/vids/a.mp4")).funscript is None
 
-    def test_a_picture_with_places_still_unpacks_as_its_pair(self):
+    def test_an_image_with_places_still_unpacks_as_its_pair(self):
         item = PlaylistItem(Path("C:/out/a.png"), points_of_interest=((0.1, 0.2, 0.3, 0.4),))
 
         video, funscript = item
@@ -77,7 +77,7 @@ class TestAnItemIsAlsoThePairItWas:
         assert (video, funscript) == (Path("C:/out/a.png"), None)
         assert item == (Path("C:/out/a.png"), None)
 
-    def test_two_pictures_whose_only_difference_is_their_places_are_two_items(self):
+    def test_two_images_whose_only_difference_is_their_places_are_two_items(self):
         bare = PlaylistItem(Path("C:/out/a.png"))
         placed = PlaylistItem(Path("C:/out/a.png"), points_of_interest=((0.1, 0.2, 0.3, 0.4),))
 
@@ -108,7 +108,7 @@ class TestOneLineOneItem:
         assert item_from_line("") is None
         assert item_from_line("\tC:/scripts/a.funscript") is None
 
-    def test_a_picture_carries_the_places_it_punches_in_on_after_a_second_tab(self):
+    def test_an_image_carries_the_places_it_punches_in_on_after_a_second_tab(self):
         item = PlaylistItem(Path("C:/out/a.png"),
                             points_of_interest=((0.1, 0.2, 0.3, 0.4), (0.5, 0.25, 0.75, 1.0)))
 

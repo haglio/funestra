@@ -71,7 +71,7 @@ class FunscriptTCodeDriver:
         REMAINING time of the descent, not a fresh full interval.  A re-sent
         full interval retargets the in-flight glide from wherever the device is,
         which bends every drawn straight ramp into a fast exponential: the
-        device was effectively parked in a third of the time the picture showed.
+        device was effectively parked in a third of the time the drawing showed.
 
         The first park after a takeover descends over the handoff ramp — the
         device is wherever the other driver left it, most of the range away, and

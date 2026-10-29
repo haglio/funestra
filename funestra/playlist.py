@@ -27,7 +27,7 @@ class _Pair(NamedTuple):
 
 class PlaylistItem(_Pair):
     """One thing a Funestra shows: its path, the script that drives the device
-    while it plays, and the places in a picture a lock punches in on, as
+    while it plays, and the places in an image a lock punches in on, as
     ``(x0, y0, x1, y1)`` fractions of it.
 
     A pair as well as a record, on purpose: every reader in the family took

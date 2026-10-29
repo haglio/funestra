@@ -49,10 +49,10 @@ from funestra.satellite_hud import (
     name_line,
     panel_width,
     parse_hud,
-    picture_rect,
     slot_rects,
     slot_width,
     speed_row,
+    thumbnail_rect,
 )
 
 # Fabricated: the words a source says the library writes in front of an act.
@@ -293,9 +293,9 @@ def test_a_column_under_the_rows_last_seed_ends_where_the_row_does():
     assert ax + aw == seeds[-1][0] + seeds[-1][2] == map_row_width("portrait")
 
 
-def test_a_picture_stands_in_the_middle_of_its_slot():
-    assert picture_rect((100, 50, 44, 54), (30, 54)) == (107, 50, 30, 54)
-    assert picture_rect((100, 50, 44, 54), (44, 24)) == (100, 65, 44, 24)
+def test_a_thumbnail_stands_in_the_middle_of_its_slot():
+    assert thumbnail_rect((100, 50, 44, 54), (30, 54)) == (107, 50, 30, 54)
+    assert thumbnail_rect((100, 50, 44, 54), (44, 24)) == (100, 65, 44, 24)
 
 
 def test_the_columns_chrome_follows_it_under_the_playing_seed():

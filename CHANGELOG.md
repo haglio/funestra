@@ -9,6 +9,31 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-29 — an image, the item on screen, and a User's own frame, where the package said picture
+
+An item is an image or a video, so nothing here says picture any more. A still a
+Funestra shows is an image: `showing_image`, `image_time`, `seek_image` and
+`hold_image_for` on the engines and `Playback`, `Tuner.tick(image=...)`,
+`FunestraStatus.image` and `KenBurns.new_image`. What a window
+shows, video or image, is the item, and the trace the readout draws is the trace
+or a drawing. A frame a User puts up itself is a `FlickFrame`, asked for with
+`User.own_frame()`, put up over mpv by `FlickOverlay` (`funestra.flick_overlay`)
+or wherever a window's `UsersFrames` puts it (`Funestra(users_frames=...)`);
+`DevicePanel.drawing`, `MpvRenderEngine.has_frame_to_draw` and
+`satellite_hud.thumbnail_rect` are the rest.
+
+What goes between processes keeps its spelling, since the apps' Funestras run
+out of venvs that update apart: the verb is still `HOLD_PICTURE`, its constant
+named as it is spelled, and a status still says `picture`. The old names answer for every checkout from
+before (`funestra.renamed`): `funestra.flick_picture` and its `Picture` and
+`FlickPicture`, `UsersPicture`, `Funestra(users_picture=...)`,
+`FunestraStatus.picture`, `DevicePanel.picture` and
+`MpvRenderEngine.has_picture_to_draw`; and a Funestra asks a User, an engine or a
+radio an app hands it by its old name where it lacks the new one (`picture()`,
+`showing_picture`, `picture_time`, `seek_picture`, `hold_picture_for`,
+`tick(picture=...)`), through the new `renamed.value_of` and `renamed.keyword_of`
+beside `method_of`.
+
 ## 2026-10-24 — a verb or a list acts on the picture on screen, one that has just moved on included
 
 A Funestra follows a picture that moved on by itself (a still at the end of its

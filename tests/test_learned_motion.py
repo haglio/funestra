@@ -170,7 +170,7 @@ class TestWhatTheReadoutDraws:
         assert heights == pytest.approx([0.0, 0.4, 0.8, 0.5, 0.2, 0.5])
         assert slide == 0.0
 
-    def test_the_picture_holds_still_between_knots_and_slides_by_the_leftover(self):
+    def test_the_drawing_holds_still_between_knots_and_slides_by_the_leftover(self):
         # A tenth of a second on, the knots' values are the same and the line
         # is shifted left by the tenth of a quarter-second knot it has moved.
         hand, state = _playing(_model(_phrase(500, 20, 80)))

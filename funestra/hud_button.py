@@ -29,7 +29,7 @@ class Button:
     on, red for a live recording, blue for the loop that recording leaves
     running.  ``favorite`` names a control whose on-state is green (the
     favorites and the funscripts own that color); ``enhanced`` one whose mark
-    and on-state are amber (an enhanced picture's own).  ``dim`` is a control
+    and on-state are amber (an enhanced image's own).  ``dim`` is a control
     at the end of its range or with nothing to act on: drawn faded and never a
     hit target.  ``danger`` draws the mark red — a control that takes something
     away.  ``remembered`` is a choice held but not applied, on the active gray.

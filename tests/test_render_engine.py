@@ -1,4 +1,4 @@
-"""The offscreen engine's word on which file each picture it draws shows, wired
+"""The offscreen engine's word on which file each frame it draws shows, wired
 to mpv: the file asked for, the events mpv sends as it opens and starts it, and
 what mpv says of the frame it is about to draw.  A fake engine stands in for
 libmpv, whose DLL and GL context the real one needs."""
@@ -97,13 +97,13 @@ def test_a_file_asked_for_is_shown_as_itself_only_once_mpv_has_started_it(engine
     handle.report("path", str(flat))
     handle.send(FILE_LOADED)
     context.announce(FRAME_PRESENT)
-    assert engine.has_picture_to_draw
+    assert engine.has_frame_to_draw
     assert engine.render(0, 16, 9) is None
 
     handle.send(PLAYBACK_RESTART)
     context.next_frame_flags = FRAME_PRESENT | FRAME_REDRAW
 
-    assert engine.has_picture_to_draw
+    assert engine.has_frame_to_draw
     assert engine.render(0, 16, 9) == str(flat)
 
 

@@ -1,4 +1,4 @@
-"""The console a Funestra keeps on its picture: what the room published, read whole, drawn where the room put it, pressed."""
+"""The console a Funestra keeps on its item: what the room published, read whole, drawn where the room put it, pressed."""
 from __future__ import annotations
 
 import json

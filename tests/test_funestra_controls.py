@@ -54,7 +54,7 @@ def _controls(tmp_path, *, entries=3, **wired) -> FunestraControls:
 
 
 class TestApplyCommand:
-    def test_a_frame_goes_up_in_place_of_the_picture_until_it_is_cleared(self, tmp_path):
+    def test_a_frame_goes_up_in_place_of_the_image_until_it_is_cleared(self, tmp_path):
         playback, engine = make_playback(tmp_path)
         controls = FunestraControls(playback, reload_playlist=_never_reloads)
 
@@ -69,14 +69,14 @@ class TestApplyCommand:
         assert apply_command(f"{SHOW_FRAME}  ", controls) is False
         assert engine.swapped == []
 
-    def test_set_pace_is_how_long_a_picture_holds_the_screen(self, tmp_path):
+    def test_set_pace_is_how_long_an_image_holds_the_screen(self, tmp_path):
         playback, engine = make_playback(tmp_path)
         controls = FunestraControls(playback, reload_playlist=_never_reloads)
 
         assert apply_command(f"{SET_PACE} 2.5", controls) is True
         assert engine.pace_s == 2.5
 
-    def test_hold_picture_is_how_long_the_picture_on_screen_holds_it_short_of_its_pace(
+    def test_hold_image_is_how_long_the_image_on_screen_holds_it_short_of_its_pace(
             self, tmp_path):
         playback, engine = make_playback(tmp_path)
         controls = FunestraControls(playback, reload_playlist=_never_reloads)
@@ -136,7 +136,7 @@ class TestApplyCommand:
         assert controls.playback.playlist[1] == newcomer
         assert controls.playback.funscript_of(newcomer) == script
 
-    def test_play_file_takes_the_places_column_as_the_pictures_places(self, tmp_path):
+    def test_play_file_takes_the_places_column_as_the_images_places(self, tmp_path):
         playback, engine = make_playback(tmp_path, entries=2)
         controls = FunestraControls(playback, reload_playlist=_never_reloads)
 
