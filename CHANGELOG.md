@@ -38,9 +38,9 @@ beside `method_of`.
 
 A source that paints a block at a panel's foot (Origenerator's Job Queue) could
 hand it over only to a Funestra in its own program, so a panel Fun Time
-publishes for a Satellite could carry none. `satellite_hud.PictureFoot` is such
-a block painted to a picture file: the panel's text carries it, the panel draws
-the picture where the block goes and names its buttons on hover, and a press on
+publishes for a Satellite could carry none. `satellite_hud.PaintedFoot` is such
+a block painted to a file: the panel's text carries it, the panel draws
+the file where the block goes and names its buttons on hover, and a press on
 it is said to the panel's side (`portrait_foot_press|x|y`), which is how a
 published panel's presses find their way back to whatever drew it.
 
