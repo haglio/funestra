@@ -16,5 +16,4 @@ def test_the_ruff_config_is_the_familys():
 
 
 def test_ruff_finds_nothing():
-    assert_lint_is_clean(ROOT, ROOT / "funestra", ROOT / "funestra_core", ROOT / "player_core",
-                         ROOT / "tests", ROOT / "tools")
+    assert_lint_is_clean(ROOT, ROOT / "funestra", ROOT / "tests", ROOT / "tools")

@@ -54,14 +54,5 @@ FORWARD_ICON = shared_mark("chevrons_right")
 NEXT_ICON = shared_mark("chevron_right")
 LOCK_ICON = shared_mark("lock")
 
-# What a funestra from before a control wore the family's mark publishes for it:
-# Origenerator publishes its HUD from a funestra of its own, which can be older
-# than the one drawing it.
-_RETIRED_GLYPHS = {"\0minimize": MINIMIZE_ICON}
-
-
-def current_glyph(glyph: str) -> str:
-    return _RETIRED_GLYPHS.get(glyph, glyph)
-
 # The family's on/off switch, on while its button is lit.
 TOGGLE_SWITCH = "\0switch"

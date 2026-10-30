@@ -16,7 +16,6 @@ from .genau_controls import GenauControls, apply_runtime_command
 from .genau_readout import AutoMotion, GenauReadout
 from .genau_status import GENAU_STATUS_FILENAME, build_status_text, write_status_file
 from .learned_motion import tick_learned_motion
-from .renamed import answers_to_old_names
 from .robot_hand import POSITION_MAX, phase_for_position_fraction
 from .robot_hand_beat import Beat, advance_beat
 from .robot_hand_driver import DeviceHandoff
@@ -25,7 +24,6 @@ from .tick_failures import TickFailures
 consume_command_keeping_its_case = partial(consume_command_file, uppercase=False)
 
 
-@answers_to_old_names({"clip_advance": "flick_advance", "seek_the_clip": "seek_the_flick"})
 class GenauRefreshController:
     def __init__(
         self,

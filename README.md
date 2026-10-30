@@ -2,9 +2,7 @@
 
 The Funestra, and everything the programs that open one share. The package is
 `funestra`, as this repo is; it was `player_core` until 2026-10-10 and
-`funestra_core` until 2026-10-11, and `player_core.<module>` and
-`funestra_core.<module>` still import, as the very same module, for every
-branch written before then. A Funestra is the window its users run on: it
+`funestra_core` until 2026-10-11. A Funestra is the window its users run on: it
 plays what it is handed, draws the HUD, and is driven, in its own process or
 through its files, by whatever runs on it. Its users are Kino and Genau, which
 run on Fun Time's Main Funestra, and Origenerator's Slideshow, which runs on a

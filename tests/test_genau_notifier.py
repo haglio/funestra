@@ -17,13 +17,13 @@ class FakeSocket:
         self.closed = True
 
 
-def test_notify_flick_sends_flick_stem_and_says_it_again_for_a_companion_from_before_the_rename():
+def test_notify_flick_sends_flick_stem():
     sock = FakeSocket()
     notifier = GenauNotifier("127.0.0.1", 9999, sock=sock)
 
     notifier.notify_flick(Path("demo.mp4"))
 
-    assert sock.sent == [(b"FLICK demo", ("127.0.0.1", 9999)), (b"CLIP demo", ("127.0.0.1", 9999))]
+    assert sock.sent == [(b"FLICK demo", ("127.0.0.1", 9999))]
 
 
 def test_notify_visible_deduplicates_repeated_state():

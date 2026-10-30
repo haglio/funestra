@@ -1,15 +1,14 @@
 """The scrubber a Funestra draws along its lower edge, and the loop frames above it.
 
 The track is the whole item, filled with its script's colors where it has one;
-while a stretch is being marked out it is a taller strip zoomed into the section
-around the mark, so the end of the stretch can be judged.  The frames a running
-A/B range starts and ends on sit above their marks.  Pure decisions here, no
-pygame: the Funestra turns them into mpv overlays.
+while a stretch is being marked out it is zoomed into the section around the
+mark, so the end of the stretch can be judged.  The frames a running A/B range
+starts and ends on sit above their marks.  Pure decisions here, no pygame: the
+Funestra turns them into mpv overlays.
 """
 from __future__ import annotations
 
 from .heatmap import build_heatmap
-from .timeline import TIMELINE_HEIGHT, bar_track_x, bar_x, progress_bar_bgra
 
 _ZOOM_SPAN_START_MS = 20_000.0
 _ZOOM_LEAD_FRAC = 0.10
@@ -38,10 +37,6 @@ class ZoomWindow:
         return start + (end - start) * _ZOOM_GROW_FRAC
 
 
-_IDLE_HEIGHT = TIMELINE_HEIGHT
-_MARKING_HEIGHT = 48
-
-
 class HeatmapStrip:
     def __init__(self) -> None:
         self._key: tuple | None = None
@@ -52,12 +47,6 @@ class HeatmapStrip:
     @property
     def colors(self) -> list[tuple[int, int, int]]:
         return self._colors
-
-    @property
-    def height(self) -> int:
-        if not self._colors:
-            return 0
-        return _MARKING_HEIGHT if self._zoom is not None else _IDLE_HEIGHT
 
     @property
     def window(self) -> tuple[float, float]:
@@ -101,10 +90,6 @@ class HeatmapStrip:
         else:
             start, end = self.window
             self._colors = build_heatmap(funscript, track_w, start_ms=start, end_ms=end)
-
-
-def timeline_height(heatmap: HeatmapStrip) -> int:
-    return heatmap.height or TIMELINE_HEIGHT
 
 
 _OUT_CAPTURE_LEAD_MS = 400.0
@@ -186,21 +171,3 @@ def loop_thumbnail_xys(
     )
 
 
-# timeline_x and timeline_bgra are reached only by the headset's old copies of
-# the row, in the checkouts from before haglio/fun_time#391; they keep the
-# signatures those copies call until none of them is open.
-def timeline_x(heatmap: HeatmapStrip, ms: float, width: int) -> int:
-    start_ms, end_ms = heatmap.window
-    return bar_x(ms - start_ms, end_ms - start_ms, *bar_track_x(width))
-
-
-def timeline_bgra(heatmap: HeatmapStrip, position_ms: float, loop_bounds, width: int, *,
-                  record_in_ms=None):
-    start_ms, end_ms = heatmap.window
-    return progress_bar_bgra(
-        position_ms - start_ms, end_ms - start_ms,
-        None if loop_bounds is None else (loop_bounds[0] - start_ms, loop_bounds[1] - start_ms),
-        width,
-        record_in_ms=None if record_in_ms is None else record_in_ms - start_ms,
-        height=timeline_height(heatmap), heatmap=heatmap.colors,
-    )

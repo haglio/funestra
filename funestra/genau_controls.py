@@ -54,7 +54,6 @@ from .learned_motion import (
     enable_learned_motion,
 )
 from .playlist import item_from_line
-from .renamed import answers_to_old_names, drops_retired_arguments
 from .robot_hand import (
     RobotHandState,
     adjust_amplitude,
@@ -71,14 +70,6 @@ from .robot_hand_beat import BeatEngine
 logger = logging.getLogger(__name__)
 
 
-@drops_retired_arguments("cruise_control_state", "set_motion_phase")
-@answers_to_old_names({
-    "clip_advance_state": "flick_advance_state",
-    "clip_flip": "flick_flip",
-    "condemn_clip": "condemn_flick",
-    "reorder_clips": "reorder_flicks",
-    "step_clip": "step_flick",
-})
 @dataclass
 class GenauControls:
     """Everything one command or console press may move."""
@@ -380,11 +371,6 @@ CONTROLS: tuple[Control, ...] = (
             Verb("FLICK_SECONDS_DOWN", _interval_step(-1)),
             Verb("FLICK_SECONDS_UP", _interval_step(1)),
             Verb(FLICK_SECONDS, _interval_named, takes_a_value=True),
-            # The spellings from before the flicks were renamed, which an
-            # orchestrator from before the rename still sends.
-            Verb("CLIP_SECONDS_DOWN", _interval_step(-1)),
-            Verb("CLIP_SECONDS_UP", _interval_step(1)),
-            Verb("CLIP_SECONDS", _interval_named, takes_a_value=True),
         ),
     ),
     Control(

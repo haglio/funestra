@@ -18,7 +18,6 @@ from typing import TYPE_CHECKING
 
 from . import learned_motion
 from .funscript import HANDOFF_RAMP_MS
-from .renamed import drops_retired_arguments
 from .robot_hand import POSITION_MAX, phase_to_position
 from .tcode import HandoffGlide, TCodeSink, format_tcode_command
 
@@ -32,7 +31,6 @@ if TYPE_CHECKING:
 _RISE_SKIP_BELOW = 200
 
 
-@drops_retired_arguments("cruise")
 class RobotHandTCodeDriver:
     def __init__(
         self,

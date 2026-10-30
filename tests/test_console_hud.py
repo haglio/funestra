@@ -1485,14 +1485,6 @@ class TestTheRowTheConsoleCarriesForItsVideo:
 
         assert colored != plain
 
-    def test_the_rows_rect_still_answers_under_its_old_name(self):
-        painter = ConsolePainter()
-        painter.rgba(self._hud(), item_row=RowHud(position_ms=30_000, duration_ms=60_000))
-        assert painter.row_rect == painter.row.rect
-
-        painter.rgba(self._hud())
-        assert painter.row_rect is None
-
     def test_it_lands_at_the_foot_of_the_hud(self):
         painter = ConsolePainter()
         row = RowHud(position_ms=30_000, duration_ms=60_000, volume=VolumeHud(volume=40))

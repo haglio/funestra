@@ -26,16 +26,10 @@ import subprocess
 import sys
 import tempfile
 
-import pytest
-
 _PROBE = """
 import funestra
-import funestra_core
-import player_core
 from funestra import libmpv_loader
 print(funestra.__file__)
-print(funestra_core.__file__)
-print(player_core.__file__)
 print(libmpv_loader.__file__)
 """
 
@@ -49,16 +43,14 @@ def _resolve_from_outside_any_repo() -> dict[str, str]:
     assert result.returncode == 0, (
         f"funestra is not importable from this interpreter:\n{result.stderr}"
     )
-    return dict(zip(("funestra", "funestra_core", "player_core", "libmpv_loader"),
-                    result.stdout.strip().splitlines(), strict=True))
+    return dict(zip(("funestra", "libmpv_loader"), result.stdout.strip().splitlines(), strict=True))
 
 
-@pytest.mark.parametrize("name", ["funestra", "funestra_core", "player_core"])
-def test_no_name_of_the_package_is_a_namespace_shadow_of_the_repo_root(name):
-    found = _resolve_from_outside_any_repo()[name]
+def test_the_package_is_not_a_namespace_shadow_of_the_repo_root():
+    found = _resolve_from_outside_any_repo()["funestra"]
 
     assert found != "None", (
-        f"{name} resolved to a namespace package (the repo root), so its "
+        "funestra resolved to a namespace package (the repo root), so its "
         "__init__.py never runs. Reinstall with:\n"
         "  python -m pip install -e <path-to-funestra> "
         "--config-settings editable_mode=compat"

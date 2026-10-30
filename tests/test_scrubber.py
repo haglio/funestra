@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import numpy as np
-import pytest
 from shared_ui.palette import AMBER
 
 from funestra.funscript import Funscript
@@ -14,11 +13,8 @@ from funestra.scrubber import (
     label_xs,
     loop_thumbnail_xys,
     time_to_x,
-    timeline_bgra,
-    timeline_height,
-    timeline_x,
 )
-from funestra.timeline import BAR_INSET_Y, TIMELINE_HEIGHT, bar_track_x, progress_bar_bgra
+from funestra.timeline import BAR_INSET_Y, bar_track_x, progress_bar_bgra
 
 
 def _funscript():
@@ -27,30 +23,6 @@ def _funscript():
 
 WIN_W = 1000
 TRACK_W = bar_track_x(WIN_W)[1] - bar_track_x(WIN_W)[0]
-
-
-class TestTheHeightOfTheTimelineRow:
-    """Every item has a clickable timeline, the heatmap where there is a script and
-    a plain bar where there is not, so the row is never absent."""
-
-    def test_a_scripted_item_is_measured_by_its_strip(self):
-        strip = HeatmapStrip()
-        strip.update("v0.mp4", _funscript(), 4000.0, track_w=40)
-
-        assert timeline_height(strip) == strip.height == TIMELINE_HEIGHT
-
-    def test_an_unscripted_item_still_leaves_the_row_the_bar_needs(self):
-        strip = HeatmapStrip()
-        strip.update("plain.mp4", None, 4000.0, track_w=40)
-
-        assert strip.height == 0
-        assert timeline_height(strip) == TIMELINE_HEIGHT
-
-    def test_a_strip_that_grew_for_a_mark_takes_the_row_with_it(self):
-        strip = HeatmapStrip()
-        strip.update("v0.mp4", _funscript(), 4000.0, track_w=40, mark_in_ms=1000.0, position_ms=1200.0)
-
-        assert timeline_height(strip) == 48
 
 
 class TestHeatmapStrip:
@@ -71,7 +43,6 @@ class TestHeatmapStrip:
         strip.update("v0.mp4", fs, 4000.0, track_w=TRACK_W)
 
         assert strip.colors == build_heatmap(fs, TRACK_W, start_ms=0, end_ms=4000.0)
-        assert strip.height == 24
 
     def test_an_unscripted_item_has_no_strip(self):
         strip = HeatmapStrip()
@@ -79,7 +50,6 @@ class TestHeatmapStrip:
         strip.update("plain.mp4", None, 4000.0, track_w=TRACK_W)
 
         assert strip.colors == []
-        assert strip.height == 0
 
     def test_caches_until_the_item_changes(self):
         strip = HeatmapStrip()
@@ -108,14 +78,13 @@ class TestHeatmapStrip:
         assert strip.window == (0.0, 4000.0)
         assert strip.mark_in_ms is None
 
-    def test_a_mark_zooms_into_a_taller_strip_around_itself(self):
+    def test_a_mark_zooms_the_strip_into_the_stretch_around_itself(self):
         fs = _funscript()
         strip = HeatmapStrip()
 
         strip.update("v0.mp4", fs, 600_000.0, track_w=TRACK_W, mark_in_ms=50_000, position_ms=50_000.0)
 
         assert strip.window == (48_000, 70_000)
-        assert strip.height == 48
         assert strip.mark_in_ms == 50_000
         assert strip.colors == build_heatmap(fs, TRACK_W, start_ms=48_000, end_ms=70_000)
 
@@ -125,7 +94,6 @@ class TestHeatmapStrip:
         strip.update("plain.mp4", None, 600_000.0, track_w=TRACK_W, mark_in_ms=50_000, position_ms=50_000.0)
 
         assert strip.window == (0.0, 600_000.0)
-        assert strip.height == 0
 
     def test_the_marked_view_rescales_in_steps_not_continuously(self):
         strip = HeatmapStrip()
@@ -152,7 +120,6 @@ class TestHeatmapStrip:
         strip.update("v0.mp4", fs, 600_000.0, track_w=TRACK_W)
 
         assert strip.window == (0.0, 600_000.0)
-        assert strip.height == 24
         assert strip.mark_in_ms is None
         assert strip.colors == build_heatmap(fs, TRACK_W, start_ms=0, end_ms=600_000.0)
 
@@ -211,7 +178,7 @@ class TestAScriptedItemsStrip:
         x0, x1 = bar_track_x(win_w)
         strip = HeatmapStrip()
         strip.update("v.mp4", _funscript(), 4000.0, track_w=x1 - x0)
-        return timeline_bgra(strip, 2000, (1000, 3000), win_w), x0, x1
+        return progress_bar_bgra(2000, 4000.0, (1000, 3000), win_w, heatmap=strip.colors), x0, x1
 
     def test_the_strip_runs_from_the_rows_edge_to_the_chips_slot(self):
         bgra, x0, x1 = self._framed_strip()
@@ -236,49 +203,6 @@ class TestAScriptedItemsStrip:
         assert len(white) >= 3
         amber = [x for x in range(x0, x1) if _rgba(bgra, my, x)[:3] == AMBER]
         assert amber and any(x < cx for x in amber) and any(x > cx for x in amber)
-
-
-class TestTheTimelineUnderAnItem:
-    def test_an_unscripted_item_gets_the_plain_bar_across_its_whole_length(self):
-        strip = HeatmapStrip()
-        strip.update("plain.mp4", None, 4000.0, track_w=TRACK_W)
-
-        drawn = timeline_bgra(strip, 2000, (1000, 3000), WIN_W, record_in_ms=500)
-
-        assert np.array_equal(
-            drawn, progress_bar_bgra(2000, 4000.0, (1000, 3000), WIN_W, record_in_ms=500))
-
-    def test_a_scripted_item_gets_the_same_bar_filled_with_its_scripts_colors(self):
-        strip = HeatmapStrip()
-        strip.update("v0.mp4", _funscript(), 4000.0, track_w=TRACK_W)
-
-        drawn = timeline_bgra(strip, 2000, (1000, 3000), WIN_W)
-
-        assert np.array_equal(
-            drawn, progress_bar_bgra(2000, 4000.0, (1000, 3000), WIN_W, heatmap=strip.colors))
-
-    def test_a_strip_zoomed_into_a_mark_maps_its_own_window(self):
-        strip = HeatmapStrip()
-        strip.update("v0.mp4", _funscript(), 600_000.0, track_w=TRACK_W,
-                     mark_in_ms=50_000, position_ms=59_000.0)
-
-        drawn = timeline_bgra(strip, 59_000.0, None, WIN_W, record_in_ms=50_000)
-
-        assert strip.window == (48_000, 70_000)
-        assert np.array_equal(drawn, progress_bar_bgra(
-            11_000.0, 22_000.0, None, WIN_W, record_in_ms=2_000, height=48,
-            heatmap=strip.colors))
-
-    @pytest.mark.parametrize("funscript", [None, _funscript()], ids=["plain", "scripted"])
-    def test_it_says_where_it_draws_the_playcursor(self, funscript):
-        strip = HeatmapStrip()
-        strip.update("v0.mp4", funscript, 4000.0, track_w=TRACK_W)
-
-        for position in range(100, 3900, 7):
-            bar = timeline_bgra(strip, position, None, WIN_W)
-            white = np.flatnonzero((bar[bar.shape[0] // 2] == 255).all(axis=1))
-            x = timeline_x(strip, position, WIN_W)
-            assert white.tolist() == [x - 1, x, x + 1]
 
 
 class TestLoopThumbCapture:

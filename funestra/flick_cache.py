@@ -11,8 +11,6 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 
-from .renamed import answers_to_old_names
-
 
 def trim_path_lru_cache[T](
     cache: OrderedDict[Path, T],
@@ -36,7 +34,6 @@ def trim_path_lru_cache[T](
         skipped = 0
 
 
-@answers_to_old_names({"loaded_clip_path": "loaded_flick_path"})
 @dataclass
 class DecodeRequestState:
     """One decode in flight, and the result it left for the loop to take.
@@ -101,11 +98,6 @@ class DecodeRequestState:
         return path, frames, error
 
 
-@answers_to_old_names({
-    "cache_clip": "cache_flick",
-    "clip_cache": "flick_cache",
-    "clip_entry_for": "flick_entry_for",
-})
 class FlickCacheStore:
     def __init__(self, *, limit: int):
         self.limit = limit

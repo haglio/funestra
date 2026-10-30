@@ -10,12 +10,7 @@ from shared_ui.type_scale import SIZE_TINY
 
 from .hud import KeptBitmap, ink_center_offset, load_font, text_width
 from .hud_title import SEPARATOR
-from .renamed import old_name_getter
-from .volume import CHIP_H, chip_xy
-
-_RENAMED = {"clip_playhead": "flick_playhead"}
-
-__getattr__ = old_name_getter(__name__, _RENAMED)
+from .volume import CHIP_H
 
 FIGURE_SPACE = "\u2007"
 
@@ -74,25 +69,6 @@ def flick_playhead(frame: int, frame_count: int) -> PlayheadHud | None:
         return None
     return PlayheadHud(text=_frame_of(frame, frame_count),
                        widest=_frame_of(frame_count, frame_count))
-
-
-# The three below are what the Fun Time on main still imports of the row's old
-# placement, kept only until its next lands -- which lays the row out through
-# funestra.hud_row.row_layout and reaches none of them.
-# lower_edge_height, readout_xy and on_readout are reached only by the
-# headset's old copies of the row, in the checkouts from before
-# haglio/fun_time#391, and answer as the one-line row would, until none of
-# them is open.
-def lower_edge_height(win_w: int, *, timeline_h: int) -> int:
-    return timeline_h
-
-
-def readout_xy(readout_w: int, *, win_w: int, win_h: int, timeline_h: int) -> tuple[int, int]:
-    return 0, chip_xy(win_w=win_w, win_h=win_h, timeline_h=timeline_h)[1]
-
-
-def on_readout(x: int, y: int, *, win_w: int, win_h: int, timeline_h: int) -> bool:
-    return False
 
 
 @cache

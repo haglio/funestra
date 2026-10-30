@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .renamed import answers_to_old_names
 from .up_next import put_up_next
 
 
@@ -22,7 +21,6 @@ def _index_of(flicks: list[Path], wanted: Path | None) -> int | None:
     return None
 
 
-@answers_to_old_names({"clips": "flicks"})
 class FlickSequenceController:
     def __init__(self, flicks: list[Path], *, start_at: Path | None = None):
         """*start_at* is the flick to open on — where a reopened session picks up,

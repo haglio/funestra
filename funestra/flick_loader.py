@@ -12,17 +12,7 @@ from __future__ import annotations
 import time
 from pathlib import Path
 
-from .renamed import answers_to_old_names
 
-
-@answers_to_old_names({
-    "adopt_loaded_clip_if_ready": "adopt_loaded_flick_if_ready",
-    "clip_store": "flick_store",
-    "current_clip_path_getter": "current_flick_path_getter",
-    "decode_clip": "decode_flick",
-    "on_active_clip_loaded": "on_active_flick_loaded",
-    "request_clip_load": "request_flick_load",
-})
 class FlickLoadController:
     def __init__(
         self,

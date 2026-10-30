@@ -9,22 +9,8 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from .timeline import bar_track_x
-
 OMNIPAUSE_TOGGLE = "omnipause_toggle"
 NOWHERE = (-1, -1)
-
-
-def time_at(mx: int, *, win_w: int, duration_ms: float,
-            window: tuple[float, float] | None = None) -> float:
-    """The time a press *mx* across a track *win_w* wide names.  The headset
-    places a squeeze on the row under its console with it."""
-    start_ms, end_ms = window or (0.0, duration_ms)
-    if end_ms <= start_ms:
-        end_ms = start_ms + duration_ms
-    x0, x1 = bar_track_x(win_w)
-    fraction = min(1.0, max(0.0, (mx - x0) / max(1, x1 - x0)))
-    return start_ms + fraction * (end_ms - start_ms)
 
 
 def _nothing() -> None:

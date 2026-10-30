@@ -96,9 +96,6 @@ WRITTEN_DOWN_VERBS = frozenset({
     "FLICK_SECONDS_DOWN", "FLICK_SECONDS_UP", "HUD_ON", "HUD_OFF",
     "AMP", "CENTER", "SPEED", "FLICK_SECONDS", "SET_VOLUME", "SET_TCODE_ENABLED", "SHAPES",
     "SET_MAX_INTENSITY", "PLAY_FILE",
-    # The seconds verbs as an orchestrator from before the flicks were renamed
-    # spells them.
-    "CLIP_SECONDS_DOWN", "CLIP_SECONDS_UP", "CLIP_SECONDS",
 })
 
 class TestTheVocabularyIsWrittenDown:

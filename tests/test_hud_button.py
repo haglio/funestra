@@ -51,14 +51,6 @@ def test_minimize_wears_the_familys_minus():
     assert shared_mark("minus") == MINIMIZE_ICON
 
 
-def test_a_minimize_published_before_it_wore_the_minus_reads_back_as_the_minus():
-    """Origenerator publishes its HUD from its own funestra, which can be older
-    than the one drawing it, and an older one spelled minimize its own way."""
-    raw = [[{"command": "show_minimize", "glyph": "\0minimize", "tooltip": "Minimize"}]]
-
-    assert rows_from_raw(raw) == ((Button("show_minimize", shared_mark("minus"), "Minimize"),),)
-
-
 def test_the_transport_and_the_lock_every_source_declares_wear_the_familys_marks():
     """Fun Time and Origenerator both declare these on a Funestra, so they take
     their faces from here rather than each typing its own."""

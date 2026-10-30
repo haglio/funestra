@@ -7,7 +7,6 @@ from pathlib import Path
 from . import learned_motion
 from .drive_readout import TRACE_SAMPLES, DriveHud, DrivePublisher
 from .genau_controls import GenauControls
-from .renamed import answers_to_old_names
 from .robot_hand import (
     MIN_BPM,
     POSITION_MAX,
@@ -55,7 +54,6 @@ class AutoMotion:
         return heights[:TRACE_SAMPLES], slide, heights[TRACE_SAMPLES]
 
 
-@answers_to_old_names({"clip_advance": "flick_advance"})
 class GenauReadout:
     def __init__(
         self,

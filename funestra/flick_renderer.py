@@ -10,21 +10,12 @@ from pathlib import Path
 
 from shared_ui.orientation import PORTRAIT, orientation_of_size
 
-from .renamed import answers_to_old_names
-
 
 def display_index_for_phase(phase: float, frame_count: int) -> int:
     logical_index = min(int(phase * frame_count), frame_count - 1)
     return (frame_count - 1) - logical_index
 
 
-@answers_to_old_names({
-    "clip_store": "flick_store",
-    "current_clip_entry": "current_flick_entry",
-    "current_clip_path": "current_flick_path",
-    "prepare_active_clip_for_current_size": "prepare_active_flick_for_current_size",
-    "set_current_clip_path": "set_current_flick_path",
-})
 class FlickRenderController:
     def __init__(
         self,

@@ -58,10 +58,6 @@ def scan_flicks(
     return files
 
 
-def cache_dir_for_flicks_folder(folder: Path) -> Path:
-    return folder.parent / "frames"
-
-
 def weird_folder_for(flick: Path, flicks_folder: Path) -> Path:
     weird = weird_dir_for_flicks_folder(flicks_folder)
     try:
