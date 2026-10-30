@@ -13,6 +13,7 @@ newurl  # the redirect urllib offers redirect_request, which declines it
 _.ab_loop_a  # mpv_engine: python-mpv sets mpv's ab-loop-a property on assignment
 _.ab_loop_b  # mpv_engine: python-mpv sets mpv's ab-loop-b property on assignment
 _.vo  # mpv_engine: python-mpv sets mpv's vo option on assignment, which builds a new video output
+_.__signature__  # renamed: inspect reads it for the keywords an old checkout still hands a call
 
 # --- reached only by checkouts from before haglio/fun_time#391, until none is open ---
 lower_edge_height  # playhead: the headset's old copies of the row

@@ -156,7 +156,7 @@ def osr2_line(channels: Channels) -> FunscriptTCodeDriver | None:
     return FunscriptTCodeDriver(UdpTCodeSink(channels.tcode_host, channels.tcode_port))
 
 
-@answers_to_old_names({"panel": "hud", "panel_surface": "hud_surface",
+@answers_to_old_names({"panel": "hud", "panel_surface": "hud_surface", "_panel": "_hud",
                        "panel_edge": "hud_edge", "panel_minimized": "hud_minimized"})
 class Funestra:
     IN_FRAME_OVERLAY_ID = 8
