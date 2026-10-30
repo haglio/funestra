@@ -8,11 +8,13 @@ per rule. If editing this file, remove or consolidate — never just append.
 
 ## Running tests
 
-This repo has no venv of its own. Use a consumer's — both have this package
-installed editable:
+This repo has no venv of its own. Use Fun Time's, with this checkout first on
+the path: that venv holds the release Fun Time pins, not this checkout, and
+`--import-mode=append` stops pytest putting the venv back in front of it when it
+collects the checks app_support ships from there.
 
 ```bash
-"C:/path/to/genau/.venv/Scripts/python.exe" -m pytest tests/
+PYTHONPATH="C:/path/to/funestra" "C:/path/to/fun_time/.venv/Scripts/python.exe" -m pytest -x --import-mode=append tests/
 ```
 
 ## Installing
@@ -47,7 +49,7 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   one the apps may use, as Python reads it. An `__all__` would also count the
   names it lists as used and hide them from the dead-code check, so a module
   that hands on a name it imports marks that import `# noqa: F401` instead.
-- **No app knows another app exists.** Nothing here may import `main_funestra`, `genau`,
+- **No app knows another app exists.** Nothing here may import `main_funestra`,
   `satellite` or `fun_time`, and nothing here may be shaped around one caller's
   needs. `StatusWriter` takes a `fields` callable rather than hardcoding either
   Funestra's keys for exactly this reason.
@@ -91,9 +93,10 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   family's vulture scan over this package with its own tests and the tracked
   code of every checkout beside it that imports it, found rather than named, so
   what it reports is what nothing anywhere uses. It skips with no such checkout
-  beside it, which only a public clone has; the merge gate clones fun_time,
-  genau and origenerator beside the checkout for it, and its `consumer / suite`
-  job also runs genau's suite against your branch. A name whose caller the scan
+  beside it, which only a public clone has; the merge gate clones fun_time
+  and origenerator beside the checkout for it, and its `consumer / suite` job
+  runs the retired Genau repository's checks of itself, until that check comes
+  off the merge queue's required checks. A name whose caller the scan
   cannot read -- Python or a library calls it, or only an old checkout still
   reaches it -- goes in `vulture_whitelist.py` with who calls it, and leaves
   when its caller does.
