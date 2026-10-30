@@ -286,12 +286,12 @@ class HudLayout:
 
 
 def hud_layout(*, title_h: int, bands: int = 0, speed: bool = False,
-                 row_h: int = 0, device_h: int = 0, foot_h: int = 0) -> HudLayout:
+               row_h: int = 0, device_h: int = 0, foot_h: int = 0) -> HudLayout:
     stacked = stack(PAD, [title_h, blocks_height([CTRL_BTN] * (bands + speed), BLOCK_GAP),
                           row_h, device_h, foot_h, MAP_H])
     _title, bands_top, row_top, device_top, foot_top, map_top = stacked.tops
     return HudLayout(bands_top, bands_top + bands * CTRL_BAND_H, row_top, device_top,
-                       foot_top, map_top, stacked.end + PAD, stacked.dividers)
+                     foot_top, map_top, stacked.end + PAD, stacked.dividers)
 
 
 @dataclass(frozen=True)

@@ -255,7 +255,7 @@ class Funestra:
         return self._front.top_block()
 
     def _hud_for(self, channels: Channels, drawn_on,
-                   hud: Callable[[], HudModel | None] | None) -> HudOverlay | ConsoleOverlay | None:
+                 hud: Callable[[], HudModel | None] | None) -> HudOverlay | ConsoleOverlay | None:
         """The one HUD this window wears, which carries the item's row: the
         room's console on the main slot, the published HUD, or the window's
         own program's HUD where no room publishes one.  Each places a press
@@ -540,18 +540,18 @@ class Funestra:
         return 0 if row is None else row.track[1] - row.track[0]
 
     def _paint_hud(self, window: tuple[int, int], row: RowHud | None, colors,
-                     playback_speed: float) -> None:
+                   playback_speed: float) -> None:
         if self._hud is None:
             return
         if isinstance(self._hud, ConsoleOverlay):
             self._flash = self._name_flash.showing(self._top_block().video)
             self._hud.tick(playback_speed=playback_speed, window=window,
-                             item_row=row, heatmap=colors, flash=self._flash)
+                           item_row=row, heatmap=colors, flash=self._flash)
         else:
             video = self._front.top_block().video or self.playback.name_on_screen
             self._flash = self._name_flash.showing(video)
             self._hud.tick(video=video, playback_speed=playback_speed, window=window,
-                             item_row=row, heatmap=colors, flash=self._flash)
+                           item_row=row, heatmap=colors, flash=self._flash)
 
     def _paint_loop_frames(self, window: tuple[int, int]) -> None:
         """The loop's in and out frames, each hanging under the HUD below its

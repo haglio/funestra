@@ -125,8 +125,8 @@ def collapsed_button(funestra: str, corner: HudCorner = HudCorner.UPPER_LEFT, *,
 
 
 def collapsed_hud(funestra: str, corner: HudCorner = HudCorner.UPPER_LEFT, *,
-                    hover: tuple[int, int] | None = None, room_for_the_tooltip: bool = False,
-                    flash: str = "") -> tuple[np.ndarray, list[tuple[Rect, Button]]]:
+                  hover: tuple[int, int] | None = None, room_for_the_tooltip: bool = False,
+                  flash: str = "") -> tuple[np.ndarray, list[tuple[Rect, Button]]]:
     image, buttons = collapsed_button(funestra, corner, hover=hover,
                                       room_for_the_tooltip=room_for_the_tooltip, flash=flash)
     return to_bgra(image), buttons

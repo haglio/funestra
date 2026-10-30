@@ -740,8 +740,8 @@ def test_a_press_in_a_lower_corner_reaches_the_button_drawn_there(
         tmp_path: Path, hud: Path):
     engine = FakeEngine()
     overlay = _hud_at(tmp_path, hud, engine, hud_corner="lower_right",
-                        rows=[[{"command": "portrait_next", "glyph": "N",
-                                "tooltip": "Next", "width": 18}]])
+                      rows=[[{"command": "portrait_next", "glyph": "N",
+                              "tooltip": "Next", "width": 18}]])
     (left, top, _bgra), = engine.overlays.values()
     (bx, by, bw, bh), button = next(
         (rect, b) for rect, b in overlay.targets.buttons if b.command == "portrait_next")
@@ -756,7 +756,7 @@ def test_the_plus_names_itself_where_the_hud_floats_over_an_item(
     so a press beside a collapsed HUD still reaches the video under it."""
     engine = FakeEngine()
     overlay = _hud_at(tmp_path, hud, engine, hud_minimized=True,
-                        hud_corner="upper_left")
+                      hud_corner="upper_left")
     (left, top, resting), = [(x, y, bgra) for x, y, bgra in engine.overlays.values()]
 
     overlay.motion(left + BUTTON_SIZE_HUD // 2, top + BUTTON_SIZE_HUD // 2)
@@ -836,7 +836,7 @@ def test_a_hud_collapsed_by_a_press_on_its_minus_draws_the_plus_alone(
 def test_its_place_is_the_corner_the_room_put_it_in_and_whether_it_is_minimized(
         tmp_path: Path, hud: Path):
     overlay = _hud_at(tmp_path, hud, FakeEngine(), hud_minimized=True,
-                        hud_corner="upper_right")
+                      hud_corner="upper_right")
 
     assert overlay.hud_place == HudPlace("portrait", HudCorner.UPPER_RIGHT, MARGIN,
                                          minimized=True, inset=MINUS_INSET)
@@ -853,7 +853,7 @@ def test_a_hud_with_nothing_published_has_no_place(tmp_path: Path):
 def test_a_minimized_hud_is_the_plus_button_in_that_corner(tmp_path: Path, hud: Path):
     engine = FakeEngine()
     overlay = _hud_at(tmp_path, hud, engine, hud_minimized=True,
-                        hud_corner="upper_right")
+                      hud_corner="upper_right")
     (x, y, bgra), = engine.overlays.values()
     height, width = bgra.shape[:2]
 

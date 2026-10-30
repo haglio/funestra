@@ -292,7 +292,7 @@ class HudRenderer:
         device_w = max(self._osr2.width(osr2_line) if model.osr2 else 0, drive_w)
         foot_w, foot_h = model.foot.size() if model.foot is not None else (0, 0)
         width = hud_width(model.funestra, text_width(self._tiny, video),
-                            content_width=max(
+                          content_width=max(
                                 band_width,
                                 2 * PAD + device_w if device_w else 0,
                                 2 * PAD + foot_w if foot_w else 0,
