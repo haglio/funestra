@@ -7,6 +7,7 @@ checkout does; when no checkout does it any more, the test goes with the name.
 """
 from __future__ import annotations
 
+import inspect
 import json
 from dataclasses import replace
 from pathlib import Path
@@ -239,8 +240,16 @@ def test_a_funestra_takes_its_hud_under_the_old_keyword_and_answers_to_the_old_n
     funestra = Funestra(FakeEngine(), channels=Channels(), playlist=[PlaylistItem(tmp_path / "v0.mp4")],
                         panel=lambda: None)
 
-    assert (funestra.panel_edge, funestra.panel_minimized) == (
-        funestra.hud_edge, funestra.hud_minimized)
+    assert (funestra.panel_edge, funestra.panel_minimized, funestra._panel) == (
+        funestra.hud_edge, funestra.hud_minimized, funestra._hud)
+
+
+def test_a_funestras_signature_names_the_old_keywords_its_shells_still_hand_it():
+    signature = inspect.signature(Funestra)
+    window = inspect.signature(Funestra.on_window)
+
+    assert {"panel", "panel_surface"} <= signature.parameters.keys()
+    assert "panel" in window.parameters
 
 
 def test_the_surface_a_hud_is_drawn_on_answers_to_its_old_name():

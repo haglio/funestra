@@ -11,6 +11,7 @@ import functools
 import importlib
 import importlib.abc
 import importlib.util
+import inspect
 import sys
 from collections.abc import Callable, Mapping
 from types import ModuleType
@@ -72,25 +73,31 @@ def _under_new_names(kwargs: dict[str, Any], renamed: Mapping[str, str]) -> dict
     return kwargs
 
 
+def _taking_old_keywords(call: Callable[..., Any], renamed: Mapping[str, str]) -> Callable[..., Any]:
+    """*call* under its old keywords too, and saying so in its signature, which an
+    app's check of what its shells hand the shared code reads."""
+    @functools.wraps(call)
+    def called(*args, **kwargs):
+        return call(*args, **_under_new_names(kwargs, renamed))
+
+    signature = inspect.signature(call)
+    taken = signature.parameters
+    old = [inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, default=None)
+           for name, new in renamed.items() if new in taken and name not in taken]
+    kept = [p for p in taken.values() if p.kind is not inspect.Parameter.VAR_KEYWORD]
+    rest = [p for p in taken.values() if p.kind is inspect.Parameter.VAR_KEYWORD]
+    called.__signature__ = signature.replace(parameters=[*kept, *old, *rest])
+    return called
+
+
 def takes_old_keywords(renamed: Mapping[str, str]) -> Callable[[Any], Any]:
     """For a function an old checkout still calls with keywords since renamed."""
-    def wrap(call: Callable[..., Any]) -> Callable[..., Any]:
-        @functools.wraps(call)
-        def called(*args, **kwargs):
-            return call(*args, **_under_new_names(kwargs, renamed))
-        return called
-    return wrap
+    return lambda call: _taking_old_keywords(call, renamed)
 
 
 def answers_to_old_names(renamed: Mapping[str, str]) -> Callable[[type], type]:
     def wrap(cls: type) -> type:
-        init = cls.__init__
-
-        @functools.wraps(init)
-        def __init__(self, *args, **kwargs) -> None:
-            init(self, *args, **_under_new_names(kwargs, renamed))
-
-        cls.__init__ = __init__
+        cls.__init__ = _taking_old_keywords(cls.__init__, renamed)
         for old, new in renamed.items():
             setattr(cls, old, property(lambda self, new=new: getattr(self, new),
                                        lambda self, value, new=new: setattr(self, new, value)))
