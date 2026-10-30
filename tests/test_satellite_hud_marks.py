@@ -3,7 +3,7 @@
 The HUD is painted into the video frame with Pillow and there is no Qt in a
 satellite process, so every mark here used to be whatever Segoe UI Symbol
 carried -- a loop that was one arc where the family's is a circuit.  The
-panel's own marks come out of shared_ui's geometry now, through funestra's
+HUD's own marks come out of shared_ui's geometry now, through funestra's
 HUD chrome, and these hold them to it; the faces a source declares for its
 buttons are held to it where they are declared.
 """
@@ -46,12 +46,12 @@ def test_the_marks_the_hud_names_all_exist():
 
 def test_the_expand_arrow_is_drawn_rather_than_typed():
     # Typed it was U+2194, a hairline beside the solid arrowheads of the
-    # transport buttons it shares a panel with.
+    # transport buttons it shares a HUD with.
     assert _named()["expand"] == "expand_horizontal"
 
 
 def test_a_resting_button_draws_its_mark_full_strength():
-    # The satellite panels read as dim and half-disabled beside the main
+    # The satellite HUDs read as dim and half-disabled beside the main
     # Funestra's console, which draws its own resting marks at full strength.
     # Both had muted the mark AND the square; only the square should be muted.
     ink = HudRenderer("portrait")._button_square(

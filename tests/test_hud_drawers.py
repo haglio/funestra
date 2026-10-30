@@ -2,7 +2,7 @@
 
 Read from the checkouts beside this one that import it, the way the dead-code
 gate reads them: a package of one that imports a painter out of this one is
-drawing a HUD itself.  A painter is what turns a panel, a row or a chip into pixels; the
+drawing a HUD itself.  A painter is what turns a HUD, a row or a chip into pixels; the
 models, the verbs and the placements a source hands a Funestra are not.
 """
 from __future__ import annotations
@@ -23,7 +23,7 @@ WHOLE_MODULE = None
 
 HUD_PAINTERS: dict[str, set[str] | None] = {
     "satellite_hud_paint": WHOLE_MODULE,
-    "hud_panel": WHOLE_MODULE,
+    "hud": WHOLE_MODULE,
     "hud_row": WHOLE_MODULE,
     "hud_minimize": WHOLE_MODULE,
     "hud_corners": {"plus_bgra"},

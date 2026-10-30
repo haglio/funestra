@@ -1,10 +1,10 @@
-"""The console kept on the item: the panel the room publishes for the main slot,
+"""The console kept on the item: the HUD the room publishes for the main slot,
 read every frame, composited, pressed.
 
 The room's two files -- the console, and the motion whoever drives the OSR2
 publishes -- are replaced while this polls them, so a torn read keeps what was
-there: blanking either for a frame is a visible flicker on a panel redrawn at
-60fps.  The motion is read through the gate before the panel believes it, or
+there: blanking either for a frame is a visible flicker on a HUD redrawn at
+60fps.  The motion is read through the gate before the HUD believes it, or
 the pill and the drawn line describe the frame before this one.
 """
 from __future__ import annotations
@@ -37,7 +37,7 @@ class ConsoleOverlay:
         top_block: Callable[[], ModeHud],
         overlay_id: int = HUD_OVERLAY_ID,
         width: int | None = None,
-        minus_on_the_panel: bool = True,
+        minus_on_the_hud: bool = True,
         seek=None,
         seek_loop=None,
         set_volume=None,
@@ -55,13 +55,13 @@ class ConsoleOverlay:
         self._clock = clock
         self._top_block = top_block
         self.overlay_id = overlay_id
-        self._painter = ConsolePainter(width=width, minus_on_the_panel=minus_on_the_panel)
-        self._minus_on_the_panel = minus_on_the_panel
+        self._painter = ConsolePainter(width=width, minus_on_the_hud=minus_on_the_hud)
+        self._minus_on_the_hud = minus_on_the_hud
         self._console = ConsoleModel()
         self._drive: DriveHud | None = None
         self._shown = False
         self._origin = (0, 0)
-        self._panel_height = 0
+        self._hud_height = 0
         self._item_row: RowHud | None = None
         # The console draws the item's row, so it places a press on it too.
         self._row = RowPress(seek=seek, seek_loop=seek_loop, set_volume=set_volume,
@@ -95,7 +95,7 @@ class ConsoleOverlay:
         if self._readout is not None and self._console.has_osr2:
             self._readout.publish(drive, self._clock())
         self._item_row = item_row
-        if self.minimized and not self._minus_on_the_panel:
+        if self.minimized and not self._minus_on_the_hud:
             self.close()
             return
         console = with_playback_speed(self._console, playback_speed)
@@ -108,13 +108,13 @@ class ConsoleOverlay:
             flash=flash,
         ), item_row=item_row, heatmap=heatmap, host_controls=self._host_controls.drawing())
         self._origin = self._painter.place(window=window)
-        self._panel_height = bgra.shape[0]
+        self._hud_height = bgra.shape[0]
         self._engine.overlay(self.overlay_id, *self._origin, bgra)
         self._shown = True
 
     @property
     def row(self) -> RowLayout | None:
-        """Where the row landed in this panel and how it is laid out,
+        """Where the row landed in this HUD and how it is laid out,
         for a host measuring the track it is to fill."""
         return self._painter.row
 
@@ -123,7 +123,7 @@ class ConsoleOverlay:
         """The row's track in the window's coordinates, for a host hanging the
         loop's frames under it."""
         return track_on_screen(self._painter.row, origin=self._origin,
-                               panel_height=self._panel_height)
+                               hud_height=self._hud_height)
 
     def covers(self, x: int, y: int) -> bool:
         return self._painter.covers(x, y)

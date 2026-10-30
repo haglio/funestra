@@ -10,9 +10,9 @@ from shared_ui.spacing import BUTTON_GAP, BUTTON_GROUP_GAP
 from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL, SIZE_TINY
 
 from funestra.console import OSR2_PARKED, VALUE_W
+from funestra.hud import load_font
 from funestra.hud_button import Button
 from funestra.hud_marks import MINIMIZE_ICON, shared_mark
-from funestra.hud_panel import load_font
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.modes import Osr2State
 from funestra.satellite_hud import (
@@ -41,6 +41,7 @@ from funestra.satellite_hud import (
     filter_button_rects,
     hit_test_targets,
     hud_text,
+    hud_width,
     label_is_filtered,
     largest_size_that_fits,
     loop_button_rects,
@@ -48,7 +49,6 @@ from funestra.satellite_hud import (
     map_row_width,
     map_window,
     name_line,
-    panel_width,
     parse_hud,
     slot_rects,
     slot_width,
@@ -68,23 +68,23 @@ def _squares(x: int, y: int, buttons) -> list:
 # --- the title ---------------------------------------------------------
 
 
-def test_the_panel_is_as_wide_as_its_map_or_its_file_name_whichever_asks_for_more():
-    for_map = panel_width("portrait")
+def test_the_hud_is_as_wide_as_its_map_or_its_file_name_whichever_asks_for_more():
+    for_map = hud_width("portrait")
     room = for_map - TITLE_X - PAD
 
-    assert panel_width("portrait", name_width=room) == for_map
-    assert panel_width("portrait", name_width=room + 20) == for_map + 20
+    assert hud_width("portrait", name_width=room) == for_map
+    assert hud_width("portrait", name_width=room + 20) == for_map + 20
 
 
 def test_parse_hud_reads_whether_this_side_has_the_floor():
-    """Absent means idle: a satellite reading a panel written before the flag
+    """Absent means idle: a satellite reading a HUD written before the flag
     existed must not light its dot on a missing key."""
     assert parse_hud(json.dumps({"funestra": "portrait", "active": True})).active is True
     assert parse_hud(json.dumps({"funestra": "portrait", "active": False})).active is False
     assert parse_hud(json.dumps({"funestra": "portrait"})).active is False
 
 
-def test_parse_hud_reads_the_panel_fun_time_published():
+def test_parse_hud_reads_the_hud_fun_time_published():
     text = json.dumps({
         "funestra": "portrait",
         "locked": True,
@@ -112,13 +112,13 @@ def test_parse_hud_reads_the_panel_fun_time_published():
 
 
 def test_parse_hud_reads_whether_the_clip_is_a_favorite():
-    """What the dashboard's panel said by turning green — now a mark on the HUD,
+    """What the dashboard's HUD said by turning green — now a mark on the HUD,
     so it is read off the Funestra showing the clip rather than off a schematic."""
     assert parse_hud(json.dumps({"funestra": "portrait", "is_favorite": True})).is_favorite is True
     assert parse_hud(json.dumps({"funestra": "portrait"})).is_favorite is False
 
 
-def test_parse_hud_defaults_an_empty_panel():
+def test_parse_hud_defaults_an_empty_hud():
     """A satellite with nothing to map (no clip yet) still parses — it simply has
     no corner, so nothing is drawn."""
     model = parse_hud(json.dumps({"funestra": "landscape", "locked": False, "title": "Unlocked"}))
@@ -425,9 +425,9 @@ def test_act_is_filtered_picks_out_which_of_a_rows_acts_the_filter_named():
 
 
 def test_button_tooltip_names_each_button():
-    """Every glyph on the panel is cryptic on purpose, so each one names itself on
+    """Every glyph on the HUD is cryptic on purpose, so each one names itself on
     hover — a declared button by the tooltip its source gave it, the map's own
-    chrome and the favorite mark by the words the panel has for them."""
+    chrome and the favorite mark by the words the HUD has for them."""
     targets = HudTargets(
         click=[],
         loop=[((0, 0, 20, 20), "action"), ((30, 0, 20, 20), "seed")],
@@ -637,7 +637,7 @@ def test_clicking_a_declared_button_posts_what_it_declares():
             assert button.command.startswith(f"{funestra}_")
 
 
-def test_a_dimmed_button_posts_nothing_but_the_press_stays_on_the_panel():
+def test_a_dimmed_button_posts_nothing_but_the_press_stays_on_the_hud():
     """Dimmed is at the end of its range or with nothing to act on: the press
     it would post is one nothing would answer, so nothing goes out."""
     targets = _targets(buttons=_squares(0, 0, (
@@ -708,7 +708,7 @@ def test_a_funestra_less_command_is_posted_verbatim():
     assert HudClicks("portrait").press(targets, 65, 5, now=0.0) == "origenerator_activate"
 
 
-class TestThePublishedPanelIsWrittenWhereItIsRead:
+class TestThePublishedHudIsWrittenWhereItIsRead:
     """A source publishes a HudModel as text and the Funestra parses it back; the
     keys are spelled once, here, rather than by the writer in one repo and the
     reader in another."""
@@ -754,9 +754,9 @@ class TestThePublishedPanelIsWrittenWhereItIsRead:
 
         assert parse_hud(hud_text(model)) == model
 
-    def test_a_key_the_panel_no_longer_carries_is_passed_over(self):
+    def test_a_key_the_hud_no_longer_carries_is_passed_over(self):
         """The switches a Funestra's band was once lit from still come from a
-        publisher on an older release; the panel reads the same without them."""
+        publisher on an older release; the HUD reads the same without them."""
         parsed = parse_hud(json.dumps({
             "funestra": "portrait", "favorites_filter": True, "latest": False,
             "enhanced_filter": True, "satellites_mode": "video"}))
@@ -775,7 +775,7 @@ class TestThePublishedPanelIsWrittenWhereItIsRead:
     def test_a_source_from_before_the_rename_still_hands_the_title_over(self):
         assert HudModel(funestra="portrait", lock_label="Locked").title == "Locked"
 
-    def test_a_panel_with_no_clip_yet_round_trips_empty(self):
+    def test_a_hud_with_no_clip_yet_round_trips_empty(self):
         parsed = parse_hud(hud_text(HudModel(funestra="portrait")))
 
         assert parsed.corner is None
@@ -784,7 +784,7 @@ class TestThePublishedPanelIsWrittenWhereItIsRead:
 
     def test_the_text_is_the_json_a_funestra_already_reads(self):
         """A cell with nothing in its label carries no label key, and the playing
-        cell is a two-element list, exactly as the panel was published before the
+        cell is a two-element list, exactly as the HUD was published before the
         writer moved here -- a Funestra on either side of the move reads it."""
         raw = json.loads(hud_text(HudModel(
             funestra="portrait", corner=HudCell(path="C:/v/cur.mp4"),
@@ -795,7 +795,7 @@ class TestThePublishedPanelIsWrittenWhereItIsRead:
         assert raw["playing"] == ["action", 0]
 
 
-def test_the_published_panel_carries_where_it_sits_and_whether_it_is_minimized():
+def test_the_published_hud_carries_where_it_sits_and_whether_it_is_minimized():
     read_back = parse_hud(hud_text(HudModel(
         funestra="landscape", hud_corner=HudCorner.LOWER_RIGHT, hud_edge=HudEdge.RIGHT,
         hud_minimized=True)))
@@ -805,7 +805,7 @@ def test_the_published_panel_carries_where_it_sits_and_whether_it_is_minimized()
     assert read_back.hud_minimized is True
 
 
-def test_a_panel_published_without_a_corner_is_drawn_in_the_upper_left():
+def test_a_hud_published_without_a_corner_is_drawn_in_the_upper_left():
     read_back = parse_hud(json.dumps({"funestra": "portrait"}))
 
     assert read_back.hud_corner is HudCorner.UPPER_LEFT

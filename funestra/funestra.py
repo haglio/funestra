@@ -41,6 +41,7 @@ from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
 from .radio import Radio, RadioFile, Tuner, radio_file_for
+from .renamed import answers_to_old_names, old_name_getter, takes_old_keywords
 from .satellite_hud import HudModel
 from .scrubber import HeatmapStrip, LoopThumbCapture, loop_thumbnail_xys
 from .session_quit import quit_gesture
@@ -92,8 +93,8 @@ class User(Protocol):
 
 
 @runtime_checkable
-class PanelSurface(Protocol):
-    """A screen of the window's own that the panel is drawn on, beside the
+class HudSurface(Protocol):
+    """A screen of the window's own that the HUD is drawn on, beside the
     item rather than over it, held to one width or sized to its contents."""
 
     width: int | None
@@ -155,6 +156,8 @@ def osr2_line(channels: Channels) -> FunscriptTCodeDriver | None:
     return FunscriptTCodeDriver(UdpTCodeSink(channels.tcode_host, channels.tcode_port))
 
 
+@answers_to_old_names({"panel": "hud", "panel_surface": "hud_surface",
+                       "panel_edge": "hud_edge", "panel_minimized": "hud_minimized"})
 class Funestra:
     IN_FRAME_OVERLAY_ID = 8
     OUT_FRAME_OVERLAY_ID = 9
@@ -171,9 +174,9 @@ class Funestra:
         locked: bool = False,
         sound_is_the_rooms: bool = False,
         users: Users | None = None,
-        panel: Callable[[], HudModel | None] | None = None,
+        hud: Callable[[], HudModel | None] | None = None,
         muted: bool = True,
-        panel_surface: PanelSurface | None = None,
+        hud_surface: HudSurface | None = None,
         users_frames: UsersFrames | None = None,
         window_verbs: Callable[[str], bool] = _nothing_of_its_own,
         host_controls: HostControls | None = None,
@@ -186,7 +189,7 @@ class Funestra:
         self._volume_moved = on_volume_moved
         self._channels = channels
         self._tiles = tiles
-        self._panel_surface = panel_surface
+        self._hud_surface = hud_surface
         self._window_verbs = window_verbs
         self._host_controls = host_controls
         self._stop = threading.Event()
@@ -211,13 +214,13 @@ class Funestra:
             if sound_is_the_rooms else VolumeControl(engine, live=audible, muted=muted)
         )
         self._radio = radio if radio is not None else self._radio_beside(channels, audible)
-        self._panel = self._panel_for(channels, panel_surface or engine, panel)
+        self._hud = self._hud_for(channels, hud_surface or engine, hud)
         self._name_flash = NameFlash(clock)
         self._flash = ""
         self._users_frames = users_frames or FlickOverlay(engine)
-        self._corners = None if self._panel is None or panel_surface is not None else HudCorners(
-            self._panel, engine, post=self._where_the_panel_asks(channels))
-        self._pointer = Pointer(hud=self._panel, corners=self._corners,
+        self._corners = None if self._hud is None or hud_surface is not None else HudCorners(
+            self._hud, engine, post=self._where_the_hud_asks(channels))
+        self._pointer = Pointer(hud=self._hud, corners=self._corners,
                                 item=self._press_on_the_item(channels))
         self._controls = FunestraControls(
             self.playback, stop_event=self._stop,
@@ -251,20 +254,20 @@ class Funestra:
     def _top_block(self) -> ModeHud:
         return self._front.top_block()
 
-    def _panel_for(self, channels: Channels, drawn_on,
-                   panel: Callable[[], HudModel | None] | None) -> HudOverlay | ConsoleOverlay | None:
-        """The one panel this window wears, which carries the item's row: the
+    def _hud_for(self, channels: Channels, drawn_on,
+                   hud: Callable[[], HudModel | None] | None) -> HudOverlay | ConsoleOverlay | None:
+        """The one HUD this window wears, which carries the item's row: the
         room's console on the main slot, the published HUD, or the window's
-        own program's panel where no room publishes one.  Each places a press
+        own program's HUD where no room publishes one.  Each places a press
         on the row itself, so each is handed what it asks of the window when
         one lands.
         """
         if channels.dashboard_cmd is None:
-            if panel is None:
+            if hud is None:
                 return None
             return HudOverlay(
-                panel=panel, post=self.apply, engine=drawn_on,
-                minus_on_the_panel=self._panel_surface is None,
+                hud=hud, post=self.apply, engine=drawn_on,
+                minus_on_the_hud=self._hud_surface is None,
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
                 **self._volume_presses(),
             )
@@ -273,8 +276,8 @@ class Funestra:
                 console_file=channels.console, drive_file=channels.drive,
                 command_file=channels.dashboard_cmd, engine=drawn_on,
                 drive_gate=self._drive_gate, top_block=self._top_block,
-                width=None if self._panel_surface is None else self._panel_surface.width,
-                minus_on_the_panel=self._panel_surface is None,
+                width=None if self._hud_surface is None else self._hud_surface.width,
+                minus_on_the_hud=self._hud_surface is None,
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
                 **self._volume_presses(),
                 host_controls=self._host_controls,
@@ -285,8 +288,8 @@ class Funestra:
                 hud_file=channels.hud, command_file=channels.dashboard_cmd, engine=drawn_on,
                 drive_file=channels.drive, drive_gate=self._drive_gate,
                 readout=self._readout_for(channels), clock=self._clock,
-                over_the_video=self._panel_surface is None,
-                minus_on_the_panel=self._panel_surface is None,
+                over_the_video=self._hud_surface is None,
+                minus_on_the_hud=self._hud_surface is None,
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
                 **self._volume_presses(),
             )
@@ -327,25 +330,26 @@ class Funestra:
             frame.seek_loop(turn)
 
     @classmethod
+    @takes_old_keywords({"panel": "hud"})
     def on_window(cls, wid: int, *, channels: Channels, playlist: list[PlaylistItem],
                   audible: bool = True, tiles: bool = False, locked: bool = False,
                   sound_is_the_rooms: bool = False, users: Users | None = None,
-                  panel: Callable[[], HudModel | None] | None = None,
+                  hud: Callable[[], HudModel | None] | None = None,
                   muted: bool = True) -> Funestra:
         return cls(
             MpvEngine(wid, muted=muted, loop_file=False, prefetch=True, audio=audible),
             channels=channels, playlist=playlist, tcode=osr2_line(channels),
             audible=audible, tiles=tiles, locked=locked, sound_is_the_rooms=sound_is_the_rooms,
-            users=users, panel=panel, muted=muted,
+            users=users, hud=hud, muted=muted,
         )
 
-    def _where_the_panel_asks(self, channels: Channels) -> Callable[[str], None]:
+    def _where_the_hud_asks(self, channels: Channels) -> Callable[[str], None]:
         if channels.dashboard_cmd is not None:
             return partial(ask, channels.dashboard_cmd)
         return self.apply
 
     def _press_on_the_item(self, channels: Channels) -> Callable[[], None]:
-        """What a press off the panel does: in a session it asks the room to
+        """What a press off the HUD does: in a session it asks the room to
         pause everything; on a window with no room to ask, what runs on the
         window is asked instead."""
         if channels.dashboard_cmd is not None:
@@ -366,16 +370,16 @@ class Funestra:
         return self._showing
 
     @property
-    def panel_edge(self) -> HudEdge:
-        return HudEdge.LOWER if self._panel is None else self._panel.edge
+    def hud_edge(self) -> HudEdge:
+        return HudEdge.LOWER if self._hud is None else self._hud.edge
 
     @property
-    def panel_minimized(self) -> bool:
-        return self._panel is not None and self._panel.minimized
+    def hud_minimized(self) -> bool:
+        return self._hud is not None and self._hud.minimized
 
     @property
     def outside_buttons(self) -> OutsideButtons | None:
-        place = None if self._panel_surface is None else self._panel.hud_place
+        place = None if self._hud_surface is None else self._hud.hud_place
         return None if place is None else OutsideButtons(place.funestra, minimized=place.minimized,
                                                          flash=self._flash)
 
@@ -489,19 +493,19 @@ class Funestra:
         frame = self._front.own_frame()
         if frame is None:
             self._users_frames.hide()
-            self._paint_panel(window, self.item_row(), self._strip.colors, self.playback.speed)
-            if self._panel_surface is None:
+            self._paint_hud(window, self.item_row(), self._strip.colors, self.playback.speed)
+            if self._hud_surface is None:
                 self._paint_loop_frames(window)
         else:
             self._users_frames.show(frame, window)
-            self._paint_panel(window, frame_row(frame, self._volume.hud), None, 1.0)
+            self._paint_hud(window, frame_row(frame, self._volume.hud), None, 1.0)
             self._take_the_loop_frames_down()
         if self._corners is not None:
             self._corners.paint(window=window)
 
     def item_row(self) -> RowHud:
         """Where the item on screen has got to, how long it runs, how loud it
-        is and where its loop ends -- the row the panel carries at its foot.  An
+        is and where its loop ends -- the row the HUD carries at its foot.  An
         image runs for the time it holds the screen.  A video is timed
         against the stretch the track spans, which is the whole video until a
         loop being recorded zooms it in.
@@ -528,35 +532,35 @@ class Funestra:
         )
 
     def _track_width(self) -> int:
-        """How wide the panel drew the track last frame, which is what the
-        colors have to cover.  A panel is as wide as what is on it, so there is
+        """How wide the HUD drew the track last frame, which is what the
+        colors have to cover.  A HUD is as wide as what is on it, so there is
         no answer until one has been drawn: 0 leaves the first row plain.
         """
-        row = None if self._panel is None else self._panel.row
+        row = None if self._hud is None else self._hud.row
         return 0 if row is None else row.track[1] - row.track[0]
 
-    def _paint_panel(self, window: tuple[int, int], row: RowHud | None, colors,
+    def _paint_hud(self, window: tuple[int, int], row: RowHud | None, colors,
                      playback_speed: float) -> None:
-        if self._panel is None:
+        if self._hud is None:
             return
-        if isinstance(self._panel, ConsoleOverlay):
+        if isinstance(self._hud, ConsoleOverlay):
             self._flash = self._name_flash.showing(self._top_block().video)
-            self._panel.tick(playback_speed=playback_speed, window=window,
+            self._hud.tick(playback_speed=playback_speed, window=window,
                              item_row=row, heatmap=colors, flash=self._flash)
         else:
             video = self._front.top_block().video or self.playback.name_on_screen
             self._flash = self._name_flash.showing(video)
-            self._panel.tick(video=video, playback_speed=playback_speed, window=window,
+            self._hud.tick(video=video, playback_speed=playback_speed, window=window,
                              item_row=row, heatmap=colors, flash=self._flash)
 
     def _paint_loop_frames(self, window: tuple[int, int]) -> None:
-        """The loop's in and out frames, each hanging under the panel below its
+        """The loop's in and out frames, each hanging under the HUD below its
         own mark on the track."""
         playback, engine, frames = self.playback, self._engine, self._loop_frames
         which = frames.needed(playback.ab_loop, playback.position_ms)
         if which is not None:
             frames.set(which, engine.screenshot_bgra())
-        track = None if self._panel is None else self._panel.row_track
+        track = None if self._hud is None else self._hud.row_track
         if playback.ab_loop is None or track is None:
             self._take_the_loop_frames_down()
             return
@@ -590,3 +594,6 @@ def frame_row(frame: FlickFrame, volume) -> RowHud | None:
                   playhead=framed_playhead(frame.played, frame.count,
                                            frame.elapsed_ms, frame.interval_ms),
                   loop=(frame.played, frame.count))
+
+
+__getattr__ = old_name_getter("funestra.funestra", {"PanelSurface": "HudSurface"})

@@ -203,7 +203,7 @@ class ConsoleModel:
     # Whether what runs on the Main Funestra is holding what is on screen rather
     # than letting it move on -- Kino's video in kino mode, Genau's flick in
     # genau.  On is where both open, so it is the default here
-    # too: a console drawn before the first panel arrives must not show the lock
+    # too: a console drawn before the first HUD arrives must not show the lock
     # off when it is not.
     locked: bool = True
     # Which browse order the title names: newest-first ("Latest") when
@@ -242,10 +242,10 @@ class ConsoleModel:
 
 
 def read_console(path: Path) -> ConsoleModel | None:
-    """The console panel Fun Time published, or None when there is not a whole one.
+    """The console HUD Fun Time published, or None when there is not a whole one.
 
     None means "keep the console you have": Fun Time replaces this file while the
-    Funestra polls it, so a lost race must not empty the panel for a frame.
+    Funestra polls it, so a lost race must not empty the HUD for a frame.
     """
     try:
         text = path.read_text(encoding="utf-8")
@@ -284,7 +284,7 @@ def console_text(model: ConsoleModel) -> str:
 
 
 def parse_console(text: str) -> ConsoleModel | None:
-    """The panel *text* carries, or None when it is not a whole one."""
+    """The HUD *text* carries, or None when it is not a whole one."""
     try:
         raw = json.loads(text)
     except (ValueError, TypeError):
@@ -357,7 +357,7 @@ def one_row_width(row: list[Button]) -> int:
 
 
 def _row_width(rows: list[list[Button]]) -> int:
-    """How wide the widest row runs — what the panel has to be to hold them."""
+    """How wide the widest row runs — what the HUD has to be to hold them."""
     return max((one_row_width(row) for row in rows), default=0)
 
 

@@ -50,19 +50,19 @@ another application's internals to get it. By what it is:
   `genau_status`, `genau_notifier` and `genau_arrival` are its verbs, its tick,
   and what it publishes. A shell — Fun Time's Main Funestra, its headset —
   supplies the surface and the loop.
-- **the chrome and what is drawn on it** — `hud_panel`, `hud_marks`,
+- **the chrome and what is drawn on it** — `hud`, `hud_marks`,
   `geometry`, `timeline`, `volume`, `hud_status`, and then a model and a
   painter per HUD: `console` / `console_hud`, `drive_layout` / `drive_readout`,
   `satellite_hud` / `satellite_hud_paint`.  Two of those are sections rather
-  than panels — the drive readout and `hud_osr2`'s device line — because a host
+  than HUDs — the drive readout and `hud_osr2`'s device line — because a host
   that both browses a set and drives the OSR2 (Origenerator's shows) says all of
-  it on ONE panel rather than stacking a console under a lock HUD.
+  it on ONE HUD rather than stacking a console under a lock HUD.
 - **the Funestra** — the window: `funestra` builds one on a way of
   playing (`Funestra.on_window` opens mpv on a window handle; the base takes
   any engine with the same interface) and the files its User drives it through
   (`Channels`), plays what it is handed (`playback`, with `funestra_controls`
   answering the verbs, `funestra_status` publishing the status, `play_points`,
-  `seeking` and `scripted_device` under it), and draws the published panel —
+  `seeking` and `scripted_device` under it), and draws the published HUD —
   a satellite's (`hud_overlay`) or the main slot's console (`console_overlay`),
   whichever file it was given — the scrubber (`scrubber`: a scripted item's
   colors, the zoom while a stretch is marked, the frames of a running A/B
@@ -110,7 +110,7 @@ A Funestra answers the verbs it can (`TRASH` is a satellite's, `TOGGLE_LOCK` the
 main slot's) and refuses the rest on its log. It draws the buttons its source
 declared and nothing else, and posts each one's verb verbatim; a read-out
 whose number only the drawing host knows (the video's rate, a flick's pace)
-names it in `host_value` and the painter fills it in. A panel declaring no
+names it in `host_value` and the painter fills it in. A HUD declaring no
 buttons is drawn with none.
 
 An image is shown by libmpv itself: it holds the frame for the pace and then

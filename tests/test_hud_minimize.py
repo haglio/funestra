@@ -5,8 +5,8 @@ import numpy as np
 import pytest
 from shared_ui.type_scale import SIZE_TINY
 
+from funestra.hud import load_font, text_width
 from funestra.hud_minimize import BUTTON, FLASH_S, NameFlash, collapsed_button
-from funestra.hud_panel import load_font, text_width
 from funestra.hud_placement import HudCorner
 
 

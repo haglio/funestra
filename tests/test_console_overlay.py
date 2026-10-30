@@ -18,7 +18,7 @@ from funestra.console_hud import MARGIN
 from funestra.console_overlay import ConsoleOverlay
 from funestra.drive_readout import DriveHud, DrivePublisher, drive_text, read_drive
 from funestra.hud_corners import HudPlace
-from funestra.hud_minimize import collapsed_panel
+from funestra.hud_minimize import collapsed_hud
 from funestra.hud_overlay import HUD_OVERLAY_ID
 from funestra.hud_placement import HudCorner
 from funestra.modes import LengthMode, MainMode, Osr2State
@@ -95,7 +95,7 @@ class TestAConsoleWhoseHostDrawsTheOsr2:
 
         assert not (tmp_path / "readout.txt").exists()
 
-    def test_draws_its_own_panel_as_one_without_the_osr2(self, tmp_path):
+    def test_draws_its_own_hud_as_one_without_the_osr2(self, tmp_path):
         plain_dir, handing_dir = tmp_path / "plain", tmp_path / "handing"
         plain_dir.mkdir()
         handing_dir.mkdir()
@@ -114,7 +114,7 @@ class TestAConsoleWhoseHostDrawsTheOsr2:
 
 
 class TestReadingTheConsole:
-    def test_what_the_room_said_is_what_the_panel_shows(self, tmp_path):
+    def test_what_the_room_said_is_what_the_hud_shows(self, tmp_path):
         overlay, _engine, _gate = _overlay(tmp_path)
         _console_file(tmp_path / "console.json", GENAU_MODE)
 
@@ -122,7 +122,7 @@ class TestReadingTheConsole:
 
         assert overlay.console.main_mode == MainMode.GENAU
 
-    def test_a_torn_read_keeps_the_panel_that_was_there(self, tmp_path):
+    def test_a_torn_read_keeps_the_hud_that_was_there(self, tmp_path):
         overlay, _engine, _gate = _overlay(tmp_path)
         _console_file(tmp_path / "console.json", GENAU_MODE)
         _tick(overlay)
@@ -142,7 +142,7 @@ class TestReadingTheConsole:
 
         assert overlay.console.main_mode == MainMode.GENAU
 
-    def test_before_the_room_has_published_the_panel_is_drawn_at_rest(self, tmp_path):
+    def test_before_the_room_has_published_the_hud_is_drawn_at_rest(self, tmp_path):
         overlay, engine, _gate = _overlay(tmp_path)
 
         _tick(overlay)
@@ -222,7 +222,7 @@ class TestReadingTheMotion:
         assert gate.told_the_video_shows == [False]
 
 
-class TestWhatThePanelSays:
+class TestWhatTheHudSays:
     def test_the_top_block_is_asked_of_whoever_runs_on_the_funestra_each_frame(self, tmp_path):
         said = {"video": "one"}
         overlay, engine, _gate = _overlay(
@@ -236,7 +236,7 @@ class TestWhatThePanelSays:
 
         assert engine.overlays[HUD_OVERLAY_ID][2] is not first
 
-    def test_the_funestras_own_rate_is_folded_into_the_panel(self, tmp_path):
+    def test_the_funestras_own_rate_is_folded_into_the_hud(self, tmp_path):
         overlay, engine, _gate = _overlay(tmp_path)
         _console_file(tmp_path / "console.json")
 
@@ -246,7 +246,7 @@ class TestWhatThePanelSays:
 
         assert engine.overlays[HUD_OVERLAY_ID][2] is not first
 
-    def test_an_unchanged_panel_is_not_repainted(self, tmp_path):
+    def test_an_unchanged_hud_is_not_repainted(self, tmp_path):
         overlay, engine, _gate = _overlay(tmp_path)
         _console_file(tmp_path / "console.json")
 
@@ -272,13 +272,13 @@ def _published(tmp_path: Path, corner: HudCorner = HudCorner.UPPER_LEFT, *, host
 
 
 class TestWhereTheConsoleIsDrawn:
-    def test_the_panel_is_drawn_in_the_corner_the_room_moved_it_to(self, tmp_path):
+    def test_the_hud_is_drawn_in_the_corner_the_room_moved_it_to(self, tmp_path):
         overlay = _published(tmp_path, HudCorner.LOWER_RIGHT)
         engine = overlay._engine
-        panel_w, panel_h = overlay._painter._image.size
+        hud_w, hud_h = overlay._painter._image.size
 
         x, y, _bgra = engine.overlays[HUD_OVERLAY_ID]
-        assert (x, y) == (WINDOW[0] - MARGIN - panel_w, WINDOW[1] - MARGIN - panel_h)
+        assert (x, y) == (WINDOW[0] - MARGIN - hud_w, WINDOW[1] - MARGIN - hud_h)
 
     def test_its_place_is_the_corner_the_room_put_it_in_and_whether_it_is_minimized(
             self, tmp_path):
@@ -287,7 +287,7 @@ class TestWhereTheConsoleIsDrawn:
         assert overlay.hud_place == HudPlace("main", HudCorner.LOWER_LEFT, MARGIN,
                                              minimized=True, inset=(PAD, PAD))
 
-    def test_closing_takes_the_panel_down(self, tmp_path):
+    def test_closing_takes_the_hud_down(self, tmp_path):
         overlay = _published(tmp_path)
 
         overlay.close()
@@ -410,7 +410,7 @@ class TestANameFlashingWhileMinimized:
         overlay.tick(playback_speed=1.0, window=WINDOW, flash="scene one")
 
         bgra = overlay._engine.overlays[HUD_OVERLAY_ID][2]
-        assert np.array_equal(bgra, collapsed_panel("main", flash="scene one")[0])
+        assert np.array_equal(bgra, collapsed_hud("main", flash="scene one")[0])
 
     def test_the_plus_is_alone_again_once_it_is_over(self, tmp_path):
         overlay = _published(tmp_path, hud_minimized=True)
@@ -489,7 +489,7 @@ def test_the_minus_sits_where_the_plus_of_the_minimized_console_sits(tmp_path, c
 
 
 @pytest.mark.parametrize("corner", list(HudCorner))
-def test_a_press_lands_on_the_panel_wherever_the_room_put_it(tmp_path, corner):
+def test_a_press_lands_on_the_hud_wherever_the_room_put_it(tmp_path, corner):
     overlay = _published(tmp_path, corner)
     left, top, _bgra = overlay._engine.overlays[HUD_OVERLAY_ID]
     (x, y, w, h), button = overlay._painter.buttons[0]

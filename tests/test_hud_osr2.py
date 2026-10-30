@@ -1,4 +1,4 @@
-"""The device's own line, drawn the same wherever a panel says who has the OSR2."""
+"""The device's own line, drawn the same wherever a HUD says who has the OSR2."""
 from __future__ import annotations
 
 import numpy as np
@@ -7,6 +7,7 @@ from shared_ui.palette import BLUE, GREEN, TEXT_MUTED
 
 from funestra.console import OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED
 from funestra.drive_readout import DRIVEN_BY_NOTHING, DriveHud, track_command
+from funestra.hud import Hud
 from funestra.hud_button import Button
 from funestra.hud_osr2 import (
     BUFFER,
@@ -20,19 +21,18 @@ from funestra.hud_osr2 import (
     driving_at_the_playhead,
     state_for,
 )
-from funestra.hud_panel import HudPanel
 from funestra.modes import Osr2State
 
 
-def _drawn(line: Osr2Line) -> tuple[HudPanel, list]:
+def _drawn(line: Osr2Line) -> tuple[Hud, list]:
     section = Osr2Section()
-    panel = HudPanel(section.width(line) + 20, HEIGHT + 20)
-    placed = section.draw(panel.image, panel.draw, 10, 10, line)
-    return panel, placed
+    hud = Hud(section.width(line) + 20, HEIGHT + 20)
+    placed = section.draw(hud.image, hud.draw, 10, 10, line)
+    return hud, placed
 
 
-def _has(panel: HudPanel, color) -> bool:
-    pixels = np.array(panel.image.convert("RGB"))
+def _has(hud: Hud, color) -> bool:
+    pixels = np.array(hud.image.convert("RGB"))
     return bool((pixels == np.array(color)).all(axis=-1).any())
 
 
@@ -42,30 +42,30 @@ class TestTheLine:
         assert LABELS[Osr2State.ROBOT_HAND] == "Robot Hand"
 
     def test_a_funscript_driving_is_said_in_green(self):
-        panel, _ = _drawn(Osr2Line(state=Osr2State.FUNSCRIPT))
-        assert _has(panel, GREEN)
+        hud, _ = _drawn(Osr2Line(state=Osr2State.FUNSCRIPT))
+        assert _has(hud, GREEN)
 
     def test_the_motion_driving_is_said_in_blue(self):
-        panel, _ = _drawn(Osr2Line(state=Osr2State.ROBOT_HAND))
-        assert _has(panel, BLUE)
+        hud, _ = _drawn(Osr2Line(state=Osr2State.ROBOT_HAND))
+        assert _has(hud, BLUE)
 
     def test_nothing_driving_is_said_in_the_muted_gray(self):
-        panel, _ = _drawn(Osr2Line(state=Osr2State.OFF))
-        assert _has(panel, TEXT_MUTED)
+        hud, _ = _drawn(Osr2Line(state=Osr2State.OFF))
+        assert _has(hud, TEXT_MUTED)
 
     @pytest.mark.parametrize(("state", "word"), [(Osr2State.UNPLUGGED, "Unplugged"),
                                                  (Osr2State.NO_ANSWER, "No answer")])
     def test_an_osr2_the_computer_cannot_hear_is_named_for_why_in_the_gray_of_off(
         self, state, word,
     ):
-        panel, _ = _drawn(Osr2Line(state=state))
+        hud, _ = _drawn(Osr2Line(state=state))
         assert LABELS[state] == word
-        assert _has(panel, TEXT_MUTED)
+        assert _has(hud, TEXT_MUTED)
 
     def test_the_word_starts_in_one_place_whatever_it_says(self):
         def where_it_starts(state: str) -> int:
-            panel, _ = _drawn(Osr2Line(state=state))
-            pixels = np.array(panel.image.convert("RGB"))
+            hud, _ = _drawn(Osr2Line(state=state))
+            pixels = np.array(hud.image.convert("RGB"))
             inked = (pixels == np.array(COLORS[state])).all(axis=-1).any(axis=0)
             return int(np.flatnonzero(inked)[0])
 
@@ -82,7 +82,7 @@ class TestTheControlsOnIt:
 
     def test_each_control_comes_back_as_a_target_where_it_was_drawn(self):
         park = _park()
-        _panel, placed = _drawn(Osr2Line(state=Osr2State.OFF, controls=(park,)))
+        _hud, placed = _drawn(Osr2Line(state=Osr2State.OFF, controls=(park,)))
         assert [button for _rect, button in placed] == [park]
         (x, y, w, h), _button = placed[0]
         assert (x, y, w, h) == (10, 10, park.width, HEIGHT)
@@ -119,10 +119,10 @@ class TestTheMaxIntensityOnIt:
     def test_the_slider_is_filled_in_blue_as_far_as_the_max_intensity_goes(self):
         def filled(max_intensity: int) -> int:
             line = Osr2Line(state=Osr2State.ROBOT_HAND, max_intensity=max_intensity)
-            panel, _ = _drawn(line)
+            hud, _ = _drawn(line)
             (band,) = Osr2Section().bands(10, 10, line)
             x, y, w, h = band.rect
-            pixels = np.array(panel.image.convert("RGB"))[y:y + h, x:x + w]
+            pixels = np.array(hud.image.convert("RGB"))[y:y + h, x:x + w]
             return int((pixels == np.array(BLUE)).all(axis=-1).sum())
 
         assert 0 < filled(20) < filled(80)
@@ -130,17 +130,17 @@ class TestTheMaxIntensityOnIt:
     def test_the_slider_says_its_level_as_a_number_beside_it(self):
         def left_of_the_bar(max_intensity: int) -> np.ndarray:
             line = Osr2Line(state=Osr2State.ROBOT_HAND, max_intensity=max_intensity)
-            panel, _ = _drawn(line)
+            hud, _ = _drawn(line)
             (band,) = Osr2Section().bands(10, 10, line)
             x, y, _w, h = band.rect
-            return np.array(panel.image.convert("RGB"))[y:y + h, :x]
+            return np.array(hud.image.convert("RGB"))[y:y + h, :x]
 
         assert (left_of_the_bar(23) > 200).all(axis=-1).any()
         assert not np.array_equal(left_of_the_bar(23), left_of_the_bar(87))
 
     def test_the_slider_names_itself_where_it_was_drawn(self):
         line = Osr2Line(state=Osr2State.ROBOT_HAND, max_intensity=60)
-        _panel, placed = _drawn(line)
+        _hud, placed = _drawn(line)
         (band,) = Osr2Section().bands(10, 10, line)
 
         assert (band.rect, Button("", "", MAX_INTENSITY_TIP)) in placed
@@ -189,10 +189,10 @@ class TestWhoTheLineNames:
     def test_a_retracted_switch_keeps_its_own_word_through_a_paused_room(self):
         assert state_for(Osr2State.ROBOT_HAND, OSR2_RETRACTED, paused=True) == OSR2_RETRACTED
 
-    def test_a_panel_that_knows_better_says_who_is_driving(self):
+    def test_a_hud_that_knows_better_says_who_is_driving(self):
         assert state_for(Osr2State.ROBOT_HAND, "", driving=Osr2State.FUNSCRIPT) == Osr2State.FUNSCRIPT
 
-    def test_a_switched_off_device_beats_whoever_a_panel_drew_driving(self):
+    def test_a_switched_off_device_beats_whoever_a_hud_drew_driving(self):
         assert state_for(Osr2State.OFF, "", driving=Osr2State.FUNSCRIPT) == Osr2State.OFF
 
     @pytest.mark.parametrize("unheard", [Osr2State.UNPLUGGED, Osr2State.NO_ANSWER])

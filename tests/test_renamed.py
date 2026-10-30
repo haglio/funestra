@@ -14,17 +14,19 @@ from pathlib import Path
 import pytest
 from funestra_fakes import FakeEngine
 
-from funestra import cruise_control, flick_folder, mpv_engine, playhead, status
+from funestra import cruise_control, flick_folder, hud, mpv_engine, playhead, status
 from funestra.console import OSR2_DRIVING, ConsoleModel, aim_row, console_text, parse_console
 from funestra.flag import Flag
 from funestra.flick_cache import FlickCacheStore
 from funestra.flick_overlay import FlickFrame
 from funestra.flick_renderer import FlickRenderController
+from funestra.funestra import Channels, Funestra, HudSurface
 from funestra.genau_controls import GenauControls, apply_runtime_command
 from funestra.genau_notifier import GenauNotifier
 from funestra.genau_status import build_status_text
 from funestra.hud_overlay import HudOverlay
 from funestra.playback import Playback
+from funestra.playlist import PlaylistItem
 from funestra.renamed import method_of
 from funestra.render_engine import MpvRenderEngine
 from funestra.robot_hand import RobotHandState
@@ -199,21 +201,21 @@ def test_the_status_record_answers_to_its_old_name():
     assert status.PlayerStatus is status.FunestraStatus
 
 
-def test_a_panel_takes_its_funestra_under_the_old_keyword_and_answers_to_it():
+def test_a_hud_takes_its_funestra_under_the_old_keyword_and_answers_to_it():
     model = HudModel(player="landscape")
 
     assert (model.funestra, model.player) == ("landscape", "landscape")
 
 
-def test_a_panel_replaced_by_the_old_keyword_changes_its_funestra():
+def test_a_hud_replaced_by_the_old_keyword_changes_its_funestra():
     assert replace(HudModel(funestra="portrait"), player="landscape").funestra == "landscape"
 
 
-def test_a_panel_written_before_the_rename_still_reads():
+def test_a_hud_written_before_the_rename_still_reads():
     assert parse_hud('{"player": "landscape"}').funestra == "landscape"
 
 
-def test_the_published_panel_names_its_funestra_under_both_keys():
+def test_the_published_hud_names_its_funestra_under_both_keys():
     raw = json.loads(hud_text(HudModel(funestra="portrait")))
 
     assert (raw["funestra"], raw["player"]) == ("portrait", "portrait")
@@ -226,3 +228,22 @@ def test_a_console_takes_and_publishes_its_funestra_the_old_way_too():
     assert json.loads(console_text(model))["player"] == "main"
     assert parse_console('{"main_mode": "kino", "player": "main"}').funestra == "main"
 
+
+def test_the_huds_old_module_path_gives_what_the_hud_module_has():
+    from funestra.hud_panel import HudPanel, load_font  # noqa: PLC0415
+
+    assert (HudPanel, load_font) == (hud.Hud, hud.load_font)
+
+
+def test_a_funestra_takes_its_hud_under_the_old_keyword_and_answers_to_the_old_names(tmp_path):
+    funestra = Funestra(FakeEngine(), channels=Channels(), playlist=[PlaylistItem(tmp_path / "v0.mp4")],
+                        panel=lambda: None)
+
+    assert (funestra.panel_edge, funestra.panel_minimized) == (
+        funestra.hud_edge, funestra.hud_minimized)
+
+
+def test_the_surface_a_hud_is_drawn_on_answers_to_its_old_name():
+    from funestra.funestra import PanelSurface  # noqa: PLC0415
+
+    assert PanelSurface is HudSurface

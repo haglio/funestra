@@ -43,6 +43,11 @@ from funestra.drive_readout import (
 )
 from funestra.geometry import Rect
 from funestra.host_controls import HostControlsSection
+from funestra.hud import (
+    TOOLTIP_PAD,
+    load_font,
+    text_width,
+)
 from funestra.hud_button import Button
 from funestra.hud_corners import HudPlace
 from funestra.hud_marks import BROKER_ICON, shared_mark
@@ -50,11 +55,6 @@ from funestra.hud_minimize import ROOM as MINUS_ROOM
 from funestra.hud_minimize import minimize_command
 from funestra.hud_osr2 import COLORS as _OSR2_COLORS
 from funestra.hud_osr2 import LABELS as _OSR2_LABELS
-from funestra.hud_panel import (
-    TOOLTIP_PAD,
-    load_font,
-    text_width,
-)
 from funestra.hud_placement import HudCorner
 from funestra.hud_row import SCRUBBER, RowHud, row_part
 from funestra.modes import LengthMode, MainMode, Osr2State
@@ -271,11 +271,11 @@ class TestPainter:
 
         assert held >= natural
 
-    def test_a_tooltip_longer_than_the_panel_is_wide_stays_on_the_panel(self):
+    def test_a_tooltip_longer_than_the_hud_is_wide_stays_on_the_hud(self):
         """The widest tooltip on the console wants to be wider than the console
         itself, so it was drawn straight off the right edge and lost its tail.
         Fitting it is funestra's job — this guards that the console hands it the
-        panel's own bounds, since anything wider puts the tooltip back over the edge."""
+        HUD's own bounds, since anything wider puts the tooltip back over the edge."""
         painter = ConsolePainter()
         hud = ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO, locked=False,
                                               rows=console_rows()))
@@ -323,11 +323,11 @@ class TestPainter:
         assert bright_rows.min() < PAD + body_h          # the status is on top …
         assert muted_rows.max() > bright_rows.min()      # … the file name below it
 
-    def test_a_longer_file_name_widens_the_panel(self):
+    def test_a_longer_file_name_widens_the_hud(self):
         """It is drawn, not truncated, so the slab grows to hold it.
 
         Both names have to outrun the button row for this to be measuring the
-        name at all: the panel is the widest of its parts, so a name shorter than
+        name at all: the HUD is the widest of its parts, so a name shorter than
         the buttons is held by the buttons and every such name gives one width.
         """
         narrow = ConsolePainter().bgra(ConsoleHud(modes=ModeHud(
@@ -337,7 +337,7 @@ class TestPainter:
 
         assert wide.shape[1] > narrow.shape[1]
 
-    def test_the_readout_grows_the_panel(self):
+    def test_the_readout_grows_the_hud(self):
         painter = ConsolePainter()
         plain = painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO))).shape[0]
         driving = ConsolePainter().bgra(
@@ -422,7 +422,7 @@ class TestPainter:
         assert not green.any()
 
     def test_an_ordinary_toggle_that_is_on_fills_the_familys_blue(self):
-        """One color for "this is in force", across every panel in the room.  The
+        """One color for "this is in force", across every HUD in the room.  The
         active gray it used to take was a step up from the resting ground and
         little more — at a glance a lit control and a dark one were the same
         button."""
@@ -555,7 +555,7 @@ class TestPainter:
         assert tuple(shades[counts.argmax()]) == amber                  # the fill
 
     def test_the_slab_is_the_canvas_gray_unless_a_host_asks_for_another(self):
-        """Floating over a video the panel reads against the item beneath it,
+        """Floating over a video the HUD reads against the item beneath it,
         so it is the canvas color. A host drawing it on its own chrome has no
         item beneath it — on a window painted that very gray the slab is
         invisible and only its border shows — so it says which gray it wants."""
@@ -571,7 +571,7 @@ class TestPainter:
         assert asked[3, 3].min() > default[3, 3].min()
 
     def test_the_ground_is_part_of_what_the_repaint_cache_compares(self):
-        """Everything else on this panel is; a ground that slipped past it would
+        """Everything else on this HUD is; a ground that slipped past it would
         leave the old slab on screen until something else moved."""
         painter = ConsolePainter()
         first = _rgb(painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU))))[3, 3]
@@ -581,7 +581,7 @@ class TestPainter:
         assert tuple(first) != tuple(second)
 
     def test_a_lit_marks_ink_stays_white_over_a_colored_fill(self):
-        """The Dash's mic keeps its white glyph while the panel under it goes
+        """The Dash's mic keeps its white glyph while the HUD under it goes
         blue.  A record button whose circle went dark while it recorded read as a
         different button rather than as the same one recording."""
         painter = ConsolePainter()
@@ -611,14 +611,14 @@ class TestPresses:
     def test_a_press_that_missed_every_button_carries_nothing(self):
         assert self._painted().press_at(2000, 2000) == ""
 
-    def test_a_dimmed_button_posts_nothing_but_the_press_is_still_on_the_panel(self):
+    def test_a_dimmed_button_posts_nothing_but_the_press_is_still_on_the_hud(self):
         painter = self._painted()
         over = _over(painter, "main_player_cycle_version")
 
         assert painter.press_at(*over) == ""
         assert painter.covers(*over)
 
-    def test_the_panel_under_a_press_ends_where_its_painting_does(self):
+    def test_the_hud_under_a_press_ends_where_its_painting_does(self):
         painter = ConsolePainter()
         height, width = painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO))).shape[:2]
         left, top = hud_xy()
@@ -629,12 +629,12 @@ class TestPresses:
         assert not painter.covers(left, top + height)
         assert not painter.covers(left - 1, top - 1)
 
-    def test_nothing_is_under_a_press_before_the_panel_is_first_painted(self):
+    def test_nothing_is_under_a_press_before_the_hud_is_first_painted(self):
         left, top = hud_xy()
 
         assert not ConsolePainter().covers(left, top)
 
-    def test_the_panels_own_corner_is_not_read_as_the_windows(self):
+    def test_the_huds_own_corner_is_not_read_as_the_windows(self):
         painter = self._painted()
         bx, by, _bw, _bh = _rect_of(painter, "main_prev")
 
@@ -659,7 +659,7 @@ class TestPresses:
         assert painter.press_at(*over) == ""
         assert all(b.dim for _rect, b in painter.buttons if b.command.startswith("genau_amplitude"))
 
-    def test_the_cursor_over_a_button_is_reported_in_panel_coordinates(self):
+    def test_the_cursor_over_a_button_is_reported_in_hud_coordinates(self):
         painter = self._painted()
         mx, my = _over(painter, "main_next")
         left, top = hud_xy()
@@ -692,7 +692,7 @@ class TestThePointer:
         assert (self._ground(under_the_pointer, painter, "main_next")
                 > self._ground(at_rest, painter, "main_next"))
 
-    def test_the_pointer_moving_off_the_panel_puts_the_button_back(self):
+    def test_the_pointer_moving_off_the_hud_puts_the_button_back(self):
         painter = ConsolePainter()
         at_rest = _rgb(painter.bgra(self._hud()))
         painter.motion(*_over(painter, "main_next"))
@@ -712,7 +712,7 @@ class TestThePointer:
 
         assert (_rgb(painter.bgra(self._hud())) == at_rest).all()
 
-    def test_a_panel_sent_to_another_corner_forgets_where_the_pointer_was(self):
+    def test_a_hud_sent_to_another_corner_forgets_where_the_pointer_was(self):
         painter = ConsolePainter()
         painter.bgra(self._hud())
         painter.motion(*_over(painter, "main_next"))
@@ -850,7 +850,7 @@ class TestDrags:
 
 class TestDeclaredRows:
     def test_the_rows_a_source_declares_are_what_is_drawn(self):
-        """A panel carrying its own buttons is drawn from them and nothing else:
+        """A HUD carrying its own buttons is drawn from them and nothing else:
         the rows in their order, then the OSR2 line's controls, each a hit
         target posting what the source said."""
         painter = ConsolePainter()
@@ -876,8 +876,8 @@ class TestDeclaredRows:
                 < _button_rect(painter, "robot_hand_park")[1]
                 < _button_rect(painter, "broker_panel")[1])
 
-    def test_a_panel_that_declares_no_buttons_draws_none(self):
-        """The buttons are the source's to declare; a panel naming none is the
+    def test_a_hud_that_declares_no_buttons_draws_none(self):
+        """The buttons are the source's to declare; a HUD naming none is the
         title and the OSR2 line, with no row held open for buttons nobody
         asked for."""
         painter = ConsolePainter()
@@ -948,7 +948,7 @@ class TestPlaybackSpeed:
 
 
 class TestPlacement:
-    def test_the_panel_sits_in_the_top_left_corner(self):
+    def test_the_hud_sits_in_the_top_left_corner(self):
         assert hud_xy() == (8, 8)
 
 
@@ -969,7 +969,7 @@ class TestTraceSources:
 
     @staticmethod
     def _drawn(mode: str, osr2: str, drive: DriveHud | None = None):
-        """The painted panel and the colors in it, for a line's own color."""
+        """The painted HUD and the colors in it, for a line's own color."""
         painter = ConsolePainter()
         rgb = _rgb(painter.bgra(ConsoleHud(
             console=ConsoleModel(main_mode=mode, osr2=osr2),
@@ -1011,9 +1011,9 @@ class TestTraceSources:
         assert painter._osr2_state(ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.AUTO)) == "auto"
         assert MAGENTA in colors
 
-    def test_the_panel_keeps_its_size_whoever_has_the_device(self):
+    def test_the_hud_keeps_its_size_whoever_has_the_device(self):
         """The controls dim for a funscript's turn rather than leave: removing
-        them resized the panel, so the trace shifted at every handoff and the
+        them resized the HUD, so the trace shifted at every handoff and the
         position marker jumped with it."""
         genau_turn = self._painted(MainMode.KINO, Osr2State.ROBOT_HAND)
         funscript_turn = self._painted(MainMode.KINO, Osr2State.FUNSCRIPT)
@@ -1022,7 +1022,7 @@ class TestTraceSources:
 
 
 class TestEveryConsolePaints:
-    """One paint per (mode x driver) with a composed trace on the panel.
+    """One paint per (mode x driver) with a composed trace on the HUD.
 
     The pill's Buffer state shipped referencing a name this module never
     imported, and no test painted a kino-mode console with a composed drive — so
@@ -1137,13 +1137,13 @@ class TestAPausedRoom:
                             paused=paused)
 
     def test_the_line_reads_as_a_parked_ones_does(self):
-        def panel(control: str, *, paused: bool) -> np.ndarray:
+        def hud(control: str, *, paused: bool) -> np.ndarray:
             return ConsolePainter().bgra(ConsoleHud(console=self._console(control, paused=paused)))
 
-        paused = panel(OSR2_DRIVING, paused=True)
+        paused = hud(OSR2_DRIVING, paused=True)
 
-        assert np.array_equal(paused, panel(OSR2_PARKED, paused=False))
-        assert not np.array_equal(paused, panel(OSR2_DRIVING, paused=False))
+        assert np.array_equal(paused, hud(OSR2_PARKED, paused=False))
+        assert not np.array_equal(paused, hud(OSR2_DRIVING, paused=False))
 
     @pytest.mark.parametrize("mode", list(MainMode))
     def test_the_readouts_speed_amp_and_center_buttons_take_presses(self, mode):
@@ -1473,7 +1473,7 @@ class TestTheRowTheConsoleCarriesForItsVideo:
 
     def test_the_clip_s_funscript_colors_fill_that_track(self):
         """The Main Funestra laid its heatmap along the lower edge of the video;
-        on the console it is the track's own fill, as it is on a show's panel."""
+        on the console it is the track's own fill, as it is on a show's HUD."""
         painter = ConsolePainter()
         row = RowHud(position_ms=0, duration_ms=60_000)
         plain = painter.rgba(self._hud(), item_row=row)[0]
@@ -1493,7 +1493,7 @@ class TestTheRowTheConsoleCarriesForItsVideo:
         painter.rgba(self._hud())
         assert painter.row_rect is None
 
-    def test_it_lands_at_the_foot_of_the_panel(self):
+    def test_it_lands_at_the_foot_of_the_hud(self):
         painter = ConsolePainter()
         row = RowHud(position_ms=30_000, duration_ms=60_000, volume=VolumeHud(volume=40))
 
@@ -1508,14 +1508,14 @@ class TestTheRowTheConsoleCarriesForItsVideo:
 
 class TestTheHostsControls:
     """A list and a bar only one host has -- the headset's projection list and
-    Angle bar -- drawn at the console's foot, inside the one panel."""
+    Angle bar -- drawn at the console's foot, inside the one HUD."""
 
     @staticmethod
     def _hud() -> ConsoleHud:
         return ConsoleHud(modes=ModeHud(video="scene one"),
                           console=ConsoleModel(main_mode=MainMode.KINO, locked=False))
 
-    def test_the_panel_grows_by_the_room_they_take(self):
+    def test_the_hud_grows_by_the_room_they_take(self):
         without = ConsolePainter().rgba(self._hud())[1][1]
 
         with_them = ConsolePainter().rgba(self._hud(), host_controls=a_hud())[1][1]
@@ -1534,7 +1534,7 @@ class TestTheHostsControls:
         assert painter.row.rect[1] + painter.row.rect[3] <= y
         assert all(rect[1] + rect[3] <= y for rect, _button in painter.buttons)
 
-    def test_controls_wider_than_the_panel_widen_it_rather_than_being_cut(self):
+    def test_controls_wider_than_the_hud_widen_it_rather_than_being_cut(self):
         wide = replace(a_hud(), choices=("A name far too long for a console held to its width",))
         painter = ConsolePainter(width=380)
 
@@ -1562,7 +1562,7 @@ class TestTheHostsControls:
 
 
 def _declared(painter) -> list:
-    """The buttons the source declared, without the panel's own minimize."""
+    """The buttons the source declared, without the HUD's own minimize."""
     return [(rect, button) for rect, button in painter.buttons
             if button.command != minimize_command(button.command.split("_")[0])]
 
@@ -1574,7 +1574,7 @@ def _button_rect(painter, command: str) -> Rect:
 
 
 class TestWhereTheConsoleSits:
-    """The corner the room moved this panel to, and what that moves with it."""
+    """The corner the room moved this HUD to, and what that moves with it."""
 
     @staticmethod
     def _hud(corner, **console) -> ConsoleHud:
@@ -1593,7 +1593,7 @@ class TestWhereTheConsoleSits:
         """Each row of the source's own buttons, by its top: where it starts and ends.
 
         The device line's controls sit inside that line rather than along the
-        panel's edge, so they are not one of these rows."""
+        HUD's edge, so they are not one of these rows."""
         on_the_line = {button.command for button in osr2_controls(broker_running=True)}
         bands: dict[int, tuple[int, int]] = {}
         for (x, y, w, _h), button in _declared(painter):
@@ -1616,15 +1616,15 @@ class TestWhereTheConsoleSits:
 
         assert min(rect[0] for rect, _button in left.buttons) == PAD
 
-    def test_the_panel_is_placed_in_the_corner_the_room_moved_it_to(self):
+    def test_the_hud_is_placed_in_the_corner_the_room_moved_it_to(self):
         painter = self._painted(HudCorner.LOWER_RIGHT)
-        panel_w, panel_h = painter._image.size
+        hud_w, hud_h = painter._image.size
 
         origin = painter.place(window=(1920, 1080), lower_edge=40)
 
-        assert origin == (1920 - MARGIN - panel_w, 1080 - 40 - MARGIN - panel_h)
+        assert origin == (1920 - MARGIN - hud_w, 1080 - 40 - MARGIN - hud_h)
 
-    def test_a_press_lands_against_wherever_the_funestra_last_put_the_panel(self):
+    def test_a_press_lands_against_wherever_the_funestra_last_put_the_hud(self):
         painter = self._painted(HudCorner.LOWER_RIGHT)
         left, top = painter.place(window=(1920, 1080))
         (x, y, w, h), button = painter.buttons[0]
@@ -1645,7 +1645,7 @@ class TestWhereTheConsoleSits:
         assert slider_past_broker(right) == slider_past_broker(left)
 
     @pytest.mark.parametrize("corner", [HudCorner.UPPER_LEFT, HudCorner.UPPER_RIGHT])
-    def test_the_title_moves_over_for_the_minus_in_the_panels_corner(self, corner):
+    def test_the_title_moves_over_for_the_minus_in_the_huds_corner(self, corner):
         painter = self._painted(corner)
         x, y, w, h = _button_rect(painter, "main_hud_minimize")
         rgba = np.asarray(painter._image).astype(int)
@@ -1688,9 +1688,9 @@ class TestWhereTheConsoleSits:
         assert ConsolePainter().hud_place is None
 
     def test_a_minimized_console_keeps_the_plus_in_its_own_corner(self):
-        """The room's corner still pins it, so the plus is where the panel was:
+        """The room's corner still pins it, so the plus is where the HUD was:
         the bitmap holds room for the tooltip beside it, and the plus sits at
-        the corner of that room the panel is justified to."""
+        the corner of that room the HUD is justified to."""
         painter = self._painted(HudCorner.LOWER_LEFT, hud_minimized=True)
         (x, y, _w, _h), _button = painter.buttons[0]
         width, height = painter._image.size

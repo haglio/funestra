@@ -31,8 +31,8 @@ from funestra.drive_readout import (
     track_value,
     tracks,
 )
-from funestra.hud_panel import (
-    HudPanel,
+from funestra.hud import (
+    Hud,
     load_font,
     text_width,
 )
@@ -48,10 +48,10 @@ def _hud(**overrides) -> DriveHud:
     return DriveHud(**base)
 
 
-def _rendered(hud: DriveHud) -> np.ndarray:
-    panel = HudPanel(SECTION_W + 2 * PAD, SECTION_H + 2 * PAD)
-    DriveSection().draw(panel.image, PAD, PAD, hud)
-    return np.asarray(panel.image)
+def _rendered(drive: DriveHud) -> np.ndarray:
+    hud = Hud(SECTION_W + 2 * PAD, SECTION_H + 2 * PAD)
+    DriveSection().draw(hud.image, PAD, PAD, drive)
+    return np.asarray(hud.image)
 
 
 class TestControls:
@@ -97,7 +97,7 @@ class TestControls:
         assert by_command["robot_hand_amplitude_down"].dim is True
 
     def test_the_center_marks_follow_the_line(self):
-        """They sit beside the center's dotted line, so they move up the panel as
+        """They sit beside the center's dotted line, so they move up the HUD as
         the center rises."""
         low = {c.command: c.rect for c in controls(0, 0, _hud(center=20))}
         high = {c.command: c.rect for c in controls(0, 0, _hud(center=80))}
@@ -286,9 +286,9 @@ class TestReadout:
     @pytest.mark.parametrize("center", [0, 100])
     def test_it_draws_nothing_outside_the_block_it_declares(self, center):
         size = (SECTION_W + 2 * PAD, SECTION_H + 4 * PAD)
-        drawn = HudPanel(*size)
+        drawn = Hud(*size)
         DriveSection().draw(drawn.image, PAD, PAD, _hud(center=center))
-        changed = (np.asarray(drawn.image) != np.asarray(HudPanel(*size).image)).any(axis=2)
+        changed = (np.asarray(drawn.image) != np.asarray(Hud(*size).image)).any(axis=2)
         rows, columns = np.nonzero(changed)
 
         assert rows.min() >= PAD and rows.max() < PAD + SECTION_H
@@ -481,7 +481,7 @@ class TestWhoseMotion:
 
     @staticmethod
     def _line_colors(hud: DriveHud) -> set[tuple[int, int, int]]:
-        """Every color the trace's own line is drawn in, panel and ruler aside."""
+        """Every color the trace's own line is drawn in, HUD and ruler aside."""
         rgb = _rendered(hud).astype(int)[:, :, :3]
         return {tuple(pixel) for row in rgb for pixel in row} - {(0, 0, 0)}
 
@@ -579,7 +579,7 @@ class TestSwitchedOff:
 
 class TestDimmedForTheScript:
     """A funscript's turn leaves the controls in place — removing them resized
-    the panel and shifted the trace at every handoff — but nothing on them may
+    the HUD and shifted the trace at every handoff — but nothing on them may
     look live: levels, numbers and marks all drop to the faint disabled gray."""
 
     @staticmethod
@@ -611,7 +611,7 @@ class TestDimmedForTheScript:
 
 
 class TestSmoothTrace:
-    """Pillow's line has no antialiasing of its own: drawn at panel size the
+    """Pillow's line has no antialiasing of its own: drawn at HUD size the
     wave was a hard-edged pixel staircase, and at low amplitude it scrolled as
     chunks.  Supersampled and scaled back down, the edges come back as
     intensity ramps and the motion as quarter-pixel steps."""

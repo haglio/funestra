@@ -10,7 +10,7 @@ from shared_ui.spacing import BUTTON_GAP, BUTTON_GROUP_GAP, BUTTON_PAD_H_TIGHT, 
 from shared_ui.type_scale import SIZE_TINY
 
 from .geometry import Rect, contains
-from .hud_panel import draw_track, load_font
+from .hud import draw_track, load_font
 
 _GROUP_GAP = BUTTON_GROUP_GAP
 _LEAST_BAR_W = 60

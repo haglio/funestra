@@ -10,7 +10,7 @@ saying at all — because a reader glancing between two screens is reading one
 sentence in two places.
 
 So the slots and the wording live here, and each Funestra fills them with its own
-words.  Kept apart from :mod:`funestra.hud_panel`, which owns how a HUD is
+words.  Kept apart from :mod:`funestra.hud`, which owns how a HUD is
 *drawn*: this owns what it *says*, and a Funestra can want one without the other.
 """
 from __future__ import annotations

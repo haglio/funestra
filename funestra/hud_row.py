@@ -1,19 +1,19 @@
-"""The scrubber, the volume chip, the playhead readout and a flick's loop dial, drawn on a panel.
+"""The scrubber, the volume chip, the playhead readout and a flick's loop dial, drawn on a HUD.
 
 Every Funestra here laid this row along the lower edge of its own video, which is
 where a video player has always put it — and where, in this family, it keeps
 turning out to be the wrong place.  A wrapped video smears it into a ring round
 the nadir, out of the controller's reach, so the headset draws it on the console
 instead.  Everything else has the same defect in slower form: a row over the
-item is a second panel, on a screen that already carries one.
+item is a second HUD, on a screen that already carries one.
 
-So the row is a block a panel hosts, the way the device line and the drive
+So the row is a block a HUD hosts, the way the device line and the drive
 readout are: one line, laid out from what is on it against the block's own
 width rather than the window's.  The track is what the room is for -- the
 heatmap and a seek need it wide -- so everything else takes only what it
 must: the readout of the frame and the time at the left end, after a
 flick's dial; the chip flush with the right end.  A flick's track has no
-heatmap and nothing to find along it, so it stays short and no panel widens
+heatmap and nothing to find along it, so it stays short and no HUD widens
 for it.
 """
 from __future__ import annotations
@@ -65,10 +65,10 @@ GAP = GAP_SMALL
 LEAST_TRACK = 60
 FLICK_TRACK_W = 96
 
-# Between the panel's lower edge and the loop's two frames hanging under it.
-UNDER_THE_PANEL_GAP = GAP_SMALL
+# Between the HUD's lower edge and the loop's two frames hanging under it.
+UNDER_THE_HUD_GAP = GAP_SMALL
 
-# The readouts a panel is held wide enough for, so it keeps one width from one
+# The readouts a HUD is held wide enough for, so it keeps one width from one
 # flick or video to the next instead of moving with the digits of each: a flick
 # of up to 999 frames shown for under ten minutes, and a video of under an hour
 # at up to 60 frames a second.
@@ -93,7 +93,7 @@ class RowHud:
     loop: tuple[int, int] | None = None
 
 
-# The widest rows a panel carries, each with the longest readouts it is held for.
+# The widest rows a HUD carries, each with the longest readouts it is held for.
 _WIDEST_ROWS = (
     RowHud(playhead=_HELD_FLICK_READOUT, loop=(0, 999)),
     RowHud(playhead=_HELD_VIDEO_READOUT),
@@ -102,7 +102,7 @@ _WIDEST_ROWS = (
 
 @dataclass(frozen=True)
 class RowLayout:
-    """Where the row lies in its panel, and where each part lands across it,
+    """Where the row lies in its HUD, and where each part lands across it,
     left to right: a flick's dial, the readout, the track, and the chip."""
 
     rect: tuple[int, int, int, int]
@@ -126,7 +126,7 @@ def _before_the_track(row: RowHud, *, held: bool = False) -> tuple[
         tuple[int, int] | None, int | None, int]:
     """The readout's place and the dial's, and where the track starts after
     them, from the row's own left edge; *held*, with the readout as wide as the
-    widest a panel is held for."""
+    widest a HUD is held for."""
     x = 0
     readout = dial = None
     if row.loop is not None:
@@ -156,7 +156,7 @@ def row_layout(row: RowHud, *, rect: tuple[int, int, int, int]) -> RowLayout:
 
 
 class RowSection:
-    """The row itself, drawn into whatever panel is hosting it."""
+    """The row itself, drawn into whatever HUD is hosting it."""
 
     def __init__(self) -> None:
         self._volume = VolumeHudPainter()
@@ -165,7 +165,7 @@ class RowSection:
 
     @staticmethod
     def least_width(row: RowHud) -> int:
-        """The narrowest panel the row can be laid out in: for a video's, one
+        """The narrowest HUD the row can be laid out in: for a video's, one
         that leaves the track no shorter than everything else on the line,
         since the heatmap and a seek are what the row is for; for a flick's,
         one that leaves its track the room to be pressed."""
@@ -176,7 +176,7 @@ class RowSection:
 
     @staticmethod
     def least_width_for_any_row() -> int:
-        """The narrowest panel every row a panel can carry fits in."""
+        """The narrowest HUD every row a HUD can carry fits in."""
         return max(RowSection.least_width(row) for row in _WIDEST_ROWS)
 
     def draw(self, image: Image.Image, layout: RowLayout, row: RowHud,
@@ -208,9 +208,9 @@ class RowSection:
 def fitting(heatmap, track: tuple[int, int]):
     """The colors if they were measured across *track*, else None.
 
-    A panel is as wide as what is on it, so how wide its track came out is an
-    answer only a render gives: a host measures one panel and fills the next.
-    Between those two the panel can change width, and a fill of the wrong
+    A HUD is as wide as what is on it, so how wide its track came out is an
+    answer only a render gives: a host measures one HUD and fills the next.
+    Between those two the HUD can change width, and a fill of the wrong
     length raises out of the track painter rather than stretching -- which
     takes the window's drawing down with it and leaves it showing no item at
     all.  Dropping the stale fill costs one frame of plain track instead.
@@ -222,9 +222,9 @@ def fitting(heatmap, track: tuple[int, int]):
 
 
 def track_on_screen(layout: RowLayout | None, *, origin: tuple[int, int],
-                    panel_height: int) -> tuple[int, int, int] | None:
+                    hud_height: int) -> tuple[int, int, int] | None:
     """Where the row's track runs in the window's own coordinates: its two ends
-    and the y just under the panel, or None where no row is drawn.  A window
+    and the y just under the HUD, or None where no row is drawn.  A window
     hangs its loop's frames there, below their own marks on the track.
     """
     if layout is None:
@@ -232,11 +232,11 @@ def track_on_screen(layout: RowLayout | None, *, origin: tuple[int, int],
     left, top = origin
     x0, x1 = layout.track
     return (left + layout.rect[0] + x0, left + layout.rect[0] + x1,
-            top + panel_height + UNDER_THE_PANEL_GAP)
+            top + hud_height + UNDER_THE_HUD_GAP)
 
 
 def _rgba(bgra: np.ndarray) -> Image.Image:
-    """One of this package's BGRA bitmaps as an image a panel can composite."""
+    """One of this package's BGRA bitmaps as an image a HUD can composite."""
     return Image.fromarray(np.ascontiguousarray(bgra[:, :, [2, 1, 0, 3]]), "RGBA")
 
 
@@ -267,7 +267,7 @@ class RowPress:
 
     The Funestra's own overlays place a press on the row with this, so the
     track, the dial, the slider and the speaker answer the same way on each of
-    them.  *layout* is where the row landed in the panel's own coordinates,
+    them.  *layout* is where the row landed in the HUD's own coordinates,
     and *duration_ms* how long the track spans -- the clip, or the window a
     loop being recorded has zoomed it to.
     """

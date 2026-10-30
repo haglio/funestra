@@ -1,4 +1,4 @@
-"""The main console: the panel whichever Funestra holds the slot draws, and where
+"""The main console: the HUD whichever Funestra holds the slot draws, and where
 a press on it lands."""
 from __future__ import annotations
 
@@ -230,7 +230,7 @@ class TestReadConsole:
                                      osr2_control=OSR2_RETRACTED, locked=False,
                                      latest=True)
 
-    def test_a_panel_that_says_nothing_about_the_lock_reads_as_locked(self, tmp_path: Path):
+    def test_a_hud_that_says_nothing_about_the_lock_reads_as_locked(self, tmp_path: Path):
         """Which is where both Funestras open, and what a Fun Time too old to
         publish the flag is still describing."""
         path = tmp_path / "main_player_console.json"
@@ -239,7 +239,7 @@ class TestReadConsole:
         assert read_console(path).locked is True
         assert ConsoleModel().locked is True
 
-    def test_a_panel_that_says_nothing_about_the_order_names_none(self, tmp_path: Path):
+    def test_a_hud_that_says_nothing_about_the_order_names_none(self, tmp_path: Path):
         """Fun Time publishes the flag every tick; a file that says nothing
         about it is from a host with no browse order to name."""
         path = tmp_path / "main_player_console.json"
@@ -247,12 +247,12 @@ class TestReadConsole:
 
         assert read_console(path).latest is None
 
-    def test_a_panel_from_a_fun_time_that_still_says_video_reads_as_kino(self):
+    def test_a_hud_from_a_fun_time_that_still_says_video_reads_as_kino(self):
         assert parse_console(json.dumps({"main_mode": "video"})).main_mode is MainMode.KINO
 
-    def test_a_key_the_panel_no_longer_carries_is_passed_over(self):
+    def test_a_key_the_hud_no_longer_carries_is_passed_over(self):
         """The switches the console's buttons were once lit from still come
-        from a publisher on an older release; the panel reads the same without
+        from a publisher on an older release; the HUD reads the same without
         them."""
         parsed = parse_console(json.dumps({
             "main_mode": MainMode.GENAU, "scripted_filter": True, "broker": True,
@@ -324,7 +324,7 @@ class TestThePublishedConsoleIsWrittenWhereItIsRead:
         assert parse_console(console_text(model)) == model
 
     def test_the_rows_a_source_declares_survive_it_too(self):
-        """The buttons themselves ride the panel: what each posts, its face,
+        """The buttons themselves ride the HUD: what each posts, its face,
         its tooltip and its state, row by row, and the controls on the OSR2
         line beside them."""
         model = ConsoleModel(
@@ -353,7 +353,7 @@ class TestThePublishedConsoleIsWrittenWhereItIsRead:
         assert parsed == ConsoleModel()
         assert "playback_speed" not in json.loads(console_text(model))
 
-    def test_what_the_room_narrowed_the_browse_to_rides_the_panel(self):
+    def test_what_the_room_narrowed_the_browse_to_rides_the_hud(self):
         model = ConsoleModel(filters=("VR", "Clips", "Portrait"))
 
         assert parse_console(console_text(model)).filters == ("VR", "Clips", "Portrait")
@@ -365,21 +365,21 @@ class TestThePublishedConsoleIsWrittenWhereItIsRead:
     def test_a_console_another_funestra_took_the_osr2_from_says_so(self):
         assert parse_console(console_text(ConsoleModel(has_osr2=False))).has_osr2 is False
 
-    def test_the_max_intensity_a_session_holds_rides_the_panel(self):
+    def test_the_max_intensity_a_session_holds_rides_the_hud(self):
         assert parse_console(console_text(ConsoleModel(max_intensity=35))).max_intensity == 35
 
-    def test_a_panel_that_says_nothing_about_the_max_intensity_has_no_slider(self):
+    def test_a_hud_that_says_nothing_about_the_max_intensity_has_no_slider(self):
         assert parse_console(json.dumps({"main_mode": MainMode.KINO})).max_intensity is None
 
-    def test_a_max_intensity_that_is_not_a_number_is_no_slider_rather_than_no_panel(self):
+    def test_a_max_intensity_that_is_not_a_number_is_no_slider_rather_than_no_hud(self):
         parsed = parse_console(json.dumps({"main_mode": MainMode.KINO, "max_intensity": "loud"}))
 
         assert parsed is not None and parsed.max_intensity is None
 
-    def test_a_panel_that_says_nothing_about_the_osr2_has_it(self):
+    def test_a_hud_that_says_nothing_about_the_osr2_has_it(self):
         assert parse_console(json.dumps({"main_mode": MainMode.KINO})).has_osr2 is True
 
-    def test_a_torn_read_is_no_panel(self):
+    def test_a_torn_read_is_no_hud(self):
         assert parse_console('{"main_mode": "kino"') is None
         assert parse_console("") is None
 

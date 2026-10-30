@@ -76,26 +76,26 @@ class PointerReading[R]:
     def take(self, reading: R) -> None:
         self.reading = reading
 
-    def on(self, panel) -> R:
-        place = None if panel is None else (panel.hud_corner, panel.hud_minimized)
+    def on(self, hud) -> R:
+        place = None if hud is None else (hud.hud_corner, hud.hud_minimized)
         if place != self._place:
             self._place, self.reading = place, self._nowhere
         return self.reading
 
 
-def block_x(corner: HudCorner, *, panel_width: int, extent: int, pad: int,
+def block_x(corner: HudCorner, *, hud_width: int, extent: int, pad: int,
             reserve: int = 0) -> int:
     if not corner.right:
         return pad + reserve
-    return max(pad, panel_width - pad - reserve - extent)
+    return max(pad, hud_width - pad - reserve - extent)
 
 
-def hud_origin(corner: HudCorner, *, panel: tuple[int, int], window: tuple[int, int],
+def hud_origin(corner: HudCorner, *, hud: tuple[int, int], window: tuple[int, int],
                margin: int, lower_edge: int = 0,
                inset: tuple[int, int] = (0, 0)) -> tuple[int, int]:
-    panel_w, panel_h = panel
+    hud_w, hud_h = hud
     win_w, win_h = window
     across, down = margin + inset[0], margin + inset[1]
-    x = win_w - across - panel_w if corner.right else across
-    y = win_h - lower_edge - down - panel_h if corner.lower else down
+    x = win_w - across - hud_w if corner.right else across
+    y = win_h - lower_edge - down - hud_h if corner.lower else down
     return max(0, x), max(0, y)

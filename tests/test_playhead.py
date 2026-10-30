@@ -69,7 +69,7 @@ class TestWhatAClipsReadoutSays:
 class TestTheReadout:
     def test_it_is_the_words_alone_with_nothing_drawn_round_them(self):
         """He asked that the time and the frames not sit in a bubble as if
-        they were a button: the panel under them is ground enough."""
+        they were a button: the HUD under them is ground enough."""
         bgra = PlayheadHudPainter().bgra(video_playhead(42_000.0, 195_000.0, 30.0))
 
         painted = bgra[:, :, 3] > 0

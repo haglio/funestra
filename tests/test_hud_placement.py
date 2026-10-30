@@ -21,8 +21,8 @@ def test_a_funestra_with_one_pair_of_keys_walks_the_four_corners_round():
     assert HudCorner.LOWER_LEFT.turned(clockwise=False) is HudCorner.LOWER_RIGHT
 
 
-def test_a_panel_is_inset_from_whichever_corner_it_was_moved_to():
-    at = dict(panel=(100, 60), window=(800, 600), margin=12)
+def test_a_hud_is_inset_from_whichever_corner_it_was_moved_to():
+    at = dict(hud=(100, 60), window=(800, 600), margin=12)
     assert hud_origin(HudCorner.UPPER_LEFT, **at) == (12, 12)
     assert hud_origin(HudCorner.UPPER_RIGHT, **at) == (688, 12)
     assert hud_origin(HudCorner.LOWER_LEFT, **at) == (12, 528)
@@ -30,14 +30,14 @@ def test_a_panel_is_inset_from_whichever_corner_it_was_moved_to():
 
 
 def test_a_lower_corner_stands_on_the_funestras_own_lower_row_rather_than_over_it():
-    assert hud_origin(HudCorner.LOWER_LEFT, panel=(100, 60), window=(800, 600),
+    assert hud_origin(HudCorner.LOWER_LEFT, hud=(100, 60), window=(800, 600),
                       margin=12, lower_edge=24) == (12, 504)
-    assert hud_origin(HudCorner.UPPER_LEFT, panel=(100, 60), window=(800, 600),
+    assert hud_origin(HudCorner.UPPER_LEFT, hud=(100, 60), window=(800, 600),
                       margin=12, lower_edge=24) == (12, 12)
 
 
-def test_a_panel_too_big_for_its_window_starts_at_the_edge_rather_than_off_it():
-    assert hud_origin(HudCorner.LOWER_RIGHT, panel=(900, 700), window=(800, 600),
+def test_a_hud_too_big_for_its_window_starts_at_the_edge_rather_than_off_it():
+    assert hud_origin(HudCorner.LOWER_RIGHT, hud=(900, 700), window=(800, 600),
                       margin=12) == (0, 0)
 
 

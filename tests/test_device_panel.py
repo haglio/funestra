@@ -48,7 +48,7 @@ class TestAPress:
 
         assert posted == ["robot_hand_cycle_shape"]
 
-    def test_is_placed_in_the_panel_s_own_pixels(self):
+    def test_is_placed_in_the_hud_s_own_pixels(self):
         painter = _Painter()
         panel, _posted = _panel(painter)
 

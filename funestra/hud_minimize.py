@@ -10,16 +10,16 @@ from shared_ui.spacing import BUTTON_GAP, BUTTON_SIZE_HUD, MARGIN_STANDARD
 from shared_ui.type_scale import SIZE_SMALL, SIZE_TINY
 
 from .geometry import Rect
-from .hud_button import Button
-from .hud_marks import shared_mark
-from .hud_panel import (
-    HudPanel,
+from .hud import (
+    Hud,
     draw_button,
     draw_tooltip,
     load_font,
     text_width,
     to_bgra,
 )
+from .hud_button import Button
+from .hud_marks import shared_mark
 from .hud_placement import HudCorner
 
 BUTTON = BUTTON_SIZE_HUD
@@ -32,7 +32,7 @@ RESTORE_TOOLTIP = "Show this HUD again"
 
 FLASH_S = 3.0
 
-# Room beside the plus for its tooltip, which a panel this small cannot hold:
+# Room beside the plus for its tooltip, which a HUD this small cannot hold:
 # wide enough for RESTORE_TOOLTIP on one line at the family's small size, and one
 # line tall.
 _TOOLTIP_ROOM_W = 118
@@ -82,9 +82,9 @@ def restore_button(funestra: str) -> Button:
     return Button(restore_command(funestra), RESTORE_GLYPH, RESTORE_TOOLTIP)
 
 
-def corner_button_rect(corner: HudCorner, *, panel: tuple[int, int],
+def corner_button_rect(corner: HudCorner, *, hud: tuple[int, int],
                        inset: tuple[int, int]) -> Rect:
-    width, height = panel
+    width, height = hud
     across, down = inset
     x = width - across - BUTTON if corner.right else across
     y = height - down - BUTTON if corner.lower else down
@@ -92,7 +92,7 @@ def corner_button_rect(corner: HudCorner, *, panel: tuple[int, int],
 
 
 def name_slab(name: str) -> Image.Image:
-    slab = HudPanel(text_width(name_font(), name) + 2 * MARGIN_STANDARD, BUTTON)
+    slab = Hud(text_width(name_font(), name) + 2 * MARGIN_STANDARD, BUTTON)
     slab.draw.text((MARGIN_STANDARD, BUTTON / 2), name, font=name_font(), anchor="lm",
                    fill=(*TEXT_MUTED, 255))
     return slab.image
@@ -114,7 +114,7 @@ def collapsed_button(funestra: str, corner: HudCorner = HudCorner.UPPER_LEFT, *,
     size = _collapsed_size(room_for_the_tooltip=room_for_the_tooltip or hover is not None,
                            beside=named)
     image = Image.new("RGBA", size, (0, 0, 0, 0))
-    rect = corner_button_rect(corner, panel=size, inset=(0, 0))
+    rect = corner_button_rect(corner, hud=size, inset=(0, 0))
     draw_button(image, ImageDraw.Draw(image), rect, restore_button(funestra),
                 hovered=hover is not None, glyph_font=mark_font(), word_font=mark_font())
     if named is not None:
@@ -124,7 +124,7 @@ def collapsed_button(funestra: str, corner: HudCorner = HudCorner.UPPER_LEFT, *,
     return image, [(rect, restore_button(funestra))]
 
 
-def collapsed_panel(funestra: str, corner: HudCorner = HudCorner.UPPER_LEFT, *,
+def collapsed_hud(funestra: str, corner: HudCorner = HudCorner.UPPER_LEFT, *,
                     hover: tuple[int, int] | None = None, room_for_the_tooltip: bool = False,
                     flash: str = "") -> tuple[np.ndarray, list[tuple[Rect, Button]]]:
     image, buttons = collapsed_button(funestra, corner, hover=hover,

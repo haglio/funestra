@@ -69,6 +69,14 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   never a player. `player_core`, `funestra_core` and the other old names answer
   only for branches written before then (`player_core/__init__.py`,
   `funestra_core/__init__.py`, `funestra/renamed.py`).
+- **What a Funestra draws over what it plays is its HUD, never its panel.** The
+  user's word, and the code's since 2026-10-29: `funestra.hud` (`Hud`, the slab
+  every HUD is painted on), `HudLayout`, `hud_width`, a Funestra's `hud=`,
+  `hud_surface=`, `hud_edge` and `hud_minimized`. The block Origenerator paints
+  at a HUD's foot (`PaintedFoot`) is its Job Queue. The panel names older
+  branches of the apps still spell answer through `funestra/hud_panel.py` and
+  `funestra/renamed.py` only; nothing new may use them. The OSR2 part keeps its
+  name (`DevicePanel`), and `BORDER_PANEL` is shared_ui's.
 - **The distribution was `player-core` and is `funestra`, and pip sees two.** A
   venv that had `player-core` keeps its record after `funestra` is installed
   over it, and both list the `player_core/` and `funestra_core/` packages. Never
