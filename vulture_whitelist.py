@@ -1,6 +1,6 @@
 """Names the dead-code scan reports that are not dead: callers it cannot read.
 
-tests/test_dead_code.py fails on an entry that no longer suppresses anything,
+The family's dead-code gate fails on an entry that no longer suppresses anything,
 so an entry leaves with the code it names.
 """
 

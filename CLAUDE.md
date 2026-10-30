@@ -97,14 +97,15 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
 - **Run all three suites before merging**: this one, genau's unit suite, and
   fun_time's unit *and* hidden-desktop integration suites (the last is what
   actually launches `MpvEngine` against the real DLL).
-- **The dead-code check reads the apps.** `tests/test_dead_code.py` runs the
-  family's vulture scan over this package with its own tests and the tracked
-  code of every checkout beside it that imports it, found rather than named, so
-  what it reports is what nothing anywhere uses. It skips with no such checkout
-  beside it, which only a public clone has; the merge gate clones fun_time
-  and origenerator beside the checkout for it. A name whose caller the scan
-  cannot read, because Python or a library calls it, goes in `vulture_whitelist.py` with who calls it, and leaves
-  when its caller does.
+- **The dead-code check reads the apps.** The family's dead-code gate, asked to
+  by `apps-are-callers` in pyproject, runs vulture over this package with its
+  own tests and the tracked code of every checkout beside it that imports it,
+  found rather than named, so what it reports is what nothing anywhere uses. It
+  skips with no such checkout beside it, which only a public clone has; the
+  merge gate clones fun_time and origenerator beside the checkout for it. A
+  name whose caller the scan cannot read, because Python or a library calls it,
+  goes in `vulture_whitelist.py` with who calls it, and leaves when its caller
+  does.
 
 ## libmpv changes: mandatory pre-flight
 
