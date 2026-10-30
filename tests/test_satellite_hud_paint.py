@@ -1591,7 +1591,7 @@ class TestTheBlockASourcePaintsAtTheFoot:
 
 class TestABlockASourceInAnotherProgramPainted:
     """A source in a program of its own cannot hand its block over to be painted,
-    so it paints it to a picture and the panel draws that picture at its foot."""
+    so it paints it to an image file and the panel draws that image at its foot."""
 
     @staticmethod
     def _painted(tmp_path, color=_Block.MARK, size=(120, 30)):
