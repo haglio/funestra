@@ -38,7 +38,6 @@ from .hud_button import (
 from .hud_marks import BROKER_ICON, TOGGLE_SWITCH, shared_mark
 from .hud_placement import HudCorner, HudEdge
 from .modes import LengthMode, MainMode, Osr2State, read_mode
-from .renamed import answers_to_old_names, drops_retired_arguments
 from .robot_hand import WaveformShape
 
 VALUE_W = 22  # a value read-out between a pair of buttons (the playback rate)
@@ -137,7 +136,6 @@ _WAVEFORM_FACES = {
 }
 
 
-@drops_retired_arguments("cruise")
 def aim_row(*, learned: bool, shape: str, control: str) -> tuple[Button, ...]:
     return (
         *_osr2_switch(control),
@@ -173,7 +171,6 @@ def osr2_controls(*, broker_running: bool) -> tuple[Button, ...]:
     )
 
 
-@answers_to_old_names({"player": "funestra"})
 @dataclass(frozen=True)
 class ConsoleModel:
     """What Fun Time tells the Main Funestra about its slot, so the console can
@@ -263,8 +260,6 @@ def console_text(model: ConsoleModel) -> str:
     return json.dumps({
         "main_mode": model.main_mode,
         "funestra": model.funestra,
-        # The same, under the key a reader from before the rename looks for.
-        "player": model.funestra,
         "hud_corner": model.hud_corner,
         "hud_edge": model.hud_edge,
         "hud_minimized": model.hud_minimized,
@@ -293,7 +288,7 @@ def parse_console(text: str) -> ConsoleModel | None:
         return None
     return ConsoleModel(
         main_mode=read_mode(MainMode, raw.get("main_mode"), MainMode.KINO),
-        funestra=str(raw.get("funestra") or raw.get("player") or "main"),
+        funestra=str(raw.get("funestra") or "main"),
         hud_corner=read_mode(HudCorner, raw.get("hud_corner"), HudCorner.UPPER_LEFT),
         hud_edge=read_mode(HudEdge, raw.get("hud_edge"), HudEdge.LOWER),
         hud_minimized=bool(raw.get("hud_minimized", False)),

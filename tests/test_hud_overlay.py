@@ -87,15 +87,6 @@ class TestTheClipsRowAtItsFoot:
 
         assert overlay.targets.row is None
 
-    def test_the_rows_rect_still_answers_under_its_old_name(self, tmp_path, hud):
-        overlay = _overlay(tmp_path, hud, FakeEngine())
-
-        overlay.tick(item_row=self._ROW)
-        assert overlay.row_rect == overlay.targets.row.rect
-
-        overlay.tick(item_row=None)
-        assert overlay.row_rect is None
-
     def _on_the_row(self, overlay, px, py):
         x, y, _width, _height = overlay.targets.row.rect
         return MARGIN + x + px, MARGIN + y + py

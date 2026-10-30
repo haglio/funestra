@@ -36,8 +36,6 @@ def build_status_text(
         f"locked={'1' if advance.locked else '0'}\n"
         # Which flick is up.  Empty until the first flick is on screen.
         f"flick={flick if flick is not None else ''}\n"
-        # The same, under the key an orchestrator from before the rename reads.
-        f"clip={flick if flick is not None else ''}\n"
         f"flipped={'1' if flipped else '0'}\n"
         f"portrait={_flag_or_unknown(portrait)}\n"
         f"shape={hand.shape.value}\n"

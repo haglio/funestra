@@ -58,7 +58,7 @@ dev = [
 siblings = ["app_support", "shared_ui"]
 
 [tool.setuptools.packages.find]
-include = ["funestra*", "player_core*"]
+include = ["funestra*"]
 
 # The learned motion's trained model ships inside the package: numbers only,
 # built by tools/train_learned_motion.py from a corpus that lives outside

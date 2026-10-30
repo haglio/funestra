@@ -9,6 +9,32 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-30 — the October renames' old names no longer answer
+
+No main of an app and no branch a session is working on or has paused spells
+them any more, so the names a checkout from before 2026-10-13 was answered by
+are gone: the `player_core` and `funestra_core` packages and the finder that
+handed out their modules (`renamed.answer_as`); the ten `funestra.clip_*`
+modules, `mpv_player`, `render_player` and `player_verbs`; `PlayerStatus` and
+`clip_playhead`; every class's clip-era keywords and attributes, and its
+`player=` for the engine or the Funestra; `cruise_control` and `wave_stack`,
+with the cruise arguments the console's aim row, Genau's controls and the
+driver dropped (`renamed.drops_retired_arguments`); and the notifier asked by
+`notify_clip` (`renamed.method_of`). What went between processes goes too: the
+console's `player` key, the status's `clip=` line, the notifier's `CLIP` datagram
+and the `CLIP_SECONDS` verbs. So does what only the headset's copies of the row
+from before haglio/fun_time#391 reached (`lower_edge_height`, `readout_xy`,
+`on_readout`, `timeline_x`, `timeline_bgra`, `time_at`, both `row_rect`s, and the
+strip's height they drew it at), and the minus a funestra from before v0.1.571
+published (`hud_marks.current_glyph`).
+
+Three answer still, each while something still uses it: the HUD's `player` key,
+which Fun Time's tests still write and read; the title's old names from
+2026-10-21 (`funestra.hud_status`, `status_line`, `HudModel.lock_label` and its
+key), which two of Fun Time's drafts and Origenerator's branches still spell; and
+`fit_text` in `funestra.hud`, which a live Origenerator branch imports through
+`funestra.hud_panel`. The panel names of 2026-10-29 answer as before.
+
 ## 2026-10-29 — a HUD, where the package said panel
 
 What a Funestra draws over what it plays is its HUD, so nothing here calls it a

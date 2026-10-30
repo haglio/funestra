@@ -66,9 +66,7 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   says so too: the repo, its folder and the package are `funestra` (since
   2026-10-11; `player_core` until 2026-10-10, then `funestra_core` for a day),
   and the mpv object a Funestra plays through is its engine (`MpvEngine`),
-  never a player. `player_core`, `funestra_core` and the other old names answer
-  only for branches written before then (`player_core/__init__.py`,
-  `funestra_core/__init__.py`, `funestra/renamed.py`).
+  never a player.
 - **What a Funestra draws over what it plays is its HUD, never its panel.** The
   user's word, and the code's since 2026-10-29: `funestra.hud` (`Hud`, the slab
   every HUD is painted on), `HudLayout`, `hud_width`, a Funestra's `hud=`,
@@ -77,11 +75,6 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   branches of the apps still spell answer through `funestra/hud_panel.py` and
   `funestra/renamed.py` only; nothing new may use them. The OSR2 part keeps its
   name (`DevicePanel`), and `BORDER_PANEL` is shared_ui's.
-- **The distribution was `player-core` and is `funestra`, and pip sees two.** A
-  venv that had `player-core` keeps its record after `funestra` is installed
-  over it, and both list the `player_core/` and `funestra_core/` packages. Never
-  `pip uninstall player-core` from such a venv without reinstalling `funestra`
-  straight after: the uninstall deletes the old-name packages `funestra` ships.
 
 ## Changing this repo changes three apps
 

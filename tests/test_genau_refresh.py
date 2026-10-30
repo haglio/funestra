@@ -190,9 +190,6 @@ def _build_controller(
         condemn_flick=selection.condemn_current,
         robot_hand=robot_hand if robot_hand is not None else RobotHandState(),
         learned_motion_state=learned,
-        set_motion_phase=(
-            tcode_sender.set_motion_phase if tcode_sender is not None else None
-        ),
         flick_advance_state=flick_advance,
         hud=hud,
         # A Genau with no chip to draw still answers SET_VOLUME: the level is the

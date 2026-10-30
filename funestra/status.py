@@ -23,11 +23,6 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .file_channel import publish_whole
-from .renamed import old_name_getter
-
-_RENAMED = {"PlayerStatus": "FunestraStatus"}
-
-__getattr__ = old_name_getter(__name__, _RENAMED)
 
 
 @dataclass(frozen=True)

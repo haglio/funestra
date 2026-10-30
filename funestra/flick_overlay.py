@@ -21,7 +21,6 @@ from shared_ui.spacing import MARGIN_STANDARD
 from shared_ui.type_scale import SIZE_HEADING
 
 from .hud import load_font, text_width, to_bgra
-from .renamed import answers_to_old_names
 
 BACKDROP_OVERLAY_ID = 1
 FIRST_TILE_OVERLAY_ID = 2
@@ -42,7 +41,6 @@ def _nothing(_value: float) -> None:
     pass
 
 
-@answers_to_old_names({"clip": "flick", "seek": "seek_loop"})
 @dataclass(frozen=True)
 class FlickFrame:
     """A frame of a flick, with the flick's two senses of time for the row: how

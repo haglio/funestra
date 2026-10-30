@@ -11,16 +11,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .renamed import answers_to_old_names, method_of
 
-
-@answers_to_old_names({
-    "adopt_pending_clip": "adopt_pending_flick",
-    "clip_store": "flick_store",
-    "condemn_clip": "condemn_flick",
-    "pending_clip_name": "pending_flick_name",
-    "set_current_clip": "set_current_flick",
-})
 class FlickSelectionController:
     def __init__(
         self,
@@ -145,7 +136,7 @@ class FlickSelectionController:
     def _show(self, path: Path) -> None:
         """Point the renderer at a flick and tell the world it is up."""
         self.renderer.set_current_flick_path(path)
-        method_of(self.notifier, "notify_flick", old_name="notify_clip")(path)
+        self.notifier.notify_flick(path)
 
     def _switch_to(self, path: Path) -> None:
         """Take up an already-cached flick, canceling any deferred switch."""

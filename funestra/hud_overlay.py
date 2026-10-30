@@ -19,7 +19,6 @@ from .hud_corners import HudPlace
 from .hud_placement import HudCorner, HudEdge, PointerReading
 from .hud_row import RowHud, RowLayout, RowPress, track_on_screen
 from .modes import Osr2State
-from .renamed import answers_to_old_names
 from .satellite_hud import (
     MARGIN,
     MINUS_INSET,
@@ -98,7 +97,6 @@ class _WindowsOwnHud:
         return model, model != shown
 
 
-@answers_to_old_names({"player": "engine"})
 class HudOverlay:
     def __init__(
         self,
@@ -238,12 +236,6 @@ class HudOverlay:
         """How long the track spans -- the clip, or the window a loop being
         recorded has zoomed it to, which is what the row was drawn from."""
         return 0.0 if self._item_row is None else self._item_row.duration_ms
-
-    # Only the headset's old copies of the row, in checkouts from before
-    # haglio/fun_time#391, read row_rect; it answers until none of them is open.
-    @property
-    def row_rect(self) -> tuple[int, int, int, int] | None:
-        return None if self.targets.row is None else self.targets.row.rect
 
     @property
     def row(self) -> RowLayout | None:

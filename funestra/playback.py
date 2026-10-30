@@ -18,7 +18,6 @@ from .funscript import load as load_funscript
 from .play_points import PlayPoints
 from .playback_rate import clamp_rate
 from .playlist import PlaylistItem
-from .renamed import answers_to_old_names
 from .scripted_device import REWIND_MS, ScriptedDevice
 from .seeking import OwedSeek, seek_if_taken
 from .up_next import put_up_next
@@ -38,7 +37,6 @@ def points_of_interest_of(items: Iterable[PlaylistItem]) -> dict[Path, tuple]:
     return _by_path(items, "points_of_interest")
 
 
-@answers_to_old_names({"player": "engine"})
 class Playback:
     def __init__(
         self,

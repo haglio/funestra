@@ -154,7 +154,7 @@ def _painted_at(path: str, _stamp: str) -> Image.Image:
         return opened.convert("RGBA")
 
 
-@answers_to_old_names({"player": "funestra", "lock_label": "title"})
+@answers_to_old_names({"lock_label": "title"})
 @dataclass(frozen=True)
 class HudModel:
     """One satellite's HUD contents, exactly as fun_time published them."""

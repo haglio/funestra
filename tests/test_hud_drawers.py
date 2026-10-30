@@ -17,7 +17,7 @@ from app_support.siblings import checkouts_that_import
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGE = ROOT / "funestra"
-PACKAGE_NAMES = ("funestra", "funestra_core", "player_core")
+PACKAGE_NAMES = ("funestra",)
 
 WHOLE_MODULE = None
 

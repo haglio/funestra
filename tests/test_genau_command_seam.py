@@ -197,8 +197,6 @@ SEAM = [
     ("LOCK_OFF", {"locked": True}, {"locked": False}),
     ("FLICK_SECONDS_DOWN", {}, {"interval": 19}),
     ("FLICK_SECONDS_UP", {}, {"interval": 21}),
-    ("CLIP_SECONDS_DOWN", {}, {"interval": 19}),
-    ("CLIP_SECONDS_UP", {}, {"interval": 21}),
     ("HUD_ON", {}, {"hud": True}),
     ("HUD_OFF", {"hud": True}, {"hud": False}),
     # The ones that carry a value -- a path among them, whose case has to survive.
@@ -207,7 +205,6 @@ SEAM = [
     ("CENTER 65", {}, {"center": 65, "intended_center": 65}),
     ("SPEED 90", {}, {"speed": 90}),
     ("FLICK_SECONDS 30", {}, {"interval": 30}),
-    ("CLIP_SECONDS 30", {}, {"interval": 30}),
     ("SET_VOLUME 40 1", {}, {"volumes": ((40, True),)}),
     ("SHAPES flat", {}, {"kept_shapes": ((False, True),)}),
     ("SET_MAX_INTENSITY 5", {}, {"max_intensity": 5, "amplitude": 40, "speed": 33,
