@@ -672,7 +672,7 @@ def _marks_drawn(monkeypatch, painter: str) -> list[str]:
 
 def test_the_more_marks_are_the_familys_dots_along_the_row_and_down_the_column(
         thumb, monkeypatch):
-    drawn = _marks_drawn(monkeypatch, "paste_glyph")
+    drawn = _marks_drawn(monkeypatch, "paste_icon")
 
     HudRenderer("portrait").render(_crowded("portrait", thumb))
 

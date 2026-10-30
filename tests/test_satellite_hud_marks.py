@@ -10,7 +10,7 @@ buttons are held to it where they are declared.
 from __future__ import annotations
 
 from PIL import Image, ImageDraw
-from shared_ui.icon_geometry import glyph_names
+from shared_ui.icon_geometry import icon_names
 from shared_ui.palette import TEXT_PRIMARY
 
 from funestra.satellite_hud import (
@@ -40,7 +40,7 @@ def test_the_favorite_mark_is_the_familys_star():
 
 
 def test_the_marks_the_hud_names_all_exist():
-    missing = {key: name for key, name in _named().items() if name not in glyph_names()}
+    missing = {key: name for key, name in _named().items() if name not in icon_names()}
     assert not missing, f"HUD faces naming marks shared_ui does not have: {missing}"
 
 

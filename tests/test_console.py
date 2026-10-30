@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 
 import pytest
-from shared_ui.icon_geometry import glyph_names
+from shared_ui.icon_geometry import icon_names
 
 from funestra.console import (
     BROKER_PRESS,
@@ -107,7 +107,7 @@ class TestTheRowThatAimsTheDevice:
         face = _button(_aim_row(), "robot_hand_toggle_learned").glyph
 
         assert face == shared_mark("human")
-        assert shared_mark_name(face) in glyph_names()
+        assert shared_mark_name(face) in icon_names()
 
     def test_the_switch_is_labeled_osr2_control_apart_from_the_osr2_itself(self):
         label, *_switch = _aim_row()[:4]
@@ -164,7 +164,7 @@ class TestTheRowThatAimsTheDevice:
         faces = [_waveform_face(shape.value) for shape in WaveformShape]
 
         assert len(set(faces)) == len(faces)
-        assert {shared_mark_name(face) for face in faces} <= set(glyph_names())
+        assert {shared_mark_name(face) for face in faces} <= set(icon_names())
 
     def test_the_sine_wears_the_face_every_version_of_the_family_draws(self):
         assert _waveform_face("sine") == shared_mark("wave")

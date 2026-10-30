@@ -5,7 +5,7 @@ import json
 import math
 
 from satellite_rows import band, funestra_rows
-from shared_ui.icon_geometry import GLYPHS, tooltip_for
+from shared_ui.icon_geometry import ICONS, tooltip_for
 from shared_ui.spacing import BUTTON_GAP, BUTTON_GROUP_GAP
 from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL, SIZE_TINY
 
@@ -459,7 +459,7 @@ def test_a_declared_button_wearing_a_mark_this_version_lacks_says_why_on_hover()
 
 def test_the_map_s_own_controls_say_why_when_this_version_lacks_their_marks(monkeypatch):
     for mark in ("loop", "cross", "expand_horizontal", "star"):
-        monkeypatch.delitem(GLYPHS, mark)
+        monkeypatch.delitem(ICONS, mark)
     targets = _targets(loop=[((0, 0, 20, 20), "action")], wrong_action=(30, 0, 20, 20),
                        expand=(60, 0, 20, 20), favorite=(90, 0, 20, 20))
 
