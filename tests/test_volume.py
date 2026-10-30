@@ -155,13 +155,13 @@ class TestPainter:
 
     def test_the_speaker_is_the_familys_and_crossed_out_while_muted(self, monkeypatch):
         drawn = []
-        real = volume.paste_glyph
+        real = volume.paste_icon
 
         def spy(image, name, frame, color):
             drawn.append((name, color))
             real(image, name, frame, color)
 
-        monkeypatch.setattr(volume, "paste_glyph", spy)
+        monkeypatch.setattr(volume, "paste_icon", spy)
         self._chip(muted=False)
         self._chip(muted=True)
 

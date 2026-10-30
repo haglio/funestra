@@ -16,7 +16,7 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from shared_ui.icons_pil import paste_glyph
+from shared_ui.icons_pil import paste_icon
 from shared_ui.lettering import fit_text
 from shared_ui.palette import (
     BG_BUTTON,
@@ -587,8 +587,8 @@ class HudRenderer:
         for rect, show in ((before, window.more_before), (after, window.more_after)):
             if not show:
                 continue
-            paste_glyph(image, "more" if axis == "seed" else "more_vertical", rect,
-                        TEXT_PRIMARY)
+            paste_icon(image, "more" if axis == "seed" else "more_vertical", rect,
+                       TEXT_PRIMARY)
 
     def _draw_thumbnails(self, image, model, corner_rect, seed_rects, action_rects,
                          corner_thumb, seed_thumbs, action_thumbs) -> dict[Rect, Rect]:

@@ -22,7 +22,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from PIL import Image
-from shared_ui.icons_pil import paste_glyph
+from shared_ui.icons_pil import paste_icon
 from shared_ui.palette import TEXT_MUTED, TEXT_PRIMARY
 from shared_ui.spacing import GAP_MEDIUM, GAP_SMALL
 
@@ -130,8 +130,8 @@ _SPEAKER_MARK = (PAD // 2, 1, CHIP_H - 2, CHIP_H - 2)
 
 def _draw_speaker(image: Image.Image, muted: bool) -> None:
     """The family's speaker at the left end, crossed out while muted."""
-    paste_glyph(image, "speaker_off" if muted else "speaker", _SPEAKER_MARK,
-                TEXT_MUTED if muted else TEXT_PRIMARY)
+    paste_icon(image, "speaker_off" if muted else "speaker", _SPEAKER_MARK,
+               TEXT_MUTED if muted else TEXT_PRIMARY)
 
 
 class VolumeHudPainter(KeptBitmap):

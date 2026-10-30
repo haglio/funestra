@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 from PIL import Image, ImageDraw
 from shared_ui.palette import BG_BUTTON, RED
-from shared_ui.spacing import BUTTON_MARK_INSET
+from shared_ui.spacing import BUTTON_ICON_INSET
 from shared_ui.toggle_geometry import TRACK_HUD
 from shared_ui.toggle_switch_pil import paste_toggle_switch
 
@@ -46,8 +46,8 @@ class TestDrawingThem:
         ink = np.asarray(hud)[:, :, 0] > 128
 
         assert ink.any(), "the mark did not draw"
-        assert not ink[:BUTTON_MARK_INSET, :].any()
-        assert not ink[-BUTTON_MARK_INSET:, :].any()
+        assert not ink[:BUTTON_ICON_INSET, :].any()
+        assert not ink[-BUTTON_ICON_INSET:, :].any()
 
     def test_a_mark_is_laid_over_what_the_button_already_painted(self):
         # It composites onto the button's fill rather than stamping a

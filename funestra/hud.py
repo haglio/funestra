@@ -15,7 +15,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from shared_ui.app_icon import draw_letter
 from shared_ui.button_pil import slab
-from shared_ui.icons_pil import paste_glyph
+from shared_ui.icons_pil import paste_icon
 from shared_ui.lettering import (
     fit_text,  # noqa: F401 -- answered here for Origenerator branches that still import it here
     wrap_text,
@@ -38,7 +38,7 @@ from shared_ui.palette import (
     WHITE,
     hovered,
 )
-from shared_ui.spacing import BUTTON_MARK_INSET, BUTTON_RADIUS, GAP_SMALL
+from shared_ui.spacing import BUTTON_ICON_INSET, BUTTON_RADIUS, GAP_SMALL
 from shared_ui.toggle_geometry import TRACK_HUD
 from shared_ui.toggle_switch_pil import paste_toggle_switch
 from shared_ui.type_scale import in_pixels
@@ -141,10 +141,10 @@ def draw_mark(image: Image.Image, name: str, rect: tuple[int, int, int, int],
     the mark is supersampled and composited back, which a pen cannot carry.
     """
     x, y, w, h = rect
-    paste_glyph(image, name,
-                (x + BUTTON_MARK_INSET, y + BUTTON_MARK_INSET, w - 2 * BUTTON_MARK_INSET,
-                 h - 2 * BUTTON_MARK_INSET),
-                fill)
+    paste_icon(image, name,
+               (x + BUTTON_ICON_INSET, y + BUTTON_ICON_INSET, w - 2 * BUTTON_ICON_INSET,
+                h - 2 * BUTTON_ICON_INSET),
+               fill)
 
 
 # The dot at the head of every HUD's title, saying whether a bare, unaddressed
@@ -164,7 +164,7 @@ def draw_active_dot(image: Image.Image, x: int, y: int, active: bool) -> None:
     the same, and then only the Funestra that *has* the floor says anything, which is
     half an answer to a question asked of the room.
     """
-    paste_glyph(image, "disc", (x, y, _DISC_FRAME, _DISC_FRAME), WHITE if active else TEXT_MUTED)
+    paste_icon(image, "disc", (x, y, _DISC_FRAME, _DISC_FRAME), WHITE if active else TEXT_MUTED)
 
 
 TOOLTIP_PAD = GAP_SMALL

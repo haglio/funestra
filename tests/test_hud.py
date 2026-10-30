@@ -4,7 +4,7 @@ from __future__ import annotations
 import numpy as np
 from PIL import Image, ImageDraw
 from shared_ui import lettering, palette
-from shared_ui.icons_pil import paste_glyph
+from shared_ui.icons_pil import paste_icon
 from shared_ui.palette import BG_PRIMARY, MAGENTA, TEXT_MUTED, WHITE
 from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL
 
@@ -98,7 +98,7 @@ def test_the_active_dot_is_the_familys_disc():
 
     assert np.array_equal(
         drawn(lambda image: draw_active_dot(image, 10, 10, True)),
-        drawn(lambda image: paste_glyph(image, "disc", (10, 10, ACTIVE_DOT + 2, ACTIVE_DOT + 2), WHITE)))
+        drawn(lambda image: paste_icon(image, "disc", (10, 10, ACTIVE_DOT + 2, ACTIVE_DOT + 2), WHITE)))
 
 
 def test_a_tooltip_wider_than_the_hud_wraps_rather_than_running_off_it():
