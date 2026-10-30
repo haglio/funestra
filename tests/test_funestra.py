@@ -1288,7 +1288,7 @@ class TestAWindowsOwnHud:
             return made[-1]
 
         hud = [HudModel(funestra="portrait", title="Unlocked",
-                          rows=((Button("portrait_next", "N", "Next"),),))]
+                        rows=((Button("portrait_next", "N", "Next"),),))]
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
                             users={"slideshow": make}, hud=lambda: hud[0], muted=muted,
                             **handed)
