@@ -26,11 +26,11 @@ jobs:
       # reports nothing at all.
       timeout-minutes: 8
       # tests/test_dead_code.py reads the apps: every caller of this package
-      # lives in another repo, so the scan reads genau, fun_time and
-      # origenerator beside the checkout as its callers, and with nothing
-      # beside it can only skip. Cloned and not installed -- the scan reads
-      # their source, and installing three applications to read it would cost
-      # more than the whole suite.
+      # lives in another repo, so the scan reads fun_time and origenerator
+      # beside the checkout as its callers, and with nothing beside it can
+      # only skip. Cloned and not installed -- the scan reads their source, and
+      # installing two applications to read it would cost more than the whole
+      # suite.
       #
       # Then the engine itself, at the pin: `tools/libmpv.lock` is the digest every
       # app in the family stands on, and until this line nothing ever downloaded it
@@ -38,14 +38,14 @@ jobs:
       # gate fetched it. The recorded digest matched no file at all for a fortnight.
       prepare: |
         set -euo pipefail
-        for repo in genau fun_time origenerator; do
+        for repo in fun_time origenerator; do
           git clone --quiet --depth 1 "https://github.com/haglio/$repo.git" "../$repo"
         done
         python tools/fetch_libmpv.py --require
 
-  # Genau's repo has held no code since Genau became part of this package, only
-  # the checks that hold its genau_contract.json to the flicks-folder layout here,
-  # so this job is those checks run against the candidate.
+  # The retired Genau repository's checks of itself, run against the candidate.
+  # Nothing in them needs this package any more; the job goes once
+  # `consumer / suite` comes off the merge queue's required checks.
   consumer:
     uses: haglio/.github/.github/workflows/merge-gate.yml@main
     with:

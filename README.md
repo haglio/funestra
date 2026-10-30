@@ -13,7 +13,6 @@ Origenerator hands it to one of Fun Time's Satellite Funestras.
 
 | Consumer | Repo | What it takes |
 | --- | --- | --- |
-| Genau | `../genau` | the flick folder's layout, which its contract publishes |
 | Fun Time's Main Funestra | `../fun_time` | a Funestra, with Kino or Genau running on it, and the flick engine for its genau mode |
 | Fun Time's satellites | `../fun_time` | a Funestra, on each satellite's window |
 | Fun Time's headset | `../fun_time` | the same three Funestras over the offscreen engine, drawn into the headset |
