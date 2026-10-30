@@ -27,7 +27,7 @@ jobs:
       # is cancelled and reports nothing at all.
       timeout-minutes: 10
       keeps-what-others-use: true
-      # tests/test_dead_code.py reads the apps: every caller of this package
+      # The family's dead-code gate reads the apps: every caller of this package
       # lives in another repo, so the scan reads fun_time and origenerator
       # beside the checkout as its callers, and with nothing beside it can
       # only skip. Cloned and not installed -- the scan reads their source, and

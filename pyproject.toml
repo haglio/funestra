@@ -54,9 +54,23 @@ dev = [
 # that forgot it died on the first HUD import while this file said the package
 # needed numpy, pillow and python-mpv. It cannot go in [project.dependencies]
 # -- neither sibling is published, so pip would look for them on PyPI -- so
-# this is the record, and tests/test_dependencies.py holds it against the tree.
+# this is the record, and the family's dependency gate holds it against the tree.
 [tool.haglio]
 siblings = ["app_support", "shared_ui"]
+
+# What the family's gates (app_support.gates) let stand here, each for the
+# reason beside it. An entry nothing is reported for any more fails the gate.
+[tool.haglio.dead-code]
+# Every caller of this package lives outside it, so the apps beside this
+# checkout are read with its tests, and what they use counts as used.
+apps-are-callers = true
+# The broker's contract names the folder Fun Time starts the tray from.
+unread-dataclass-fields = ["BrokerContract.package_dir"]
+# The placements the headset's old copies of the row call, in the signatures
+# they call them with, until no checkout from before fun_time#391 is open.
+unread-arguments = ["funestra/playhead.py: win_w", "funestra/playhead.py: readout_w",
+                    "funestra/playhead.py: x", "funestra/playhead.py: y",
+                    "funestra/playhead.py: win_h", "funestra/playhead.py: timeline_h"]
 
 [tool.setuptools.packages.find]
 include = ["funestra*"]
@@ -79,6 +93,6 @@ funestra = ["learned_motion.json.gz", "tiles.glsl"]
 # --timeout-method=thread is the half that pays for itself: it dumps the stack
 # of the test that stopped, which turns a stalled required check into a
 # one-line diagnosis.
-# app_support.clocks holds all three halves of it.
-addopts = "-p no:cacheprovider -p app_support.sanitize.pytest_plugin -p app_support.clocks.pytest_plugin -p app_support.coverage_gate --cov --cov-report= --timeout=60 --timeout-method=thread"
+# app_support.gates holds all three halves of it.
+addopts = "-p no:cacheprovider -p app_support.sanitize.pytest_plugin -p app_support.gates.pytest_plugin -p app_support.coverage_gate --cov --cov-report= --timeout=60 --timeout-method=thread"
 testpaths = ["tests"]
