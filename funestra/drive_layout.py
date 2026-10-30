@@ -9,7 +9,7 @@ their range, and what value a press at a point is asking for.
 Kept apart from the painter because the halves fail differently. A painter can
 be wrong and look wrong; this can be wrong and look right — a hit target that
 has drifted a few pixels from the mark over it is invisible until a press lands
-on the wrong thing. So it is plain functions over plain numbers, and every panel
+on the wrong thing. So it is plain functions over plain numbers, and every HUD
 showing the readout is a thin painter over one tested layout.
 """
 from __future__ import annotations

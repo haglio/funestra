@@ -14,7 +14,7 @@ publishes (:mod:`funestra.console`) plus the Robot Hand's drive readout
 (:mod:`funestra.drive_readout`) with its own controls.
 
 The wording and shape are pure functions; the drawing goes onto the slab
-:mod:`funestra.hud_panel` owns, the same slab the satellites' HUD is drawn on,
+:mod:`funestra.hud` owns, the same slab the satellites' HUD is drawn on,
 so every Funestra says things the same way and from the same corner.
 """
 from __future__ import annotations
@@ -56,6 +56,17 @@ from .drive_readout import (
 )
 from .geometry import Rect, contains
 from .host_controls import HostControlsHud, HostControlsLayout, HostControlsSection
+from .hud import (
+    ACTIVE_DOT,
+    SYMBOL_FONT,
+    Hud,
+    draw_active_dot,
+    draw_button,
+    draw_tooltip,
+    load_font,
+    text_width,
+    to_bgra,
+)
 from .hud_corners import HudPlace
 from .hud_minimize import ROOM as MINUS_ROOM
 from .hud_minimize import collapsed_button, corner_button_rect, minimize_button
@@ -66,17 +77,6 @@ from .hud_osr2 import (
     ReadoutResolver,
     driving_at_the_playhead,
     state_for,
-)
-from .hud_panel import (
-    ACTIVE_DOT,
-    SYMBOL_FONT,
-    HudPanel,
-    draw_active_dot,
-    draw_button,
-    draw_tooltip,
-    load_font,
-    text_width,
-    to_bgra,
 )
 from .hud_placement import HudCorner, PointerReading, block_x
 from .hud_row import ROW_H, RowHud, RowLayout, RowSection, row_layout
@@ -112,7 +112,7 @@ def compilation_label(title: str) -> str:
     return _REVISION.sub("", volume).strip()
 
 
-# --- the panel ---------------------------------------------------------------
+# --- the HUD ---------------------------------------------------------------
 
 _PAD = MARGIN_STANDARD
 _MINUS_INSET = (_PAD, _PAD)
@@ -123,7 +123,7 @@ _SUBTITLE_GAP = GAP_SMALL  # between the title and the file name under it
 
 
 def hud_xy() -> tuple[int, int]:
-    """Where the panel goes: the window's top-left corner, the same place the
+    """Where the HUD goes: the window's top-left corner, the same place the
     satellites put theirs."""
     return MARGIN, MARGIN
 
@@ -142,7 +142,7 @@ class ConsoleHud:
     console: ConsoleModel = field(default_factory=ConsoleModel)
     drive: DriveHud | None = None
     # The gray the slab is made of, or None for the canvas color every Funestra
-    # floating this over a video wants (see hud_panel.HudPanel).  Part of the
+    # floating this over a video wants (see hud.Hud).  Part of the
     # value compared for the repaint cache, like the rest.
     ground: tuple[int, int, int] | None = None
     flash: str = ""
@@ -152,7 +152,7 @@ class ConsoleHud:
         """How long an unlocked Genau leaves each flick up.
 
         Genau owns the pace, so it rides its own drive readout rather than the
-        console panel Fun Time publishes — and is read back off the readout
+        console HUD Fun Time publishes — and is read back off the readout
         wherever the console needs it, which is both the auto-advance button and
         the title.
         """
@@ -214,7 +214,7 @@ class ConsolePainter:
     """Paints the main console, and only when something on it has moved.
 
     A Funestra redraws its overlays every frame at 60 fps and Pillow is nowhere
-    near cheap enough for that, so the bitmap is kept until the panel's contents
+    near cheap enough for that, so the bitmap is kept until the HUD's contents
     change.  The button rects from the last painting are kept beside it — the
     console's own and the drive readout's arrows — so what is clickable is exactly
     what was drawn, and the readout's own bands with them, so what is draggable is
@@ -222,20 +222,20 @@ class ConsolePainter:
     """
 
     def __init__(self, *, width: int | None = None, device_only: bool = False,
-                 minus_on_the_panel: bool = True,
+                 minus_on_the_hud: bool = True,
                  clock: Callable[[], float] = time.monotonic) -> None:
-        """*width* holds every panel to one width, whatever is on it.  A console
+        """*width* holds every HUD to one width, whatever is on it.  A console
         hanging in a scene as a screen of its own (FunTimeVR's) otherwise changes
         size with its contents — the genau-mode rows are narrower than the
-        kino-mode ones, and a long title widens the panel — and a screen that
+        kino-mode ones, and a long title widens the HUD — and a screen that
         grows and shrinks is a screen that moves.  The rows, the readout and
         the OSR2 line must fit, so a width narrower than them is widened, never
         clipped; the two text lines give way instead, elided to fit.  None
-        sizes the panel to its contents, as one drawn over the Funestra's own
+        sizes the HUD to its contents, as one drawn over the Funestra's own
         window is."""
         self._width = width
         self._device_only = device_only
-        self._minus_on_the_panel = minus_on_the_panel
+        self._minus_on_the_hud = minus_on_the_hud
         self._body = load_font(SIZE_BODY)
         self._tiny = load_font(SIZE_TINY)
         self._glyph = load_font(SIZE_BODY, SYMBOL_FONT)
@@ -243,7 +243,7 @@ class ConsolePainter:
         self._osr2 = Osr2Section()
         self._item_row = RowSection()
         self._host_controls = HostControlsSection()
-        # What the panel on hand was painted from.  The heatmap is held by
+        # What the HUD on hand was painted from.  The heatmap is held by
         # identity rather than value: comparing a track's worth of colors every
         # frame costs more than the paint it saves, and a host rebuilds the
         # array rather than writing into it.
@@ -282,12 +282,12 @@ class ConsolePainter:
 
     def _resolve(self, hud: ConsoleHud) -> ConsoleHud:
         """*hud* with everything the drawing Funestra knows folded into it, before
-        anything asks whether the panel has moved.
+        anything asks whether the HUD has moved.
 
         Folded here rather than at paint time because a readout that is *not*
         moving has to compare equal: the trace held still while nothing is being
         sent arrives as a fresh scroll of Genau's phase every publish, and folded
-        after the comparison it would repaint the whole panel forty times a
+        after the comparison it would repaint the whole HUD forty times a
         second to draw the same still image.
         """
         console = hud.console
@@ -300,10 +300,10 @@ class ConsolePainter:
                 item_row: RowHud | None = None, heatmap=None,
                 host_controls: HostControlsHud | None = None) -> bool:
         """Repaint if *hud*/*hover*/the item's row/the host's controls moved; report whether it did
-        (so a cached bitmap can be reused).  The panel is redrawn a few times a
+        (so a cached bitmap can be reused).  The HUD is redrawn a few times a
         minute at most — Pillow is too slow to run every frame — so the image is
         kept until it changes.  The row is the one part that moves with playback,
-        which is why a Funestra redrawing on its beat gets a fresh panel."""
+        which is why a Funestra redrawing on its beat gets a fresh HUD."""
         hover = hover if hover is not None else self._pointer.on(hud.console)
         if ((hud, hover, item_row, host_controls) == self._painted[:4]
                 and heatmap is self._painted[4] and self._image is not None):
@@ -352,14 +352,14 @@ class ConsolePainter:
     def motion(self, mx: int, my: int) -> None:
         """Follow the pointer to *window* point ``(mx, my)``: the next painting
         lights the button under it and names it, until the pointer moves off or
-        the panel moves to another corner."""
+        the HUD moves to another corner."""
         self._pointer.take(self.hover_at(mx, my))
 
     def leave(self) -> None:
         """The pointer has left the window: no button is under it."""
         self._pointer.take(None)
 
-    # Only Genau's old console panel, in checkouts from before its window went,
+    # Only Genau's old console HUD, in checkouts from before its window went,
     # reads row_rect; it answers until none of them is open.
     @property
     def row_rect(self) -> tuple[int, int, int, int] | None:
@@ -377,19 +377,19 @@ class ConsolePainter:
     def place(self, *, window: tuple[int, int], lower_edge: int = 0) -> tuple[int, int]:
         place = self.hud_place or HudPlace("", HudCorner.UPPER_LEFT, MARGIN)
         size = self._image.size if self._image is not None else (0, 0)
-        self._origin = place.origin(panel=size, window=window, lower_edge=lower_edge)
+        self._origin = place.origin(hud=size, window=window, lower_edge=lower_edge)
         return self._origin
 
     def _local(self, mx: int, my: int) -> tuple[int, int]:
         left, top = self._origin
         return mx - left, my - top
 
-    def _block_x(self, corner: HudCorner, panel_width: int, extent: int,
+    def _block_x(self, corner: HudCorner, hud_width: int, extent: int,
                  reserve: int = 0) -> int:
-        return block_x(corner, panel_width=panel_width, extent=extent, pad=_PAD,
+        return block_x(corner, hud_width=hud_width, extent=extent, pad=_PAD,
                        reserve=reserve)
 
-    def _draw_top_block(self, panel: HudPanel, y: int, title: str, filename: str,
+    def _draw_top_block(self, hud: Hud, y: int, title: str, filename: str,
                         active: bool, width: int, corner: HudCorner, *,
                         reserve: int) -> None:
         """The active-Funestra dot and the title — what is selecting this
@@ -399,12 +399,12 @@ class ConsolePainter:
         screens finds the same answer in the same corner.  Both are empty in genau
         mode, and the block is then only the dot.
         """
-        draw = panel.draw
+        draw = hud.draw
         ascent, descent = self._body.getmetrics()
         indent = ACTIVE_DOT + DOT_GAP
         title_x = self._block_x(corner, width,
                                  indent + text_width(self._body, title), reserve)
-        draw_active_dot(panel.image, title_x, y + (ascent + descent) // 2 - ACTIVE_DOT // 2,
+        draw_active_dot(hud.image, title_x, y + (ascent + descent) // 2 - ACTIVE_DOT // 2,
                         active)
         if title:
             draw.text((title_x + indent, y + ascent), title, font=self._body,
@@ -415,39 +415,39 @@ class ConsolePainter:
             draw.text((name_x + indent, y + ascent + descent + _SUBTITLE_GAP), filename,
                       font=self._tiny, anchor="la", fill=(*TEXT_MUTED, 255))
 
-    def _draw_rows(self, panel: HudPanel, rows: list[list[Button]], y: int,
+    def _draw_rows(self, hud: Hud, rows: list[list[Button]], y: int,
                    corner: HudCorner, hover: tuple[int, int] | None, reserve: int = 0,
                    ) -> list[tuple[Rect, Button]]:
-        width = panel.image.width
+        width = hud.image.width
         placed = place_rows(rows, x=_PAD + (0 if corner.right else reserve), y=y,
                             ends_at=width - _PAD - reserve if corner.right else None)
         row_top = None
         for rect, button in placed:
-            draw_button(panel.image, panel.draw, rect, button,
+            draw_button(hud.image, hud.draw, rect, button,
                         hovered=hover is not None and contains(rect, *hover),
                         glyph_font=self._glyph, word_font=self._tiny,
                         row_label=rect[1] != row_top)
             row_top = rect[1]
         return placed
 
-    def _paint(self, hud: ConsoleHud, hover: tuple[int, int] | None = None,
+    def _paint(self, console_hud: ConsoleHud, hover: tuple[int, int] | None = None,
                item_row: RowHud | None = None, heatmap=None,
                host_controls: HostControlsHud | None = None) -> Image.Image:
-        console, drive = hud.console, hud.drive
+        console, drive = console_hud.console, console_hud.drive
         if console.hud_minimized:
-            return self._paint_minimized(console.funestra, console.hud_corner, hover, hud.flash)
-        # Held for the OSR2 pill: with a composed trace on the panel the pill
+            return self._paint_minimized(console.funestra, console.hud_corner, hover, console_hud.flash)
+        # Held for the OSR2 pill: with a composed trace on the HUD the pill
         # reads the trace's own answer to who has the device (see _osr2_state),
         # and the width helpers need it before the pill is drawn.
         self._composed_drive = (
             drive if (drive is not None and drive.segments
                       and kino_shows(console.main_mode)) else None)
         whole = not self._device_only
-        rows = [[self._filled(button, hud) for button in row]
+        rows = [[self._filled(button, console_hud) for button in row]
                 for row in (console.rows if whole else ())]
-        aim_rows = [[self._filled(button, hud) for button in row] for row in console.osr2_rows]
-        title = hud.title if whole else ""
-        filename = hud.modes.video if whole else ""
+        aim_rows = [[self._filled(button, console_hud) for button in row] for row in console.osr2_rows]
+        title = console_hud.title if whole else ""
+        filename = console_hud.modes.video if whole else ""
         item_row = item_row if whole else None
         drive_w, drive_h = section_size() if drive is not None else (0, 0)
         body_ascent, body_descent = self._body.getmetrics()
@@ -462,7 +462,7 @@ class ConsolePainter:
                       self._osr2_width(console) if console.has_osr2 else 0),
                   self._item_row.least_width(item_row) if item_row is not None else 0,
                   self._host_controls.least_width(host_controls) if host_controls is not None else 0]
-        minus_room = MINUS_ROOM if whole and self._minus_on_the_panel else 0
+        minus_room = MINUS_ROOM if whole and self._minus_on_the_hud else 0
         last = max(index for index, used in enumerate(
             (True, bool(rows), bool(aim_rows) or console.has_osr2 or drive is not None,
              item_row is not None, host_controls is not None)) if used)
@@ -497,35 +497,35 @@ class ConsolePainter:
         title_top, rows_top, device_top, row_top, host_top = sections.tops
         height = sections.end + _PAD
 
-        panel = HudPanel(width, height, ground=hud.ground or BG_PRIMARY)
+        hud = Hud(width, height, ground=console_hud.ground or BG_PRIMARY)
         for divider in sections.dividers:
-            panel.divide(divider)
-        draw = panel.draw
+            hud.divide(divider)
+        draw = hud.draw
 
         if whole:
-            self._draw_top_block(panel, title_top, title, filename, console.active,
+            self._draw_top_block(hud, title_top, title, filename, console.active,
                                  width, corner, reserve=reserves[0])
-        self.buttons = self._draw_rows(panel, rows, rows_top, corner, hover, reserves[1])
+        self.buttons = self._draw_rows(hud, rows, rows_top, corner, hover, reserves[1])
         self.tracks = []
 
         y = device_top
         if aim_rows:
-            self.buttons.extend(self._draw_rows(panel, aim_rows, y, corner, hover, reserves[2]))
+            self.buttons.extend(self._draw_rows(hud, aim_rows, y, corner, hover, reserves[2]))
             y += rows_height(aim_rows) + _BLOCK_GAP
 
         if console.has_osr2:
             osr2_line = self._osr2_line(console)
             osr2_x = self._block_x(corner, width, self._osr2.width(osr2_line), reserves[2])
-            self.buttons.extend(self._osr2.draw(panel.image, draw, osr2_x, y, osr2_line,
+            self.buttons.extend(self._osr2.draw(hud.image, draw, osr2_x, y, osr2_line,
                                                 hover=hover))
             self.tracks.extend(self._osr2.bands(osr2_x, y, osr2_line))
             y += _OSR2_H + _BLOCK_GAP
 
         if drive is not None:
             drive_x = self._block_x(corner, width, drive_w, reserves[2])
-            # The panel's image rather than its pen: the readout supersamples
+            # The HUD's image rather than its pen: the readout supersamples
             # its trace and composites it back, which a pen cannot carry.
-            self._drive.draw(panel.image, drive_x, y, drive)
+            self._drive.draw(hud.image, drive_x, y, drive)
             # The readout draws its own arrows and bands; the console only needs
             # them as hit targets, so they answer a press and name themselves on
             # hover.
@@ -533,21 +533,21 @@ class ConsolePainter:
             self.buttons.extend(targets)
             self.tracks.extend(bands)
 
-        if whole and self._minus_on_the_panel:
-            minus = (corner_button_rect(corner, panel=(width, height), inset=_MINUS_INSET),
+        if whole and self._minus_on_the_hud:
+            minus = (corner_button_rect(corner, hud=(width, height), inset=_MINUS_INSET),
                      minimize_button(console.funestra))
-            draw_button(panel.image, draw, *minus,
+            draw_button(hud.image, draw, *minus,
                         hovered=hover is not None and contains(minus[0], *hover),
                         glyph_font=self._glyph, word_font=self._tiny)
             self.buttons.append(minus)
-        self._draw_the_foot(panel.image, corner, reserves, item_row, row_top, row_h, heatmap,
+        self._draw_the_foot(hud.image, corner, reserves, item_row, row_top, row_h, heatmap,
                             host_controls, host_top)
 
         if hover is not None:
             tip = tooltip_at(self.buttons, *hover)
             if tip:
                 draw_tooltip(draw, self._tiny, tip, hover, (width, height))
-        return panel.image
+        return hud.image
 
     def _draw_the_foot(self, image: Image.Image, corner: HudCorner, reserves: list[int],
                        item_row: RowHud | None, row_top: int, row_h: int, heatmap,
@@ -573,14 +573,14 @@ class ConsolePainter:
 
     def _osr2_state(self, model: ConsoleModel) -> str:
         """What the pill says has the device — the drawn line's own answer
-        when a composed trace is on the panel, so the pill flips exactly when
+        when a composed trace is on the HUD, so the pill flips exactly when
         the line under the dot changes hands, and says Buffer through the gray
         where the device belongs to neither driver.  The round-tripped osr2
         stands in everywhere else, and for its own device-level states.
 
         The precedence around it -- auto, then a hold, then whoever
         is driving -- is the shared line's (:func:`funestra.hud_osr2.state_for`),
-        since every panel that draws this line answers it the same way."""
+        since every HUD that draws this line answers it the same way."""
         return state_for(model.osr2, model.osr2_control,
                          driving=driving_at_the_playhead(self._composed_drive, model.osr2),
                          paused=model.paused)

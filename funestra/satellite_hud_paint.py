@@ -4,9 +4,9 @@ Drawing it into the frame rather than into a window of its own is the whole
 point: an mpv overlay has no z-order, so it can neither fall beneath the video nor
 float above the desktop.
 
-The slab it is drawn on — the rounded translucent panel, the palette, the Segoe
+The slab it is drawn on — the rounded translucent HUD, the palette, the Segoe
 face sized the way Qt sized it, the BGRA hand-off — comes from
-:mod:`funestra.hud_panel`, which the Main Funestra's own HUD is drawn on too, so the two
+:mod:`funestra.hud`, which the Main Funestra's own HUD is drawn on too, so the two
 Funestras go on looking like one another.  The layout and hit-test rects come from
 :mod:`funestra.satellite_hud`, so what is drawn and what is clickable cannot drift apart.
 """
@@ -31,11 +31,9 @@ from shared_ui.palette import (
 from shared_ui.spacing import BUTTON_GROUP_GAP
 from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
-from funestra.hud_button import Button
-from funestra.hud_marks import SHARED_MARK, shared_mark, shared_mark_name
-from funestra.hud_panel import (
+from funestra.hud import (
     SYMBOL_FONT,
-    HudPanel,
+    Hud,
     button_ground,
     draw_active_dot,
     draw_button,
@@ -45,11 +43,13 @@ from funestra.hud_panel import (
     load_font,
     text_width,
 )
+from funestra.hud_button import Button
+from funestra.hud_marks import SHARED_MARK, shared_mark, shared_mark_name
 
 from .drive_readout import DriveSection, DriveTrack, readout_targets, section_size
 from .geometry import Rect, contains
 from .hud_minimize import ROOM as MINIMIZE_ROOM
-from .hud_minimize import collapsed_panel, corner_button_rect, minimize_button
+from .hud_minimize import collapsed_hud, corner_button_rect, minimize_button
 from .hud_osr2 import HEIGHT as OSR2_H
 from .hud_osr2 import (
     Osr2Line,
@@ -102,6 +102,8 @@ from .satellite_hud import (
     expand_button_rect,
     favorite_mark_rect,
     filter_button_rects,
+    hud_layout,
+    hud_width,
     label_is_filtered,
     label_stack_top,
     largest_size_that_fits,
@@ -111,8 +113,6 @@ from .satellite_hud import (
     map_row_width,
     map_window,
     name_line,
-    panel_layout,
-    panel_width,
     playing_rect,
     seed_column_label,
     slot_rects,
@@ -158,7 +158,7 @@ def _dashed_rect(draw: ImageDraw.ImageDraw, rect: Rect, color, dash: int = 4) ->
 class HudRenderer:
     """Paints one satellite's HUD, reusing its fonts and decoded thumbnails.
 
-    A render happens whenever the published panel changes (every few seconds, as
+    A render happens whenever the published HUD changes (every few seconds, as
     clips advance) or the cursor moves onto or off a button, so the thumbnails are
     cached by path: fun_time's cache filenames fold in the clip's mtime, so a path
     that is still valid is still the right image.
@@ -172,7 +172,7 @@ class HudRenderer:
         self._pointer: tuple[int, int] | None = None
         self._glyph = load_font(SIZE_BODY, SYMBOL_FONT)
         self._thumbs: dict[str, Image.Image] = {}
-        # The main console's own two blocks, hosted here for a panel whose
+        # The main console's own two blocks, hosted here for a HUD whose
         # Funestra has the OSR2 -- see HudModel.osr2.
         self._osr2 = Osr2Section()
         self._drive = DriveSection()
@@ -207,8 +207,8 @@ class HudRenderer:
                 [self._thumbnail(cell) for cell in model.actions])
 
     @staticmethod
-    def _block_x(model: HudModel, panel_width: int, extent: int, reserve: int = 0) -> int:
-        return block_x(model.hud_corner, panel_width=panel_width, extent=extent, pad=PAD,
+    def _block_x(model: HudModel, hud_width: int, extent: int, reserve: int = 0) -> int:
+        return block_x(model.hud_corner, hud_width=hud_width, extent=extent, pad=PAD,
                        reserve=reserve)
 
     def render(
@@ -222,10 +222,10 @@ class HudRenderer:
         hover_tip: str = "",
         hover_pos: tuple[int, int] = (0, 0),
         may_grow_on_hover: bool = True,
-        minus_on_the_panel: bool = True,
+        minus_on_the_hud: bool = True,
         flash: str = "",
     ) -> RenderedHud:
-        """The panel as a BGRA bitmap plus the rects its controls occupy.
+        """The HUD as a BGRA bitmap plus the rects its controls occupy.
 
         The current clip anchors the map — its seed family runs right along the row
         and distinct other actions run down the column, so stepping an action
@@ -243,17 +243,17 @@ class HudRenderer:
         the source published.
 
         *video* is the file on screen, named under the title.  It comes from
-        the Funestra rather than from *model*: the published panel is fun_time's answer
+        the Funestra rather than from *model*: the published HUD is fun_time's answer
         to what this side is browsing, and what is actually decoding is the Funestra's
         own — the same split the Main Funestra draws, which names its file from its own
         session and takes the rest of its console off the wire.
         """
-        # Where the pointer is for this frame, or None off the panel.  The
+        # Where the pointer is for this frame, or None off the HUD.  The
         # position is only current while something under it has a tooltip —
         # every control here has one — so an empty tip means "not on a button".
         self._pointer = hover_pos if hover_tip else None
         if model.hud_minimized:
-            bgra, buttons = collapsed_panel(
+            bgra, buttons = collapsed_hud(
                 model.funestra, model.hud_corner, hover=self._pointer,
                 room_for_the_tooltip=not may_grow_on_hover, flash=flash)
             return RenderedHud(bgra, HudTargets(click=[], loop=[], filter=[], expand=None,
@@ -264,13 +264,13 @@ class HudRenderer:
         counts = self._count_lines(model)
         model, seed_win, action_win = self._window(model)
         corner_thumb, seed_thumbs, action_thumbs = self._map_thumbnails(model)
-        # The bands' own demand: a row the panel cannot hold clips away in
+        # The bands' own demand: a row the HUD cannot hold clips away in
         # silence — the buttons past the edge are simply not there, with nothing
-        # raised — so the panel is measured around the widest row.
+        # raised — so the HUD is measured around the widest row.
         rows = [list(row) for row in model.rows]
         widths = [[self._button_width(button) for button in row] for row in rows]
         # The rows that aim the device are measured with the rest -- they are
-        # drawn in the device's own block, but a panel too narrow for them clips
+        # drawn in the device's own block, but a HUD too narrow for them clips
         # them away just as silently.
         device_rows = [list(row) for row in model.osr2_rows]
         device_row_widths = [[self._button_width(b) for b in row] for row in device_rows]
@@ -291,7 +291,7 @@ class HudRenderer:
         drive_w, drive_h = section_size() if model.drive is not None else (0, 0)
         device_w = max(self._osr2.width(osr2_line) if model.osr2 else 0, drive_w)
         foot_w, foot_h = model.foot.size() if model.foot is not None else (0, 0)
-        width = panel_width(model.funestra, text_width(self._tiny, video),
+        width = hud_width(model.funestra, text_width(self._tiny, video),
                             content_width=max(
                                 band_width,
                                 2 * PAD + device_w if device_w else 0,
@@ -299,19 +299,19 @@ class HudRenderer:
                                 2 * PAD + self._item_row.least_width(item_row)
                                 if item_row is not None else 0))
         row_h = ROW_H if item_row is not None else 0
-        layout = panel_layout(
+        layout = hud_layout(
             title_h=self._title_height(),
             bands=len(rows), speed=model.playback_speed is not None, row_h=row_h,
             device_h=device_height(model.osr2, model.drive, drive_h, len(device_rows)),
             foot_h=foot_h)
         height = layout.height
-        panel = HudPanel(width, height)
+        hud = Hud(width, height)
         for divider in layout.dividers:
-            panel.divide(divider)
-        image, draw = panel.image, panel.draw
+            hud.divide(divider)
+        image, draw = hud.image, hud.draw
 
         x = PAD
-        minus_room = MINIMIZE_ROOM if minus_on_the_panel else 0
+        minus_room = MINIMIZE_ROOM if minus_on_the_hud else 0
         room = width - TITLE_X - PAD - minus_room
         title_font = self._title_font(largest_size_that_fits(
             SIZE_BODY, room,
@@ -323,15 +323,15 @@ class HudRenderer:
             reserve=0 if model.hud_corner.lower else minus_room)
         y = layout.bands
         buttons: list[tuple[Rect, Button]] = []
-        if minus_on_the_panel:
-            minus = (corner_button_rect(model.hud_corner, panel=(width, height),
+        if minus_on_the_hud:
+            minus = (corner_button_rect(model.hud_corner, hud=(width, height),
                                         inset=MINUS_INSET),
                      minimize_button(model.funestra))
             draw_button(image, draw, *minus, hovered=self._pointer_is_on(minus[0]),
                         glyph_font=self._glyph, word_font=self._tiny)
             buttons.append(minus)
 
-        # Laid out against the panel rather than against the map: they act on the
+        # Laid out against the HUD rather than against the map: they act on the
         # side and the clip on screen, and are there whether or not there is a map.
         for row, row_widths in zip(rows, widths):
             placed = button_row_rects(
@@ -384,7 +384,7 @@ class HudRenderer:
                        else HudTargets(click=[], loop=[], filter=[], expand=None))
         if hover_tip:
             draw_tooltip(draw, self._tiny, hover_tip, hover_pos, (width, height))
-        return RenderedHud(panel.to_bgra(), replace(
+        return RenderedHud(hud.to_bgra(), replace(
             map_targets, tracks=bands, row=row, foot=foot_rect, buttons=buttons,
             favorite=favorite))
 
@@ -464,7 +464,7 @@ class HudRenderer:
             y += OSR2_H + BLOCK_GAP
         if model.drive is not None:
             drive_x = self._block_x(model, width, section_size()[0])
-            # The panel's image rather than its pen: the readout supersamples its
+            # The HUD's image rather than its pen: the readout supersamples its
             # trace and composites it back, which a pen cannot carry.
             self._drive.draw(image, drive_x, y, model.drive)
             drive_targets, bands = readout_targets(drive_x, y, model.drive)
@@ -675,7 +675,7 @@ class HudRenderer:
         """Whether the pointer is inside *rect* in the frame being drawn.
 
         Read off the hover the render was handed rather than passed down through
-        every button: the panel is redrawn on every hover change anyway, and
+        every button: the HUD is redrawn on every hover change anyway, and
         threading a flag through six drawing helpers to say one thing is how the
         lock ended up with three ways to be told it was on.
         """
@@ -683,20 +683,20 @@ class HudRenderer:
 
     def _button_square(self, draw, rect: Rect, *, on: bool,
                        on_color=BLUE, ink=None) -> tuple[int, int, int, int]:
-        """The panel's square button, and the color to draw its mark in — the
+        """The HUD's square button, and the color to draw its mark in — the
         single button shape every control on this HUD is drawn with, so a new one
         cannot invent its own look.
 
         Off, the square sits on the family's own button ground -- an outline over
-        the slab and nothing else read as a gap cut in the panel rather than as
+        the slab and nothing else read as a gap cut in the HUD rather than as
         the raised button every window here offers -- with an edge in the muted
         gray the rest of the chrome uses, and the MARK is full-strength -- the same way the Main Funestra's console
-        draws its own.  Both were muted here, which left these panels reading as
+        draws its own.  Both were muted here, which left these HUDs reading as
         dim and half-disabled beside the console's, for controls that were
         neither.  On, the square fills *on_color*: the family's ACTIVE ground, one
         step up from the resting one, which is the step Origenerator's checked
         buttons take and now the step every HUD here takes with them.  It used to
-        fill white, the loudest thing on the panel for a control whose whole news
+        fill white, the loudest thing on the HUD for a control whose whole news
         is that it is on.  The lock is the exception: green across this family
         means favorites and the funscripts, and the lock is the gesture that
         favorites a clip, so it is the one control that earns the color.
@@ -710,7 +710,7 @@ class HudRenderer:
 
     def _glyph_button(self, image, draw, rect: Rect, glyph: str, *, on: bool = False,
                       on_color=WHITE, ink=None) -> None:
-        """One of the panel's square buttons, with a mark or a glyph on it.
+        """One of the HUD's square buttons, with a mark or a glyph on it.
 
         A mark the family draws is rendered from its geometry, so the bin here is
         the bin on Origenerator's toolbar rather than whatever a symbol face had.
@@ -733,7 +733,7 @@ class HudRenderer:
         """The strike under the current clip's act: the family's cross, drawn red.
 
         Red because it takes something away — the same red the bin on the control
-        band wears, and the one color on this panel worth stopping at before
+        band wears, and the one color on this HUD worth stopping at before
         pressing.  Never lit: striking an act is a thing done, not a state the
         side sits in, and the act is relabeled out from under it.
         """

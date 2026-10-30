@@ -5,7 +5,7 @@ Pillow -- and that is worth keeping: it is what lets the model be built, tested
 and sent around without a drawing toolkit anywhere near it.  So a control that
 wants one of :mod:`shared_ui.icon_geometry`'s marks NAMES it, with the marker
 below, and the painter is what turns the name into pixels
-(:func:`funestra.hud_panel.draw_mark`).
+(:func:`funestra.hud.draw_mark`).
 
 This module holds only the naming, and imports nothing, so both a model module
 and a painter can use it without either dragging the other's dependencies along.
@@ -55,7 +55,7 @@ NEXT_ICON = shared_mark("chevron_right")
 LOCK_ICON = shared_mark("lock")
 
 # What a funestra from before a control wore the family's mark publishes for it:
-# Origenerator publishes its panel from a funestra of its own, which can be older
+# Origenerator publishes its HUD from a funestra of its own, which can be older
 # than the one drawing it.
 _RETIRED_GLYPHS = {"\0minimize": MINIMIZE_ICON}
 

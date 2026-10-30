@@ -1,8 +1,8 @@
-"""The panel kept on the item: taken from its source, rendered when it changes, composited, pressed.
+"""The HUD kept on the item: taken from its source, rendered when it changes, composited, pressed.
 
-Two sources.  A session in another process publishes the panel to a file and
+Two sources.  A session in another process publishes the HUD to a file and
 takes its presses back on the dashboard's command file; a window's own
-program -- a standalone Origenerator building its Slideshow's panel -- hands
+program -- a standalone Origenerator building its Slideshow's HUD -- hands
 the model over in-process and takes the presses itself.
 """
 from __future__ import annotations
@@ -35,7 +35,7 @@ from .satellite_hud_paint import HudRenderer
 
 HUD_OVERLAY_ID = 10
 
-# What the panel posts about the block its source paints at its foot: the
+# What the HUD posts about the block its source paints at its foot: the
 # source placed it and knows what is drawn where, so a press, a drag, the
 # button coming up and the wheel go back to it with where they landed, in the
 # block's own pixels.
@@ -59,8 +59,8 @@ class _Hover(NamedTuple):
 _ON_NO_CONTROL = _Hover("", "", (0, 0))
 
 
-class _PublishedPanel:
-    """The panel a session publishes to a file, and the file its presses go back on."""
+class _PublishedHud:
+    """The HUD a session publishes to a file, and the file its presses go back on."""
 
     def __init__(self, hud_file: Path, command_file: Path) -> None:
         self._hud_file = Path(hud_file)
@@ -68,7 +68,7 @@ class _PublishedPanel:
         self._published = ""
 
     def next(self, shown: HudModel | None) -> tuple[HudModel | None, bool]:
-        """The panel to show and whether it changed -- unchanged for a frame
+        """The HUD to show and whether it changed -- unchanged for a frame
         that lost the race with the source replacing the file."""
         try:
             text = self._hud_file.read_text(encoding="utf-8")
@@ -85,16 +85,16 @@ class _PublishedPanel:
         ask(self._command_file, command)
 
 
-class _WindowsOwnPanel:
-    """The panel the window's own program hands over, and where its presses go."""
+class _WindowsOwnHud:
+    """The HUD the window's own program hands over, and where its presses go."""
 
-    def __init__(self, panel: Callable[[], HudModel | None],
+    def __init__(self, hud: Callable[[], HudModel | None],
                  post: Callable[[str], None]) -> None:
-        self._panel = panel
+        self._hud = hud
         self.post = post
 
     def next(self, shown: HudModel | None) -> tuple[HudModel | None, bool]:
-        model = self._panel()
+        model = self._hud()
         return model, model != shown
 
 
@@ -106,7 +106,7 @@ class HudOverlay:
         engine,
         hud_file: Path | None = None,
         command_file: Path | None = None,
-        panel: Callable[[], HudModel | None] | None = None,
+        hud: Callable[[], HudModel | None] | None = None,
         post: Callable[[str], None] | None = None,
         overlay_id: int = HUD_OVERLAY_ID,
         clock=time.monotonic,
@@ -114,14 +114,14 @@ class HudOverlay:
         drive_gate=None,
         readout: DrivePublisher | None = None,
         over_the_video: bool = True,
-        minus_on_the_panel: bool = True,
+        minus_on_the_hud: bool = True,
         seek=None,
         seek_loop=None,
         set_volume=None,
         toggle_mute=None,
     ) -> None:
-        self._source = (_WindowsOwnPanel(panel, post) if panel is not None
-                        else _PublishedPanel(hud_file, command_file))
+        self._source = (_WindowsOwnHud(hud, post) if hud is not None
+                        else _PublishedHud(hud_file, command_file))
         self._drive_file = None if drive_file is None else Path(drive_file)
         self._drive_gate = drive_gate
         self._readout = readout
@@ -131,7 +131,7 @@ class HudOverlay:
         self.overlay_id = overlay_id
         self._clock = clock
         self._over_the_video = over_the_video
-        self._minus_on_the_panel = minus_on_the_panel
+        self._minus_on_the_hud = minus_on_the_hud
         self._renderer: HudRenderer | None = None
         self._clicks: HudClicks | None = None
         self._model: HudModel | None = None
@@ -140,7 +140,7 @@ class HudOverlay:
         self._playback_speed: float | None = None
         self._item_row: RowHud | None = None
         self._heatmap = None
-        # The panel draws the item's row, so it places a press on it too.
+        # The HUD draws the item's row, so it places a press on it too.
         self._row = RowPress(seek=seek, seek_loop=seek_loop, set_volume=set_volume,
                              toggle_mute=toggle_mute)
         self._hover: PointerReading[_Hover] = PointerReading(_ON_NO_CONTROL)
@@ -150,7 +150,7 @@ class HudOverlay:
         self._draw_owed = False
         self._window: tuple[int, int] | None = None
         self._origin = (MARGIN, MARGIN)
-        self._panel_size: tuple[int, int] | None = None
+        self._hud_size: tuple[int, int] | None = None
         self.targets: HudTargets = _EMPTY_TARGETS
 
     @property
@@ -224,9 +224,9 @@ class HudOverlay:
         return True
 
     def wheel(self, x: int, y: int, steps: int) -> bool:
-        """The wheel turned *steps* notches over the panel: the block at the
-        foot takes it, and the rest of the panel is a surface with nothing to
-        turn, which is still the panel's and not the item's."""
+        """The wheel turned *steps* notches over the HUD: the block at the
+        foot takes it, and the rest of the HUD is a surface with nothing to
+        turn, which is still the HUD's and not the item's."""
         if self._clicks is None or not self.covers(x, y):
             return False
         self._pointer_at = self._local(x, y)
@@ -247,7 +247,7 @@ class HudOverlay:
 
     @property
     def row(self) -> RowLayout | None:
-        """Where the row landed in this panel and how it is laid out,
+        """Where the row landed in this HUD and how it is laid out,
         for a host measuring the track it is to fill."""
         return self.targets.row
 
@@ -257,7 +257,7 @@ class HudOverlay:
         loop's frames under it."""
         return track_on_screen(
             self.targets.row, origin=self._origin,
-            panel_height=0 if self._panel_size is None else self._panel_size[1])
+            hud_height=0 if self._hud_size is None else self._hud_size[1])
 
     @property
     def holding(self) -> bool:
@@ -266,7 +266,7 @@ class HudOverlay:
 
     def drag_to(self, x: int, y: int) -> str:
         """The pointer held down and moving: the row goes on being set, and past
-        the row, whatever the panel itself took hold of."""
+        the row, whatever the HUD itself took hold of."""
         self._pointer_at = self._local(x, y)
         if self._row.drag_to(*self._pointer_at, layout=self.targets.row,
                              duration_ms=self._track_duration()):
@@ -280,7 +280,7 @@ class HudOverlay:
         return command
 
     def release(self) -> None:
-        """Let go of whichever part of the row, of the foot, or of the panel a press took."""
+        """Let go of whichever part of the row, of the foot, or of the HUD a press took."""
         self._row.release()
         if self._foot_held:
             self._foot_held = False
@@ -299,16 +299,16 @@ class HudOverlay:
         self._draw()
 
     def close(self) -> None:
-        self._panel_size = None
+        self._hud_size = None
         if self._shown:
             self._engine.remove_overlay(self.overlay_id)
             self._shown = False
 
     def covers(self, x: int, y: int) -> bool:
-        if self._panel_size is None:
+        if self._hud_size is None:
             return False
         left, top = self._origin
-        width, height = self._panel_size
+        width, height = self._hud_size
         return left <= x < left + width and top <= y < top + height
 
     def _foot_covers(self, px: int, py: int) -> bool:
@@ -332,7 +332,7 @@ class HudOverlay:
     def _place(self, corner: HudCorner, size: tuple[int, int]) -> tuple[int, int]:
         if self._window is None:
             return MARGIN, MARGIN
-        return replace(self.hud_place, corner=corner).origin(panel=size, window=self._window)
+        return replace(self.hud_place, corner=corner).origin(hud=size, window=self._window)
 
     def _motion(self) -> DriveHud | None:
         if self._drive_file is None or self._model is None or not self._model.osr2:
@@ -346,7 +346,7 @@ class HudOverlay:
     def _draw(self) -> None:
         hover = self._hover.on(self._model)
         if (self._model is None or self._renderer is None
-                or (self._model.hud_minimized and not self._minus_on_the_panel)):
+                or (self._model.hud_minimized and not self._minus_on_the_hud)):
             self.targets = _EMPTY_TARGETS
             self.close()
             return
@@ -361,7 +361,7 @@ class HudOverlay:
             model,
             video=self._video, hover_loop=hover.loop, hover_tip=hover.tip, hover_pos=hover.at,
             may_grow_on_hover=self._over_the_video,
-            minus_on_the_panel=self._minus_on_the_panel,
+            minus_on_the_hud=self._minus_on_the_hud,
             item_row=self._item_row, heatmap=self._heatmap, flash=self._flash,
         )
         height, width = rendered.bgra.shape[:2]
@@ -369,7 +369,7 @@ class HudOverlay:
         self._engine.overlay(self.overlay_id, *origin, rendered.bgra)
         self._draw_owed = False
         self.targets = rendered.targets
-        self._panel_size = (width, height)
+        self._hud_size = (width, height)
         self._origin = origin
         self._shown = True
 

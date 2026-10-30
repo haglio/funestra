@@ -253,7 +253,7 @@ def test_refresh_displays_active_frame():
 def test_under_the_broker_the_line_is_the_device_s_own_swing():
     """The device runs itself here, so the trace is the broker's beat -- and it
     moves, which is the whole of what a readout under the broker is for.  The
-    panel used to come down instead, taking the room's controls with it."""
+    HUD used to come down instead, taking the room's controls with it."""
     state = BrokerFeed(auto_active=True, raw_bpm=120.0)
     entry = {"frames": [object() for _ in range(8)]}
     clock = [5.0]
@@ -471,7 +471,7 @@ def test_direct_mode_publishes_the_drive_readout():
 
     hud = built["controller"].readout.drive
     assert (hud.amplitude, hud.center, hud.speed) == (70, 60, 50)
-    assert hud.shape == "sine"  # named on the panel, not only drawn
+    assert hud.shape == "sine"  # named on the HUD, not only drawn
     assert len(hud.waveform) == 80
 
 

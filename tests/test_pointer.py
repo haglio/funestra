@@ -1,6 +1,6 @@
-"""Where a press on a Funestra's window lands: the panel, or the item under it.
+"""Where a press on a Funestra's window lands: the HUD, or the item under it.
 
-The track, the time and the volume are a block of the panel, which places a
+The track, the time and the volume are a block of the HUD, which places a
 press on them itself (test_hud_overlay.py), so nothing over the item takes
 one any more.
 """
@@ -16,7 +16,7 @@ class _StubHud:
     """The lock HUD's half of the pointer's interface, and nothing else.
 
     *takes* is whether its slab is under the press — the real HUD answers that
-    from the panel it last drew, which is a question about a bitmap's size.
+    from the HUD it last drew, which is a question about a bitmap's size.
     """
 
     def __init__(self, *, takes: bool = True) -> None:
@@ -53,11 +53,11 @@ def _pointer(*, hud: bool = True, hud_takes: bool = True):
 
 
 class TestTheItem:
-    """A press the panel does not take is a press on the item, which asks
+    """A press the HUD does not take is a press on the item, which asks
     whoever built the window -- the room, or the program running on it -- to
     pause."""
 
-    def test_a_press_the_panel_refused_asks_for_the_pause(self):
+    def test_a_press_the_hud_refused_asks_for_the_pause(self):
         pointer, hud, asked = _pointer(hud_takes=False)
 
         pointer.press(*ON_THE_VIDEO)
@@ -65,14 +65,14 @@ class TestTheItem:
         assert hud.presses == [ON_THE_VIDEO]
         assert asked == ["pause"]
 
-    def test_a_window_with_no_panel_asks_from_the_whole_item(self):
+    def test_a_window_with_no_hud_asks_from_the_whole_item(self):
         pointer, _hud, asked = _pointer(hud=False)
 
         pointer.press(*ON_THE_VIDEO)
 
         assert asked == ["pause"]
 
-    def test_a_press_the_panel_took_asks_for_nothing(self):
+    def test_a_press_the_hud_took_asks_for_nothing(self):
         pointer, _hud, asked = _pointer()
 
         pointer.press(*ON_THE_VIDEO)
@@ -92,7 +92,7 @@ class TestTheItem:
 
         pointer.press(*ON_THE_VIDEO)
 
-    def test_the_wheel_is_the_panels_alone(self):
+    def test_the_wheel_is_the_huds_alone(self):
         pointer, hud, asked = _pointer(hud_takes=False)
 
         pointer.wheel(*ON_THE_VIDEO, 3)
@@ -102,10 +102,10 @@ class TestTheItem:
 
 
 class TestDragging:
-    """Everything a held pointer can set is on the panel, so this is only about
-    telling the panel where the pointer went and letting go of what it took."""
+    """Everything a held pointer can set is on the HUD, so this is only about
+    telling the HUD where the pointer went and letting go of what it took."""
 
-    def test_the_panel_is_told_where_the_pointer_went_either_way(self):
+    def test_the_hud_is_told_where_the_pointer_went_either_way(self):
         pointer, hud, _asked = _pointer()
 
         pointer.motion(*ON_THE_VIDEO, held=False)
@@ -113,7 +113,7 @@ class TestDragging:
 
         assert hud.motions == [ON_THE_VIDEO, LOWER_EDGE]
 
-    def test_what_the_panel_took_hold_of_keeps_the_drag(self):
+    def test_what_the_hud_took_hold_of_keeps_the_drag(self):
         pointer, hud, _asked = _pointer()
         hud.holding = True
 
@@ -129,14 +129,14 @@ class TestDragging:
 
         assert hud.holding is False
 
-    def test_the_pointer_leaving_the_window_leaves_nothing_on_the_panel_lit(self):
+    def test_the_pointer_leaving_the_window_leaves_nothing_on_the_hud_lit(self):
         pointer, hud, _asked = _pointer()
 
         pointer.leave()
 
         assert hud.motions == [(-1, -1)]
 
-    def test_a_window_with_no_panel_has_nothing_to_tell(self):
+    def test_a_window_with_no_hud_has_nothing_to_tell(self):
         pointer, _hud, asked = _pointer(hud=False)
 
         pointer.motion(*LOWER_EDGE, held=True)

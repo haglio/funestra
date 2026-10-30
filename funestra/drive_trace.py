@@ -28,7 +28,7 @@ Two disciplines keep the trace still while it slides:
   before the resting phase destroys it.
 
 Shared by every Funestra that hangs the console over a video — the Main Funestra's window on
-the desktop, FunTimeVR's panel in the headset — so both draw one line by one
+the desktop, FunTimeVR's HUD in the headset — so both draw one line by one
 set of rules, and free of Pillow, so the shape of the trace is testable
 without a window or a font.
 """

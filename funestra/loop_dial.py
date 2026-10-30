@@ -14,7 +14,7 @@ import math
 from PIL import Image, ImageDraw
 from shared_ui.palette import BG_PRIMARY, BORDER_PANEL, TEXT_MUTED, TEXT_PRIMARY
 
-from .hud_panel import PILL_ALPHA, KeptBitmap
+from .hud import PILL_ALPHA, KeptBitmap
 from .volume import CHIP_H
 
 # As tall as the chip and the readout it shares the row with.

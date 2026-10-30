@@ -55,7 +55,7 @@ class TestTheHeightOfTheTimelineRow:
 
 class TestHeatmapStrip:
     def test_a_track_nobody_has_measured_yet_gets_no_colors(self):
-        """A panel is as wide as what is on it, so its host has no width to
+        """A HUD is as wide as what is on it, so its host has no width to
         offer until one has been drawn.  Nothing to measure across is not an
         error; it is the first frame, and it goes up as a plain bar."""
         strip = HeatmapStrip()
@@ -309,7 +309,7 @@ class TestLoopThumbCapture:
 
 
 class TestWhereTheLoopsTwoFramesGo:
-    """Each hangs at the y its host gives -- just under the panel the track is
+    """Each hangs at the y its host gives -- just under the HUD the track is
     a block of -- lined up with its own mark along that track."""
 
     TRACK = (40, 868)

@@ -1,6 +1,6 @@
 """The device's own line: who has the OSR2, and the controls that aim it.
 
-Every panel whose host drives the device draws this line, so the word for a
+Every HUD whose host drives the device draws this line, so the word for a
 parked OSR2 is the same word wherever it is read — the Main Funestra's console
 (:mod:`funestra.console_hud`) and a HUD over a host that drives it itself
 (:mod:`funestra.satellite_hud_paint`) share this one rather than each
@@ -44,12 +44,12 @@ from .drive_readout import (
     trace_ink,
 )
 from .geometry import Rect, contains
+from .hud import SYMBOL_FONT, draw_button, load_font, text_width
 from .hud_button import BUTTON, Button
-from .hud_panel import SYMBOL_FONT, draw_button, load_font, text_width
 from .modes import UNHEARD, Osr2State
 from .robot_hand import FULL_INTENSITY, POSITION_MAX
 
-# Package-internal: the two panels that draw this line are both in here, and a
+# Package-internal: the two HUDs that draw this line are both in here, and a
 # host says what its line shows through the model it already hands over
 # (:class:`funestra.console.ConsoleModel`,
 # :class:`funestra.satellite_hud.HudModel`) rather than by building one.
@@ -220,7 +220,7 @@ class Osr2Line:
     *state* is already resolved by whoever is drawing — one of
     :class:`~funestra.modes.Osr2State`, :data:`BUFFER`, or one of the
     control states — because what has the device is a different question on
-    every panel and only the host can answer it.
+    every HUD and only the host can answer it.
     """
 
     state: str = Osr2State.OFF
@@ -229,14 +229,14 @@ class Osr2Line:
 
 
 class Osr2Section:
-    """The line itself, drawn into whatever panel is hosting it."""
+    """The line itself, drawn into whatever HUD is hosting it."""
 
     def __init__(self) -> None:
         self._tiny = load_font(SIZE_TINY)
         self._glyph = load_font(SIZE_BODY, SYMBOL_FONT)
 
     def width(self, line: Osr2Line) -> int:
-        """How wide the line runs — a floor on the panel holding it."""
+        """How wide the line runs — a floor on the HUD holding it."""
         return (self._controls_width(line.controls)
                 + text_width(self._tiny, LABEL) + _LABEL_GAP
                 + self._widest_word + _PILL_PAD

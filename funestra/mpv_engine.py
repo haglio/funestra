@@ -361,7 +361,7 @@ class _MpvControl:
         until it knows, and between files.
 
         What a host measures its own chrome against: where to float the stills
-        either side of the item, where to seat a panel under it.  Callers
+        either side of the item, where to seat a HUD under it.  Callers
         keep their last size through the gap between files, which is what keeps
         the previous clip's final frame on screen during a transition instead
         of a teardown flicker.

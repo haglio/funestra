@@ -20,7 +20,7 @@ current video; until then the descent tops off the parked publish instead, which
 is where the device really is.
 
 One gate for every Funestra that hangs the console over a video — the Main Funestra's window on
-the desktop, FunTimeVR's panel in the headset — so the two hold their forecasts
+the desktop, FunTimeVR's HUD in the headset — so the two hold their forecasts
 by the same rules and publish the same touch for the arbiter.  It lived as a
 closure and two dicts inside the Main Funestra's run loop, where none of these rules could be
 exercised: widening the seek window a hundredfold, so a rewind no longer voided

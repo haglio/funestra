@@ -8,7 +8,7 @@ two sinks the room drives -- shows the level the room publishes and asks the
 room for a new one; the ask shows at once so the slider does not trail the
 pointer, and the room's answer overwrites it either way.
 
-The chip is a part of the row the panel draws, so the panel is what places a
+The chip is a part of the row the HUD draws, so the HUD is what places a
 press on it (:class:`funestra.hud_row.RowPress`): both controls answer the
 same two verbs, and neither hit-tests a window of its own any more.
 """

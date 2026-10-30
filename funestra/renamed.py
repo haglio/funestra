@@ -65,16 +65,30 @@ def old_name_getter(module: str, renamed: Mapping[str, str]) -> Callable[[str], 
     return __getattr__
 
 
+def _under_new_names(kwargs: dict[str, Any], renamed: Mapping[str, str]) -> dict[str, Any]:
+    for old, new in renamed.items():
+        if old in kwargs:
+            kwargs[new] = kwargs.pop(old)
+    return kwargs
+
+
+def takes_old_keywords(renamed: Mapping[str, str]) -> Callable[[Any], Any]:
+    """For a function an old checkout still calls with keywords since renamed."""
+    def wrap(call: Callable[..., Any]) -> Callable[..., Any]:
+        @functools.wraps(call)
+        def called(*args, **kwargs):
+            return call(*args, **_under_new_names(kwargs, renamed))
+        return called
+    return wrap
+
+
 def answers_to_old_names(renamed: Mapping[str, str]) -> Callable[[type], type]:
     def wrap(cls: type) -> type:
         init = cls.__init__
 
         @functools.wraps(init)
         def __init__(self, *args, **kwargs) -> None:
-            for old, new in renamed.items():
-                if old in kwargs:
-                    kwargs[new] = kwargs.pop(old)
-            init(self, *args, **kwargs)
+            init(self, *args, **_under_new_names(kwargs, renamed))
 
         cls.__init__ = __init__
         for old, new in renamed.items():

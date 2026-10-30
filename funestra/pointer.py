@@ -1,9 +1,9 @@
-"""What the mouse does to a Funestra's window: the panel, a corner the panel
+"""What the mouse does to a Funestra's window: the HUD, a corner the HUD
 can be sent to, or the item.
 
-The track, the time and the volume are a block of the panel now
-(:mod:`funestra.hud_row`), and the panel places a press on them itself, so
-what is left here is the panel first and the item under it.
+The track, the time and the volume are a block of the HUD now
+(:mod:`funestra.hud_row`), and the HUD places a press on them itself, so
+what is left here is the HUD first and the item under it.
 """
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""The scrubber, the volume chip, the playhead readout and a flick's dial, laid out on one line of a panel."""
+"""The scrubber, the volume chip, the playhead readout and a flick's dial, laid out on one line of a HUD."""
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -95,32 +95,32 @@ class TestHowTheRowIsLaidOut:
         assert long.track[0] > short.track[0]
         assert long.readout[0] == short.readout[0] == 0
 
-    def test_a_videos_narrowest_panel_leaves_its_track_no_shorter_than_the_rest_of_its_line(self):
+    def test_a_videos_narrowest_hud_leaves_its_track_no_shorter_than_the_rest_of_its_line(self):
         for row in (VIDEO, RowHud(duration_ms=10_000)):
             layout = _layout(row, width=RowSection.least_width(row))
             track = layout.track[1] - layout.track[0]
             assert track >= layout.width - track
 
-    def test_no_panel_widens_for_a_flicks_track_past_the_room_to_press_it(self):
+    def test_no_hud_widens_for_a_flicks_track_past_the_room_to_press_it(self):
         widest = RowHud(playhead=framed_playhead(999, 999, 599_000, 599_000), loop=(0, 999))
         layout = _layout(widest, width=RowSection.least_width(widest))
 
         assert layout.track[1] - layout.track[0] == LEAST_TRACK
 
-    def test_a_flicks_track_stays_short_on_a_wide_panel_and_the_chip_keeps_the_end(self):
+    def test_a_flicks_track_stays_short_on_a_wide_hud_and_the_chip_keeps_the_end(self):
         layout = _layout(CLIP, width=800)
 
         assert layout.track[1] - layout.track[0] == FLICK_TRACK_W
         assert chip_xy(win_w=800, win_h=ROW_H, timeline_h=ROW_H)[0] == 800 - CHIP_W
 
-    def test_the_narrowest_panel_is_one_width_from_one_flick_to_the_next(self):
+    def test_the_narrowest_hud_is_one_width_from_one_flick_to_the_next(self):
         def flick(frames: int) -> RowHud:
             return RowHud(position_ms=4_000, duration_ms=10_000, loop=(6, frames),
                           playhead=framed_playhead(6, frames, 4_000, 10_000))
 
         assert RowSection.least_width(flick(20)) == RowSection.least_width(flick(238))
 
-    def test_the_narrowest_panel_is_one_width_from_one_video_to_the_next(self):
+    def test_the_narrowest_hud_is_one_width_from_one_video_to_the_next(self):
         def video(ms: int) -> RowHud:
             return RowHud(duration_ms=ms, playhead=video_playhead(0, ms, 30))
 
@@ -129,9 +129,9 @@ class TestHowTheRowIsLaidOut:
 
 def _painted(row: RowHud, *, width: int = WIDTH, at: tuple[int, int] = (0, 0), heatmap=None):
     layout = _layout(row, width=width, at=at)
-    panel = Image.new("RGBA", (at[0] + width + 20, at[1] + ROW_H + 20), (0, 0, 0, 0))
-    RowSection().draw(panel, layout, row, heatmap=heatmap)
-    return np.asarray(panel), layout
+    hud = Image.new("RGBA", (at[0] + width + 20, at[1] + ROW_H + 20), (0, 0, 0, 0))
+    RowSection().draw(hud, layout, row, heatmap=heatmap)
+    return np.asarray(hud), layout
 
 
 def test_it_draws_everything_inside_the_room_it_was_laid_out_in():
@@ -202,7 +202,7 @@ def _marks(painted, color) -> list[int]:
 
 def test_a_loop_being_played_shows_its_ends_on_the_track():
     """The row is the lower edge of a Funestra's video, and the Funestra marks a
-    loop's in and out there — so the panel does too."""
+    loop's in and out there — so the HUD does too."""
     row = RowHud(position_ms=0, duration_ms=60_000, loop_bounds=(15_000, 45_000))
 
     painted, layout = _painted(row)
@@ -222,7 +222,7 @@ def test_a_loop_still_being_recorded_shows_its_in_point_in_red():
 
 
 class TestWhatAPressOnTheRowIsOn:
-    """The row is pressed where it is drawn: a panel hands it the press in its
+    """The row is pressed where it is drawn: a HUD hands it the press in its
     own coordinates and it says which control was under it."""
 
     LAYOUT = _layout(VIDEO)
@@ -264,7 +264,7 @@ class TestWhatAPressOnTheRowIsOn:
 
 
 class TestWhatAPressOnTheRowAsksFor:
-    """One placement for every panel that hosts the row, so the track, the
+    """One placement for every HUD that hosts the row, so the track, the
     slider and the speaker answer the same way wherever the row is drawn."""
 
     LAYOUT = _layout(VIDEO, at=(10, 40))
@@ -313,7 +313,7 @@ class TestWhatAPressOnTheRowAsksFor:
         assert self._squeeze(press, (x - 5, y + 2)) is False
         assert (asked.seeks, asked.levels, asked.mutes) == ([], [], 0)
 
-    def test_a_row_the_panel_never_drew_takes_nothing(self):
+    def test_a_row_the_hud_never_drew_takes_nothing(self):
         press, _asked = self._press()
 
         assert press.press(20, 50, layout=None, duration_ms=self.DURATION_MS) is False

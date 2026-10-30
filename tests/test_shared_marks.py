@@ -16,19 +16,19 @@ from shared_ui.spacing import BUTTON_MARK_INSET
 from shared_ui.toggle_geometry import TRACK_HUD
 from shared_ui.toggle_switch_pil import paste_toggle_switch
 
-from funestra.hud_button import Button
-from funestra.hud_marks import TOGGLE_SWITCH, shared_mark, shared_mark_name
-from funestra.hud_panel import (
+from funestra.hud import (
     SYMBOL_FONT,
     draw_button,
     draw_mark,
     load_font,
 )
+from funestra.hud_button import Button
+from funestra.hud_marks import TOGGLE_SWITCH, shared_mark, shared_mark_name
 
 
-def _drawn(panel, draw, button) -> None:
+def _drawn(hud, draw, button) -> None:
     """One declared control, drawn the way every HUD here draws one."""
-    draw_button(panel, draw, (0, 0, 18, 18), button, hovered=False,
+    draw_button(hud, draw, (0, 0, 18, 18), button, hovered=False,
                 glyph_font=load_font(11, SYMBOL_FONT), word_font=load_font(8))
 
 
@@ -41,9 +41,9 @@ class TestDrawingThem:
     def test_a_mark_lands_inside_the_button_it_was_given(self):
         # HUD buttons draw their own rounded border, so a mark filling the whole
         # rect runs into it. The inset is what keeps the two apart.
-        panel = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
-        draw_mark(panel, "trash", (0, 0, 18, 18), (255, 255, 255, 255))
-        ink = np.asarray(panel)[:, :, 0] > 128
+        hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
+        draw_mark(hud, "trash", (0, 0, 18, 18), (255, 255, 255, 255))
+        ink = np.asarray(hud)[:, :, 0] > 128
 
         assert ink.any(), "the mark did not draw"
         assert not ink[:BUTTON_MARK_INSET, :].any()
@@ -51,12 +51,12 @@ class TestDrawingThem:
 
     def test_a_mark_is_laid_over_what_the_button_already_painted(self):
         # It composites onto the button's fill rather than stamping a
-        # transparent square over it, which would cut a gap in the panel.
-        panel = Image.new("RGBA", (18, 18), (0, 90, 0, 255))
-        draw_mark(panel, "reset", (0, 0, 18, 18), (255, 255, 255, 255))
-        pixels = np.asarray(panel)
+        # transparent square over it, which would cut a gap in the HUD.
+        hud = Image.new("RGBA", (18, 18), (0, 90, 0, 255))
+        draw_mark(hud, "reset", (0, 0, 18, 18), (255, 255, 255, 255))
+        pixels = np.asarray(hud)
 
-        assert (pixels[:, :, 3] == 255).all(), "the mark punched through the panel"
+        assert (pixels[:, :, 3] == 255).all(), "the mark punched through the HUD"
         assert (pixels[:, :, 0] > 128).any(), "the mark did not draw"
         assert (pixels[:, :, 1] == 90).any(), "the fill is gone"
 
@@ -64,9 +64,9 @@ class TestDrawingThem:
         # The point of naming them: a control that names the wrong one shows the
         # wrong one, and only a difference here would ever reveal that.
         def drawn(name: str) -> bytes:
-            panel = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
-            draw_mark(panel, name, (0, 0, 18, 18), (255, 255, 255, 255))
-            return panel.tobytes()
+            hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
+            draw_mark(hud, name, (0, 0, 18, 18), (255, 255, 255, 255))
+            return hud.tobytes()
 
         assert drawn("trash") != drawn("reset")
         assert drawn("reset") != drawn("wave")
@@ -74,10 +74,10 @@ class TestDrawingThem:
 
 class TestDangerIsRed:
     def test_a_dangerous_control_draws_its_mark_in_red(self):
-        panel = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
-        draw = ImageDraw.Draw(panel)
-        _drawn(panel, draw, Button("x", shared_mark("trash"), "", danger=True))
-        pixels = np.asarray(panel)
+        hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
+        draw = ImageDraw.Draw(hud)
+        _drawn(hud, draw, Button("x", shared_mark("trash"), "", danger=True))
+        pixels = np.asarray(hud)
 
         reddest = pixels[:, :, 0].astype(int) - pixels[:, :, 1].astype(int)
         assert reddest.max() > 60, "the mark is not red"
@@ -87,11 +87,11 @@ class TestDangerIsRed:
 class TestButtonGrounds:
     def test_a_resting_control_sits_on_the_familys_button_ground(self):
         # It was an outline over the slab and nothing else, which read as a gap
-        # in the panel rather than as the raised button every window in this
+        # in the HUD rather than as the raised button every window in this
         # family offers for the same act.
-        panel = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
-        _drawn(panel, ImageDraw.Draw(panel), Button("x", "🔒", ""))
-        middle = np.asarray(panel)[9, 3]
+        hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
+        _drawn(hud, ImageDraw.Draw(hud), Button("x", "🔒", ""))
+        middle = np.asarray(hud)[9, 3]
 
         assert tuple(middle[:3]) == BG_BUTTON
 
@@ -99,9 +99,9 @@ class TestButtonGrounds:
         # The ground is the resting state, not the lit one: a lit control fills
         # white, and would say nothing if resting looked the same.
         def ground(lit: bool):
-            panel = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
-            _drawn(panel, ImageDraw.Draw(panel), Button("x", "🔒", "", lit=lit))
-            return tuple(int(v) for v in np.asarray(panel)[9, 3][:3])
+            hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
+            _drawn(hud, ImageDraw.Draw(hud), Button("x", "🔒", "", lit=lit))
+            return tuple(int(v) for v in np.asarray(hud)[9, 3][:3])
 
         assert ground(False) == BG_BUTTON
         assert ground(True) != BG_BUTTON
@@ -113,34 +113,34 @@ class TestTheFamilysSwitch:
         width, height = TRACK_HUD
 
         def cell(lit: bool) -> bytes:
-            panel = Image.new("RGBA", (width, 18), (0, 0, 0, 255))
-            draw_button(panel, ImageDraw.Draw(panel), (0, 0, width, 18),
+            hud = Image.new("RGBA", (width, 18), (0, 0, 0, 255))
+            draw_button(hud, ImageDraw.Draw(hud), (0, 0, width, 18),
                         Button("x", TOGGLE_SWITCH, "", width=width, lit=lit), hovered=False,
                         glyph_font=load_font(11, SYMBOL_FONT), word_font=load_font(8))
-            return panel.tobytes()
+            return hud.tobytes()
 
         def familys(on: bool) -> bytes:
-            panel = Image.new("RGBA", (width, 18), (0, 0, 0, 255))
-            paste_toggle_switch(panel, (0, (18 - height) // 2), on=on)
-            return panel.tobytes()
+            hud = Image.new("RGBA", (width, 18), (0, 0, 0, 255))
+            paste_toggle_switch(hud, (0, (18 - height) // 2), on=on)
+            return hud.tobytes()
 
         assert cell(lit=True) == familys(on=True)
         assert cell(lit=False) == familys(on=False)
 
     def test_the_word_on_the_side_the_switch_is_at_is_the_bright_one(self):
         def brightest(lit: bool) -> int:
-            panel = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
-            _drawn(panel, ImageDraw.Draw(panel), Button("", "On", "", lit=lit))
-            return int(np.asarray(panel)[:, :, :3].max())
+            hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
+            _drawn(hud, ImageDraw.Draw(hud), Button("", "On", "", lit=lit))
+            return int(np.asarray(hud)[:, :, :3].max())
 
         assert brightest(lit=True) > brightest(lit=False)
 
     def test_a_read_out_that_starts_with_a_letter_names_something_and_is_drawn_muted(self):
         def brightest(glyph: str) -> int:
-            panel = Image.new("RGBA", (60, 18), (0, 0, 0, 255))
-            draw_button(panel, ImageDraw.Draw(panel), (0, 0, 60, 18), Button("", glyph, ""),
+            hud = Image.new("RGBA", (60, 18), (0, 0, 0, 255))
+            draw_button(hud, ImageDraw.Draw(hud), (0, 0, 60, 18), Button("", glyph, ""),
                         hovered=False, glyph_font=load_font(11, SYMBOL_FONT),
                         word_font=load_font(8))
-            return int(np.asarray(panel)[:, :, :3].max())
+            return int(np.asarray(hud)[:, :, :3].max())
 
         assert brightest("OSR2 control") < brightest("4s")

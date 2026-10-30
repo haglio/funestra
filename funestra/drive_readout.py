@@ -7,10 +7,10 @@ number.  Speed sits under the trace, out of the way of the other two.
 
 Origenerator floats this over its slideshows: the painter is shared and the
 toolkit is not — a caller with no Pillow surface of its own renders this into
-one (:class:`funestra.hud_panel.HudPanel`) and blits the result, so a second
+one (:class:`funestra.hud.Hud`) and blits the result, so a second
 app shows this drawing instead of its own idea of it.
 
-It is a block, not a panel: it hosts inside whatever slab is showing it rather
+It is a block, not a HUD: it hosts inside whatever slab is showing it rather
 than carrying one of its own, so a console is one HUD and not two stacked.
 """
 from __future__ import annotations
@@ -46,12 +46,12 @@ from .drive_layout import (
 from .drive_layout import fraction as _fraction
 from .file_channel import publish_whole
 from .geometry import Rect, contains
-from .hud_button import Button
-from .hud_panel import (
+from .hud import (
     draw_mark,
     load_font,
     text_width,
 )
+from .hud_button import Button
 from .robot_hand import FULL_INTENSITY, POSITION_MAX, amplitude_ceiling, speed_ceiling
 
 # What has the device, which is what the trace is a drawing of.  The Robot
@@ -91,7 +91,7 @@ _KEY_GAP = GAP_MEDIUM  # between a key and the value it names
 _ETCH_PITCH = 4  # between the red lines across a stretch a bar cannot reach
 
 # A disabled part's ink: a dark gray, laid down opaque.  While a funscript has
-# the device the controls stay put — removing them resized the panel, and the
+# the device the controls stay put — removing them resized the HUD, and the
 # trace shifting at every handoff is worse than dead furniture — so everything
 # unpressable is drawn in this instead.  Dark and opaque on purpose: over a
 # bright video a see-through pixel is a *brighter* pixel, so muted ink at part
@@ -99,7 +99,7 @@ _ETCH_PITCH = 4  # between the red lines across a stretch a bar cannot reach
 DISABLED_INK = (*BORDER_SUBTLE, 255)
 
 # The trace is drawn this many times larger and scaled back down, which is what
-# smooths it: Pillow's line has no antialiasing of its own, so drawn at panel
+# smooths it: Pillow's line has no antialiasing of its own, so drawn at HUD
 # size every segment was a hard-edged pixel staircase, and a wave at low
 # amplitude — a few pixel rows tall — scrolled as chunks.  Supersampled, the
 # edges come back as intensity ramps and positions land on quarter-pixels, so
@@ -252,7 +252,7 @@ def track_command(track: DriveTrack, px: int, py: float) -> str:
     return f"{owner}{track.axis}_{track_value(track, px, py)}"
 
 
-# The readout draws its own marks, but a panel hosting it still has to know what
+# The readout draws its own marks, but a HUD hosting it still has to know what
 # each posts and name it on hover.
 CONTROL_TIPS = {
     "robot_hand_speed_down": "Motion slower", "robot_hand_speed_up": "Motion faster",
@@ -288,7 +288,7 @@ class TrackGrip:
     """A press that took hold of one of the readout's bands, and the drag that
     goes on setting it.
 
-    Held by whichever panel routes presses — the main console and the lock HUD
+    Held by whichever HUD routes presses — the main console and the lock HUD
     both do — so a bar can be dragged and not only clicked, and so the two
     cannot answer a drag differently.
     """
@@ -347,7 +347,7 @@ def draw_level_bar(draw, rect: Rect, *, fill: float, color) -> None:
 
 
 class DriveSection:
-    """The readout itself, drawn into whatever panel is hosting it."""
+    """The readout itself, drawn into whatever HUD is hosting it."""
 
     def __init__(self) -> None:
         self._tiny = load_font(SIZE_TINY)
@@ -355,7 +355,7 @@ class DriveSection:
     def draw(self, image: Image.Image, x: int, y: int, hud: DriveHud) -> None:
         """Paint the readout with its top-left corner at ``(x, y)`` of *image*.
 
-        Takes the hosting panel's image rather than a pen: the trace is
+        Takes the hosting HUD's image rather than a pen: the trace is
         rendered supersampled and composited back (:meth:`_wave`), which no
         pen can do.
         """

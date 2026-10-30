@@ -1,4 +1,4 @@
-"""The satellite lock HUD: the published panel's geometry and hit-testing.
+"""The satellite lock HUD: the published HUD's geometry and hit-testing.
 
 Shared through funestra because two apps draw this exact HUD: each of Fun
 Time's Satellite Funestras composites it into its video, and a hosted
@@ -43,10 +43,10 @@ from shared_ui.type_scale import SIZES
 from .console import VALUE_W, max_intensity_from_raw
 from .drive_readout import DriveHud, DriveTrack, TrackGrip
 from .geometry import Rect, contains
+from .hud import ACTIVE_DOT
 from .hud_button import Button, buttons_from_raw, buttons_raw, rows_from_raw, rows_raw
 from .hud_marks import shared_mark
 from .hud_osr2 import HEIGHT as OSR2_H
-from .hud_panel import ACTIVE_DOT
 from .hud_placement import HudCorner, HudEdge
 from .hud_sections import blocks_height, stack
 from .hud_title import SEPARATOR
@@ -83,7 +83,7 @@ TITLE_BAND_H = 24        # the band the title sits in — one line deep, always
 TITLE_X = PAD + ACTIVE_DOT + 8  # where the title starts, clear of the active-Funestra dot
 TITLE_BASELINE = 11      # the title's baseline, down from the band's top
 # The file on screen, muted under the title — the same second line the Main
-# Funestra's console carries, so the two panels answer "what am I playing?" in the
+# Funestra's console carries, so the two HUDs answer "what am I playing?" in the
 # same corner and the same shape.  Its own height comes from the paint module,
 # which has the face; this is only the gap between the two lines.
 SUBTITLE_GAP = GAP_SMALL
@@ -105,7 +105,7 @@ class HudCell:
 
 
 class HudSection(Protocol):
-    """A block the source paints into the panel itself, at its very foot."""
+    """A block the source paints into the HUD itself, at its very foot."""
 
     def size(self) -> tuple[int, int]: ...
 
@@ -201,12 +201,12 @@ class HudModel:
     # The rate this Funestra plays at, folded into its own HUD so the painter draws
     # the speed row under the bands; None for a surface with no rate to show.
     playback_speed: float | None = None
-    # The buttons the source declares for this Funestra, in the bands the panel
+    # The buttons the source declares for this Funestra, in the bands the HUD
     # draws them in: what each posts, its face, its tooltip and its state.  The
-    # panel draws nothing it was not handed.
+    # HUD draws nothing it was not handed.
     rows: tuple[tuple[Button, ...], ...] = ()
 
-    # --- the device, for a panel whose Funestra has the OSR2 ----------------
+    # --- the device, for a HUD whose Funestra has the OSR2 ----------------
     # Which driver has the OSR2, and the controls that aim it: the same line the
     # main console draws (:mod:`funestra.hud_osr2`), grown here because a host
     # can be both the thing browsing a set AND the thing driving the device.
@@ -218,19 +218,19 @@ class HudModel:
     # four control states.  They sit in the device's own block rather than among
     # the rows above, because they are the OSR2's and the reader looks for them
     # beside the line naming who has it: on the main console those rows happen to
-    # be the last ones before that line, so nothing showed, and on a panel with a
+    # be the last ones before that line, so nothing showed, and on a HUD with a
     # map between them they came out as one group of OSR2 controls split in two.
     osr2_rows: tuple[tuple[Button, ...], ...] = ()
     # And what the host is doing to the device, which is a different question:
     # driving, parked or retracted, or empty from a host with no such switch.
-    # The panel resolves the two into one word exactly as the console does
+    # The HUD resolves the two into one word exactly as the console does
     # (:func:`funestra.hud_osr2.state_for`).
     osr2_control: str = ""
     osr2_controls: tuple[Button, ...] = ()
     max_intensity: int | None = None
     paused: bool = False
     # The motion being sent, drawn under that line — the main console's readout
-    # (:mod:`funestra.drive_readout`), hosted here rather than on a panel of
+    # (:mod:`funestra.drive_readout`), hosted here rather than on a HUD of
     # its own.  None wherever there is nothing to report.
     drive: DriveHud | None = None
     drive_composed: bool = False
@@ -261,7 +261,7 @@ def map_block_width(funestra: str) -> int:
             + MAP_RIGHT_RESERVE)
 
 
-def panel_width(funestra: str, name_width: int = 0, *, content_width: int = 0) -> int:
+def hud_width(funestra: str, name_width: int = 0, *, content_width: int = 0) -> int:
     return max(2 * PAD + map_block_width(funestra),
                TITLE_X + name_width + PAD, content_width)
 
@@ -274,7 +274,7 @@ def device_height(osr2: str, drive: DriveHud | None, drive_h: int,
 
 
 @dataclass(frozen=True)
-class PanelLayout:
+class HudLayout:
     bands: int
     speed: int
     row: int
@@ -285,12 +285,12 @@ class PanelLayout:
     dividers: tuple[int, ...]
 
 
-def panel_layout(*, title_h: int, bands: int = 0, speed: bool = False,
-                 row_h: int = 0, device_h: int = 0, foot_h: int = 0) -> PanelLayout:
+def hud_layout(*, title_h: int, bands: int = 0, speed: bool = False,
+                 row_h: int = 0, device_h: int = 0, foot_h: int = 0) -> HudLayout:
     stacked = stack(PAD, [title_h, blocks_height([CTRL_BTN] * (bands + speed), BLOCK_GAP),
                           row_h, device_h, foot_h, MAP_H])
     _title, bands_top, row_top, device_top, foot_top, map_top = stacked.tops
-    return PanelLayout(bands_top, bands_top + bands * CTRL_BAND_H, row_top, device_top,
+    return HudLayout(bands_top, bands_top + bands * CTRL_BAND_H, row_top, device_top,
                        foot_top, map_top, stacked.end + PAD, stacked.dividers)
 
 
@@ -513,7 +513,7 @@ TITLE_INDENT = TITLE_X - PAD
 def favorite_mark_rect(x: int, y: int, line_h: int) -> Rect:
     """The favorite mark: at the head of the file-name line, under the dot.
 
-    A readout, not a button, so it belongs where the panel keeps readouts and
+    A readout, not a button, so it belongs where the HUD keeps readouts and
     not in the control band: the one column already used for "what is true of
     this Funestra" — the active dot is directly above it — and immediately left of
     the name of the very clip it is answering about.
@@ -542,7 +542,7 @@ def largest_size_that_fits(largest: int, room: int, width_at: Callable[[int], in
 # The strike under the current clip's act: this act is wrong, ask about it again.
 # Smaller than a control button and in the gutter rather than on the band,
 # because it is about the words above it rather than about the Funestra — the one
-# place on the panel where that act is named is the only place the strike can
+# place on the HUD where that act is named is the only place the strike can
 # say which act it means.
 WRONG_BTN = 14
 WRONG_GAP = GAP_SMALL   # between the act's last line and the strike under it
@@ -734,7 +734,7 @@ def _in(rect: Rect | None, px: int, py: int) -> bool:
 def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
     """What the HUD control under ``(px, py)`` is, or "" over none of them.
 
-    Every glyph on this panel is cryptic on purpose — it is read over moving video
+    Every glyph on this HUD is cryptic on purpose — it is read over moving video
     — so each one names itself on hover: a declared button by the tooltip its
     source gave it, the map's own chrome by the words here.
     """
@@ -785,7 +785,7 @@ class HudClicks:
         self._pending_at = 0.0
         self._grip = TrackGrip()
         # Which axis is looping, and which act the Funestra is filtered to.  Both are
-        # mirrored from the published panel on every refresh, and set optimistically
+        # mirrored from the published HUD on every refresh, and set optimistically
         # on a click so the control lights up before fun_time's answer comes back.
         self.active_loop = ""
         self.active_filter = ""
@@ -971,7 +971,7 @@ def hud_text(model: HudModel) -> str:
 
 
 def parse_hud(text: str) -> HudModel | None:
-    """The published panel, or None when *text* is not a complete panel.
+    """The published HUD, or None when *text* is not a complete HUD.
 
     fun_time rewrites the file in place while the Funestra is reading it, so a
     torn or empty read is expected and simply means "keep the HUD you have".

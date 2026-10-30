@@ -6,10 +6,10 @@ from functools import lru_cache
 import numpy as np
 from PIL import Image, ImageDraw
 
+from .hud import draw_button, draw_tooltip, to_bgra
 from .hud_button import Button
 from .hud_corners import plus_bgra, plus_button, tooltip_size
 from .hud_minimize import BUTTON, mark_font, minimize_button, name_slab, restore_button
-from .hud_panel import draw_button, draw_tooltip, to_bgra
 from .hud_placement import HudCorner, HudEdge
 
 _PLUS_NEAREST_THE_ITEM = {

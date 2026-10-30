@@ -52,7 +52,7 @@ def test_minimize_wears_the_familys_minus():
 
 
 def test_a_minimize_published_before_it_wore_the_minus_reads_back_as_the_minus():
-    """Origenerator publishes its panel from its own funestra, which can be older
+    """Origenerator publishes its HUD from its own funestra, which can be older
     than the one drawing it, and an older one spelled minimize its own way."""
     raw = [[{"command": "show_minimize", "glyph": "\0minimize", "tooltip": "Minimize"}]]
 

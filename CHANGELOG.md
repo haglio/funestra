@@ -9,6 +9,19 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-29 — a HUD, where the package said panel
+
+What a Funestra draws over what it plays is its HUD, so nothing here calls it a
+panel any more. `funestra.hud_panel` is `funestra.hud`, and the slab every HUD is
+painted on is `Hud`, not `HudPanel`; `HudLayout`, `hud_layout`, `hud_width`,
+`hud_height`, `HudSurface`, `collapsed_hud`, `HUD_ALPHA` and `UNDER_THE_HUD_GAP`
+follow it, and a Funestra takes `hud=` and `hud_surface=` and answers
+`hud_edge` and `hud_minimized`. The apps' branches from before still import
+`funestra.hud_panel`, `HudPanel` and `PanelSurface` and hand a Funestra `panel=`
+and `panel_surface=`, so those answer through `funestra/hud_panel.py` and
+`renamed.takes_old_keywords` / `answers_to_old_names` until none does. The
+OSR2 part is still `DevicePanel`, and `BORDER_PANEL` is shared_ui's.
+
 ## 2026-10-29 — the old picture names no longer answer
 
 No open branch of an app spells them any more, so the names a checkout from

@@ -149,7 +149,7 @@ class GenauRefreshController:
         if beat.robot_hand_active:
             self.readout.update(now)
         else:
-            # The device is running itself.  The panel stays up and the line
+            # The device is running itself.  The HUD stays up and the line
             # goes on moving -- on the broker's beat, the same one the frames
             # below are scrubbed by.
             self.readout.update(now, AutoMotion(

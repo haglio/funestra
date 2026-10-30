@@ -8,14 +8,12 @@ from shared_ui.icons_pil import paste_glyph
 from shared_ui.palette import BG_PRIMARY, MAGENTA, TEXT_MUTED, WHITE
 from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL
 
-from funestra import hud_panel
-from funestra.hud_button import Button
-from funestra.hud_marks import app_mark
-from funestra.hud_panel import (
+from funestra import hud
+from funestra.hud import (
     ACTIVE_DOT,
-    PANEL_ALPHA,
+    HUD_ALPHA,
     TOOLTIP_PAD,
-    HudPanel,
+    Hud,
     draw_active_dot,
     draw_button,
     draw_glyph,
@@ -23,6 +21,8 @@ from funestra.hud_panel import (
     load_font,
     text_width,
 )
+from funestra.hud_button import Button
+from funestra.hud_marks import app_mark
 
 
 def test_the_palette_is_shared_uis_own_read_without_qt():
@@ -31,36 +31,36 @@ def test_the_palette_is_shared_uis_own_read_without_qt():
     kept them from drifting apart.
     """
 
-    assert hud_panel.WHITE is palette.WHITE
-    assert hud_panel.BG_PRIMARY is palette.BG_PRIMARY
-    assert hud_panel.BLUE is palette.BLUE
+    assert hud.WHITE is palette.WHITE
+    assert hud.BG_PRIMARY is palette.BG_PRIMARY
+    assert hud.BLUE is palette.BLUE
 
 
-def test_panel_is_a_translucent_rounded_slab_of_the_asked_size():
-    panel = HudPanel(60, 40)
+def test_hud_is_a_translucent_rounded_slab_of_the_asked_size():
+    hud = Hud(60, 40)
 
-    bgra = panel.to_bgra()
+    bgra = hud.to_bgra()
 
     assert bgra.shape == (40, 60, 4)
     middle = bgra[20, 30]
-    assert tuple(middle) == (BG_PRIMARY[2], BG_PRIMARY[1], BG_PRIMARY[0], PANEL_ALPHA)
+    assert tuple(middle) == (BG_PRIMARY[2], BG_PRIMARY[1], BG_PRIMARY[0], HUD_ALPHA)
     assert bgra[0, 0, 3] == 0  # the rounded corner leaves the very corner clear
     assert np.asarray(bgra).dtype == np.uint8
 
 
 def test_a_divider_is_one_line_across_the_slab_in_the_gray_of_its_edge():
-    panel = HudPanel(60, 40)
+    hud = Hud(60, 40)
 
-    panel.divide(20)
+    hud.divide(20)
 
-    rgba = np.asarray(panel.image)
+    rgba = np.asarray(hud.image)
     assert (rgba[20] == (*palette.BORDER_PANEL, 255)).all()
     assert not (rgba[[19, 21], 1:-1] == (*palette.BORDER_PANEL, 255)).all(axis=-1).any()
 
 
 def test_a_point_size_loads_its_face_at_its_pixels_on_a_96_dpi_screen():
     """Qt sized these HUDs' fonts in points and Pillow sizes in pixels, so the
-    panels keep their old proportions only if the conversion does."""
+    HUDs keep their old proportions only if the conversion does."""
     assert (load_font(SIZE_SMALL).size, load_font(SIZE_BODY).size) == (12, 15)
 
 
@@ -82,9 +82,9 @@ def test_the_active_dot_is_lit_or_gray_but_never_absent():
     floor would say anything — and a reader would have to check every screen to
     learn what one mark should tell them."""
     def dot(active: bool) -> tuple[int, ...]:
-        panel = HudPanel(40, 40)
-        draw_active_dot(panel.image, 10, 10, active)
-        return tuple(np.asarray(panel.image)[15, 15][:3])
+        hud = Hud(40, 40)
+        draw_active_dot(hud.image, 10, 10, active)
+        return tuple(np.asarray(hud.image)[15, 15][:3])
 
     assert dot(True) == WHITE
     assert dot(False) == TEXT_MUTED
@@ -101,15 +101,15 @@ def test_the_active_dot_is_the_familys_disc():
         drawn(lambda image: paste_glyph(image, "disc", (10, 10, ACTIVE_DOT + 2, ACTIVE_DOT + 2), WHITE)))
 
 
-def test_a_tooltip_wider_than_the_panel_wraps_rather_than_running_off_it():
-    """A tooltip is drawn into the panel's own bitmap, so whatever crosses the edge
+def test_a_tooltip_wider_than_the_hud_wraps_rather_than_running_off_it():
+    """A tooltip is drawn into the HUD's own bitmap, so whatever crosses the edge
     is simply never drawn — the sentence loses its tail with nothing to say it had
     one.  It wraps to the room there is instead, and the tooltip stays on the slab."""
-    panel = HudPanel(150, 120)
+    hud = Hud(150, 120)
     font = load_font(8)
 
-    rect = draw_tooltip(panel.draw, font, "Unfavorite it or mark weird when it is "
-                        "not a favorite", (20, 20), panel.image.size)
+    rect = draw_tooltip(hud.draw, font, "Unfavorite it or mark weird when it is "
+                        "not a favorite", (20, 20), hud.image.size)
 
     x, y, w, h = rect
     assert (x, y) >= (0, 0) and (x + w, y + h) <= (150, 120)
@@ -120,22 +120,22 @@ def test_a_tooltip_that_fits_stays_on_one_line_beside_the_cursor():
     """Wrapping is what a tooltip does when it must, not what it does — one that
     fits keeps its single line and sits down and to the right of the pointer,
     clear of the arrow itself."""
-    panel = HudPanel(300, 200)
+    hud = Hud(300, 200)
     font = load_font(8)
 
-    x, y, _w, h = draw_tooltip(panel.draw, font, "Next clip", (40, 60),
-                               panel.image.size)
+    x, y, _w, h = draw_tooltip(hud.draw, font, "Next clip", (40, 60),
+                               hud.image.size)
 
     assert h == sum(font.getmetrics()) + 2 * TOOLTIP_PAD
     assert (x, y) > (40, 60)
 
 
 def test_a_tooltip_starts_a_new_line_wherever_its_text_does():
-    panel = HudPanel(300, 200)
+    hud = Hud(300, 200)
     font = load_font(8)
 
-    _x, _y, _w, h = draw_tooltip(panel.draw, font, "Next clip\nThen the one after it",
-                                 (40, 60), panel.image.size)
+    _x, _y, _w, h = draw_tooltip(hud.draw, font, "Next clip\nThen the one after it",
+                                 (40, 60), hud.image.size)
 
     assert h == 2 * sum(font.getmetrics()) + 2 * TOOLTIP_PAD
 
@@ -143,12 +143,12 @@ def test_a_tooltip_starts_a_new_line_wherever_its_text_does():
 def test_a_tooltip_keeps_the_spaces_it_was_written_with():
     """It wraps with the family's one wrapper, which keeps a text's own spaces
     as the desktop's log does."""
-    panel = HudPanel(300, 200)
+    hud = Hud(300, 200)
     font = load_font(8)
 
-    _x, _y, single, _h = draw_tooltip(panel.draw, font, "Next clip", (40, 60), panel.image.size)
-    _x, _y, spaced, _h = draw_tooltip(panel.draw, font, "Next    clip", (40, 60),
-                                      panel.image.size)
+    _x, _y, single, _h = draw_tooltip(hud.draw, font, "Next clip", (40, 60), hud.image.size)
+    _x, _y, spaced, _h = draw_tooltip(hud.draw, font, "Next    clip", (40, 60),
+                                      hud.image.size)
 
     assert spaced > single
 
@@ -156,7 +156,7 @@ def test_a_tooltip_keeps_the_spaces_it_was_written_with():
 def test_the_cut_older_branches_import_from_here_is_shared_uis_own():
     """Origenerator's main and its open branches import fit_text from here, so
     it answers here as the family's one cut, never a copy, until none does."""
-    assert hud_panel.fit_text is lettering.fit_text
+    assert hud.fit_text is lettering.fit_text
 
 
 def _ink_center(size: int, paint) -> tuple[float, float]:

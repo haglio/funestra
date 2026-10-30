@@ -148,8 +148,8 @@ def test_the_loading_notice_comes_down_with_the_flick_decoded():
     assert LOADING_OVERLAY_ID not in engine.overlays
 
 
-def test_every_id_it_draws_with_is_under_the_panels():
-    panels = (Funestra.IN_FRAME_OVERLAY_ID, Funestra.OUT_FRAME_OVERLAY_ID,
+def test_every_id_it_draws_with_is_under_the_huds():
+    huds = (Funestra.IN_FRAME_OVERLAY_ID, Funestra.OUT_FRAME_OVERLAY_ID,
               HUD_OVERLAY_ID, CORNER_PLUS_OVERLAY_ID)
 
-    assert max(BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID + 3, LOADING_OVERLAY_ID) < min(panels)
+    assert max(BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID + 3, LOADING_OVERLAY_ID) < min(huds)
