@@ -457,7 +457,7 @@ def test_a_press_outside_the_hud_posts_nothing_and_is_refused(
     assert _commands(tmp_path) == []
 
 
-def test_a_press_on_the_hud_s_own_background_is_the_hud_s(tmp_path: Path, hud: Path):
+def test_a_press_between_the_huds_controls_is_still_the_huds(tmp_path: Path, hud: Path):
     """The slab is one surface: a press between its controls posts nothing and
     is still the HUD's, not the item's."""
     engine = FakeEngine()
