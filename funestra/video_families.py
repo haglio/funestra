@@ -27,6 +27,10 @@ def normalized_text(value: object) -> str:
     return " ".join(str(value or "").split()).lower()
 
 
+def filter_keeps(text: object, query: object) -> bool:
+    return normalized_text(query) in normalized_text(text)
+
+
 def _field_key(prefix: str, block: dict, fields: tuple[str, ...]) -> str:
     return prefix + "|" + "|".join(normalized_text(block.get(field)) for field in fields)
 
