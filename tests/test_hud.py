@@ -112,7 +112,8 @@ def test_a_tooltip_wider_than_the_hud_wraps_rather_than_running_off_it():
                         "not a favorite", (20, 20), hud.image.size)
 
     x, y, w, h = rect
-    assert (x, y) >= (0, 0) and (x + w, y + h) <= (150, 120)
+    assert (x, y) >= (0, 0)
+    assert (x + w, y + h) <= (150, 120)
     assert h > sum(font.getmetrics()) + 2 * TOOLTIP_PAD  # more than one line
 
 
@@ -194,8 +195,10 @@ def test_an_app_mark_fits_inside_the_button_it_is_centered_in():
                 hovered=False, glyph_font=load_font(11), word_font=load_font(11))
     ys, xs = np.nonzero((np.asarray(image)[:, :, :3] == MAGENTA).all(axis=2))
 
-    assert xs.min() >= 2 and xs.max() <= 15
-    assert ys.min() >= 2 and ys.max() <= 15
+    assert xs.min() >= 2
+    assert xs.max() <= 15
+    assert ys.min() >= 2
+    assert ys.max() <= 15
 
 
 def test_a_glyph_with_no_ink_draws_nothing_rather_than_raising():

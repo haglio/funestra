@@ -152,7 +152,8 @@ def test_a_funestra_jumps_to_its_clips_scripting_and_says_so_on_its_notice_chann
 
     assert engine.position_ms == 40_000.0
     notice = (tmp_path / "notice.txt").read_text(encoding="utf-8")
-    assert "level=warning" in notice and "message=no other funscripted video" in notice
+    assert "level=warning" in notice
+    assert "message=no other funscripted video" in notice
 
 
 def test_a_funestra_given_no_notice_channel_still_jumps(tmp_path):

@@ -10,6 +10,7 @@ from .console import HELD_HEIGHT, HOLD_VERB
 from .device_walk import Walk, the_broker_holding, the_hand_taking_back
 from .file_channel import consume_command_file
 from .flick_advance import set_elapsed, tick_flick_advance
+from .flick_flip import HALF_A_LOOP
 from .flick_renderer import display_index_for_phase
 from .flick_scrub import FlickScrub, scrub_flick
 from .genau_controls import GenauControls, apply_runtime_command
@@ -302,7 +303,7 @@ class GenauRefreshController:
         if self.tcode_sender is None or not (entry and entry["frames"]):
             return
         fraction = self.flip.applied_to(min(1.0, max(0.0, fraction)))
-        back_half = fraction > 0.5
+        back_half = fraction > HALF_A_LOOP
         height = 2 * (1 - fraction) if back_half else 2 * fraction
         self._scrub.back_half = back_half
         # Not arrived at either end by traveling, so the next tick may not read

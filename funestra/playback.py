@@ -169,7 +169,7 @@ class Playback:
 
     def step_version(self, versions: list[Path], delta: int) -> None:
         showing = self.showing
-        if len(versions) < 2 or showing not in versions:
+        if len(versions) <= 1 or showing not in versions:
             return
         target = versions[(versions.index(showing) + delta) % len(versions)]
         clip = self.current_video
