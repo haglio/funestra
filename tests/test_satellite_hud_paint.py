@@ -1824,7 +1824,7 @@ def test_in_a_lower_corner_the_minus_sits_in_room_the_map_leaves_free(thumb, cor
         corner=HudCell(path="c.mp4", thumb=thumb) if cells else None,
         seeds=tuple(HudCell(path=f"s{i}.mp4", thumb=thumb) for i in range(cells)),
         actions=tuple(HudCell(path=f"a{i}.mp4", thumb=thumb, label=label)
-                      for i, label in zip(range(cells), ("alpha", "beta", "gamma"))))
+                      for i, label in zip(range(cells), ("alpha", "beta", "gamma"), strict=False)))
     with_it = HudRenderer("portrait").render(model, video="one.mp4")
     without_it = HudRenderer("portrait").render(model, video="one.mp4", minus_on_the_hud=False)
     x, y, w, h = _button_rect(with_it, "portrait_hud_minimize")
@@ -1909,6 +1909,6 @@ class TestEverySectionIsSetOffFromTheNextByALine:
         lines = _dividers(rendered)
 
         assert len(lines) == len(sections) - 1
-        for (_top, above_ends), line, (below_starts, _end) in zip(sections, lines, sections[1:]):
+        for (_top, above_ends), line, (below_starts, _end) in zip(sections[:-1], lines, sections[1:], strict=True):
             assert above_ends <= line < below_starts
 

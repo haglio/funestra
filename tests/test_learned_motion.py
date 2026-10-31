@@ -6,6 +6,7 @@ Every phrase here is invented.
 from __future__ import annotations
 
 import random
+from itertools import pairwise
 
 import pytest
 
@@ -78,7 +79,7 @@ class TestPlayingThePhrases:
         highs = state.positions[1::2]
         assert set(lows) <= {20.0, 40.0}
         assert set(highs) <= {80.0, 60.0}
-        assert all(t1 > t0 for t0, t1 in zip(state.times, state.times[1:]))
+        assert all(t1 > t0 for t0, t1 in pairwise(state.times))
 
     def test_the_bars_are_the_envelope_the_phrases_play_inside(self):
         hand, state = _playing(_model(_phrase(500, 20, 80)), amplitude=50, intended_center=50)

@@ -473,7 +473,7 @@ def button_row_rects(x: int, y: int, buttons: Sequence[Button],
     *widths* being each one's width as the painter measured it -- this module
     is font-free."""
     rects: list[tuple[Rect, Button]] = []
-    for button, width in zip(buttons, widths):
+    for button, width in zip(buttons, widths, strict=True):
         if rects:
             x += BUTTON_GROUP_GAP if button.group_break else BUTTON_GAP
         rects.append(((x, y, width, CTRL_BTN), button))
@@ -502,7 +502,7 @@ def speed_row(funestra: str, x: int, y: int, *,
     up_x = rate_x + VALUE_W + MAP_GAP
     buttons = [
         ((button_x, y, CTRL_BTN, CTRL_BTN), Button(f"{funestra}_{name}", face, tooltip))
-        for button_x, (name, face, tooltip) in zip((down_x, up_x), _SPEED_BUTTONS)
+        for button_x, (name, face, tooltip) in zip((down_x, up_x), _SPEED_BUTTONS, strict=True)
     ]
     return buttons, (rate_x, y, VALUE_W, CTRL_BTN)
 
@@ -621,8 +621,8 @@ def build_click_targets(
     targets: list[tuple[Rect, str]] = []
     if corner_rect is not None and corner is not None and corner.path:
         targets.append((corner_rect, corner.path))
-    targets.extend((rect, cell.path) for rect, cell in zip(seed_rects, seeds))
-    targets.extend((rect, cell.path) for rect, cell in zip(action_rects, actions))
+    targets.extend((rect, cell.path) for rect, cell in zip(seed_rects, seeds, strict=False))
+    targets.extend((rect, cell.path) for rect, cell in zip(action_rects, actions, strict=False))
     return targets
 
 
@@ -665,7 +665,7 @@ def filter_button_rects(
     if corner_rect is not None and current_action:
         _cx, cy, _cw, ch = corner_rect
         rects.append(((gutter_x, cy, FILTER_BTN, ch), current_action))
-    for (_ax, ay, _aw, ah), name in zip(action_rects, action_labels):
+    for (_ax, ay, _aw, ah), name in zip(action_rects, action_labels, strict=False):
         if name:
             rects.append(((gutter_x, ay, FILTER_BTN, ah), name))
     return rects

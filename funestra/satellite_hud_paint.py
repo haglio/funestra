@@ -276,7 +276,7 @@ class HudRenderer:
         device_row_widths = [[self._button_width(b) for b in row] for row in device_rows]
         band_width = max((
             2 * PAD + button_row_width(row, row_widths)
-            for row, row_widths in zip(rows + device_rows, widths + device_row_widths)
+            for row, row_widths in zip(rows + device_rows, widths + device_row_widths, strict=True)
             if row
         ), default=0)
         # The device's own blocks, on a host that drives it: the OSR2 line and
@@ -333,7 +333,7 @@ class HudRenderer:
 
         # Laid out against the HUD rather than against the map: they act on the
         # side and the clip on screen, and are there whether or not there is a map.
-        for row, row_widths in zip(rows, widths):
+        for row, row_widths in zip(rows, widths, strict=True):
             placed = button_row_rects(
                 self._block_x(model, width, button_row_width(row, row_widths)),
                 y, row, row_widths)
@@ -445,7 +445,7 @@ class HudRenderer:
                      ) -> tuple[list[tuple[Rect, Button]], list[DriveTrack]]:
         buttons: list[tuple[Rect, Button]] = []
         bands: list[DriveTrack] = []
-        for row, row_widths in zip(rows, widths):
+        for row, row_widths in zip(rows, widths, strict=True):
             placed = button_row_rects(
                 self._block_x(model, width, button_row_width(row, row_widths)),
                 y, row, row_widths)
@@ -595,9 +595,9 @@ class HudRenderer:
         bucket, index = model.playing
         drawn = [(corner_rect, corner_thumb, bucket == "corner")]
         drawn += [(slot, thumb, bucket == "seed" and index == i)
-                  for i, (slot, thumb) in enumerate(zip(seed_rects, seed_thumbs))]
+                  for i, (slot, thumb) in enumerate(zip(seed_rects, seed_thumbs, strict=False))]
         drawn += [(slot, thumb, bucket == "action" and index == i)
-                  for i, (slot, thumb) in enumerate(zip(action_rects, action_thumbs))]
+                  for i, (slot, thumb) in enumerate(zip(action_rects, action_thumbs, strict=False))]
         thumbnails: dict[Rect, Rect] = {}
         for slot, thumb, bright in drawn:
             thumbnails[slot] = thumbnail_rect(slot, thumb.size)
