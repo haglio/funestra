@@ -109,8 +109,10 @@ class TestControls:
         lands on what is on screen — at either end of the center's travel."""
         for center in (0, 50, 100):
             for x, y, w, h in (c.rect for c in controls(PAD, PAD, _hud(center=center))):
-                assert x >= PAD and x + w <= PAD + SECTION_W
-                assert y >= PAD and y + h <= PAD + SECTION_H
+                assert x >= PAD
+                assert x + w <= PAD + SECTION_W
+                assert y >= PAD
+                assert y + h <= PAD + SECTION_H
 
     def test_each_plus_and_minus_sits_in_the_middle_of_its_mark(self):
         hud = _hud()
@@ -142,7 +144,8 @@ class TestTheCenterLabel:
             _hud(center=center))
 
         assert rows
-        assert marks_top <= rows[0] and rows[-1] < marks_bottom
+        assert marks_top <= rows[0]
+        assert rows[-1] < marks_bottom
 
     @staticmethod
     def _on_the_word(hud: DriveHud) -> tuple[int, int]:
@@ -278,8 +281,10 @@ class TestTracks:
     def test_the_bands_it_offers_all_fall_on_the_block_it_draws(self):
         for center in (0, 50, 100):
             for x, y, w, h in (t.rect for t in tracks(PAD, PAD, _hud(center=center))):
-                assert x >= PAD and x + w <= PAD + SECTION_W
-                assert y >= PAD and y + h <= PAD + SECTION_H
+                assert x >= PAD
+                assert x + w <= PAD + SECTION_W
+                assert y >= PAD
+                assert y + h <= PAD + SECTION_H
 
 
 class TestReadout:
@@ -291,8 +296,10 @@ class TestReadout:
         changed = (np.asarray(drawn.image) != np.asarray(Hud(*size).image)).any(axis=2)
         rows, columns = np.nonzero(changed)
 
-        assert rows.min() >= PAD and rows.max() < PAD + SECTION_H
-        assert columns.min() >= PAD and columns.max() < PAD + SECTION_W
+        assert rows.min() >= PAD
+        assert rows.max() < PAD + SECTION_H
+        assert columns.min() >= PAD
+        assert columns.max() < PAD + SECTION_W
 
     def test_it_fills_the_block_it_declares(self):
         rgb = _rendered(_hud(speed=62, center=45, amplitude=80))

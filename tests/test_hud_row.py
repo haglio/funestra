@@ -139,8 +139,10 @@ def test_it_draws_everything_inside_the_room_it_was_laid_out_in():
 
     inked = np.argwhere(painted[:, :, 3] > 0)
     assert inked.size
-    assert inked[:, 0].min() >= 20 and inked[:, 0].max() < 20 + ROW_H
-    assert inked[:, 1].min() >= 20 and inked[:, 1].max() < 20 + WIDTH
+    assert inked[:, 0].min() >= 20
+    assert inked[:, 0].max() < 20 + ROW_H
+    assert inked[:, 1].min() >= 20
+    assert inked[:, 1].max() < 20 + WIDTH
 
 
 def test_it_draws_each_part_where_it_laid_it_out_and_nothing_between_them():

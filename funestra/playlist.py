@@ -90,8 +90,9 @@ def _points_in(column: str) -> tuple:
             edges = tuple(float(edge) for edge in box.split(","))
         except ValueError:
             continue
-        if len(edges) == 4:
-            boxes.append(edges)
+        match edges:
+            case (_, _, _, _):
+                boxes.append(edges)
     return tuple(boxes)
 
 

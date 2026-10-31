@@ -183,8 +183,10 @@ class TestAScriptedItemsStrip:
     def test_the_strip_runs_from_the_rows_edge_to_the_chips_slot(self):
         bgra, x0, x1 = self._framed_strip()
         my = bgra.shape[0] // 2
-        assert x0 == 0 and bgra[my, 1, 3] > 0
-        assert bgra[my, x1 + 2, 3] == 0 and bgra[my, bgra.shape[1] - 5, 3] == 0
+        assert x0 == 0
+        assert bgra[my, 1, 3] > 0
+        assert bgra[my, x1 + 2, 3] == 0
+        assert bgra[my, bgra.shape[1] - 5, 3] == 0
         assert bgra[my, (x0 + x1) // 2, 3] > 0
 
     def test_it_has_a_two_tone_border(self):
@@ -192,7 +194,8 @@ class TestAScriptedItemsStrip:
         outer = _rgba(bgra, BAR_INSET_Y, x0 + 10)
         inner = _rgba(bgra, BAR_INSET_Y + 1, x0 + 10)
         assert max(outer[:3]) < 100
-        assert min(inner[:3]) >= 200 and inner[3] >= 200
+        assert min(inner[:3]) >= 200
+        assert inner[3] >= 200
 
     def test_prominent_full_height_marks(self):
         bgra, x0, x1 = self._framed_strip()
@@ -202,7 +205,9 @@ class TestAScriptedItemsStrip:
         white = [x for x in range(x0, x1) if _rgba(bgra, my, x) == (255, 255, 255, 255)]
         assert len(white) >= 3
         yellow = [x for x in range(x0, x1) if _rgba(bgra, my, x)[:3] == YELLOW]
-        assert yellow and any(x < cx for x in yellow) and any(x > cx for x in yellow)
+        assert yellow
+        assert any(x < cx for x in yellow)
+        assert any(x > cx for x in yellow)
 
 
 class TestLoopThumbCapture:

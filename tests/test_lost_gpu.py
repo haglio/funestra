@@ -163,7 +163,8 @@ def test_the_log_says_what_mpv_said_and_whether_each_new_output_came_up(caplog):
     assert len(said) == 3
     assert SUSPENDED in said[0]
     assert "did not come up" in said[1]
-    assert "came up" in said[2] and "did not" not in said[2]
+    assert "came up" in said[2]
+    assert "did not" not in said[2]
 
 
 def test_the_wait_runs_on_a_timer_of_its_own_and_can_be_called_off():

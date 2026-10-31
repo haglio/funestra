@@ -22,8 +22,10 @@ def test_the_block_is_as_big_as_the_parts_it_places(center):
     g = layout.geometry(0, 0, center)
     rects = [value for value in dataclasses.astuple(g) if isinstance(value, tuple)]
     for x, y, w, h in rects:
-        assert x >= 0 and x + w <= layout.SECTION_W
-        assert y >= 0 and y + h <= layout.SECTION_H
+        assert x >= 0
+        assert x + w <= layout.SECTION_W
+        assert y >= 0
+        assert y + h <= layout.SECTION_H
     assert layout.section_size() == (layout.SECTION_W, layout.SECTION_H)
 
 

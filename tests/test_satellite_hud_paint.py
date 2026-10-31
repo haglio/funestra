@@ -737,7 +737,8 @@ def test_a_long_loop_lights_the_clip_on_screen_wherever_it_has_got_to(tmp_path: 
 
     lit = mean(by_path["s8.mp4"])
     others = [mean(rect) for path, rect in by_path.items() if path != "s8.mp4"]
-    assert others and lit > max(others)
+    assert others
+    assert lit > max(others)
 
 
 def test_a_long_loop_marks_that_it_runs_on_past_the_map(thumb):
@@ -925,8 +926,10 @@ def test_only_the_act_the_filter_matched_is_lit_on_a_two_act_row(thumb):
     gamma_upper, gamma_lower = halves("gamma")
     theta_upper, theta_lower = halves("theta")
 
-    assert gamma_upper > 0 and gamma_lower == 0
-    assert theta_lower > 0 and theta_upper == 0
+    assert gamma_upper > 0
+    assert gamma_lower == 0
+    assert theta_lower > 0
+    assert theta_upper == 0
     assert halves("alpha") == (0, 0)
 
 
@@ -941,7 +944,8 @@ def test_a_filter_set_from_a_two_act_clip_lights_both_of_its_acts(thumb):
 
     upper, lower = _white_halves(rendered)
 
-    assert upper > 0 and lower > 0
+    assert upper > 0
+    assert lower > 0
 
 
 @pytest.mark.parametrize("camera", ["xyz", "side"])
@@ -964,7 +968,8 @@ def test_a_leading_camera_word_stays_gray_when_its_act_is_filtered(camera, thumb
 
     scope, gamma = halves("gamma")
 
-    assert scope == 0 and gamma > 0
+    assert scope == 0
+    assert gamma > 0
     # …and a filter on the row itself names both, so both light.
     assert all(half > 0 for half in halves(f"{camera} gamma"))
 
@@ -1700,7 +1705,8 @@ def test_the_status_block_moves_to_the_corner_the_hud_sits_in(thumb):
     left = rendered(HudCorner.UPPER_LEFT)
     right = rendered(HudCorner.UPPER_RIGHT)
 
-    assert left.targets.favorite is not None and right.targets.favorite is not None
+    assert left.targets.favorite is not None
+    assert right.targets.favorite is not None
     assert left.targets.favorite[0] < PAD + MINUS_ROOM + ACTIVE_DOT
     assert right.targets.favorite[0] > left.bgra.shape[1] // 2
 

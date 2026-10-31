@@ -128,4 +128,5 @@ def test_a_folder_that_cannot_be_looked_in_at_all_says_what_it_answered(monkeypa
 
     said = mpv_engine._where_it_looked()
 
-    assert "could not be looked in" in said and "Access is denied" in said
+    assert "could not be looked in" in said
+    assert "Access is denied" in said

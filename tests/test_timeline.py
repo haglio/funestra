@@ -45,8 +45,10 @@ class TestProgressBar:
         x0, x1 = bar_track_x(1000)
         my = bar.shape[0] // 2
 
-        assert bar[my, 1, 3] > 0 and bar[my, (x0 + x1) // 2, 3] > 0
-        assert bar[my, x1 + 2, 3] == 0 and bar[my, 995, 3] == 0
+        assert bar[my, 1, 3] > 0
+        assert bar[my, (x0 + x1) // 2, 3] > 0
+        assert bar[my, x1 + 2, 3] == 0
+        assert bar[my, 995, 3] == 0
 
     def test_has_a_two_tone_border_around_the_track(self):
         bar = progress_bar_bgra(0, 10_000, None, 1000)
@@ -56,7 +58,8 @@ class TestProgressBar:
         outer = _rgba(bar, BAR_INSET_Y, xc)           # dark outer edge
         inner = _rgba(bar, BAR_INSET_Y + 1, xc)       # light inner border
         assert max(outer[:3]) < min(fill[:3])                     # darker than fill
-        assert min(inner[:3]) > max(fill[:3]) and inner[3] >= 200  # lighter than fill
+        assert min(inner[:3]) > max(fill[:3])
+        assert inner[3] >= 200
 
     def test_a_prominent_white_playcursor(self):
         bar = progress_bar_bgra(5_000, 10_000, None, 1000)  # 50%
@@ -75,7 +78,8 @@ class TestProgressBar:
         yellow = [x for x in range(x0, x1) if _rgba(bar, my, x)[:3] == YELLOW]
         assert len(yellow) >= 6  # two marks (in and out), each a few px wide
         xc = (x0 + x1) // 2
-        assert any(x < xc for x in yellow) and any(x > xc for x in yellow)
+        assert any(x < xc for x in yellow)
+        assert any(x > xc for x in yellow)
 
     def test_no_loop_marks_without_a_loop(self):
         bar = progress_bar_bgra(0, 10_000, None, 1000)

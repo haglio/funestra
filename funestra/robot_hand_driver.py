@@ -17,6 +17,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from . import learned_motion
+from .flick_flip import HALF_A_LOOP
 from .funscript import HANDOFF_RAMP_MS
 from .robot_hand import POSITION_MAX, phase_to_position
 from .tcode import HandoffGlide, TCodeSink, format_tcode_command
@@ -174,7 +175,7 @@ class RobotHandTCodeDriver:
         else:
             # Accumulate continuous motion phase, detecting wraps.
             delta = phase - self._last_phase
-            if delta < -0.5:
+            if delta < -HALF_A_LOOP:
                 delta += 1.0
             self._motion_phase += max(0.0, delta)
             self._last_phase = phase
