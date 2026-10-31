@@ -75,7 +75,8 @@ class TestTheReadout:
         painted = bgra[:, :, 3] > 0
         assert painted.any()
         assert painted.mean() < 0.5
-        assert not painted[0].any() and not painted[-1].any()
+        assert not painted[0].any()
+        assert not painted[-1].any()
 
     def test_it_is_as_tall_as_the_volume_chip_at_the_other_end_of_the_row(self):
         bgra = PlayheadHudPainter().bgra(video_playhead(42_000.0, 195_000.0, 30.0))

@@ -676,7 +676,8 @@ class TestAHudWithTheOsr2ItsOwnFunestraScripts:
         overlay.tick()
 
         ((published, drives_itself),) = gate.asked
-        assert published.amplitude == 80 and drives_itself is False
+        assert published.amplitude == 80
+        assert drives_itself is False
         assert overlay.targets.tracks
 
 

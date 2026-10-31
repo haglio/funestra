@@ -466,7 +466,8 @@ class TestTheOsr2:
 
         playback.advance()
 
-        assert tcode.updates == [] and tcode.parks == 0
+        assert tcode.updates == []
+        assert tcode.parks == 0
 
     def test_told_to_drive_it_follows_its_clips_funscript_at_its_own_rate(self, tmp_path):
         playback, engine, tcode = _driving(tmp_path)
@@ -484,7 +485,8 @@ class TestTheOsr2:
 
         playback.advance()
 
-        assert tcode.updates == [] and tcode.parks == 1
+        assert tcode.updates == []
+        assert tcode.parks == 1
 
     def test_told_to_stop_it_sends_nothing_more(self, tmp_path):
         playback, _engine, tcode = _driving(tmp_path)
@@ -561,7 +563,8 @@ class TestTheOsr2:
         playback.set_paused(False)
 
         playback.advance()
-        assert tcode.updates == [] and tcode.parks == 0
+        assert tcode.updates == []
+        assert tcode.parks == 0
 
         engine.position_ms = 40
         playback.advance()

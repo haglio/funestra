@@ -56,12 +56,14 @@ class TestHowItIsDrawn:
 
         assert ink[2, c] > disc + 100
         assert ink[DIAL_SIZE - 3, c] > disc + 100
-        assert ink[c - 3, c - 4] < disc + 40 and ink[c + 3, c + 4] < disc + 40
+        assert ink[c - 3, c - 4] < disc + 40
+        assert ink[c + 3, c + 4] < disc + 40
 
     def test_it_is_a_disc_that_leaves_its_corners_clear(self):
         alpha = LoopDialPainter().bgra(LoopDialPainter.hand(0.0))[:, :, 3]
 
-        assert alpha[0, 0] == 0 and alpha[DIAL_SIZE - 1, DIAL_SIZE - 1] == 0
+        assert alpha[0, 0] == 0
+        assert alpha[DIAL_SIZE - 1, DIAL_SIZE - 1] == 0
         assert alpha[DIAL_SIZE // 2, DIAL_SIZE // 2] > 0
 
     def test_it_is_repainted_only_when_the_hand_moves_a_step(self):

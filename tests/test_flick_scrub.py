@@ -40,7 +40,9 @@ def _forward_only(phases):
     loop's seam wrap, where the back half near 1 gives way to the front near 0."""
     for prev, nxt in pairwise(phases):
         if nxt < prev:
-            assert prev > 0.5 and nxt < 0.5, f"cursor went backwards: {prev} -> {nxt}"
+            backwards = f"cursor went backwards: {prev} -> {nxt}"
+            assert prev > 0.5, backwards
+            assert nxt < 0.5, backwards
 
 
 def test_the_frame_is_where_the_device_is():
@@ -103,7 +105,8 @@ def test_a_reversal_at_the_bottom_wraps_the_loop_forward():
     rising = _sweep(state, _ramp(0.2, 0.5))      # turns back up
     after = rising[-1]
     assert state.back_half is False              # swapped to the front half
-    assert before > 0.5 and after < 0.5          # crossed the seam forward
+    assert before > 0.5
+    assert after < 0.5
 
 
 def test_a_wobble_shorter_than_a_frame_holds_the_cursor():

@@ -20,6 +20,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .flick_flip import HALF_A_LOOP
+
 # The most wall time one tick may move the phase, the same cap
 # :func:`funestra.robot_hand.phase_advanced` puts on a caller's own clock: a
 # clock that stalled comes back owing a step the motion should not take at once.
@@ -82,6 +84,6 @@ def advance_beat(
     if sync_pulse_id != engine.seen_sync_pulse_id:
         engine.seen_sync_pulse_id = sync_pulse_id
         phase = engine.phase
-        if phase > 0.5:
+        if phase > HALF_A_LOOP:
             strength = max(0.0, min(1.0, sync_strength))
             engine.phase = (engine.phase + (1.0 - phase) * strength) % 1.0

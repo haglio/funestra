@@ -6,6 +6,7 @@ from pathlib import Path
 
 from . import learned_motion
 from .drive_readout import TRACE_SAMPLES, DriveHud, DrivePublisher
+from .flick_flip import HALF_A_LOOP
 from .genau_controls import GenauControls
 from .robot_hand import (
     MIN_BPM,
@@ -90,7 +91,7 @@ class GenauReadout:
     def _counted_up(self, auto: AutoMotion | None) -> AutoMotion | None:
         if auto is None:
             return None
-        if self._auto_phase is not None and auto.phase < self._auto_phase - 0.5:
+        if self._auto_phase is not None and auto.phase < self._auto_phase - HALF_A_LOOP:
             self._auto_turns += 1
         self._auto_phase = auto.phase
         return replace(auto, phase=self._auto_turns + auto.phase)

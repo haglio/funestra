@@ -12,6 +12,10 @@ from .hud import KeptBitmap, ink_center_offset, load_font, text_width
 from .hud_title import SEPARATOR
 from .volume import CHIP_H
 
+_SECONDS_PER_MINUTE = 60
+_MINUTES_PER_HOUR = 60
+_SECONDS_PER_HOUR = _SECONDS_PER_MINUTE * _MINUTES_PER_HOUR
+
 FIGURE_SPACE = "\u2007"
 
 
@@ -23,11 +27,11 @@ class PlayheadHud:
 
 def _clock(ms: float, length_ms: float) -> str:
     length_s = int(length_ms // 1000)
-    minutes, seconds = divmod(int(ms // 1000), 60)
-    if length_s < 3600:
-        return f"{minutes:0{len(str(length_s // 60))}d}:{seconds:02d}"
-    hours, minutes = divmod(minutes, 60)
-    return f"{hours:0{len(str(length_s // 3600))}d}:{minutes:02d}:{seconds:02d}"
+    minutes, seconds = divmod(int(ms // 1000), _SECONDS_PER_MINUTE)
+    if length_s < _SECONDS_PER_HOUR:
+        return f"{minutes:0{len(str(length_s // _SECONDS_PER_MINUTE))}d}:{seconds:02d}"
+    hours, minutes = divmod(minutes, _MINUTES_PER_HOUR)
+    return f"{hours:0{len(str(length_s // _SECONDS_PER_HOUR))}d}:{minutes:02d}:{seconds:02d}"
 
 
 def _time(position_ms: float, duration_ms: float) -> str:
