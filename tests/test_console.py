@@ -14,7 +14,6 @@ from funestra.console import (
     GAP,
     GROUP_GAP,
     OSR2_CONTROL_BUTTONS,
-    OSR2_CONTROL_OFF,
     OSR2_CONTROL_UNANSWERED,
     OSR2_DRIVING,
     OSR2_PARKED,
@@ -129,16 +128,12 @@ class TestTheRowThatAimsTheDevice:
         assert switch.command == OSR2_CONTROL_BUTTONS[OSR2_PARKED]
 
     @pytest.mark.parametrize("control", [OSR2_PARKED, OSR2_RETRACTED, OSR2_CONTROL_UNANSWERED,
-                                         OSR2_CONTROL_OFF])
-    def test_the_switch_is_off_while_held_or_unsaid_and_a_press_drives(self, control):
+                                         "an unknown control"])
+    def test_the_switch_is_off_for_every_word_but_driving_and_a_press_drives(self, control):
         _label, off, switch, on = _aim_row(control=control)[:4]
 
         assert off.lit and not switch.lit and not on.lit
         assert switch.command == OSR2_CONTROL_BUTTONS[OSR2_DRIVING]
-
-    def test_an_older_fun_time_still_finds_the_presses_it_answers_for_retired_holds(self):
-        assert OSR2_CONTROL_BUTTONS[OSR2_RETRACTED] == "robot_hand_retract"
-        assert OSR2_CONTROL_BUTTONS[OSR2_CONTROL_OFF] == "osr2_control_off"
 
     def test_the_switch_offers_only_its_two_positions(self):
         assert set(OSR2_CONTROL_BUTTONS) == {OSR2_PARKED, OSR2_DRIVING}

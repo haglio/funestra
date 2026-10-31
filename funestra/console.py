@@ -96,26 +96,14 @@ OSR2_RETRACTED = "retracted"
 OSR2_DRIVING = "driving"
 # And an answer that is not a state: this host has no such switch.
 OSR2_CONTROL_UNANSWERED = ""
-# Control off, which the switch no longer has: Origenerator and Fun Time import
-# the name until every checkout of theirs has moved to the switch, and a console
-# told it draws the switch off.
-OSR2_CONTROL_OFF = "control_off"
 
 # The press that puts the device in each of the switch's two positions.  Data,
 # so a consumer routing a press can read the state off the command rather than
 # spelling this out a second time.
-class _SwitchPresses(dict):
-    _RETIRED = MappingProxyType({OSR2_RETRACTED: "robot_hand_retract",
-                                 OSR2_CONTROL_OFF: "osr2_control_off"})
-
-    def __missing__(self, control: str) -> str:
-        return self._RETIRED[control]
-
-
-OSR2_CONTROL_BUTTONS: dict[str, str] = _SwitchPresses({
+OSR2_CONTROL_BUTTONS: dict[str, str] = {
     OSR2_PARKED: "robot_hand_park",
     OSR2_DRIVING: "robot_hand_release",
-})
+}
 _SWITCH_SAYS = {
     OSR2_DRIVING: "OSR2 control on — the OSR2 follows whatever the motion is doing. "
                   "Press to switch control off: the OSR2 parks at home",
