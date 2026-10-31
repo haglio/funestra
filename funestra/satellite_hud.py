@@ -51,7 +51,6 @@ from .hud_placement import HudCorner, HudEdge
 from .hud_sections import blocks_height, stack
 from .hud_title import SEPARATOR
 from .modes import read_mode
-from .renamed import answers_to_old_names
 from .video_families import filter_keeps, normalized_text
 
 if TYPE_CHECKING:
@@ -155,7 +154,6 @@ def _painted_at(path: str, _stamp: str) -> Image.Image:
         return opened.convert("RGBA")
 
 
-@answers_to_old_names({"lock_label": "title"})
 @dataclass(frozen=True)
 class HudModel:
     """One satellite's HUD contents, exactly as fun_time published them."""
@@ -938,8 +936,6 @@ def hud_text(model: HudModel) -> str:
         "hud_minimized": model.hud_minimized,
         "locked": model.locked,
         "title": model.title,
-        # The same, under the key a reader from before the rename looks for.
-        "lock_label": model.title,
         "active": model.active,
         "is_favorite": model.is_favorite,
         "item_note": model.item_note,
@@ -985,7 +981,7 @@ def parse_hud(text: str) -> HudModel | None:
         hud_edge=read_mode(HudEdge, raw.get("hud_edge"), HudEdge.LOWER),
         hud_minimized=bool(raw.get("hud_minimized", False)),
         locked=bool(raw.get("locked", False)),
-        title=str(raw.get("title", raw.get("lock_label", "")) or ""),
+        title=str(raw.get("title", "") or ""),
         active=bool(raw.get("active", False)),
         is_favorite=bool(raw.get("is_favorite", False)),
         item_note=str(raw.get("item_note", "") or ""),

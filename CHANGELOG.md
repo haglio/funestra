@@ -15,7 +15,9 @@ No main of an app and no work a session has open or paused spells them any
 more; the two drafts that still do, haglio/fun_time#419 and #450, have to be
 brought up to today's main before they can run at all. So `funestra.hud_status`
 is gone, with its `status_line` and the labels it handed on from
-`funestra.hud_title`.
+`funestra.hud_title`; and `HudModel` neither takes nor answers `lock_label`,
+so the HUD a source publishes carries its title under `title` alone, the one
+key `parse_hud` reads it from.
 
 ## 2026-10-30 — the October renames' old names no longer answer
 

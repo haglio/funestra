@@ -763,18 +763,6 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
 
         assert parsed == HudModel(funestra="portrait")
 
-    def test_a_title_published_before_it_was_called_the_title_still_reads(self):
-        assert parse_hud(json.dumps({"funestra": "portrait", "lock_label": "Locked"})).title == (
-            "Locked")
-
-    def test_the_title_also_goes_out_where_a_reader_from_before_the_rename_looks(self):
-        raw = json.loads(hud_text(HudModel(funestra="portrait", title="Locked")))
-
-        assert raw["title"] == raw["lock_label"] == "Locked"
-
-    def test_a_source_from_before_the_rename_still_hands_the_title_over(self):
-        assert HudModel(funestra="portrait", lock_label="Locked").title == "Locked"
-
     def test_a_hud_with_no_clip_yet_round_trips_empty(self):
         parsed = parse_hud(hud_text(HudModel(funestra="portrait")))
 
