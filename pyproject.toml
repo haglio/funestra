@@ -15,13 +15,12 @@ requires-python = ">=3.14"
 # PyPI served that morning, which is how the family's gates came to run a major
 # version of the imaging stack past the one the machines have. Floors are what
 # the consumer venvs hold today.
-# app_support and shared_ui are named at the tags this repo was built against
-# rather than left to be whatever checkouts sit beside it. Unpinned, a change
-# landing in one of them reached every consumer the same minute, and one whose
-# other half had not landed turned all of them red at once.
+# app_support and shared_ui are not among them: every app that runs this pins
+# both itself, and pip refuses two pins of one repo that differ, so a pin here held
+# every app to this repo's copies until this repo released again. The copies this
+# repo's own suite runs are named in the dev extra, never left to whatever
+# checkouts sit beside it.
 dependencies = [
-    "app-support @ git+https://github.com/haglio/app_support@v0.1.307",
-    "shared-ui @ git+https://github.com/haglio/shared_ui@v0.1.285",
     "numpy>=2.4,<3",
     "pillow>=12,<13",
     "python-mpv>=1,<2",
@@ -33,6 +32,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+    "app-support @ git+https://github.com/haglio/app_support@v0.1.307",
+    "shared-ui @ git+https://github.com/haglio/shared_ui@v0.1.285",
     "pytest>=9,<10",
     "pytest-cov>=7,<8",
     "pytest-timeout>=2.4,<3",
