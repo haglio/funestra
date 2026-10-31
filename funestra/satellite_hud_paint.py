@@ -42,6 +42,7 @@ from funestra.hud import (
     draw_tooltip,
     load_font,
     text_width,
+    to_bgra,
 )
 from funestra.hud_button import Button
 from funestra.hud_marks import SHARED_MARK, shared_mark, shared_mark_name
@@ -141,6 +142,15 @@ class RenderedHud:
     targets: HudTargets
 
 
+@dataclass(frozen=True)
+class _DrawnButTheRow:
+    drawn_for: tuple
+    image: Image.Image
+    bgra: np.ndarray
+    row_rect: tuple[int, int, int, int]
+    targets: HudTargets
+
+
 def _dashed_rect(draw: ImageDraw.ImageDraw, rect: Rect, color, dash: int = 4) -> None:
     """A 1px dashed outline — Pillow draws only solid lines, and the hover preview
     has to read as provisional next to the solid border a running loop gets."""
@@ -178,6 +188,7 @@ class HudRenderer:
         self._drive = DriveSection()
         self._readout = ReadoutResolver()
         self._item_row = RowSection()
+        self._drawn: _DrawnButTheRow | None = None
 
     def _thumbnail(self, cell: HudCell) -> Image.Image:
         slot_w = slot_width(self._funestra)
@@ -261,6 +272,21 @@ class HudRenderer:
         model = replace(model, drive=self._readout.resolve(
             model.drive, osr2=model.osr2, control=model.osr2_control, paused=model.paused,
             composed=model.drive_composed))
+        drawn_for = self._all_but_the_row(
+            model, item_row, video=video, hover_loop=hover_loop, hover_tip=hover_tip,
+            hover_pos=hover_pos, may_grow_on_hover=may_grow_on_hover,
+            minus_on_the_hud=minus_on_the_hud, flash=flash)
+        if drawn_for is not None and self._drawn is not None and self._drawn.drawn_for == drawn_for:
+            return self._with_the_row(self._drawn, item_row, heatmap)
+        return self._drawn_whole(
+            model, drawn_for, video=video, item_row=item_row, heatmap=heatmap,
+            hover_loop=hover_loop, hover_tip=hover_tip, hover_pos=hover_pos,
+            may_grow_on_hover=may_grow_on_hover, minus_on_the_hud=minus_on_the_hud, flash=flash)
+
+    def _drawn_whole(self, model: HudModel, drawn_for: tuple | None, *, video: str,
+                     item_row: RowHud | None, heatmap: np.ndarray | None, hover_loop: str,
+                     hover_tip: str, hover_pos: tuple[int, int], may_grow_on_hover: bool,
+                     minus_on_the_hud: bool, flash: str) -> RenderedHud:
         counts = self._count_lines(model)
         model, seed_win, action_win = self._window(model)
         corner_thumb, seed_thumbs, action_thumbs = self._map_thumbnails(model)
@@ -366,7 +392,6 @@ class HudRenderer:
         row = None
         if item_row is not None:
             row = row_layout(item_row, rect=(x, layout.row, width - 2 * PAD, row_h))
-            self._item_row.draw(image, row, item_row, heatmap=heatmap)
         device_buttons, bands = self._draw_device(
             image, draw, width, layout.device, model, osr2_line, drive_h,
             rows=device_rows, widths=device_row_widths)
@@ -382,11 +407,31 @@ class HudRenderer:
                                       (seed_win, action_win), hover_loop)
                        if corner_thumb is not None
                        else HudTargets(click=[], loop=[], filter=[], expand=None))
+        targets = replace(map_targets, tracks=bands, row=row, foot=foot_rect, buttons=buttons,
+                          favorite=favorite)
+        if drawn_for is not None:
+            self._drawn = _DrawnButTheRow(drawn_for, image, to_bgra(image), row.rect, targets)
+            return self._with_the_row(self._drawn, item_row, heatmap)
+        if row is not None:
+            self._item_row.draw(image, row, item_row, heatmap=heatmap)
         if hover_tip:
             draw_tooltip(draw, self._tiny, hover_tip, hover_pos, (width, height))
-        return RenderedHud(hud.to_bgra(), replace(
-            map_targets, tracks=bands, row=row, foot=foot_rect, buttons=buttons,
-            favorite=favorite))
+        return RenderedHud(hud.to_bgra(), targets)
+
+    def _all_but_the_row(self, model: HudModel, item_row: RowHud | None, **drawn_with) -> tuple | None:
+        if item_row is None or drawn_with["hover_tip"]:
+            return None
+        return model, self._item_row.least_width(item_row), tuple(sorted(drawn_with.items()))
+
+    def _with_the_row(self, drawn: _DrawnButTheRow, item_row: RowHud, heatmap) -> RenderedHud:
+        x, y, width, height = drawn.row_rect
+        region = drawn.image.crop((x, y, x + width, y + height))
+        self._item_row.draw(region, row_layout(item_row, rect=(0, 0, width, height)), item_row,
+                            heatmap=heatmap)
+        bgra = drawn.bgra.copy()
+        bgra[y:y + height, x:x + width] = to_bgra(region)
+        return RenderedHud(bgra, replace(drawn.targets,
+                                         row=row_layout(item_row, rect=drawn.row_rect)))
 
     def _draw_map(self, image, draw, model: HudModel, top: int, width: int,
                   counts: tuple[str, ...], thumbs, windows, hover_loop: str) -> HudTargets:
