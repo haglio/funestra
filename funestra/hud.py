@@ -13,10 +13,12 @@ from __future__ import annotations
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+from shared_ui import lettering
 from shared_ui.app_icon import draw_letter
 from shared_ui.button_pil import slab
 from shared_ui.icons_pil import paste_icon
 from shared_ui.lettering import (
+    BOLD_FACE,
     fit_text,  # noqa: F401 -- answered here for Origenerator branches that still import it here
     wrap_text,
 )
@@ -51,10 +53,6 @@ from .hud_marks import (
     shared_mark_name,
 )
 
-# Segoe UI Bold — every label on these HUDs is bold, because they are read at a
-# glance over moving video.  A caller wanting another face passes its filename.
-UI_FONT = "segoeuib.ttf"
-
 # Segoe UI Symbol, for the marks these HUDs type rather than draw.  Segoe UI Bold
 # carries none of them, and Pillow draws a ".notdef" tofu for a codepoint a face
 # lacks, where Qt falls back silently — so anything typed names this face.
@@ -69,16 +67,14 @@ CORNER_RADIUS = BUTTON_RADIUS
 hovered_fill = hovered
 
 
-def load_font(points: int, family: str = UI_FONT) -> ImageFont.FreeTypeFont:
-    """*family* at *points*, or Pillow's own face when the machine lacks it.
+def load_font(points: int, family: str = BOLD_FACE) -> ImageFont.FreeTypeFont:
+    """*family* at *points*, sized the way Qt sizes a point, in shared_ui's one loader.
 
-    The HUD is redrawn while the video plays, so a missing face has to degrade to
-    an ugly HUD rather than raise into the run loop.
+    Every label on these HUDs is bold, because they are read at a glance over
+    moving video, and a missing face degrades to Pillow's own rather than raise
+    into the run loop.
     """
-    try:
-        return ImageFont.truetype(family, in_pixels(points))
-    except OSError:
-        return ImageFont.load_default(in_pixels(points))
+    return lettering.load_font(in_pixels(points), family)
 
 
 def text_width(font: ImageFont.FreeTypeFont, text: str) -> int:
