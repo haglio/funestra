@@ -43,18 +43,6 @@ jobs:
         done
         python tools/fetch_libmpv.py --require
 
-  # The retired Genau repository's checks of itself, run against the candidate.
-  # Nothing in them needs this package any more; the job goes once
-  # `consumer / suite` comes off the merge queue's required checks.
-  consumer:
-    uses: haglio/.github/.github/workflows/merge-gate.yml@main
-    with:
-      repo: genau
-      siblings: "app_support shared_ui"
-      python-version: "3.14"
-      timeout-minutes: 15
-      sdl-video: dummy
-
   # Fun Time's and Origenerator's whole suites, with the candidate installed over their
   # own pins: haglio/.github's apps-import.yml says how, once for every library. The
   # scan above reads only the names the apps import: on 2026-10-14 v0.1.507 dropped
