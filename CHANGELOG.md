@@ -9,7 +9,7 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
-## 2026-10-30 — the title's old names no longer answer
+## 2026-10-30 — the title's old names and the OSR2 switch's retired presses no longer answer
 
 No main of an app and no work a session has open or paused spells them any
 more; the two drafts that still do, haglio/fun_time#419 and #450, have to be
@@ -18,6 +18,13 @@ is gone, with its `status_line` and the labels it handed on from
 `funestra.hud_title`; and `HudModel` neither takes nor answers `lock_label`,
 so the HUD a source publishes carries its title under `title` alone, the one
 key `parse_hud` reads it from.
+
+The OSR2 switch's go too: `console.OSR2_CONTROL_OFF`, and the presses
+`OSR2_CONTROL_BUTTONS` still answered for the holds the switch no longer
+offers (`robot_hand_retract` for `OSR2_RETRACTED`, `osr2_control_off` for
+`control_off`), so the table is a plain dict of the switch's two positions. A
+console told `control_off` still draws the switch off, as it does for every
+word but `driving`.
 
 ## 2026-10-30 — the October renames' old names no longer answer
 
