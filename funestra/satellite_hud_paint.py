@@ -601,10 +601,11 @@ class HudRenderer:
         thumbnails: dict[Rect, Rect] = {}
         for slot, thumb, bright in drawn:
             thumbnails[slot] = thumbnail_rect(slot, thumb.size)
+            shown = thumb
             if not bright:
-                thumb = thumb.copy()
-                thumb.putalpha(thumb.getchannel("A").point(lambda a: int(a * _DIM)))
-            image.alpha_composite(thumb, thumbnails[slot][:2])
+                shown = thumb.copy()
+                shown.putalpha(shown.getchannel("A").point(lambda a: int(a * _DIM)))
+            image.alpha_composite(shown, thumbnails[slot][:2])
         return thumbnails
 
     def _draw_labels(self, image, draw, model, x, y, corner_rect, seed_rects,

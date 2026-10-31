@@ -35,11 +35,8 @@ class TestOneVerbHasOneOwner:
             Control(name="two", verbs=(Verb("EXAMPLE_VERB", _moved),)),
         )
 
-        with pytest.raises(ValueError) as refused:
+        with pytest.raises(ValueError, match="EXAMPLE_VERB is claimed by both one and two"):
             bind(clash)
-
-        assert "EXAMPLE_VERB" in str(refused.value)
-        assert "one" in str(refused.value) and "two" in str(refused.value)
 
     def test_the_registry_that_ships_binds(self):
         assert set(VERBS) == {

@@ -12,7 +12,7 @@ def _paths():
 
 
 def test_requires_at_least_one_flick():
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="requires at least one flick"):
         FlickSequenceController([])
 
 
@@ -87,7 +87,7 @@ class TestTakeUp:
         nothing leaves the sequence it already has rather than emptying it."""
         controller = FlickSequenceController(_paths())
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="requires at least one flick"):
             controller.take_up([])
 
         assert controller.current_path == Path("a.mp4")

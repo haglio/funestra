@@ -65,8 +65,8 @@ class Attachment(NamedTuple):
 
 def attachments_in(cooked: str) -> list[Attachment]:
     found = []
-    for url, name in _ATTACHMENT.findall(cooked):
-        name = html.unescape(name)
+    for url, escaped in _ATTACHMENT.findall(cooked):
+        name = html.unescape(escaped)
         if is_main_axis_script(name):
             found.append(Attachment(url, name))
     return found

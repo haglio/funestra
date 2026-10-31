@@ -71,7 +71,7 @@ class TestUdpTCodeSink:
     def test_a_send_that_fails_while_the_sink_is_open_still_raises(self):
         """Only closing is forgiven; a misaddressed sink stays as loud as it was."""
         sink = UdpTCodeSink(sock=RaisingSock())
-        with pytest.raises(OSError):
+        with pytest.raises(OSError, match="not a socket"):
             sink.send("L05000I33")
 
 
