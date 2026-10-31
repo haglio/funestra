@@ -22,9 +22,11 @@ jobs:
       siblings: ""
       python-version: "3.14"
       # Six for the suite; the rest is the libmpv fetch below -- a 32 MB download
-      # and an extraction, and a job that runs past its clock is cancelled and
-      # reports nothing at all.
-      timeout-minutes: 8
+      # and an extraction -- and, for a change that takes out a module or a name,
+      # every other repo's open work read for it. A job that runs past its clock
+      # is cancelled and reports nothing at all.
+      timeout-minutes: 10
+      keeps-what-others-use: true
       # tests/test_dead_code.py reads the apps: every caller of this package
       # lives in another repo, so the scan reads fun_time and origenerator
       # beside the checkout as its callers, and with nothing beside it can
@@ -65,11 +67,12 @@ jobs:
     uses: haglio/.github/.github/workflows/apps-import.yml@main
 
   # A version for each landing, so the apps that run this one can pin the copy
-  # they were built against. The tag is the version: pyproject reads it with
-  # setuptools-scm.
+  # they were built against, and a pull request in each of them taking it. The tag
+  # is the version: pyproject reads it with setuptools-scm.
   tag:
     if: github.event_name == 'push'
     needs: full-suite
     uses: haglio/.github/.github/workflows/tag-the-landing.yml@main
     permissions:
       contents: write
+    secrets: inherit

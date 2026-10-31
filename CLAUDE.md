@@ -82,10 +82,15 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
 
 - A change here reaches an app when that app moves its pin, not before: each
   names a tag of this repo in its `[project.dependencies]`. Landing is two
-  commits — this repo's, which tags a version, then the app's, which takes it.
+  commits — this repo's, which tags a version, then the app's, which takes it
+  and which this repo's landing opens in every app as a pull request that ships
+  by itself once the app's checks pass (`app_support.newest_pins`).
 - This repo pins app_support and shared_ui only in its `dev` extra, for its own
   suite: every app pins both itself, and a pin here, where installing this asks
   for one, made every app wait for this repo's next release to take a new copy.
+- A change that takes out a module or a name another repo's main or open pull
+  request still uses is refused at the gate (`app_support.taken_out`): keep it
+  until that work has moved off it, then take it out.
 - **To try a change here inside an app**, install this checkout over the pin in
   that app's venv (`pip install -e ../funestra --config-settings
   editable_mode=compat`), and reinstall the app afterwards to put its pin back.
