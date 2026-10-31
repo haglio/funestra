@@ -518,7 +518,7 @@ class TestStillTrace:
         ]
 
         for later in traces[1:]:
-            for a, b in zip(traces[0], later):
+            for a, b in zip(traces[0], later, strict=True):
                 assert abs(a - b) < 0.005
 
 

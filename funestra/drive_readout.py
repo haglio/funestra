@@ -218,7 +218,7 @@ class DriveHud:
         """
         marks = self.segments or ((0, self.driven),)
         ends = [start for start, _who in marks[1:]] + [len(self.waveform) - 1]
-        return tuple((start, end, who) for (start, who), end in zip(marks, ends))
+        return tuple((start, end, who) for (start, who), end in zip(marks, ends, strict=True))
 
 
 def controls(x: int, y: int, hud: DriveHud) -> list[DriveControl]:

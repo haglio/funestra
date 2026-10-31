@@ -1,6 +1,8 @@
 """A funscript's colors across the scrubber: how fast the script moves in each pixel of the track."""
 from __future__ import annotations
 
+from itertools import pairwise
+
 from shared_ui.heat import heat_at
 
 from .funscript import Funscript
@@ -13,7 +15,7 @@ def bin_speeds(
         return []
     bin_ms = (end_ms - start_ms) / buckets
     travel = [0.0] * buckets
-    for (t0, p0), (t1, p1) in zip(fs.actions, fs.actions[1:]):
+    for (t0, p0), (t1, p1) in pairwise(fs.actions):
         if t1 <= t0:
             continue
         delta = abs(p1 - p0)

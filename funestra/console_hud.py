@@ -462,7 +462,7 @@ class ConsolePainter:
              item_row is not None, host_controls is not None)) if used)
         reserves = [0] * len(widths)
         reserves[last if corner.lower else 0] = minus_room
-        parts_w = max(width_ + reserve for width_, reserve in zip(widths, reserves))
+        parts_w = max(width_ + reserve for width_, reserve in zip(widths, reserves, strict=True))
         if self._width is None:
             width = 2 * _PAD + max(
                 parts_w,

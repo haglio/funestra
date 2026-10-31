@@ -35,6 +35,6 @@ def test_a_module_imports_where_ctypes_has_no_windows_half(module):
     run = subprocess.run([sys.executable, "-c", body], capture_output=True, text=True, cwd=ROOT,
                          env={**os.environ, "QT_QPA_PLATFORM": "offscreen",
                               "PYTHONPATH": os.pathsep.join(filter(None, (str(ROOT), os.environ.get("PYTHONPATH"))))},
-                         timeout=60)
+                         timeout=60, check=False)
 
     assert run.returncode == 0, run.stderr[-2000:]
