@@ -6,7 +6,6 @@ so an entry leaves with the code it names.
 # ruff: noqa: F821, B018 -- a whitelist is names, not statements
 
 # --- called by Python or a library, never by our code ---
-_._missing_  # modes.LengthMode: Enum asks it about a value it does not know, an old "shorts"
 _.redirect_request  # tools/harvest_eroscripts.py: urllib asks a redirect handler
 newurl  # the redirect urllib offers redirect_request, which declines it
 _.ab_loop_a  # mpv_engine: python-mpv sets mpv's ab-loop-a property on assignment

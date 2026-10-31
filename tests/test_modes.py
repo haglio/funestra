@@ -31,17 +31,8 @@ def test_each_entry_is_spelled_as_its_word_on_the_wire(enum):
     assert {entry.value for entry in enum} == _WIRE_WORDS[enum]
 
 
-@pytest.mark.parametrize("enum", [MainMode, SatellitesMode])
-def test_a_branch_from_before_the_rename_still_finds_kino_under_its_old_name(enum):
-    assert enum.VIDEO is enum.KINO
-
-
-def test_a_branch_from_before_the_rename_still_finds_clips_under_its_old_name():
-    assert LengthMode.SHORTS is LengthMode.CLIPS
-
-
-def test_a_length_mode_written_before_the_rename_reads_as_clips():
-    assert read_mode(LengthMode, "shorts", None) is LengthMode.CLIPS
+def test_a_branch_from_before_the_rename_still_finds_kino_under_its_old_name():
+    assert MainMode.VIDEO is MainMode.KINO
 
 
 @pytest.mark.parametrize("enum", list(_WIRE_WORDS))

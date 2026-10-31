@@ -9,7 +9,7 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
-## 2026-10-30 — the title's old names and the OSR2 switch's retired presses no longer answer
+## 2026-10-30 — the title's old names, the OSR2 switch's retired presses and two old mode words no longer answer
 
 No main of an app and no work a session has open or paused spells them any
 more; the two drafts that still do, haglio/fun_time#419 and #450, have to be
@@ -25,6 +25,16 @@ offers (`robot_hand_retract` for `OSR2_RETRACTED`, `osr2_control_off` for
 `control_off`), so the table is a plain dict of the switch's two positions. A
 console told `control_off` still draws the switch off, as it does for every
 word but `driving`.
+
+In `funestra.modes`, `LengthMode.SHORTS` goes, and so does reading `shorts`,
+Kino's word for clips until 2026-10-11, as `clips`: every state saved since
+says `clips`, and a `shorts` now gets the reader's default, as any word it does
+not know does. `SatellitesMode.VIDEO` goes too.
+
+What answers still, each while an app's main or live work uses it:
+`MainMode.VIDEO`; the HUD's `player` key; `funestra.hud_panel`, with the
+panel keywords and attributes a Funestra takes and answers and `PanelSurface`;
+and `fit_text` in `funestra.hud`.
 
 ## 2026-10-30 — the October renames' old names no longer answer
 
