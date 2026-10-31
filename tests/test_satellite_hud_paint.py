@@ -1912,3 +1912,48 @@ class TestEverySectionIsSetOffFromTheNextByALine:
         for (_top, above_ends), line, (below_starts, _end) in zip(sections[:-1], lines, sections[1:], strict=True):
             assert above_ends <= line < below_starts
 
+
+
+def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_its_buttons(
+        thumb, monkeypatch):
+    # Drawn whole for every frame its row moved, the HUD kept the window of a
+    # slideshow in Standalone Origenerator busy three quarters of the time.
+    model = _model(corner=HudCell(path="c.mp4", thumb=thumb),
+                   seeds=(HudCell(path="s1.mp4", thumb=thumb),))
+    renderer = HudRenderer("portrait")
+    renderer.render(model, video="scene one", item_row=RowHud(position_ms=1_000, duration_ms=10_000))
+    pressed = []
+    draw = satellite_hud_paint.draw_button
+    monkeypatch.setattr(satellite_hud_paint, "draw_button",
+                        lambda *args, **kwargs: pressed.append(1) or draw(*args, **kwargs))
+
+    moved = renderer.render(model, video="scene one",
+                            item_row=RowHud(position_ms=4_000, duration_ms=10_000))
+
+    drawn_while_moving = len(pressed)
+    whole = HudRenderer("portrait").render(model, video="scene one",
+                                           item_row=RowHud(position_ms=4_000, duration_ms=10_000))
+    assert np.array_equal(moved.bgra, whole.bgra)
+    assert (moved.targets, drawn_while_moving) == (whole.targets, 0)
+
+
+def test_a_hud_whose_osr2_readout_is_still_draws_only_its_row_again_too(thumb, monkeypatch):
+    # The Standalone slideshow's HUD carries the OSR2's readout, so leaving every
+    # HUD with one to the whole drawing left that slideshow drawing it whole.
+    model = _model(corner=HudCell(path="c.mp4", thumb=thumb), osr2=Osr2State.ROBOT_HAND,
+                   drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND))
+    renderer = HudRenderer("portrait")
+    renderer.render(model, video="scene one", item_row=RowHud(position_ms=1_000, duration_ms=10_000))
+    pressed = []
+    draw = satellite_hud_paint.draw_button
+    monkeypatch.setattr(satellite_hud_paint, "draw_button",
+                        lambda *args, **kwargs: pressed.append(1) or draw(*args, **kwargs))
+
+    moved = renderer.render(model, video="scene one",
+                            item_row=RowHud(position_ms=4_000, duration_ms=10_000))
+
+    drawn_while_moving = len(pressed)
+    whole = HudRenderer("portrait").render(model, video="scene one",
+                                           item_row=RowHud(position_ms=4_000, duration_ms=10_000))
+    assert np.array_equal(moved.bgra, whole.bgra)
+    assert (moved.targets, drawn_while_moving) == (whole.targets, 0)
