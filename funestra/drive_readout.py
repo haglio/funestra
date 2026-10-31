@@ -455,7 +455,7 @@ class DriveSection:
         draw.rectangle([0, 0, w * s - 1, h * s - 1], fill=(*_TRACK, 255),
                        outline=(*TEXT_MUTED, 255), width=s)
         # White, at the same part-strength it was drawn in before: the dotted line
-        # is a ruler across the trace rather than a state of anything, and amber on
+        # is a ruler across the trace rather than a state of anything, and yellow on
         # these HUDs is a warning's color, which this is not.
         if hud.driving:
             center_y = round((1 - _fraction(hud.center)) * (h * s - 1))

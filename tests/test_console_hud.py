@@ -543,16 +543,16 @@ class TestPainter:
         """An enhanced image wears a yellow plus in its corner, so the switch
         that keeps only those is yellow wherever you find it: the mark at rest,
         and the whole button once it is on."""
-        amber = (255, 200, 120)
+        yellow = (255, 200, 120)
         off = self._button_pixels("genau_filter_enhanced", ConsoleModel(
             main_mode=MainMode.GENAU, rows=console_rows("genau", enhanced=False)))
         on = self._button_pixels("genau_filter_enhanced", ConsoleModel(
             main_mode=MainMode.GENAU, rows=console_rows("genau", enhanced=True)))
 
-        assert (np.abs(off.astype(int) - amber).sum(axis=2) < 30).any()  # the mark
+        assert (np.abs(off.astype(int) - yellow).sum(axis=2) < 30).any()  # the mark
         shades, counts = np.unique(on.astype(int).reshape(-1, 3), axis=0,
                                    return_counts=True)
-        assert tuple(shades[counts.argmax()]) == amber                  # the fill
+        assert tuple(shades[counts.argmax()]) == yellow                  # the fill
 
     def test_the_slab_is_the_canvas_gray_unless_a_host_asks_for_another(self):
         """Floating over a video the HUD reads against the item beneath it,

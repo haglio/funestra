@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import numpy as np
-from shared_ui.palette import AMBER
+from shared_ui.palette import YELLOW
 
 from funestra.funscript import Funscript
 from funestra.heatmap import build_heatmap
@@ -201,8 +201,8 @@ class TestAScriptedItemsStrip:
         assert _rgba(bgra, my, cx) == (255, 255, 255, 255)
         white = [x for x in range(x0, x1) if _rgba(bgra, my, x) == (255, 255, 255, 255)]
         assert len(white) >= 3
-        amber = [x for x in range(x0, x1) if _rgba(bgra, my, x)[:3] == AMBER]
-        assert amber and any(x < cx for x in amber) and any(x > cx for x in amber)
+        yellow = [x for x in range(x0, x1) if _rgba(bgra, my, x)[:3] == YELLOW]
+        assert yellow and any(x < cx for x in yellow) and any(x > cx for x in yellow)
 
 
 class TestLoopThumbCapture:

@@ -30,10 +30,10 @@ from funestra.hud_row import (
 from funestra.loop_dial import DIAL_SIZE
 from funestra.playhead import PlayheadHud, framed_playhead, readout_width, video_playhead
 from funestra.timeline import (
-    AMBER,
     HEATMAP_ALPHA,
     RED,
     TIMELINE_HEIGHT,
+    YELLOW,
 )
 from funestra.volume import (
     CHIP_H,
@@ -208,7 +208,7 @@ def test_a_loop_being_played_shows_its_ends_on_the_track():
     painted, layout = _painted(row)
 
     x0, x1 = layout.track
-    assert _marks(painted, AMBER) == [
+    assert _marks(painted, YELLOW) == [
         pytest.approx(x0 + (x1 - x0) // 4, abs=3),
         pytest.approx(x0 + 3 * (x1 - x0) // 4, abs=3),
     ]

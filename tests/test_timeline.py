@@ -1,7 +1,7 @@
 """The shared scrubber: inset track geometry and the plain progress bar."""
 from __future__ import annotations
 
-from shared_ui.palette import AMBER, RED
+from shared_ui.palette import RED, YELLOW
 
 from funestra.timeline import (
     BAR_INSET_Y,
@@ -68,19 +68,19 @@ class TestProgressBar:
         white = [x for x in range(x0, x1) if _rgba(bar, my, x) == (255, 255, 255, 255)]
         assert len(white) >= 3
 
-    def test_draws_prominent_amber_loop_marks(self):
+    def test_draws_prominent_yellow_loop_marks(self):
         bar = progress_bar_bgra(0, 10_000, (2_500, 7_500), 1000)  # in 25%, out 75%
         x0, x1 = bar_track_x(1000)
         my = bar.shape[0] // 2
-        amber = [x for x in range(x0, x1) if _rgba(bar, my, x)[:3] == AMBER]
-        assert len(amber) >= 6  # two marks (in and out), each a few px wide
+        yellow = [x for x in range(x0, x1) if _rgba(bar, my, x)[:3] == YELLOW]
+        assert len(yellow) >= 6  # two marks (in and out), each a few px wide
         xc = (x0 + x1) // 2
-        assert any(x < xc for x in amber) and any(x > xc for x in amber)
+        assert any(x < xc for x in yellow) and any(x > xc for x in yellow)
 
     def test_no_loop_marks_without_a_loop(self):
         bar = progress_bar_bgra(0, 10_000, None, 1000)
         my = bar.shape[0] // 2
-        assert not any(_rgba(bar, my, x)[:3] == AMBER for x in range(1000))
+        assert not any(_rgba(bar, my, x)[:3] == YELLOW for x in range(1000))
 
     def test_record_in_point_shows_red(self):
         bar = progress_bar_bgra(0, 10_000, None, 1000, record_in_ms=5_000)
