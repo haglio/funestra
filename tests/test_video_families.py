@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from funestra.video_families import action_group_key, seed_family, seed_group_key
+from funestra.video_families import action_group_key, filter_keeps, seed_family, seed_group_key
 
 IMAGE = {
     "positive_prompt": "a lighthouse at dusk",
@@ -91,3 +91,21 @@ def test_a_record_naming_no_prompt_has_no_seed_family_whatever_its_act():
     assert seed_family({"video": {"action": "Alpha", "duration_seconds": 5}}) is None
     assert seed_family({"video": {"action": "Beta", "seed": "7"}}) is None
     assert seed_family(_from_an_image(positive_prompt="")) is None
+
+
+def test_the_filter_keeps_text_holding_the_query_whatever_its_case_and_spacing():
+    assert filter_keeps("Alpha,  Theta Motion", "alpha")
+    assert filter_keeps("Beta Gamma", " BETA   gamma ")
+
+
+def test_the_filter_keeps_a_query_only_in_the_order_it_was_said():
+    assert not filter_keeps("Beta Gamma", "gamma beta")
+
+
+def test_an_empty_filter_keeps_everything_even_text_with_no_act():
+    assert filter_keeps(None, "")
+    assert filter_keeps("Alpha", "   ")
+
+
+def test_a_filter_keeps_nothing_where_no_act_was_recorded():
+    assert not filter_keeps(None, "alpha")

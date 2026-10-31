@@ -52,6 +52,7 @@ from .hud_sections import blocks_height, stack
 from .hud_title import SEPARATOR
 from .modes import read_mode
 from .renamed import answers_to_old_names
+from .video_families import filter_keeps, normalized_text
 
 if TYPE_CHECKING:
     from .hud_row import RowLayout
@@ -671,17 +672,10 @@ def filter_button_rects(
     return rects
 
 
-def _norm_act(text: str) -> str:
-    """An act label or a filter query flattened for comparison: lower-cased with
-    runs of whitespace collapsed, the way fun_time normalizes both sides of its own
-    match (``media_metadata._norm_text``)."""
-    return " ".join(str(text or "").split()).lower()
-
-
 def _acts(text: str, camera_words: Sequence[str]) -> list[str]:
     """*text* as its separate acts, normalized — for a row label or for a filter
     query, which is set from one and so is shaped like one."""
-    return [act for act in (_norm_act(part) for part in split_acts(text, camera_words)) if act]
+    return [act for act in (normalized_text(part) for part in split_acts(text, camera_words)) if act]
 
 
 def act_is_filtered(act: str, filter_query: str, camera_words: Sequence[str]) -> bool:
@@ -692,7 +686,7 @@ def act_is_filtered(act: str, filter_query: str, camera_words: Sequence[str]) ->
     filter whitens "Gamma" and leaves "Side" gray, which is what says *why* the clip
     is here.  A filter set from a clip carrying two acts names both, so both light.
     """
-    return any(query in _norm_act(act) for query in _acts(filter_query, camera_words))
+    return any(filter_keeps(act, query) for query in _acts(filter_query, camera_words))
 
 
 def label_is_filtered(label: str, filter_query: str, camera_words: Sequence[str]) -> bool:
@@ -713,7 +707,7 @@ def label_is_filtered(label: str, filter_query: str, camera_words: Sequence[str]
     """
     acts, query = _acts(label, camera_words), _acts(filter_query, camera_words)
     return bool(acts) and bool(query) and all(
-        any(part in act for act in acts) for part in query)
+        any(filter_keeps(act, part) for act in acts) for part in query)
 
 
 LOOP_TOOLTIPS = {"action": "Loop this action column", "seed": "Loop this seed row"}
@@ -836,8 +830,8 @@ class HudClicks:
             # ("Side Gamma" under "gamma") moves the filter onto that whole row, and
             # only a press on the row the filter already *is* turns it off, so a
             # broad filter can be tightened from the map.
-            query = _norm_act(action)
-            if query == _norm_act(self.active_filter):
+            query = normalized_text(action)
+            if query == normalized_text(self.active_filter):
                 self.active_filter = ""
                 return f"{self._funestra}_no_filter"
             self.active_filter = query
