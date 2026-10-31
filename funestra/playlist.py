@@ -101,8 +101,8 @@ def read_playlist(path: Path) -> list[PlaylistItem]:
     except OSError:
         return []
     items: list[PlaylistItem] = []
-    for line in text.splitlines():
-        line = line.strip()
+    for raw in text.splitlines():
+        line = raw.strip()
         if not line or line.startswith("#"):
             continue
         item = item_from_line(line)

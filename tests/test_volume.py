@@ -1,6 +1,8 @@
 """The shared volume chip: what it shows, and where a click on it lands."""
 from __future__ import annotations
 
+from typing import ClassVar
+
 import numpy as np
 from shared_ui.palette import TEXT_MUTED, TEXT_PRIMARY
 
@@ -82,7 +84,7 @@ class TestWindowPoints:
     origin moves with the window and with the timeline beneath it — which is why
     undoing `chip_xy` belongs beside `chip_xy` and not at each call site."""
 
-    GEOMETRY = {"win_w": 1200, "win_h": 900, "timeline_h": 40}
+    GEOMETRY: ClassVar[dict[str, int]] = {"win_w": 1200, "win_h": 900, "timeline_h": 40}
 
     def test_the_chips_own_corner_reads_as_its_origin(self):
         assert chip_local(*chip_xy(**self.GEOMETRY), **self.GEOMETRY) == (0, 0)

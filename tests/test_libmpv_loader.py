@@ -109,12 +109,11 @@ def test_an_engine_that_is_really_not_there_says_where_it_looked():
     def load(name):
         raise OSError("Cannot find mpv-1.dll, mpv-2.dll or libmpv-2.dll")
 
-    with pytest.raises(OSError) as refused:
+    with pytest.raises(OSError, match="PATH starts") as refused:
         mpv_engine._import_the_engine(load, tries=2)
 
     for folder in libmpv_dirs():
         assert str(folder) in str(refused.value)
-    assert "PATH starts" in str(refused.value)
 
 
 def test_a_folder_that_cannot_be_looked_in_at_all_says_what_it_answered(monkeypatch):

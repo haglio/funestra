@@ -55,8 +55,8 @@ def dll_path() -> Path:
 def lock() -> dict[str, str]:
     """The pin, as ``key = value`` lines; ``#`` starts a comment."""
     pinned = {}
-    for line in LOCK.read_text(encoding="utf-8").splitlines():
-        line = line.split("#", 1)[0].strip()
+    for raw in LOCK.read_text(encoding="utf-8").splitlines():
+        line = raw.split("#", 1)[0].strip()
         if "=" in line:
             key, value = line.split("=", 1)
             pinned[key.strip()] = value.strip()
@@ -151,8 +151,8 @@ def fetch() -> Path:
     pinned = lock()
     url, digest = resolve(pinned)
     dll = dll_path()
-    with tempfile.TemporaryDirectory() as scratch:
-        scratch = Path(scratch)
+    with tempfile.TemporaryDirectory() as scratch_dir:
+        scratch = Path(scratch_dir)
         found = extract(download(url, digest, scratch), scratch)
         dll.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(found, dll)

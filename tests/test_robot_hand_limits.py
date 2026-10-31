@@ -118,7 +118,7 @@ class TestBothPublicationsReadTheSameSix:
     """The point of the type: what the status file says and what the console
     draws cannot disagree, because there is one answer."""
 
-    HANDS = [
+    HANDS = (
         {},
         {"amplitude": 100},
         {"amplitude": 0},
@@ -126,7 +126,7 @@ class TestBothPublicationsReadTheSameSix:
         {"speed": MIN_SPEED},
         {"amplitude": 60, "center": 70, "intended_center": 70},
         {"amplitude": 60, "center": 30, "intended_center": 30},
-    ]
+    )
 
     @pytest.mark.parametrize("hand", HANDS, ids=[str(sorted(h)) for h in HANDS])
     def test_the_status_file_says_what_the_readout_was_told(self, hand):
