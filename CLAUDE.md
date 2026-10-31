@@ -102,9 +102,7 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   code of every checkout beside it that imports it, found rather than named, so
   what it reports is what nothing anywhere uses. It skips with no such checkout
   beside it, which only a public clone has; the merge gate clones fun_time
-  and origenerator beside the checkout for it, and its `consumer / suite` job
-  runs the retired Genau repository's checks of itself, until that check comes
-  off the merge queue's required checks. A name whose caller the scan
+  and origenerator beside the checkout for it. A name whose caller the scan
   cannot read -- Python or a library calls it, or only an old checkout still
   reaches it -- goes in `vulture_whitelist.py` with who calls it, and leaves
   when its caller does.
