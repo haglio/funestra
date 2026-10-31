@@ -1245,18 +1245,18 @@ def test_the_speed_row_draws_its_buttons_and_reads_out_the_rate():
         assert (_rgb(normal.bgra)[y:y + h, x:x + w].min(axis=2) > 200).any(), name
 
 
-def _amber_ink(rect, rendered) -> int:
-    """How many pixels inside *rect* are the amber an enhanced mark is drawn in."""
+def _yellow_ink(rect, rendered) -> int:
+    """How many pixels inside *rect* are the yellow an enhanced mark is drawn in."""
     x, y, w, h = rect
     rgb = _rgb(rendered.bgra)[y:y + h, x:x + w].astype(int)
-    amber = (rgb[:, :, 0] > 200) & (rgb[:, :, 1] > 150) & (rgb[:, :, 2] < 160) & (rgb[:, :, 1] < rgb[:, :, 0])
-    return int(amber.sum())
+    yellow = (rgb[:, :, 0] > 200) & (rgb[:, :, 1] > 150) & (rgb[:, :, 2] < 160) & (rgb[:, :, 1] < rgb[:, :, 0])
+    return int(yellow.sum())
 
 
-def test_the_enhanced_switch_wears_amber_and_fills_with_it_when_on():
-    """Amber is what an enhanced image is marked with across this family, so
-    the switch that keeps only those wears its mark in amber at rest and its
-    whole ground in amber while it is on — never the favorites' green, which
+def test_the_enhanced_switch_wears_yellow_and_fills_with_it_when_on():
+    """Yellow is what an enhanced image is marked with across this family, so
+    the switch that keeps only those wears its mark in yellow at rest and its
+    whole ground in yellow while it is on — never the favorites' green, which
     would say the wrong thing about what was kept."""
     def rendered_with(on: bool):
         return HudRenderer("landscape").render(_model(
@@ -1266,8 +1266,8 @@ def test_the_enhanced_switch_wears_amber_and_fills_with_it_when_on():
     off, on = rendered_with(False), rendered_with(True)
     rect = _rects(on)["enhanced"]
 
-    assert _amber_ink(rect, off) > 0                      # the mark itself, at rest
-    assert _amber_ink(rect, on) > _amber_ink(rect, off)   # the ground, when on
+    assert _yellow_ink(rect, off) > 0                      # the mark itself, at rest
+    assert _yellow_ink(rect, on) > _yellow_ink(rect, off)   # the ground, when on
     assert _lit_ink(rect, on) == 0                        # and no green anywhere in it
 
 

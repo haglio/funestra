@@ -19,7 +19,7 @@ from shared_ui import palette
 from funestra.volume import SLOT_W as _VOLUME_SLOT_W
 
 RED = (*palette.RED, 245)
-AMBER = (*palette.AMBER, 245)
+YELLOW = (*palette.YELLOW, 245)
 
 # The timeline — heatmap strip or plain bar — is drawn as one shared frame: an
 # inset, floated, bordered track with full-height marks.
@@ -102,7 +102,7 @@ def framed_track(width, height, track=None):
 
 def draw_track_marks(bgra, *, x0, x1, y0, y1, to_x, position_ms,
                      loop_bounds, record_in_ms):
-    """Full-height playcursor + amber loop in/out (and red record-in) ticks on a
+    """Full-height playcursor + yellow loop in/out (and red record-in) ticks on a
     framed track.  ``to_x(ms)`` maps a timestamp to an absolute x in [x0, x1].
     Ticks span the whole frame (crossing the border) and are fully opaque, so
     they stay prominent over any fill or video."""
@@ -113,8 +113,8 @@ def draw_track_marks(bgra, *, x0, x1, y0, y1, to_x, position_ms,
     if record_in_ms is not None:
         mark(record_in_ms, MARK_W, RED)
     if loop_bounds is not None:
-        mark(loop_bounds[0], MARK_W, AMBER)
-        mark(loop_bounds[1], MARK_W, AMBER)
+        mark(loop_bounds[0], MARK_W, YELLOW)
+        mark(loop_bounds[1], MARK_W, YELLOW)
     mark(position_ms, CURSOR_W, CURSOR)  # playcursor on top
 
 
@@ -123,7 +123,7 @@ def progress_bar_bgra(position_ms, duration_ms, loop_bounds, width,
                       track=None):
     """A bordered, inset seek bar: the track floated in from the window edges
     under a light border, with a full-height white playcursor and full-height
-    loop in/out marks (amber; the in point shows red while it is still being
+    loop in/out marks (yellow; the in point shows red while it is still being
     recorded).  *heatmap* is the funscript's color for each pixel of the track,
     RGB, and fills it in place of the dark fill; *track* is where the row put
     the track's two ends, else they are where a bare row puts them."""

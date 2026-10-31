@@ -27,7 +27,6 @@ from shared_ui.lettering import (
 # nothing, and these HUDs are Pillow.  Every HUD painter reads it there too,
 # so a Funestra reaching for its own blue has the family's to reach for.
 from shared_ui.palette import (
-    AMBER,
     BG_BUTTON,
     BG_BUTTON_ACTIVE,
     BG_PRIMARY,
@@ -38,6 +37,7 @@ from shared_ui.palette import (
     TEXT_MUTED,
     TEXT_PRIMARY,
     WHITE,
+    YELLOW,
     hovered,
 )
 from shared_ui.spacing import BUTTON_ICON_INSET, BUTTON_RADIUS, GAP_SMALL
@@ -302,7 +302,7 @@ def button_ground(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int], fi
     fill so hovering never changes the outline.  A dim control is never
     lightened: it cannot be pressed, and lighting it would promise otherwise.
 
-    A mark reverses out of a light fill only (white, amber); over either gray
+    A mark reverses out of a light fill only (white, yellow); over either gray
     ground it keeps *rest_ink* or the chrome's own, muted while dim; over a
     colored ground it is white.
     """
@@ -310,7 +310,7 @@ def button_ground(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int], fi
     if hovered and not dim:
         fill = hovered_fill(fill)
     slab(draw, rect, fill, edge)
-    if fill in (WHITE, AMBER):
+    if fill in (WHITE, YELLOW):
         return (*BG_PRIMARY, 255)
     if fill in (BG_BUTTON, BG_BUTTON_ACTIVE):
         return (*(TEXT_MUTED if dim else rest_ink or TEXT_PRIMARY), 255)
@@ -324,7 +324,7 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
                 row_label: bool = False) -> None:
     """One declared control (:class:`funestra.hud_button.Button`), in the
     one shape every HUD here draws: on the family's button ground at rest,
-    filled while lit -- green for a favorites control, amber for an enhanced
+    filled while lit -- green for a favorites control, yellow for an enhanced
     one, the family's blue for the rest; red for a live recording, blue for the
     loop it leaves running, the active gray for a choice held but not applied
     -- with its face drawn on top: an app mark, one of the family's marks, a
@@ -355,11 +355,11 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
                             on=button.lit, hovered=hovered)
         return
 
-    lit = GREEN if button.favorite else AMBER if button.enhanced else BLUE
+    lit = GREEN if button.favorite else YELLOW if button.enhanced else BLUE
     fill = (lit if button.lit else RED if button.warn else BLUE if button.hold
             else BG_BUTTON_ACTIVE if button.remembered else BG_BUTTON)
     ink = button_ground(draw, rect, fill, hovered=hovered, dim=button.dim,
-                        rest_ink=RED if button.danger else AMBER if button.enhanced else None)
+                        rest_ink=RED if button.danger else YELLOW if button.enhanced else None)
     glyph = button.glyph
     if glyph.startswith(APP_MARK):
         draw_letter(draw, rect, app_mark_letter(glyph))
