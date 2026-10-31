@@ -17,8 +17,8 @@ jobs:
   full-suite:
     uses: haglio/.github/.github/workflows/merge-gate.yml@main
     with:
-      # No siblings cloned: both are pinned in pyproject, so pip fetches the
-      # tags this repo was built against.
+      # No siblings cloned: both are pinned in pyproject's dev extra, so pip
+      # fetches the tags this repo's suite was built against.
       siblings: ""
       python-version: "3.14"
       # Six for the suite; the rest is the libmpv fetch below -- a 32 MB download

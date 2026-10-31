@@ -83,6 +83,9 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
 - A change here reaches an app when that app moves its pin, not before: each
   names a tag of this repo in its `[project.dependencies]`. Landing is two
   commits — this repo's, which tags a version, then the app's, which takes it.
+- This repo pins app_support and shared_ui only in its `dev` extra, for its own
+  suite: every app pins both itself, and a pin here, where installing this asks
+  for one, made every app wait for this repo's next release to take a new copy.
 - **To try a change here inside an app**, install this checkout over the pin in
   that app's venv (`pip install -e ../funestra --config-settings
   editable_mode=compat`), and reinstall the app afterwards to put its pin back.
