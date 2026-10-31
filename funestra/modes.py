@@ -32,7 +32,6 @@ class SatellitesMode(StrEnum):
 
     KINO = "kino"
     ORIGENERATOR = "origenerator"
-    VIDEO = KINO
 
 
 class LoopState(StrEnum):
@@ -79,11 +78,6 @@ class LengthMode(StrEnum):
     CLIPS = "clips"
     FULL = "full"
     NONE = "none"
-    SHORTS = CLIPS
-
-    @classmethod
-    def _missing_(cls, value: object) -> LengthMode | None:
-        return cls.CLIPS if value == "shorts" else None
 
 
 class NoticeLevel(StrEnum):
