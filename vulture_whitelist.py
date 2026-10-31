@@ -3,7 +3,7 @@
 tests/test_dead_code.py fails on an entry that no longer suppresses anything,
 so an entry leaves with the code it names.
 """
-# ruff: noqa: F821, B018 -- a whitelist is names, not statements
+
 
 # --- called by Python or a library, never by our code ---
 _._missing_  # modes.LengthMode: Enum asks it about a value it does not know, an old "shorts"
