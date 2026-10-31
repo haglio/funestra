@@ -45,13 +45,6 @@ def test_an_empty_slot_takes_no_room_and_leaves_no_separator():
     assert hud_title(locked=False, filters=("beta",)) == f"{UNLOCKED_LABEL} · beta"
 
 
-def test_a_checkout_from_before_the_rename_still_gets_its_status_line():
-    from funestra.hud_status import status_line  # noqa: PLC0415
-
-    assert status_line(locked=True, filter_label="alpha") == f"{LOCKED_LABEL} · alpha"
-    assert status_line(locked=True) == LOCKED_LABEL
-
-
 def test_the_two_browse_orders_are_named_once_for_every_funestra():
     """Each Funestra browses newest-first or shuffled, and says so in this slot — so
     the words belong here rather than in each app, where they drifted before."""

@@ -9,6 +9,14 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-10-30 — the title's old names no longer answer
+
+No main of an app and no work a session has open or paused spells them any
+more; the two drafts that still do, haglio/fun_time#419 and #450, have to be
+brought up to today's main before they can run at all. So `funestra.hud_status`
+is gone, with its `status_line` and the labels it handed on from
+`funestra.hud_title`.
+
 ## 2026-10-30 — the October renames' old names no longer answer
 
 No main of an app and no branch a session is working on or has paused spells
