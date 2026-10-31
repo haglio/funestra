@@ -463,7 +463,7 @@ class DriveSection:
                 draw.line([(dash, center_y), (min(dash + 3 * s, w * s - 1), center_y)],
                           fill=(*WHITE, 150), width=s)
         points = hud.waveform
-        if len(points) >= 2:
+        if len(points) > 1:
             pitch = (w * s - 1) / (len(points) - 1)
 
             def at(index: float, value: float, shift: float) -> tuple[int, int]:
@@ -484,7 +484,7 @@ class DriveSection:
                     # The knot just past the border, so the shifted line still
                     # reaches the block's edge instead of stopping short of it.
                     pts.append(at(len(points), hud.edge, hud.slide))
-                if len(pts) >= 2:
+                if len(pts) > 1:
                     draw.line(pts, fill=(*trace_ink(driven), 255), width=2 * s,
                               joint="curve")
         image.alpha_composite(block.resize((w, h), Image.LANCZOS), (x, y))

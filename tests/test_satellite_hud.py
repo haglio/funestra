@@ -767,7 +767,8 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
         parsed = parse_hud(hud_text(HudModel(funestra="portrait")))
 
         assert parsed.corner is None
-        assert parsed.seeds == () and parsed.actions == ()
+        assert parsed.seeds == ()
+        assert parsed.actions == ()
         assert parsed.playing == ("corner", 0)
 
     def test_the_text_is_the_json_a_funestra_already_reads(self):

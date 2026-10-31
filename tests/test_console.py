@@ -119,12 +119,15 @@ class TestTheRowThatAimsTheDevice:
         _label, off, _switch, on = _aim_row()[:4]
 
         assert (off.glyph, on.glyph) == ("Off", "On")
-        assert not off.command and not on.command
+        assert not off.command
+        assert not on.command
 
     def test_the_switch_is_on_while_driving_and_a_press_parks(self):
         _label, off, switch, on = _aim_row(control=OSR2_DRIVING)[:4]
 
-        assert switch.lit and on.lit and not off.lit
+        assert switch.lit
+        assert on.lit
+        assert not off.lit
         assert switch.command == OSR2_CONTROL_BUTTONS[OSR2_PARKED]
 
     @pytest.mark.parametrize("control", [OSR2_PARKED, OSR2_RETRACTED, OSR2_CONTROL_UNANSWERED,
@@ -132,7 +135,9 @@ class TestTheRowThatAimsTheDevice:
     def test_the_switch_is_off_for_every_word_but_driving_and_a_press_drives(self, control):
         _label, off, switch, on = _aim_row(control=control)[:4]
 
-        assert off.lit and not switch.lit and not on.lit
+        assert off.lit
+        assert not switch.lit
+        assert not on.lit
         assert switch.command == OSR2_CONTROL_BUTTONS[OSR2_DRIVING]
 
     def test_the_switch_offers_only_its_two_positions(self):
@@ -177,7 +182,8 @@ class TestTheBrokerButton:
 
         assert running.command == down.command == BROKER_PRESS
         assert running.lit is True
-        assert down.lit is False and down.warn is True
+        assert down.lit is False
+        assert down.warn is True
         assert (running.tooltip, down.tooltip) == (
             "Broker is running — press to stop it",
             "Broker is not running — press to start it",
@@ -369,7 +375,8 @@ class TestThePublishedConsoleIsWrittenWhereItIsRead:
     def test_a_max_intensity_that_is_not_a_number_is_no_slider_rather_than_no_hud(self):
         parsed = parse_console(json.dumps({"main_mode": MainMode.KINO, "max_intensity": "loud"}))
 
-        assert parsed is not None and parsed.max_intensity is None
+        assert parsed is not None
+        assert parsed.max_intensity is None
 
     def test_a_hud_that_says_nothing_about_the_osr2_has_it(self):
         assert parse_console(json.dumps({"main_mode": MainMode.KINO})).has_osr2 is True

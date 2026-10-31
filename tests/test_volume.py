@@ -34,7 +34,8 @@ class TestPlacement:
         x, y = chip_xy(win_w=1200, win_h=900, timeline_h=tl)
 
         assert x + CHIP_W == 1200                    # flush with the right edge
-        assert 900 - tl <= y and y + CHIP_H <= 900   # within the timeline row's band
+        assert 900 - tl <= y
+        assert y + CHIP_H <= 900
 
     def test_the_slot_it_reserves_covers_the_chip_and_its_margins(self):
         """The scrubber subtracts SLOT_W to clear the chip, so the slot has to be

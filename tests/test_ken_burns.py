@@ -369,7 +369,8 @@ def test_no_view_draws_an_edge_of_the_image_inside_the_window(shown, corner, zoo
 @pytest.mark.parametrize("corner", CORNERS)
 def test_a_view_at_the_end_of_its_reach_brings_the_images_edge_up_to_the_windows(shown, corner):
     for window, start, end in drawn(WIDE, shown, View(8.0, *corner)):
-        assert start <= 0 and end >= window
+        assert start <= 0
+        assert end >= window
         assert min(-start, end - window) == 0
 
 

@@ -20,7 +20,8 @@ def test_every_verb_is_spelled_as_a_registry_looks_it_up():
     verb nothing could ever answer."""
     for name, spelling in _spellings().items():
         assert spelling == name, f"{name} is spelled {spelling!r}"
-        assert spelling == spelling.upper() and " " not in spelling
+        assert spelling == spelling.upper()
+        assert " " not in spelling
 
 
 def test_no_two_verbs_share_a_spelling():

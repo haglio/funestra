@@ -1659,7 +1659,9 @@ class TestWhereTheConsoleSits:
         x, y, w, h = _button_rect(painter, "main_hud_minimize")
         rx, ry, rw, rh = painter.row.rect
 
-        assert ry < y + h and y < ry + rh, "the minus is not beside the row"
+        beside = "the minus is not beside the row"
+        assert ry < y + h, beside
+        assert y < ry + rh, beside
         assert (rx + rw <= x) if corner.right else (rx >= x + w)
 
     def test_a_minimized_console_is_the_restore_button_and_nothing_else(self):

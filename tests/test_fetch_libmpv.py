@@ -97,7 +97,8 @@ class TestWhenThePinExpires:
         assert url == "https://example.invalid/newest.7z"
         assert digest == ""
         warning = capsys.readouterr().err
-        assert "libmpv.lock" in warning and "Bump the pin" in warning
+        assert "libmpv.lock" in warning
+        assert "Bump the pin" in warning
 
     def test_the_fallback_feed_answers_when_the_first_has_nothing(self, monkeypatch):
         monkeypatch.setattr(fetch_libmpv, "_reachable", lambda _url: False)

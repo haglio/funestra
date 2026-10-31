@@ -170,12 +170,12 @@ class Forum:
 
 
 def _rate_limited(error: Exception) -> bool:
-    return isinstance(error, urllib.error.HTTPError) and error.code == 429
+    return isinstance(error, urllib.error.HTTPError) and error.code == http.HTTPStatus.TOO_MANY_REQUESTS
 
 
 def _may_be_asked_again(error: Exception) -> bool:
     if isinstance(error, urllib.error.HTTPError):
-        return error.code >= 500
+        return error.code >= http.HTTPStatus.INTERNAL_SERVER_ERROR
     return True
 
 
