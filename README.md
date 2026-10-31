@@ -14,7 +14,7 @@ Origenerator hands it to one of Fun Time's Satellite Funestras.
 | Fun Time's Main Funestra | `../fun_time` | a Funestra, with Kino or Genau running on it, and the flick engine for its genau mode |
 | Fun Time's satellites | `../fun_time` | a Funestra, on each satellite's window |
 | Fun Time's headset | `../fun_time` | the same three Funestras over the offscreen engine, drawn into the headset |
-| Fun Time itself | `../fun_time` | the file channel, the playlist, the status line |
+| Fun Time itself | `../fun_time` | the file channel, the playlist, the HUD's title |
 | Origenerator | `../origenerator` | a Funestra for a Standalone Slideshow, and the console and drive readout over its shows |
 
 Everything they had to agree on lives here, so none of them has to import
@@ -48,7 +48,7 @@ another application's internals to get it. By what it is:
   and what it publishes. A shell — Fun Time's Main Funestra, its headset —
   supplies the surface and the loop.
 - **the chrome and what is drawn on it** — `hud`, `hud_marks`,
-  `geometry`, `timeline`, `volume`, `hud_status`, and then a model and a
+  `geometry`, `timeline`, `volume`, `hud_title`, and then a model and a
   painter per HUD: `console` / `console_hud`, `drive_layout` / `drive_readout`,
   `satellite_hud` / `satellite_hud_paint`.  Two of those are sections rather
   than HUDs — the drive readout and `hud_osr2`'s device line — because a host
