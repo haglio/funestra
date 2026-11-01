@@ -66,11 +66,6 @@ siblings = ["app_support", "shared_ui"]
 apps-are-callers = true
 # The broker's contract names the folder Fun Time starts the tray from.
 unread-dataclass-fields = ["BrokerContract.package_dir"]
-# The placements the headset's old copies of the row call, in the signatures
-# they call them with, until no checkout from before fun_time#391 is open.
-unread-arguments = ["funestra/playhead.py: win_w", "funestra/playhead.py: readout_w",
-                    "funestra/playhead.py: x", "funestra/playhead.py: y",
-                    "funestra/playhead.py: win_h", "funestra/playhead.py: timeline_h"]
 
 [tool.setuptools.packages.find]
 include = ["funestra*"]
