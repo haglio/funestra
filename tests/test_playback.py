@@ -103,7 +103,7 @@ class TestPrefetch:
     def test_auto_advance_is_seamless_and_does_not_reload(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=3)
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
         assert playback.current_video == tmp_path / "v1.mp4"
@@ -114,7 +114,7 @@ class TestPrefetch:
 class TestAdvance:
     def test_advance_after_eof_steps_to_next(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
-        engine.simulate_eof_advance()
+        engine.run_out()
 
         playback.advance()
 
@@ -130,7 +130,7 @@ class TestAdvance:
     def test_advance_while_paused_never_steps(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
         playback.set_paused(True)
-        engine.simulate_eof_advance()
+        engine.run_out()
 
         playback.advance()
 
@@ -138,7 +138,7 @@ class TestAdvance:
 
     def test_a_list_of_one_coming_round_has_the_engine_settle_on_it_again(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=1)
-        engine.simulate_eof_advance()
+        engine.run_out()
 
         playback.advance()
 
@@ -151,7 +151,7 @@ class TestLock:
         playback.set_locked(True)
         assert playback.is_locked
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
         assert playback.current_video == tmp_path / "v0.mp4"
@@ -172,7 +172,7 @@ class TestLock:
         playback.set_locked(True)
         playback.set_locked(False)
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
         assert playback.current_video == tmp_path / "v1.mp4"
@@ -184,7 +184,7 @@ class TestAPaceOfNought:
         playback, engine = _make_playback(tmp_path, entries=2)
         playback.set_pace(0)
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
         assert (playback.current_video, playback.is_locked) == (tmp_path / "v0.mp4", False)
@@ -194,7 +194,7 @@ class TestAPaceOfNought:
         playback.set_pace(0)
         playback.set_pace(6)
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
         assert playback.current_video == tmp_path / "v1.mp4"
@@ -443,7 +443,7 @@ class TestThePlacesOfTheImageOnScreen:
     def test_an_image_rolled_onto_by_itself_brings_its_places(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2, points_of_interest={1: FACE})
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
         assert engine.points_told == [FACE]
@@ -527,7 +527,7 @@ class TestTheOsr2:
         playback, engine, tcode = _driving(tmp_path)
         before = tcode.resets
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
         assert tcode.resets == before + 1
@@ -714,7 +714,7 @@ class TestPlayNext:
         newcomer, script = tmp_path / "newcomer.mp4", tmp_path / "newcomer.funscript"
 
         playback.play_next(newcomer, script)
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
         assert playback.current_video == newcomer
@@ -866,7 +866,7 @@ class TestWhereAClipWasLeft:
         playback, engine = _make_playback(tmp_path, entries=2, play_points=PlayPoints(file))
         _watch_to(playback, engine, 4_960)
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
         assert PlayPoints(file).point_for(tmp_path / "v0.mp4") == 0
@@ -878,7 +878,7 @@ class TestWhereAClipWasLeft:
         _watch_to(playback, engine, 2_000)
         playback.step(-1)
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
         playback.advance()
 
@@ -932,7 +932,7 @@ class TestAFrameInTheImagesPlace:
         playback, engine = _make_playback(tmp_path, entries=2)
         playback.show_frame(tmp_path / "frame.png")
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
         playback.clear_frame()
 
@@ -943,30 +943,30 @@ class TestAFrameInTheImagesPlace:
         playback, engine = _make_playback(tmp_path, entries=1)
         playback.show_frame(tmp_path / "frame.png")
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
-        assert engine.playing == tmp_path / "frame.png"
+        assert engine.on_screen == tmp_path / "frame.png"
 
     def test_a_frame_stays_up_through_every_roll_of_a_list_of_one(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=1)
         playback.show_frame(tmp_path / "frame.png")
 
         for _ in range(2):
-            engine.simulate_eof_advance()
+            engine.run_out()
             playback.advance()
 
-        assert engine.playing == tmp_path / "frame.png"
+        assert engine.on_screen == tmp_path / "frame.png"
 
     def test_a_list_of_one_whose_frame_is_cleared_rolls_onto_its_own_image(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=1)
         playback.show_frame(tmp_path / "frame.png")
 
         playback.clear_frame()
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
-        assert engine.playing == tmp_path / "v0.mp4"
+        assert engine.on_screen == tmp_path / "v0.mp4"
 
     def test_a_frame_going_up_is_an_image_while_the_engine_opens_it(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
@@ -992,7 +992,7 @@ class TestAFrameInTheImagesPlace:
         playback, engine = _make_playback(tmp_path, entries=2)
         playback.show_frame(tmp_path / "frame.png")
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
         assert playback.showing_image is False
@@ -1254,7 +1254,7 @@ class TestCountingTheItemsOpened:
         playback, engine = _make_playback(tmp_path, entries=2)
         opened = playback.loads
 
-        engine.simulate_eof_advance()
+        engine.run_out()
         playback.advance()
 
         assert playback.loads == opened + 1

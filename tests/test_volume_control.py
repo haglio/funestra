@@ -6,8 +6,7 @@ reaches a control is the mute or the level it asks for.
 """
 from __future__ import annotations
 
-from funestra_fakes import FakeEngine
-
+from funestra.testing import FakeEngine
 from funestra.volume import VolumeHud
 from funestra.volume_control import RoomVolume, VolumeControl
 

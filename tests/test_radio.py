@@ -3,9 +3,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from funestra_fakes import FakeStation
-
 from funestra.radio import Radio, RadioFile, radio_file_for, read_radio, write_radio
+from funestra.testing import FakeStation
 
 
 def test_a_radio_file_reads_back_the_stations_written_to_it(tmp_path):
