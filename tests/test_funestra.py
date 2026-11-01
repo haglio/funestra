@@ -14,7 +14,6 @@ import pytest
 from app_support.osr2_slot import Osr2Slot
 from app_support.threading_utils import start_daemon_thread
 from console_rows import console_rows
-from funestra_fakes import FakeEngine
 from host_controls_fakes import AHost, middle_of
 
 from funestra.console import ConsoleModel, ModeHud, console_text
@@ -36,6 +35,7 @@ from funestra.pointer import OMNIPAUSE_TOGGLE
 from funestra.radio import radio_file_for, write_radio
 from funestra.satellite_hud import MARGIN, HudModel
 from funestra.session_quit import SESSION_QUIT
+from funestra.testing import FakeEngine
 from funestra.timeline import TIMELINE_HEIGHT
 from funestra.volume import CHIP_H, CHIP_W, PAD, VolumeHud, chip_xy
 
@@ -441,7 +441,7 @@ def test_a_list_handed_over_in_process_is_played_as_one_read_off_the_playlist_fi
 def _just_moved_on(tmp_path: Path) -> tuple[Funestra, FakeEngine, list[Path]]:
     clips = _clips(tmp_path, "v0", "v1", "v2", "v3")
     funestra, engine = _funestra(tmp_path, [str(clip) for clip in clips], commands="")
-    engine.simulate_eof_advance()
+    engine.run_out()
     return funestra, engine, clips
 
 
@@ -451,28 +451,28 @@ class TestWhatLandsAsTheImageMovesOnByItself:
 
         funestra.apply("LOCK_ON")
 
-        assert engine.playing == funestra.playback.current_video == clips[1]
+        assert engine.on_screen == funestra.playback.current_video == clips[1]
 
     def test_a_pace_of_nought_holds_the_image_on_screen(self, tmp_path):
         funestra, engine, clips = _just_moved_on(tmp_path)
 
         funestra.apply("SET_PACE 0")
 
-        assert engine.playing == funestra.playback.current_video == clips[1]
+        assert engine.on_screen == funestra.playback.current_video == clips[1]
 
     def test_going_back_goes_to_the_image_before_the_one_on_screen(self, tmp_path):
         funestra, engine, clips = _just_moved_on(tmp_path)
 
         funestra.apply("PREV")
 
-        assert engine.playing == clips[0]
+        assert engine.on_screen == clips[0]
 
     def test_a_trash_drops_the_image_on_screen(self, tmp_path):
         funestra, engine, clips = _just_moved_on(tmp_path)
 
         funestra.apply("TRASH")
 
-        assert (funestra.playback.playlist, engine.playing) == ([clips[0], *clips[2:]], clips[2])
+        assert (funestra.playback.playlist, engine.on_screen) == ([clips[0], *clips[2:]], clips[2])
 
     def test_an_item_asked_for_next_comes_after_the_image_on_screen(self, tmp_path):
         funestra, _engine, clips = _just_moved_on(tmp_path)
@@ -487,7 +487,7 @@ class TestWhatLandsAsTheImageMovesOnByItself:
 
         funestra.take_the_list([PlaylistItem(clip) for clip in clips])
 
-        assert engine.playing == funestra.playback.current_video == clips[1]
+        assert engine.on_screen == funestra.playback.current_video == clips[1]
         assert engine.staged_next == clips[2]
 
 
@@ -1029,7 +1029,7 @@ class TestWhatRunsOnTheFunestra:
         engine.position_ms = 1_000.0
 
         funestra.tick(window=WINDOW)
-        engine.simulate_eof_advance()
+        engine.run_out()
         funestra.tick(window=WINDOW)
 
         assert [loads for loads, _position in kino.ticks] == [2, 2]

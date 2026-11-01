@@ -3,7 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-from funestra_fakes import FakeEngine, FakeStation
+
+from funestra.testing import FakeEngine, FakeStation
 
 ONE, TWO, THREE = Path("one.mp4"), Path("two.mp4"), Path("three.mp4")
 
@@ -11,24 +12,26 @@ ONE, TWO, THREE = Path("one.mp4"), Path("two.mp4"), Path("three.mp4")
 def test_a_new_engine_holds_nothing_and_opens_muted_at_full_volume():
     engine = FakeEngine()
 
-    assert (engine.opened, engine.playlist, engine.playlist_pos) == ([], [], 0)
+    assert (engine.opened, engine.opened_at_pace, engine.playlist, engine.playlist_pos) == ([], [], [], 0)
     assert (engine.duration_ms, engine.position_ms, engine.frame_rate) == (5_000.0, 0.0, 25.0)
     assert (engine.volume, engine.muted, engine.speed) == (100, True, 1.0)
     assert (engine.paused, engine.loop_file, engine.closed, engine.idle) == (False,) * 4
     assert (engine.showing_image, engine.showing_video) == (False, True)
 
 
-def test_its_length_is_its_first_argument():
-    assert FakeEngine(1_000.0).duration_ms == 1_000.0
+def test_its_length_is_its_first_argument_or_a_keyword():
+    assert FakeEngine(1_000.0).duration_ms == FakeEngine(duration_ms=1_000.0).duration_ms == 1_000.0
 
 
-def test_a_load_leaves_the_position_where_it_was():
+def test_a_load_goes_back_to_the_start_and_notes_the_pace():
     engine = FakeEngine()
+    engine.set_pace(3.0)
     engine.seek_ms(1_000.0)
 
     engine.load(ONE)
 
-    assert (engine.opened, engine.playlist, engine.position_ms) == ([ONE], [ONE], 1_000.0)
+    assert (engine.opened, engine.opened_at_pace) == ([ONE], [3.0])
+    assert (engine.playlist, engine.position_ms) == ([ONE], 0.0)
 
 
 def test_a_stop_lets_go_and_goes_back_to_the_start():
@@ -76,25 +79,29 @@ def test_running_out_rolls_onto_what_was_staged():
     engine.stage_next(TWO)
     assert engine.advanced_to_next is False
 
-    engine.simulate_eof_advance()
+    engine.run_out()
 
-    assert (engine.advanced_to_next, engine.playing, engine.staged_next) == (True, TWO, None)
+    assert (engine.advanced_to_next, engine.on_screen, engine.staged_next) == (True, TWO, None)
 
 
 def test_running_out_with_nothing_staged_stays_put():
     engine = FakeEngine()
     engine.load(ONE)
 
-    engine.simulate_eof_advance()
+    engine.run_out()
 
-    assert (engine.advanced_to_next, engine.playing) == (False, ONE)
+    assert (engine.advanced_to_next, engine.on_screen) == (False, ONE)
+
+
+def test_nothing_is_on_screen_before_anything_is_open():
+    assert FakeEngine().on_screen is None
 
 
 def test_settling_forgets_the_item_it_rolled_off_and_counts():
     engine = FakeEngine()
     engine.load(ONE)
     engine.stage_next(TWO)
-    engine.simulate_eof_advance()
+    engine.run_out()
 
     engine.settle_on_the_next()
 
@@ -105,16 +112,19 @@ def test_staging_after_a_roll_also_forgets_the_item_it_rolled_off():
     engine = FakeEngine()
     engine.load(ONE)
     engine.stage_next(TWO)
-    engine.simulate_eof_advance()
+    engine.run_out()
 
     engine.stage_next(THREE)
 
     assert (engine.playlist, engine.playlist_pos) == ([TWO, THREE], 0)
 
 
-def test_staging_before_anything_is_open_fails():
-    with pytest.raises(IndexError):
-        FakeEngine().stage_next(ONE)
+def test_staging_before_anything_is_open_is_the_first_entry():
+    engine = FakeEngine()
+
+    engine.stage_next(ONE)
+
+    assert engine.playlist == [ONE]
 
 
 def test_a_swap_replaces_the_item_on_screen():
@@ -167,12 +177,14 @@ def test_each_setting_is_held_as_given():
     assert engine.ab_loop is None
 
 
-def test_a_hold_of_nothing_is_kept_as_given():
+def test_a_hold_of_nothing_is_no_hold():
     engine = FakeEngine()
+    engine.hold_image_for(3.0)
+    assert engine.held_for == 3.0
 
     engine.hold_image_for(0)
 
-    assert engine.held_for == 0
+    assert engine.held_for is None
 
 
 def test_a_still_counts_what_it_is_asked():

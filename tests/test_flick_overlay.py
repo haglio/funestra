@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import numpy as np
-from funestra_fakes import FakeEngine
 
 import funestra.flick_overlay as module
 from funestra.flick_overlay import (
@@ -15,6 +14,7 @@ from funestra.flick_overlay import (
 from funestra.funestra import Funestra
 from funestra.hud_corners import CORNER_PLUS_OVERLAY_ID
 from funestra.hud_overlay import HUD_OVERLAY_ID
+from funestra.testing import FakeEngine
 
 
 def _frame(width: int, height: int, rgb=(10, 20, 30)) -> np.ndarray:

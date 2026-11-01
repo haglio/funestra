@@ -7,7 +7,6 @@ from pathlib import Path
 import numpy as np
 import pytest
 from console_rows import console_rows
-from funestra_fakes import FakeEngine
 from host_controls_fakes import BAR, AHost, middle_of
 from shared_ui.palette import BG_BUTTON
 from shared_ui.spacing import BUTTON_SIZE_HUD
@@ -22,6 +21,7 @@ from funestra.hud_minimize import collapsed_hud
 from funestra.hud_overlay import HUD_OVERLAY_ID
 from funestra.hud_placement import HudCorner
 from funestra.modes import LengthMode, MainMode, Osr2State
+from funestra.testing import FakeEngine
 
 WINDOW = (1000, 600)
 GENAU_MODE, KINO_MODE = "genau", "kino"

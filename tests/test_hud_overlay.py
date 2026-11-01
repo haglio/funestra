@@ -7,7 +7,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from funestra_fakes import FakeEngine
 from PIL import Image
 from shared_ui.spacing import BUTTON_SIZE_HUD
 
@@ -20,6 +19,7 @@ from funestra.hud_placement import HudCorner, HudEdge
 from funestra.hud_row import UNDER_THE_HUD_GAP, RowHud
 from funestra.satellite_hud import MARGIN, MINUS_INSET, PAD, HudModel
 from funestra.satellite_hud_paint import HudRenderer
+from funestra.testing import FakeEngine
 from funestra.timeline import TIMELINE_HEIGHT
 from funestra.volume import CHIP_H, CHIP_W, SPEAKER_W, VolumeHud, chip_xy
 
