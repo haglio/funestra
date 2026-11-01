@@ -9,10 +9,10 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
-## 2026-11-01 — no old name answers any more
+## 2026-11-01 — no old name answers any more, but the HUD module's
 
-The last ones go, so a name a rename left behind now fails where it is spelled.
-`funestra.hud_panel` and `funestra.renamed` are gone, with the panel keywords
+The last ones go but one, so a name a rename left behind now fails where it is
+spelled. `funestra.renamed` is gone, with the panel keywords
 and attributes on a Funestra (`panel`, `panel_surface`, `_panel`, `panel_edge`,
 `panel_minimized`), `on_window`'s `panel`, `PanelSurface`, `fit_text` in
 `funestra.hud` (it is `shared_ui.lettering`'s), `MainMode.VIDEO`, and the HUD
@@ -23,6 +23,10 @@ No app's main spells any of them. Looked for on 2026-11-01 in the head of every
 session he has not archived and every open pull request of fun_time and
 origenerator: no branch's own commits add one, so a rebase clears the rest, and
 haglio/fun_time#419 and #450 already cannot run, on `funestra.hud_status`.
+
+`funestra.hud_panel` still answers, as `funestra.hud` with `Hud` as `HudPanel`:
+the release check refuses taking it out while fun_time#549 and #513, and the
+two that cannot run, import it. It goes once they are rebased or closed.
 
 ## 2026-10-30 — the title's old names, the OSR2 switch's retired presses and two old mode words no longer answer
 

@@ -73,7 +73,9 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   user's word, and the code's since 2026-10-29: `funestra.hud` (`Hud`, the slab
   every HUD is painted on), `HudLayout`, `hud_width`, a Funestra's `hud=`,
   `hud_surface=`, `hud_edge` and `hud_minimized`. The block Origenerator paints
-  at a HUD's foot (`PaintedFoot`) is its Job Queue. The OSR2 part keeps its
+  at a HUD's foot (`PaintedFoot`) is its Job Queue. `funestra/hud_panel.py` answers the HUD module's old
+  name for the Fun Time branches still importing it; nothing new may use it.
+  The OSR2 part keeps its
   name (`DevicePanel`), and `BORDER_PANEL` is shared_ui's.
 
 ## Changing this repo changes three apps
