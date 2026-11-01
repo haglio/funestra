@@ -64,8 +64,9 @@ siblings = ["app_support", "shared_ui"]
 # Every caller of this package lives outside it, so the apps beside this
 # checkout are read with its tests, and what they use counts as used.
 apps-are-callers = true
-# The broker's contract names the folder Fun Time starts the tray from.
-unread-dataclass-fields = ["BrokerContract.package_dir"]
+# The broker's contract names the folder Fun Time starts the tray from; whether
+# a HUD may grow on hover is read only by comparing one drawn HUD with the next.
+unread-dataclass-fields = ["BrokerContract.package_dir", "_DrawnWith.may_grow_on_hover"]
 
 [tool.setuptools.packages.find]
 include = ["funestra*"]
