@@ -929,8 +929,6 @@ def hud_text(model: HudModel) -> str:
     """
     return json.dumps({
         "funestra": model.funestra,
-        # The same, under the key a reader from before the rename looks for.
-        "player": model.funestra,
         "hud_corner": model.hud_corner,
         "hud_edge": model.hud_edge,
         "hud_minimized": model.hud_minimized,
@@ -970,13 +968,13 @@ def parse_hud(text: str) -> HudModel | None:
         raw = json.loads(text)
     except (ValueError, TypeError):
         return None
-    if not isinstance(raw, dict) or not ({"funestra", "player"} & raw.keys()):
+    if not isinstance(raw, dict) or "funestra" not in raw:
         return None
     playing = raw.get("playing") or ["corner", 0]
     seeds = [_cell(item) for item in raw.get("seeds", []) or []]
     actions = [_cell(item) for item in raw.get("actions", []) or []]
     return HudModel(
-        funestra=str(raw.get("funestra", raw.get("player", ""))),
+        funestra=str(raw["funestra"]),
         hud_corner=read_mode(HudCorner, raw.get("hud_corner"), HudCorner.UPPER_LEFT),
         hud_edge=read_mode(HudEdge, raw.get("hud_edge"), HudEdge.LOWER),
         hud_minimized=bool(raw.get("hud_minimized", False)),

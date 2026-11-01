@@ -126,11 +126,7 @@ class TestAVerbIsSpelledInOneFile:
         naming = set()
         for path in sorted(package.glob("*.py")):
             tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
-            spoken = [node for node in tree.body
-                      if not (isinstance(node, ast.Assign)
-                              and any(isinstance(t, ast.Name) and t.id == "_RENAMED" for t in node.targets))]
-            if any(isinstance(n, ast.Constant) and n.value == verb
-                   for node in spoken for n in ast.walk(node)):
+            if any(isinstance(n, ast.Constant) and n.value == verb for n in ast.walk(tree)):
                 naming.add(path.name)
         return naming
 

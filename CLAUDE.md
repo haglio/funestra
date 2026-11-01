@@ -73,9 +73,7 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   user's word, and the code's since 2026-10-29: `funestra.hud` (`Hud`, the slab
   every HUD is painted on), `HudLayout`, `hud_width`, a Funestra's `hud=`,
   `hud_surface=`, `hud_edge` and `hud_minimized`. The block Origenerator paints
-  at a HUD's foot (`PaintedFoot`) is its Job Queue. The panel names older
-  branches of the apps still spell answer through `funestra/hud_panel.py` and
-  `funestra/renamed.py` only; nothing new may use them. The OSR2 part keeps its
+  at a HUD's foot (`PaintedFoot`) is its Job Queue. The OSR2 part keeps its
   name (`DevicePanel`), and `BORDER_PANEL` is shared_ui's.
 
 ## Changing this repo changes three apps
@@ -103,8 +101,7 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
   what it reports is what nothing anywhere uses. It skips with no such checkout
   beside it, which only a public clone has; the merge gate clones fun_time
   and origenerator beside the checkout for it. A name whose caller the scan
-  cannot read -- Python or a library calls it, or only an old checkout still
-  reaches it -- goes in `vulture_whitelist.py` with who calls it, and leaves
+  cannot read, because Python or a library calls it, goes in `vulture_whitelist.py` with who calls it, and leaves
   when its caller does.
 
 ## libmpv changes: mandatory pre-flight

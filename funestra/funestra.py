@@ -41,7 +41,6 @@ from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
 from .radio import Radio, RadioFile, Tuner, radio_file_for
-from .renamed import answers_to_old_names, old_name_getter, takes_old_keywords
 from .satellite_hud import HudModel
 from .scrubber import HeatmapStrip, LoopThumbCapture, loop_thumbnail_xys
 from .session_quit import quit_gesture
@@ -156,8 +155,6 @@ def osr2_line(channels: Channels) -> FunscriptTCodeDriver | None:
     return FunscriptTCodeDriver(UdpTCodeSink(channels.tcode_host, channels.tcode_port))
 
 
-@answers_to_old_names({"panel": "hud", "panel_surface": "hud_surface", "_panel": "_hud",
-                       "panel_edge": "hud_edge", "panel_minimized": "hud_minimized"})
 class Funestra:
     IN_FRAME_OVERLAY_ID = 8
     OUT_FRAME_OVERLAY_ID = 9
@@ -330,7 +327,6 @@ class Funestra:
             frame.seek_loop(turn)
 
     @classmethod
-    @takes_old_keywords({"panel": "hud"})
     def on_window(cls, wid: int, *, channels: Channels, playlist: list[PlaylistItem],
                   audible: bool = True, tiles: bool = False, locked: bool = False,
                   sound_is_the_rooms: bool = False, users: Users | None = None,
@@ -596,4 +592,3 @@ def frame_row(frame: FlickFrame, volume) -> RowHud | None:
                   loop=(frame.played, frame.count))
 
 
-__getattr__ = old_name_getter("funestra.funestra", {"PanelSurface": "HudSurface"})
