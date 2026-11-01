@@ -76,6 +76,10 @@ def test_the_hud_is_as_wide_as_its_map_or_its_file_name_whichever_asks_for_more(
     assert hud_width("portrait", name_width=room + 20) == for_map + 20
 
 
+def test_a_text_naming_no_funestra_is_not_a_hud():
+    assert parse_hud('{"player": "landscape"}') is None
+
+
 def test_parse_hud_reads_whether_this_side_has_the_floor():
     """Absent means idle: a satellite reading a HUD written before the flag
     existed must not light its dot on a missing key."""

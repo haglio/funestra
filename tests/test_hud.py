@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import numpy as np
 from PIL import Image, ImageDraw
-from shared_ui import lettering, palette
+from shared_ui import palette
 from shared_ui.icons_pil import paste_icon
 from shared_ui.palette import BG_PRIMARY, MAGENTA, TEXT_MUTED, WHITE
 from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL
@@ -151,12 +151,6 @@ def test_a_tooltip_keeps_the_spaces_it_was_written_with():
                                       hud.image.size)
 
     assert spaced > single
-
-
-def test_the_cut_older_branches_import_from_here_is_shared_uis_own():
-    """Origenerator's main and its open branches import fit_text from here, so
-    it answers here as the family's one cut, never a copy, until none does."""
-    assert hud.fit_text is lettering.fit_text
 
 
 def _ink_center(size: int, paint) -> tuple[float, float]:

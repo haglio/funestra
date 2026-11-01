@@ -23,7 +23,6 @@ class MainMode(StrEnum):
 
     KINO = "kino"
     GENAU = "genau"
-    VIDEO = KINO
 
 
 class SatellitesMode(StrEnum):
