@@ -143,6 +143,17 @@ class RenderedHud:
 
 
 @dataclass(frozen=True)
+class _DrawnWith:
+    video: str
+    hover_loop: str
+    hover_tip: str
+    hover_pos: tuple[int, int]
+    may_grow_on_hover: bool
+    minus_on_the_hud: bool
+    flash: str
+
+
+@dataclass(frozen=True)
 class _DrawnButTheRow:
     drawn_for: tuple
     image: Image.Image
@@ -272,21 +283,15 @@ class HudRenderer:
         model = replace(model, drive=self._readout.resolve(
             model.drive, osr2=model.osr2, control=model.osr2_control, paused=model.paused,
             composed=model.drive_composed))
-        drawn_for = self._all_but_the_row(
-            model, item_row, video=video, hover_loop=hover_loop, hover_tip=hover_tip,
-            hover_pos=hover_pos, may_grow_on_hover=may_grow_on_hover,
-            minus_on_the_hud=minus_on_the_hud, flash=flash)
+        drawn_with = _DrawnWith(video, hover_loop, hover_tip, hover_pos, may_grow_on_hover,
+                                minus_on_the_hud, flash)
+        drawn_for = self._all_but_the_row(model, item_row, drawn_with)
         if drawn_for is not None and self._drawn is not None and self._drawn.drawn_for == drawn_for:
             return self._with_the_row(self._drawn, item_row, heatmap)
-        return self._drawn_whole(
-            model, drawn_for, video=video, item_row=item_row, heatmap=heatmap,
-            hover_loop=hover_loop, hover_tip=hover_tip, hover_pos=hover_pos,
-            may_grow_on_hover=may_grow_on_hover, minus_on_the_hud=minus_on_the_hud, flash=flash)
+        return self._drawn_whole(model, drawn_for, item_row, heatmap, drawn_with)
 
-    def _drawn_whole(self, model: HudModel, drawn_for: tuple | None, *, video: str,
-                     item_row: RowHud | None, heatmap: np.ndarray | None, hover_loop: str,
-                     hover_tip: str, hover_pos: tuple[int, int], may_grow_on_hover: bool,
-                     minus_on_the_hud: bool, flash: str) -> RenderedHud:
+    def _drawn_whole(self, model: HudModel, drawn_for: tuple | None, item_row: RowHud | None,
+                     heatmap: np.ndarray | None, drawn_with: _DrawnWith) -> RenderedHud:
         counts = self._count_lines(model)
         model, seed_win, action_win = self._window(model)
         corner_thumb, seed_thumbs, action_thumbs = self._map_thumbnails(model)
@@ -317,7 +322,7 @@ class HudRenderer:
         drive_w, drive_h = section_size() if model.drive is not None else (0, 0)
         device_w = max(self._osr2.width(osr2_line) if model.osr2 else 0, drive_w)
         foot_w, foot_h = model.foot.size() if model.foot is not None else (0, 0)
-        width = hud_width(model.funestra, text_width(self._tiny, video),
+        width = hud_width(model.funestra, text_width(self._tiny, drawn_with.video),
                           content_width=max(
                                 band_width,
                                 2 * PAD + device_w if device_w else 0,
@@ -337,7 +342,7 @@ class HudRenderer:
         image, draw = hud.image, hud.draw
 
         x = PAD
-        minus_room = MINIMIZE_ROOM if minus_on_the_hud else 0
+        minus_room = MINIMIZE_ROOM if drawn_with.minus_on_the_hud else 0
         room = width - TITLE_X - PAD - minus_room
         title_font = self._title_font(largest_size_that_fits(
             SIZE_BODY, room,
@@ -345,11 +350,11 @@ class HudRenderer:
         model = replace(model, title=fit_text(title_font, model.title, room))
         favorite = self._draw_title_band(
             image, draw, PAD, model, width, title_font,
-            name_line(video, model.item_note, room, self._tiny),
+            name_line(drawn_with.video, model.item_note, room, self._tiny),
             reserve=0 if model.hud_corner.lower else minus_room)
         y = layout.bands
         buttons: list[tuple[Rect, Button]] = []
-        if minus_on_the_hud:
+        if drawn_with.minus_on_the_hud:
             minus = (corner_button_rect(model.hud_corner, hud=(width, height),
                                         inset=MINUS_INSET),
                      minimize_button(model.funestra))
@@ -404,7 +409,7 @@ class HudRenderer:
 
         map_targets = (self._draw_map(image, draw, model, layout.map, width, counts,
                                       (corner_thumb, seed_thumbs, action_thumbs),
-                                      (seed_win, action_win), hover_loop)
+                                      (seed_win, action_win), drawn_with.hover_loop)
                        if corner_thumb is not None
                        else HudTargets(click=[], loop=[], filter=[], expand=None))
         targets = replace(map_targets, tracks=bands, row=row, foot=foot_rect, buttons=buttons,
@@ -414,14 +419,16 @@ class HudRenderer:
             return self._with_the_row(self._drawn, item_row, heatmap)
         if row is not None:
             self._item_row.draw(image, row, item_row, heatmap=heatmap)
-        if hover_tip:
-            draw_tooltip(draw, self._tiny, hover_tip, hover_pos, (width, height))
+        if drawn_with.hover_tip:
+            draw_tooltip(draw, self._tiny, drawn_with.hover_tip, drawn_with.hover_pos,
+                         (width, height))
         return RenderedHud(hud.to_bgra(), targets)
 
-    def _all_but_the_row(self, model: HudModel, item_row: RowHud | None, **drawn_with) -> tuple | None:
-        if item_row is None or drawn_with["hover_tip"]:
+    def _all_but_the_row(self, model: HudModel, item_row: RowHud | None,
+                         drawn_with: _DrawnWith) -> tuple | None:
+        if item_row is None or drawn_with.hover_tip:
             return None
-        return model, self._item_row.least_width(item_row), tuple(sorted(drawn_with.items()))
+        return model, self._item_row.least_width(item_row), drawn_with
 
     def _with_the_row(self, drawn: _DrawnButTheRow, item_row: RowHud, heatmap) -> RenderedHud:
         x, y, width, height = drawn.row_rect
