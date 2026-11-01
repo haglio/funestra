@@ -9,6 +9,11 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-01 — the HUD module's old name no longer answers
+
+`funestra.hud_panel` goes, the last name a rename left answering, now that no
+open pull request imports it.
+
 ## 2026-11-01 — no old name answers any more, but the HUD module's
 
 The last ones go but one, so a name a rename left behind now fails where it is
