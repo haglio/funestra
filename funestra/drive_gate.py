@@ -19,7 +19,7 @@ is honored only once Genau has been seen live (``let_go`` unset) within the
 current video; until then the descent tops off the parked publish instead, which
 is where the device really is.
 
-One gate for every Funestra that hangs the console over a video — the Main Funestra's window on
+One gate for every Funestra that hangs the Main Funestra's HUD over a video — the Main Funestra's window on
 the desktop, FunTimeVR's HUD in the headset — so the two hold their forecasts
 by the same rules and publish the same touch for the arbiter.  It lived as a
 closure and two dicts inside the Main Funestra's run loop, where none of these rules could be

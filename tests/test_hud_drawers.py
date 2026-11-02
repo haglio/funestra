@@ -30,7 +30,7 @@ HUD_PAINTERS: dict[str, set[str] | None] = {
     "outside_buttons": WHOLE_MODULE,
     "hud_osr2": WHOLE_MODULE,
     "hud_overlay": WHOLE_MODULE,
-    "console_hud": {"ConsolePainter"},
+    "main_hud_painter": {"MainHudPainter"},
     "playhead": {"PlayheadHudPainter"},
     "volume": {"VolumeHudPainter"},
     "scrubber_bar": {"progress_bar_bgra"},
@@ -139,13 +139,13 @@ def test_every_known_drawer_still_draws(drawers_and_consumers):
 
 
 def test_a_painter_reached_by_module_counts_as_well_as_one_imported_by_name():
-    by_name = _painters_reached("from funestra.console_hud import ConsolePainter\n")
+    by_name = _painters_reached("from funestra.main_hud_painter import MainHudPainter\n")
     by_module = _painters_reached(
-        "from funestra import console_hud\npainter = console_hud.ConsolePainter()\n")
+        "from funestra import main_hud_painter\npainter = main_hud_painter.MainHudPainter()\n")
     by_dotted = _painters_reached(
         "import funestra.playhead as playhead\npainter = playhead.PlayheadHudPainter()\n")
-    model_only = _painters_reached("from funestra.console_hud import ConsoleHud\n")
+    model_only = _painters_reached("from funestra.main_hud_painter import MainHud\n")
 
-    assert by_name == by_module == {"console_hud.ConsolePainter"}
+    assert by_name == by_module == {"main_hud_painter.MainHudPainter"}
     assert by_dotted == {"playhead.PlayheadHudPainter"}
     assert model_only == set()

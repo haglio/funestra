@@ -1,37 +1,17 @@
-"""The main console painter: the top line, the controls, and the visualizer."""
+"""The Main Funestra's HUD painter: the top line, the controls, and the visualizer."""
 from __future__ import annotations
 
 from dataclasses import replace
 
 import numpy as np
 import pytest
-from console_rows import console_rows, motion_rows
 from host_controls_fakes import a_hud
+from main_hud_rows import main_hud_rows, motion_rows
 from shared_ui import colors
 from shared_ui.app_icon import LETTERS
 from shared_ui.palette import BG_PRIMARY, BLUE, BORDER_PANEL, GREEN, MAGENTA, TEXT_MUTED, WHITE
 from shared_ui.spacing import BUTTON_GAP
 
-from funestra.console import (
-    BUTTON,
-    OSR2_DRIVING,
-    OSR2_PARKED,
-    OSR2_RETRACTED,
-    ConsoleModel,
-    aim_row,
-    osr2_controls,
-)
-from funestra.console_hud import (
-    _PAD,
-    MARGIN,
-    ConsoleHud,
-    ConsolePainter,
-    ModeHud,
-    compilation_label,
-    hud_xy,
-    with_playback_speed,
-)
-from funestra.console_hud import _PAD as PAD
 from funestra.drive_layout import AMPLITUDE, CENTER, MAX_INTENSITY, SPEED
 from funestra.geometry import Rect
 from funestra.host_controls import HostControlsSection
@@ -49,6 +29,26 @@ from funestra.hud_osr2 import COLORS as _OSR2_COLORS
 from funestra.hud_osr2 import LABELS as _OSR2_LABELS
 from funestra.hud_placement import HudCorner
 from funestra.hud_row import SCRUBBER, RowHud, row_part
+from funestra.main_hud import (
+    BUTTON,
+    OSR2_DRIVING,
+    OSR2_PARKED,
+    OSR2_RETRACTED,
+    MainHudModel,
+    aim_row,
+    osr2_controls,
+)
+from funestra.main_hud_painter import (
+    _PAD,
+    MARGIN,
+    MainHud,
+    MainHudPainter,
+    ModeHud,
+    compilation_label,
+    hud_xy,
+    with_playback_speed,
+)
+from funestra.main_hud_painter import _PAD as PAD
 from funestra.modes import LengthMode, MainMode, Osr2State
 from funestra.osr2_visualizer import (
     CONTROL_TIPS,
@@ -74,16 +74,16 @@ def _drive(offset: float = 0.0, **over) -> DriveHud:
 
 def _line(*, locked: bool = True, order_latest: bool = False, **modes) -> str:
     """The title for a Main Funestra in *modes*, with that lock and order."""
-    return ConsoleHud(modes=ModeHud(**modes),
-                      console=ConsoleModel(main_mode=MainMode.KINO, locked=locked,
+    return MainHud(modes=ModeHud(**modes),
+                      main_hud_model=MainHudModel(main_mode=MainMode.KINO, locked=locked,
                                            latest=order_latest)).title
 
 
-def _rect_of(painter: ConsolePainter, command: str) -> Rect:
+def _rect_of(painter: MainHudPainter, command: str) -> Rect:
     return next(rect for rect, button in painter.buttons if button.command == command)
 
 
-def _over(painter: ConsolePainter, command: str) -> tuple[int, int]:
+def _over(painter: MainHudPainter, command: str) -> tuple[int, int]:
     bx, by, bw, bh = _rect_of(painter, command)
     left, top = hud_xy()
     return left + bx + bw // 2, top + by + bh // 2
@@ -112,14 +112,14 @@ class TestLine:
 
     def test_ends_with_every_word_the_room_narrowed_the_browse_by_in_either_mode(self):
         for main_mode in MainMode:
-            hud = ConsoleHud(console=ConsoleModel(main_mode=main_mode, latest=False,
+            hud = MainHud(main_hud_model=MainHudModel(main_mode=main_mode, latest=False,
                                                   filters=("VR", "Clips", "Portrait")))
 
             assert hud.title == "Locked · Shuffle · VR · Clips · Portrait"
 
     def test_the_rooms_words_stand_in_for_kinos_own_length_word(self):
-        hud = ConsoleHud(modes=ModeHud(length_mode=CLIPS),
-                         console=ConsoleModel(latest=False, filters=("Full",)))
+        hud = MainHud(modes=ModeHud(length_mode=CLIPS),
+                         main_hud_model=MainHudModel(latest=False, filters=("Full",)))
 
         assert hud.title == "Locked · Shuffle · Full"
 
@@ -137,7 +137,7 @@ class TestLine:
         pace says when.  Held, there is no pace to report: the video stays until
         something moves it."""
         def line(**over) -> str:
-            return ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU, latest=False, **over),
+            return MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU, latest=False, **over),
                               drive=_drive(advance_interval=5)).title
 
         assert line(locked=False) == "Unlocked · Shuffle · 5s"
@@ -148,7 +148,7 @@ class TestLine:
         it for one used to leave the answer nowhere on screen: this slot printed the
         pace instead, so "latest" changed the videos and said nothing."""
         def line(**over) -> str:
-            return ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU, **over),
+            return MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU, **over),
                               drive=_drive(advance_interval=5)).title
 
         assert line(locked=False, latest=True) == "Unlocked · Latest · 5s"
@@ -158,16 +158,16 @@ class TestLine:
         """Kino mode draws the visualizer, so the pace is there to read — but the Main Funestra is on
         screen and an unlocked Main Funestra plays through its playlist rather than moving on
         a timer, so saying seconds would describe the wrong Funestra."""
-        assert ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO, locked=False, latest=False),
+        assert MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, locked=False, latest=False),
                           drive=_drive(advance_interval=5)).title == "Unlocked · Shuffle"
 
     def test_a_host_with_no_browse_order_names_none(self):
-        """Origenerator's motion panel draws this console over a show's own set —
+        """Origenerator's motion panel draws this Main Funestra's HUD over a show's own set —
         a fixed run, not a browse — so there is no order to name and that slot
         stays empty.  The pace it does have still prints."""
-        assert ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU, locked=True)).title == (
+        assert MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU, locked=True)).title == (
             "Locked")
-        assert ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU, locked=False),
+        assert MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU, locked=False),
                           drive=_drive(advance_interval=5)).title == "Unlocked · 5s"
 
     def test_names_the_compilation_and_where_you_are_in_it(self):
@@ -218,13 +218,13 @@ class TestPainter:
         not change size with what is on it: the genau-mode rows are narrower
         than the kino-mode ones, and sized to its contents the screen jumped
         between the modes."""
-        painter = ConsolePainter(width=600)
+        painter = MainHudPainter(width=600)
 
         widths = {
-            mode: painter.rgba(ConsoleHud(
+            mode: painter.rgba(MainHud(
                 modes=ModeHud(video="scene one"),
-                console=ConsoleModel(main_mode=mode, locked=False,
-                                     rows=console_rows(mode)),
+                main_hud_model=MainHudModel(main_mode=mode, locked=False,
+                                     rows=main_hud_rows(mode)),
                 drive=_drive()))[1][0]
             for mode in MainMode
         }
@@ -236,16 +236,16 @@ class TestPainter:
         and none while an image is up.  A screen in a scene that changes size
         is a screen that moves, so it is as wide as the widest row would make
         it whichever it carries."""
-        painter = ConsolePainter(width=300)
+        painter = MainHudPainter(width=300)
         flick = RowHud(position_ms=4_000, duration_ms=10_000,
                        playhead=video_playhead(4_000, 10_000, 0.0), loop=(6, 238))
         video = RowHud(position_ms=42_000, duration_ms=195_000,
                        playhead=video_playhead(42_000, 195_000, 30.0))
 
         widths = {
-            painter.rgba(ConsoleHud(
+            painter.rgba(MainHud(
                 modes=ModeHud(video="scene one"),
-                console=ConsoleModel(main_mode=mode, locked=False, rows=console_rows(mode)),
+                main_hud_model=MainHudModel(main_mode=mode, locked=False, rows=main_hud_rows(mode)),
                 drive=_drive()), item_row=row)[1][0]
             for mode in MainMode for row in (flick, video, None)
         }
@@ -253,38 +253,38 @@ class TestPainter:
         assert len(widths) == 1
 
     def test_a_file_name_too_long_for_the_held_width_is_elided_rather_than_widening_it(self):
-        painter = ConsolePainter(width=600)
+        painter = MainHudPainter(width=600)
         long_name = "Jane Doe - scene one - " + "a long descriptor " * 12
 
-        _rgba, (width, _height) = painter.rgba(ConsoleHud(
-            modes=ModeHud(video=long_name), console=ConsoleModel(main_mode=MainMode.KINO, locked=False)))
+        _rgba, (width, _height) = painter.rgba(MainHud(
+            modes=ModeHud(video=long_name), main_hud_model=MainHudModel(main_mode=MainMode.KINO, locked=False)))
 
         assert width == 600
 
     def test_a_width_its_own_parts_cannot_fit_in_is_widened_not_clipped(self):
         """The rows, the visualizer and the OSR2 line are not text that can give way."""
-        hud = ConsoleHud(modes=ModeHud(video="scene one"),
-                         console=ConsoleModel(main_mode=MainMode.GENAU, locked=False), drive=_drive())
+        hud = MainHud(modes=ModeHud(video="scene one"),
+                         main_hud_model=MainHudModel(main_mode=MainMode.GENAU, locked=False), drive=_drive())
 
-        _rgba, (natural, _h) = ConsolePainter().rgba(hud)
-        _rgba, (held, _h) = ConsolePainter(width=50).rgba(hud)
+        _rgba, (natural, _h) = MainHudPainter().rgba(hud)
+        _rgba, (held, _h) = MainHudPainter(width=50).rgba(hud)
 
         assert held >= natural
 
     def test_a_tooltip_longer_than_the_hud_is_wide_stays_on_the_hud(self):
-        """The widest tooltip on the console wants to be wider than the console
+        """The widest tooltip on the Main Funestra's HUD wants to be wider than the Main Funestra's HUD
         itself, so it was drawn straight off the right edge and lost its tail.
-        Fitting it is funestra's job — this guards that the console hands it the
+        Fitting it is funestra's job — this guards that the Main Funestra's HUD hands it the
         HUD's own bounds, since anything wider puts the tooltip back over the edge."""
-        painter = ConsolePainter()
-        hud = ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO, locked=False,
-                                              rows=console_rows()))
+        painter = MainHudPainter()
+        hud = MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, locked=False,
+                                              rows=main_hud_rows()))
         plain = _rgb(painter.bgra(hud))  # also lays the buttons out, so one can be hovered
         tiny = load_font(8)
         (x, y, w, h), _button = max(
             ((rect, button) for rect, button in painter.buttons if button.tooltip),
             key=lambda pair: text_width(tiny, pair[1].tooltip))
-        tipped = _rgb(ConsolePainter().bgra(hud, hover=(x + w // 2, y + h // 2)))
+        tipped = _rgb(MainHudPainter().bgra(hud, hover=(x + w // 2, y + h // 2)))
 
         rows, cols = np.nonzero((tipped != plain).any(axis=2))
         one_line_height = sum(tiny.getmetrics()) + 2 * TOOLTIP_PAD
@@ -295,10 +295,10 @@ class TestPainter:
 
     def test_the_top_line_sits_tight_to_the_top(self):
         """The old console left a tall empty bar above its first line; the status
-        line now heads the console within a body line-height of the slab's top, the
+        line now heads the Main Funestra's HUD within a body line-height of the slab's top, the
         way each satellite's does."""
-        painter = ConsolePainter()
-        bgra = painter.bgra(ConsoleHud(modes=ModeHud(length_mode=FULL)))
+        painter = MainHudPainter()
+        bgra = painter.bgra(MainHud(modes=ModeHud(length_mode=FULL)))
         rgb = _rgb(bgra)
 
         # There is ink (the title) within the first line-height below the pad.
@@ -310,8 +310,8 @@ class TestPainter:
         """The satellites lead with what they are showing, not with a file name, so
         the Main Funestra does too: the length mode or compilation in the body face, the
         file beneath it in the muted one."""
-        painter = ConsolePainter()
-        bgra = painter.bgra(ConsoleHud(modes=ModeHud(
+        painter = MainHudPainter()
+        bgra = painter.bgra(MainHud(modes=ModeHud(
             video="Some Video Name", length_mode=MIXED)))
         rgb = _rgb(bgra)
 
@@ -330,25 +330,25 @@ class TestPainter:
         name at all: the HUD is the widest of its parts, so a name shorter than
         the buttons is held by the buttons and every such name gives one width.
         """
-        narrow = ConsolePainter().bgra(ConsoleHud(modes=ModeHud(
+        narrow = MainHudPainter().bgra(MainHud(modes=ModeHud(
             video="A Much Much Longer Video Name Indeed")))
-        wide = ConsolePainter().bgra(ConsoleHud(modes=ModeHud(
+        wide = MainHudPainter().bgra(MainHud(modes=ModeHud(
             video="A Much Much Longer Video Name Indeed, And Then Some More Of It")))
 
         assert wide.shape[1] > narrow.shape[1]
 
     def test_the_visualizer_grows_the_hud(self):
-        painter = ConsolePainter()
-        plain = painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO))).shape[0]
-        driving = ConsolePainter().bgra(
-            ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO), drive=_drive())).shape[0]
+        painter = MainHudPainter()
+        plain = painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO))).shape[0]
+        driving = MainHudPainter().bgra(
+            MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO), drive=_drive())).shape[0]
 
         assert driving > plain
 
     def test_the_dot_lights_only_while_the_main_has_the_floor(self):
         def dot(active: bool):
-            bgra = ConsolePainter().bgra(
-                ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO, active=active)))
+            bgra = MainHudPainter().bgra(
+                MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, active=active)))
             body = sum(load_font(11).getmetrics())
             cx, cy = PAD + MINUS_ROOM + 5, PAD + body // 2  # the dot's own center
             return tuple(int(v) for v in _rgb(bgra)[cy, cx])
@@ -360,25 +360,25 @@ class TestPainter:
         """The dot is always in the same place and the same size — active only
         recolors it — so the line beside it cannot jump when the floor moves to
         another Funestra."""
-        painter = ConsolePainter()
+        painter = MainHudPainter()
 
-        lit = painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO, active=True)))
-        idle = ConsolePainter().bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO, active=False)))
+        lit = painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, active=True)))
+        idle = MainHudPainter().bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, active=False)))
 
         assert lit.shape == idle.shape
 
     def test_an_unchanged_hud_is_not_repainted(self):
-        painter = ConsolePainter()
-        hud = ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO))
+        painter = MainHudPainter()
+        hud = MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO))
 
-        assert painter.bgra(hud) is painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO)))
+        assert painter.bgra(hud) is painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO)))
 
     def test_the_visualizers_arrows_are_hit_targets_even_though_it_draws_them(self):
-        """The visualizer paints its own amplitude/center/speed arrows; the console
+        """The visualizer paints its own amplitude/center/speed arrows; the Main Funestra's HUD
         adds them to its hit targets so a press on the trace's controls posts what
         is drawn there."""
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO), drive=_drive()))
+        painter = MainHudPainter()
+        painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO), drive=_drive()))
 
         actions = {b.command for _rect, b in painter.buttons}
         for action in ("robot_hand_amplitude_up", "robot_hand_center_down", "robot_hand_speed_up"):
@@ -387,17 +387,17 @@ class TestPainter:
     def test_the_osr2_state_is_shown(self):
         """A framed word, lower in the HUD — a read-out of what has the device, not
         a line jammed in with the mode."""
-        painter = ConsolePainter()
-        bgra = painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.FUNSCRIPT)))
+        painter = MainHudPainter()
+        bgra = painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.FUNSCRIPT)))
         rgb = _rgb(bgra)
         # FunScript is drawn green; there is green ink somewhere below the top line.
         green = (rgb[:, :, 1] > 130) & (rgb[:, :, 0] < 110) & (rgb[:, :, 2] < 110)
         assert green.any()
 
-    def _busiest_shade(self, command: str, model: ConsoleModel, modes=None):
-        painter = ConsolePainter()
-        rgb = _rgb(painter.bgra(ConsoleHud(console=model, modes=modes or ModeHud())))
+    def _busiest_shade(self, command: str, model: MainHudModel, modes=None):
+        painter = MainHudPainter()
+        rgb = _rgb(painter.bgra(MainHud(main_hud_model=model, modes=modes or ModeHud())))
         bx, by, bw, bh = _rect_of(painter, command)
         pixels = rgb[by:by + bh, bx:bx + bw].astype(int)
         shades, counts = np.unique(pixels.reshape(-1, 3), axis=0, return_counts=True)
@@ -415,7 +415,7 @@ class TestPainter:
 
         shade, pixels = self._busiest_shade(
             "main_kino_activate",
-            ConsoleModel(main_mode=MainMode.KINO, rows=console_rows("kino")))
+            MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows("kino")))
 
         assert shade == BLUE
         green = (pixels[:, :, 1] > 130) & (pixels[:, :, 0] < 110) & (pixels[:, :, 2] < 110)
@@ -430,7 +430,7 @@ class TestPainter:
         blue = BLUE
         shade, _pixels = self._busiest_shade(
             "robot_hand_toggle_learned",
-            ConsoleModel(main_mode=MainMode.GENAU, rows=console_rows("genau"),
+            MainHudModel(main_mode=MainMode.GENAU, rows=main_hud_rows("genau"),
                          osr2_rows=motion_rows(learned=True)))
 
         assert shade == blue
@@ -445,8 +445,8 @@ class TestPainter:
                 colors.BG_BUTTON_ACTIVE.blue())
         shade, _pixels = self._busiest_shade(
             "main_shuffle",
-            ConsoleModel(main_mode=MainMode.KINO, latest=False,
-                         rows=console_rows(remembered=True)),
+            MainHudModel(main_mode=MainMode.KINO, latest=False,
+                         rows=main_hud_rows(remembered=True)),
             modes=ModeHud(length_mode=LengthMode.MIXED, compilation="Volume 6"))
 
         assert shade == gray
@@ -454,11 +454,11 @@ class TestPainter:
     def test_a_control_at_rest_still_carries_the_familys_thin_edge(self):
         """The edge used to be the resting fill's own color, which is no edge at
         all — the satellite HUDs beside this one draw theirs in the muted gray the
-        rest of the chrome uses, and the console read as borderless slabs."""
+        rest of the chrome uses, and the Main Funestra's HUD read as borderless slabs."""
 
-        painter = ConsolePainter()
-        rgb = _rgb(painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.KINO, rows=console_rows()))))
+        painter = MainHudPainter()
+        rgb = _rgb(painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows()))))
         (bx, by, bw, bh), _b = next(
             (rect, b) for rect, b in painter.buttons
             if b.command and b.command != "main_kino_activate")
@@ -486,8 +486,8 @@ class TestPainter:
         doing underneath it."""
         for action, grid in (("broker_panel", LETTERS["B"]),
                              ("main_fmode", LETTERS["F"])):
-            pixels = self._button_pixels(action, ConsoleModel(
-                main_mode=MainMode.KINO, rows=console_rows(favorites=True),
+            pixels = self._button_pixels(action, MainHudModel(
+                main_mode=MainMode.KINO, rows=main_hud_rows(favorites=True),
                 osr2_controls=osr2_controls(broker_running=True)))
             magenta = (pixels == np.array((200, 80, 160), dtype=pixels.dtype)).all(axis=2)
             ys, xs = np.nonzero(magenta)
@@ -507,7 +507,7 @@ class TestPainter:
         wears the family's minus: a run of ink across the middle of the button,
         wider than it is tall."""
         pixels = self._button_pixels(
-            "main_minimize", ConsoleModel(main_mode=MainMode.KINO, rows=console_rows()))
+            "main_minimize", MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows()))
         # The button's own rounded outline is its border, so only the interior
         # holds the mark -- and the interior is the button's ground now, which is
         # itself gray, so the mark is what is BRIGHTER than that ground.
@@ -518,14 +518,14 @@ class TestPainter:
         assert xs.max() - xs.min() > ys.max() - ys.min()
 
     @staticmethod
-    def _button_pixels(command: str, model: ConsoleModel) -> np.ndarray:
-        painter = ConsolePainter()
-        rgb = _rgb(painter.bgra(ConsoleHud(console=model)))
+    def _button_pixels(command: str, model: MainHudModel) -> np.ndarray:
+        painter = MainHudPainter()
+        rgb = _rgb(painter.bgra(MainHud(main_hud_model=model)))
         bx, by, bw, bh = _rect_of(painter, command)
         return rgb[by:by + bh, bx:bx + bw]
 
     def _broker_pixels(self, broker: bool) -> np.ndarray:
-        return self._button_pixels("broker_panel", ConsoleModel(
+        return self._button_pixels("broker_panel", MainHudModel(
             main_mode=MainMode.KINO, osr2_controls=osr2_controls(broker_running=broker)))
 
     def test_f_mode_is_the_one_lit_control_that_stays_green(self):
@@ -533,8 +533,8 @@ class TestPainter:
         is what the funscripts and the favorites own."""
         pixels = self._button_pixels(
             "main_fmode",
-            ConsoleModel(main_mode=MainMode.KINO,
-                         rows=console_rows(favorites=True))).astype(int)
+            MainHudModel(main_mode=MainMode.KINO,
+                         rows=main_hud_rows(favorites=True))).astype(int)
 
         shades, counts = np.unique(pixels.reshape(-1, 3), axis=0, return_counts=True)
         assert tuple(shades[counts.argmax()]) == (48, 160, 48)
@@ -544,10 +544,10 @@ class TestPainter:
         that keeps only those is yellow wherever you find it: the mark at rest,
         and the whole button once it is on."""
         yellow = (255, 200, 120)
-        off = self._button_pixels("genau_filter_enhanced", ConsoleModel(
-            main_mode=MainMode.GENAU, rows=console_rows("genau", enhanced=False)))
-        on = self._button_pixels("genau_filter_enhanced", ConsoleModel(
-            main_mode=MainMode.GENAU, rows=console_rows("genau", enhanced=True)))
+        off = self._button_pixels("genau_filter_enhanced", MainHudModel(
+            main_mode=MainMode.GENAU, rows=main_hud_rows("genau", enhanced=False)))
+        on = self._button_pixels("genau_filter_enhanced", MainHudModel(
+            main_mode=MainMode.GENAU, rows=main_hud_rows("genau", enhanced=True)))
 
         assert (np.abs(off.astype(int) - yellow).sum(axis=2) < 30).any()  # the mark
         shades, counts = np.unique(on.astype(int).reshape(-1, 3), axis=0,
@@ -560,10 +560,10 @@ class TestPainter:
         item beneath it — on a window painted that very gray the slab is
         invisible and only its border shows — so it says which gray it wants."""
 
-        default = _rgb(ConsolePainter().bgra(
-            ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU))))
-        asked = _rgb(ConsolePainter().bgra(
-            ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU), ground=(40, 40, 40))))
+        default = _rgb(MainHudPainter().bgra(
+            MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU))))
+        asked = _rgb(MainHudPainter().bgra(
+            MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU), ground=(40, 40, 40))))
 
         # A pixel of bare slab: just inside the border, clear of every control.
         assert tuple(default[3, 3]) == BG_PRIMARY
@@ -573,9 +573,9 @@ class TestPainter:
     def test_the_ground_is_part_of_what_the_repaint_cache_compares(self):
         """Everything else on this HUD is; a ground that slipped past it would
         leave the old slab on screen until something else moved."""
-        painter = ConsolePainter()
-        first = _rgb(painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU))))[3, 3]
-        second = _rgb(painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU),
+        painter = MainHudPainter()
+        first = _rgb(painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU))))[3, 3]
+        second = _rgb(painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU),
                                               ground=(40, 40, 40))))[3, 3]
 
         assert tuple(first) != tuple(second)
@@ -584,10 +584,10 @@ class TestPainter:
         """The Dash's mic keeps its white icon while the HUD under it goes
         blue.  A record button whose circle went dark while it recorded read as a
         different button rather than as the same one recording."""
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         rgb = _rgb(painter.bgra(
-            ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO,
-                                            rows=console_rows(recording=True)))))
+            MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO,
+                                            rows=main_hud_rows(recording=True)))))
         bx, by, bw, bh = _rect_of(painter, "main_player_record_tap")
         pixels = rgb[by:by + bh, bx:bx + bw].astype(int)
 
@@ -597,10 +597,10 @@ class TestPainter:
 
 class TestPresses:
     @staticmethod
-    def _painted(mode: MainMode = MainMode.KINO) -> ConsolePainter:
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=mode,
-                                                    rows=console_rows(mode))))
+    def _painted(mode: MainMode = MainMode.KINO) -> MainHudPainter:
+        painter = MainHudPainter()
+        painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=mode,
+                                                    rows=main_hud_rows(mode))))
         return painter
 
     def test_a_press_on_a_button_carries_that_buttons_command(self):
@@ -619,8 +619,8 @@ class TestPresses:
         assert painter.covers(*over)
 
     def test_the_hud_under_a_press_ends_where_its_painting_does(self):
-        painter = ConsolePainter()
-        height, width = painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO))).shape[:2]
+        painter = MainHudPainter()
+        height, width = painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO))).shape[:2]
         left, top = hud_xy()
 
         assert painter.covers(left, top)
@@ -632,7 +632,7 @@ class TestPresses:
     def test_nothing_is_under_a_press_before_the_hud_is_first_painted(self):
         left, top = hud_xy()
 
-        assert not ConsolePainter().covers(left, top)
+        assert not MainHudPainter().covers(left, top)
 
     def test_the_huds_own_corner_is_not_read_as_the_windows(self):
         painter = self._painted()
@@ -641,9 +641,9 @@ class TestPresses:
         assert painter.press_at(bx, by) == ""
 
     def test_a_visualizers_arrow_press_reaches_genau(self):
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND), drive=_drive()))
+        painter = MainHudPainter()
+        painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND), drive=_drive()))
 
         assert painter.press_at(*_over(painter, "robot_hand_amplitude_up")) == "robot_hand_amplitude_up"
 
@@ -651,9 +651,9 @@ class TestPresses:
         """Genau is paused through a funscript's stretch, so a motion it is not
         sending cannot be adjusted — pressing one woke Genau onto a device the
         funscript was already driving, and the two fought over it."""
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.FUNSCRIPT), drive=_drive()))
+        painter = MainHudPainter()
+        painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.FUNSCRIPT), drive=_drive()))
 
         over = _over(painter, "robot_hand_amplitude_up")
         assert painter.press_at(*over) == ""
@@ -676,22 +676,22 @@ class TestPresses:
 
 
 class TestThePointer:
-    """The console follows the pointer itself, so every window that draws one -- a
+    """The Main Funestra's HUD follows the pointer itself, so every window that draws one -- a
     Funestra's, and Origenerator's own at its top left -- lights the button under
     it the same way."""
 
     @staticmethod
-    def _hud(corner: HudCorner = HudCorner.UPPER_LEFT) -> ConsoleHud:
-        return ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO, hud_corner=corner,
-                                               rows=console_rows(MainMode.KINO)))
+    def _hud(corner: HudCorner = HudCorner.UPPER_LEFT) -> MainHud:
+        return MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, hud_corner=corner,
+                                               rows=main_hud_rows(MainMode.KINO)))
 
     @staticmethod
-    def _ground(rgb: np.ndarray, painter: ConsolePainter, command: str) -> int:
+    def _ground(rgb: np.ndarray, painter: MainHudPainter, command: str) -> int:
         x, y, _w, h = _rect_of(painter, command)
         return int(rgb[y + h // 2, x + 2].sum())
 
     def test_the_button_under_the_pointer_draws_lighter(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         at_rest = _rgb(painter.bgra(self._hud()))
 
         painter.motion(*_over(painter, "main_next"))
@@ -701,7 +701,7 @@ class TestThePointer:
                 > self._ground(at_rest, painter, "main_next"))
 
     def test_the_pointer_moving_off_the_hud_puts_the_button_back(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         at_rest = _rgb(painter.bgra(self._hud()))
         painter.motion(*_over(painter, "main_next"))
         painter.bgra(self._hud())
@@ -711,7 +711,7 @@ class TestThePointer:
         assert (_rgb(painter.bgra(self._hud())) == at_rest).all()
 
     def test_the_pointer_leaving_the_window_puts_the_button_back(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         at_rest = _rgb(painter.bgra(self._hud()))
         painter.motion(*_over(painter, "main_next"))
         painter.bgra(self._hud())
@@ -721,13 +721,13 @@ class TestThePointer:
         assert (_rgb(painter.bgra(self._hud())) == at_rest).all()
 
     def test_a_hud_sent_to_another_corner_forgets_where_the_pointer_was(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         painter.bgra(self._hud())
         painter.motion(*_over(painter, "main_next"))
 
         moved = _rgb(painter.bgra(self._hud(HudCorner.UPPER_RIGHT)))
 
-        assert (moved == _rgb(ConsolePainter().bgra(self._hud(HudCorner.UPPER_RIGHT)))).all()
+        assert (moved == _rgb(MainHudPainter().bgra(self._hud(HudCorner.UPPER_RIGHT)))).all()
 
 
 class TestDrags:
@@ -735,16 +735,16 @@ class TestDrags:
     a level is reached in one gesture rather than by walking a mark to it."""
 
     @staticmethod
-    def _painted(osr2: Osr2State = Osr2State.ROBOT_HAND) -> ConsolePainter:
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.KINO, osr2=osr2,
-                                 rows=console_rows()),
+    def _painted(osr2: Osr2State = Osr2State.ROBOT_HAND) -> MainHudPainter:
+        painter = MainHudPainter()
+        painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=osr2,
+                                 rows=main_hud_rows()),
             drive=_drive()))
         return painter
 
     @staticmethod
-    def _bar(painter: ConsolePainter, axis: str):
+    def _bar(painter: MainHudPainter, axis: str):
         return next(track for track in painter.tracks if track.axis == axis)
 
     @staticmethod
@@ -828,9 +828,9 @@ class TestDrags:
         assert painter.holding is False
 
     def test_a_press_along_the_max_intensity_sets_it_and_the_drag_goes_on_setting_it(self):
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND,
+        painter = MainHudPainter()
+        painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND,
                                  max_intensity=50),
             drive=_drive()))
         max_intensity = self._bar(painter, MAX_INTENSITY)
@@ -840,9 +840,9 @@ class TestDrags:
 
     def test_there_are_no_bars_at_all_where_nothing_is_driving(self):
         """With nothing driving, the visualizer is not drawn, so its bars must not linger as
-        targets over whatever the console puts in that space instead."""
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO)))
+        targets over whatever the Main Funestra's HUD puts in that space instead."""
+        painter = MainHudPainter()
+        painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO)))
 
         assert painter.tracks == []
 
@@ -861,8 +861,8 @@ class TestDeclaredRows:
         """A HUD carrying its own buttons is drawn from them and nothing else:
         the rows in their order, then the OSR2 line's controls, each a hit
         target posting what the source said."""
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(console=ConsoleModel(
+        painter = MainHudPainter()
+        painter.bgra(MainHud(main_hud_model=MainHudModel(
             rows=((Button("go_on", "⏭", "On to the next"),),
                   (Button("", "Pace", "", width=40),
                    Button("slower", shared_icon("minus"), "Slower", group_break=True))),
@@ -873,8 +873,8 @@ class TestDeclaredRows:
             "go_on", "", "slower", "wake_broker"]
 
     def test_the_rows_that_aim_the_device_are_drawn_under_the_rest_and_over_its_line(self):
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(console=ConsoleModel(
+        painter = MainHudPainter()
+        painter.bgra(MainHud(main_hud_model=MainHudModel(
             osr2=Osr2State.ROBOT_HAND,
             rows=((Button("go_on", "⏭", "On to the next"),),),
             osr2_rows=((Button("robot_hand_park", "P", "Parked"),),),
@@ -888,16 +888,16 @@ class TestDeclaredRows:
         """The buttons are the source's to declare; a HUD naming none is the
         title and the OSR2 line, with no row held open for buttons nobody
         asked for."""
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO)))
+        painter = MainHudPainter()
+        painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO)))
 
         assert _declared(painter) == []
 
     def test_with_no_controls_on_its_line_the_osr2_label_starts_the_line(self):
         """No gap is held open before the label for controls that are not there."""
 
-        rgb = _rgb(ConsolePainter().bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.GENAU))))
+        rgb = _rgb(MainHudPainter().bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.GENAU))))
         height = rgb.shape[0]
         line = rgb[height - PAD - BUTTON:height - PAD, 3:].astype(int)
         inked = (np.abs(line - np.array(BG_PRIMARY)).max(axis=2) > 40).any(axis=0)
@@ -907,10 +907,10 @@ class TestDeclaredRows:
 
 class TestAConsoleAnotherFunestraTookTheOsr2From:
     @staticmethod
-    def _painted(*, has_osr2: bool) -> tuple[ConsolePainter, np.ndarray]:
-        painter = ConsolePainter()
-        bgra = painter.bgra(ConsoleHud(
-            console=ConsoleModel(
+    def _painted(*, has_osr2: bool) -> tuple[MainHudPainter, np.ndarray]:
+        painter = MainHudPainter()
+        bgra = painter.bgra(MainHud(
+            main_hud_model=MainHudModel(
                 main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND,
                 rows=((Button("main_take_osr2", "OSR2", "Take the OSR2"),),),
                 osr2_controls=(Button("broker_panel", BROKER_ICON, "Broker"),),
@@ -934,24 +934,24 @@ class TestAConsoleAnotherFunestraTookTheOsr2From:
 class TestPlaybackSpeed:
     def test_the_drawing_funestra_folds_in_its_own_rate(self):
         """Fun Time does not publish the Main Funestra's video rate — the Main Funestra knows it and adds it
-        at draw time, so the console shows the rate the video is really playing."""
-        console = with_playback_speed(ConsoleModel(main_mode=MainMode.KINO), 1.75)
+        at draw time, so the Main Funestra's HUD shows the rate the video is really playing."""
+        main_hud_model = with_playback_speed(MainHudModel(main_mode=MainMode.KINO), 1.75)
 
-        assert console.playback_speed == 1.75
+        assert main_hud_model.playback_speed == 1.75
 
     def test_the_painter_writes_the_hosts_numbers_into_the_read_outs_that_name_them(self):
         """The row names the number ("playback_speed", "advance_interval") and
         the painter fills it from whoever is drawing: the Main Funestra's rate
         under a video, Genau's pace off its visualizer in genau mode."""
-        def visualizers(hud: ConsoleHud) -> list[str]:
-            painter = ConsolePainter()
+        def visualizers(hud: MainHud) -> list[str]:
+            painter = MainHudPainter()
             painter.bgra(hud)
             return [button.icon for _rect, button in painter.buttons if button.host_value]
 
-        assert visualizers(ConsoleHud(console=with_playback_speed(
-            ConsoleModel(main_mode=MainMode.KINO, rows=console_rows("kino")), 1.75))) == ["1.75×"]
-        assert visualizers(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.GENAU, rows=console_rows("genau")),
+        assert visualizers(MainHud(main_hud_model=with_playback_speed(
+            MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows("kino")), 1.75))) == ["1.75×"]
+        assert visualizers(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.GENAU, rows=main_hud_rows("genau")),
             drive=_drive(advance_interval=7))) == ["7s"]
 
 
@@ -965,22 +965,22 @@ def _rgb(bgra: np.ndarray) -> np.ndarray:
 
 
 class TestTraceSources:
-    """The trace is on the console in every mode, because in every mode something
+    """The trace is on the Main Funestra's HUD in every mode, because in every mode something
     may be driving the device — and what it is a drawing of is whoever that is."""
 
     @staticmethod
-    def _painted(mode: MainMode, osr2: Osr2State, drive: DriveHud | None = None) -> ConsolePainter:
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=mode, osr2=osr2), drive=drive or _drive()))
+    def _painted(mode: MainMode, osr2: Osr2State, drive: DriveHud | None = None) -> MainHudPainter:
+        painter = MainHudPainter()
+        painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=mode, osr2=osr2), drive=drive or _drive()))
         return painter
 
     @staticmethod
     def _drawn(mode: str, osr2: str, drive: DriveHud | None = None):
         """The painted HUD and the colors in it, for a line's own color."""
-        painter = ConsolePainter()
-        rgb = _rgb(painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=mode, osr2=osr2),
+        painter = MainHudPainter()
+        rgb = _rgb(painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=mode, osr2=osr2),
             drive=drive or _drive()))).astype(int)
         return painter, {tuple(pixel) for row in rgb for pixel in row}
 
@@ -1004,19 +1004,19 @@ class TestTraceSources:
         here is sending go dim."""
         painter, colors = self._drawn("genau", "auto")
 
-        assert painter._osr2_state(ConsoleModel(main_mode=MainMode.GENAU, osr2=Osr2State.AUTO)) == "auto"
+        assert painter._osr2_state(MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.AUTO)) == "auto"
         assert all(t.dim for t in painter.tracks)
         assert MAGENTA in colors
 
     def test_the_device_running_itself_wins_over_a_composed_handoff(self):
-        """In kino mode the console composes the funscript's plan over Genau's
+        """In kino mode the Main Funestra's HUD composes the funscript's plan over Genau's
         motion -- but under auto neither of them reaches the device, so a plan
         drawn in their two colors describes drivers that do not have it."""
         painter, colors = self._drawn(
             "kino", "auto",
             drive=_drive(segments=((0, "robot_hand"), (40, "funscript"))))
 
-        assert painter._osr2_state(ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.AUTO)) == "auto"
+        assert painter._osr2_state(MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.AUTO)) == "auto"
         assert MAGENTA in colors
 
     def test_the_hud_keeps_its_size_whoever_has_the_device(self):
@@ -1029,7 +1029,7 @@ class TestTraceSources:
         assert genau_turn._image.size == funscript_turn._image.size
 
 
-class TestEveryConsolePaints:
+class TestEveryMainHudPaints:
     """One paint per (mode x driver) with a composed trace on the HUD.
 
     The pill's Buffer state shipped referencing a name this module never
@@ -1044,28 +1044,28 @@ class TestEveryConsolePaints:
         segments = ((0, "robot_hand"), (30, "neutral"), (50, "funscript"))
         for mode in MainMode:
             for driven in ("robot_hand", "funscript", "neutral", "nothing"):
-                hud = ConsoleHud(
+                hud = MainHud(
                     modes=ModeHud(video="clip one"),
-                    console=ConsoleModel(main_mode=mode, osr2=Osr2State.ROBOT_HAND,
-                                         rows=console_rows(mode),
+                    main_hud_model=MainHudModel(main_mode=mode, osr2=Osr2State.ROBOT_HAND,
+                                         rows=main_hud_rows(mode),
                                          osr2_controls=osr2_controls(broker_running=True)),
                     drive=DriveHud(waveform=wave, driven=driven,
                                    segments=segments))
-                ConsolePainter().rgba(hud)
+                MainHudPainter().rgba(hud)
 
     def test_the_buffer_pill_is_wider_than_nothing(self):
         """The Buffer word really reaches the pill: its width is computed from
         the same state the paint will draw."""
         wave = tuple(0.5 for _ in range(80))
-        painter = ConsolePainter()
-        hud = ConsoleHud(
+        painter = MainHudPainter()
+        hud = MainHud(
             modes=ModeHud(video="clip one"),
-            console=ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND),
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND),
             drive=DriveHud(waveform=wave, driven="neutral",
                            segments=((0, "robot_hand"), (30, "neutral"))))
         painter.rgba(hud)
 
-        assert painter._osr2_state(hud.console) == "buffer"
+        assert painter._osr2_state(hud.main_hud_model) == "buffer"
 
 
 class TestHolds:
@@ -1074,22 +1074,22 @@ class TestHolds:
     draw, in gray."""
 
     @staticmethod
-    def _hud(mode: str, osr2: str, control: str) -> ConsoleHud:
+    def _hud(mode: str, osr2: str, control: str) -> MainHud:
         wave = tuple(0.5 for _ in range(80))
-        return ConsoleHud(
+        return MainHud(
             modes=ModeHud(video="clip one"),
-            console=ConsoleModel(main_mode=mode, osr2=osr2, osr2_control=control),
+            main_hud_model=MainHudModel(main_mode=mode, osr2=osr2, osr2_control=control),
             drive=DriveHud(waveform=wave, driven="funscript", position=5000,
                            segments=((0, "robot_hand"), (30, "funscript"))))
 
     def test_the_pill_names_the_hold_whoever_would_have_had_the_device(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         for control in (OSR2_PARKED, OSR2_RETRACTED):
             for mode in MainMode:
                 for osr2 in ("robot_hand", "funscript"):
                     hud = self._hud(mode, osr2, control)
                     painter.rgba(hud)
-                    assert painter._osr2_state(hud.console) == control, (mode, osr2)
+                    assert painter._osr2_state(hud.main_hud_model) == control, (mode, osr2)
 
     def test_the_pill_says_it_in_words(self):
         assert _OSR2_LABELS[OSR2_PARKED] == "Parked"
@@ -1100,9 +1100,9 @@ class TestHolds:
                              segments=((0, "robot_hand"), (30, "funscript")))
         for control in (OSR2_PARKED, OSR2_RETRACTED):
             for mode in MainMode:
-                painter = ConsolePainter()
-                painter.rgba(ConsoleHud(
-                    console=ConsoleModel(main_mode=mode, osr2="funscript", osr2_control=control),
+                painter = MainHudPainter()
+                painter.rgba(MainHud(
+                    main_hud_model=MainHudModel(main_mode=mode, osr2="funscript", osr2_control=control),
                     drive=would_drive))
                 drive = painter._painted[0].drive
 
@@ -1113,19 +1113,19 @@ class TestHolds:
 
     def test_a_held_visualizer_holds_still_with_the_device_on(self):
         for control in (OSR2_PARKED, OSR2_RETRACTED):
-            painter = ConsolePainter()
-            console = ConsoleModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
+            painter = MainHudPainter()
+            main_hud_model = MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
                                    osr2_control=control)
-            first = painter.bgra(ConsoleHud(console=console, drive=_drive(0.0))).copy()
+            first = painter.bgra(MainHud(main_hud_model=main_hud_model, drive=_drive(0.0))).copy()
 
-            assert np.array_equal(painter.bgra(ConsoleHud(console=console, drive=_drive(3.0))),
+            assert np.array_equal(painter.bgra(MainHud(main_hud_model=main_hud_model, drive=_drive(3.0))),
                                   first), control
 
     def test_a_held_visualizer_cannot_be_pressed(self):
         """Nudging a level under a hold is what would move the device while the
         pill still said it was held."""
         for control in (OSR2_PARKED, OSR2_RETRACTED):
-            painter = ConsolePainter()
+            painter = MainHudPainter()
             painter.rgba(self._hud("genau", "robot_hand", control))
 
             assert painter._painted[0].drive.driving is False
@@ -1140,13 +1140,13 @@ class TestHolds:
 
 class TestAPausedRoom:
     @staticmethod
-    def _console(control: str, *, paused: bool, mode: MainMode = MainMode.GENAU) -> ConsoleModel:
-        return ConsoleModel(main_mode=mode, osr2=Osr2State.ROBOT_HAND, osr2_control=control,
+    def _main_hud(control: str, *, paused: bool, mode: MainMode = MainMode.GENAU) -> MainHudModel:
+        return MainHudModel(main_mode=mode, osr2=Osr2State.ROBOT_HAND, osr2_control=control,
                             paused=paused)
 
     def test_the_line_reads_as_a_parked_ones_does(self):
         def hud(control: str, *, paused: bool) -> np.ndarray:
-            return ConsolePainter().bgra(ConsoleHud(console=self._console(control, paused=paused)))
+            return MainHudPainter().bgra(MainHud(main_hud_model=self._main_hud(control, paused=paused)))
 
         paused = hud(OSR2_DRIVING, paused=True)
 
@@ -1155,8 +1155,8 @@ class TestAPausedRoom:
 
     @pytest.mark.parametrize("mode", list(MainMode))
     def test_the_visualizers_speed_amp_and_center_buttons_take_presses(self, mode):
-        painter = ConsolePainter()
-        painter.rgba(ConsoleHud(console=self._console(OSR2_DRIVING, paused=True, mode=mode),
+        painter = MainHudPainter()
+        painter.rgba(MainHud(main_hud_model=self._main_hud(OSR2_DRIVING, paused=True, mode=mode),
                                 drive=_drive()))
 
         taken = {command for command in CONTROL_TIPS
@@ -1171,20 +1171,20 @@ class TestTheDotIsWhereTheDeviceIs:
 
     @staticmethod
     def _hud(control: str, *, osr2: str = Osr2State.ROBOT_HAND,
-             paused: bool = False) -> ConsoleHud:
-        return ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.GENAU, osr2=osr2, osr2_control=control,
+             paused: bool = False) -> MainHud:
+        return MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.GENAU, osr2=osr2, osr2_control=control,
                                  paused=paused),
             drive=_drive(0.0, position=6_000))
 
     @staticmethod
-    def _dot(painter: ConsolePainter, hud: ConsoleHud) -> int:
+    def _dot(painter: MainHudPainter, hud: MainHud) -> int:
         painter.rgba(hud)
         return painter._painted[0].drive.position
 
     def _held_from(self, control: str):
         clock = [10.0]
-        painter = ConsolePainter(clock=lambda: clock[0])
+        painter = MainHudPainter(clock=lambda: clock[0])
         assert self._dot(painter, self._hud(OSR2_DRIVING)) == 6_000
 
         def at(seconds_after_the_hold: float, *, osr2: str = Osr2State.ROBOT_HAND,
@@ -1248,21 +1248,21 @@ class TestNothingDriving:
 
     @staticmethod
     def _off(mode: MainMode, offset: float, control: str = OSR2_DRIVING,
-             **drive) -> ConsoleHud:
-        return ConsoleHud(
-            console=ConsoleModel(main_mode=mode, osr2=Osr2State.OFF, osr2_control=control),
+             **drive) -> MainHud:
+        return MainHud(
+            main_hud_model=MainHudModel(main_mode=mode, osr2=Osr2State.OFF, osr2_control=control),
             drive=_drive(offset, **drive))
 
     @pytest.mark.parametrize("mode", list(MainMode))
     def test_the_trace_stops_where_it_was_when_the_device_went_quiet(self, mode):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         first = painter.bgra(self._off(mode, 0.0)).copy()
 
         assert np.array_equal(painter.bgra(self._off(mode, 3.0)), first)
 
     def test_the_switchs_label_gets_room_for_its_words(self):
-        painter = ConsolePainter()
-        painter.rgba(ConsoleHud(console=ConsoleModel(
+        painter = MainHudPainter()
+        painter.rgba(MainHud(main_hud_model=MainHudModel(
             main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
             osr2_rows=(aim_row(learned=False, shape="sine", control=OSR2_DRIVING),))))
         label = next(rect for rect, button in painter.buttons if button.icon == "OSR2 control")
@@ -1270,16 +1270,16 @@ class TestNothingDriving:
         assert label[2] > text_width(load_font(8), "OSR2 control")
 
     def test_it_moves_again_the_moment_something_is_driving(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         still = painter.bgra(self._off(MainMode.GENAU, 0.0)).copy()
 
-        moving = painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND), drive=_drive(3.0)))
+        moving = painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND), drive=_drive(3.0)))
 
         assert not np.array_equal(moving, still)
 
     def test_a_videos_composed_trace_holds_still_in_gray_with_the_device_off(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         first = painter.bgra(self._off(
             MainMode.KINO, 0.0, driven="funscript", segments=self._HANDOFF)).copy()
 
@@ -1290,16 +1290,16 @@ class TestNothingDriving:
         assert np.array_equal(later, first)
 
     def test_the_pill_says_off_whoever_a_videos_composed_trace_has_driving(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         hud = self._off(MainMode.KINO, 0.0, driven="funscript", segments=self._HANDOFF)
         painter.rgba(hud)
 
-        assert painter._osr2_state(hud.console) == "off"
+        assert painter._osr2_state(hud.main_hud_model) == "off"
 
     @pytest.mark.parametrize("control", [OSR2_PARKED, OSR2_RETRACTED])
     def test_held_with_the_device_off_is_the_dim_gray_of_driving_with_it_off(self, control):
         def drawn(control: str):
-            return ConsolePainter().bgra(self._off(
+            return MainHudPainter().bgra(self._off(
                 MainMode.KINO, 0.0, control=control, position=4_200,
                 driven="funscript", segments=self._HANDOFF))
 
@@ -1307,7 +1307,7 @@ class TestNothingDriving:
 
     @pytest.mark.parametrize("control", [OSR2_PARKED, OSR2_RETRACTED])
     def test_held_with_the_device_off_holds_still(self, control):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         first = painter.bgra(self._off(MainMode.GENAU, 0.0, control=control)).copy()
 
         assert np.array_equal(
@@ -1321,12 +1321,12 @@ class TestTheDeviceRunningItselfKeepsMoving:
     """
 
     def test_the_trace_scrolls_on_its_own_beat(self):
-        painter = ConsolePainter()
-        first = painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.GENAU, osr2=Osr2State.AUTO), drive=_drive(0.0))).copy()
+        painter = MainHudPainter()
+        first = painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.AUTO), drive=_drive(0.0))).copy()
 
-        later = painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.GENAU, osr2=Osr2State.AUTO), drive=_drive(3.0)))
+        later = painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.AUTO), drive=_drive(3.0)))
 
         assert not np.array_equal(later, first)
 
@@ -1335,13 +1335,13 @@ class TestTheDeviceRunningItselfKeepsMoving:
         """Auto wins over everything the room might be doing, a hold included:
         none of those reaches a device running its own firmware, so the
         word and the moving line are the device's own."""
-        painter = ConsolePainter()
-        console = ConsoleModel(main_mode=MainMode.GENAU, osr2=Osr2State.AUTO, osr2_control=control)
-        first = painter.bgra(ConsoleHud(console=console, drive=_drive(0.0))).copy()
+        painter = MainHudPainter()
+        main_hud_model = MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.AUTO, osr2_control=control)
+        first = painter.bgra(MainHud(main_hud_model=main_hud_model, drive=_drive(0.0))).copy()
 
-        later = painter.bgra(ConsoleHud(console=console, drive=_drive(3.0)))
+        later = painter.bgra(MainHud(main_hud_model=main_hud_model, drive=_drive(3.0)))
 
-        assert painter._osr2_state(console) == "auto"
+        assert painter._osr2_state(main_hud_model) == "auto"
         assert not np.array_equal(later, first)
 
 
@@ -1354,13 +1354,13 @@ class TestTheHandoffKeepsMoving:
 
     _GAP = ((0, "robot_hand"), (40, "neutral"))
 
-    def _in_the_gap(self, offset: float) -> ConsoleHud:
-        return ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.FUNSCRIPT),
+    def _in_the_gap(self, offset: float) -> MainHud:
+        return MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.FUNSCRIPT),
             drive=_drive(offset, driven="neutral", segments=self._GAP))
 
     def test_the_trace_goes_on_sliding_through_the_gap(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         first = painter.bgra(self._in_the_gap(0.0)).copy()
 
         later = painter.bgra(self._in_the_gap(3.0))
@@ -1371,7 +1371,7 @@ class TestTheHandoffKeepsMoving:
         """Blanked segments fall back to one flat color for the whole line —
         the gray he saw.  The model says where the device changes hands, and
         that has to survive the gap."""
-        assert ConsolePainter()._resolve(self._in_the_gap(0.0)).drive.segments == self._GAP
+        assert MainHudPainter()._resolve(self._in_the_gap(0.0)).drive.segments == self._GAP
 
 
 class TestTheLockIsGreen:
@@ -1380,9 +1380,9 @@ class TestTheLockIsGreen:
 
     def test_a_held_clip_lights_the_lock_green(self):
 
-        painter = ConsolePainter()
-        rgb = _rgb(painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.KINO, rows=console_rows(locked=True)))))
+        painter = MainHudPainter()
+        rgb = _rgb(painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows(locked=True)))))
         bx, by, bw, bh = _rect_of(painter, "main_lock")
         pixels = rgb[by:by + bh, bx:bx + bw].astype(int)
         shades, counts = np.unique(pixels.reshape(-1, 3), axis=0, return_counts=True)
@@ -1391,9 +1391,9 @@ class TestTheLockIsGreen:
 
     def test_an_unheld_lock_sits_on_the_resting_ground(self):
 
-        painter = ConsolePainter()
-        rgb = _rgb(painter.bgra(ConsoleHud(
-            console=ConsoleModel(main_mode=MainMode.KINO, rows=console_rows(locked=False)))))
+        painter = MainHudPainter()
+        rgb = _rgb(painter.bgra(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows(locked=False)))))
         bx, by, bw, bh = _rect_of(painter, "main_lock")
         pixels = rgb[by:by + bh, bx:bx + bw].astype(int)
         shades, counts = np.unique(pixels.reshape(-1, 3), axis=0, return_counts=True)
@@ -1413,9 +1413,9 @@ class TestARowsNameLinesUpWithItsControls:
     """
 
     def _rows(self, mode: str):
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=mode,
-                                                    rows=console_rows(mode))))
+        painter = MainHudPainter()
+        painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=mode,
+                                                    rows=main_hud_rows(mode))))
         rows: dict[int, list] = {}
         for rect, button in _declared(painter):
             rows.setdefault(rect[1], []).append((rect[0], rect[2], button))
@@ -1441,8 +1441,8 @@ class TestARowsNameLinesUpWithItsControls:
                 assert x + width <= items[1][0]
 
     def test_a_name_wider_than_the_cell_its_source_gave_it_widens_the_cell(self):
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(console=ConsoleModel(rows=(
+        painter = MainHudPainter()
+        painter.bgra(MainHud(main_hud_model=MainHudModel(rows=(
             (Button("", "Playback speed", "", width=20),
              Button("slower", "−", "Slower")),))))
         (name, _n), (slower, _s) = painter.buttons[:2]
@@ -1460,41 +1460,41 @@ class TestARowsNameLinesUpWithItsControls:
             genau, "genau_clip_seconds_down")[0]
 
 
-class TestTheRowTheConsoleCarriesForItsVideo:
-    """Where the video is and how loud it is, on the console rather than along
+class TestTheRowTheMainHudCarriesForItsVideo:
+    """Where the video is and how loud it is, on the Main Funestra's HUD rather than along
     the lower edge of the item — the row the headset already draws here for a
     wrapped video, drawn here for every video."""
 
     @staticmethod
-    def _hud() -> ConsoleHud:
-        return ConsoleHud(modes=ModeHud(video="scene one"),
-                          console=ConsoleModel(main_mode=MainMode.KINO, locked=False))
+    def _hud() -> MainHud:
+        return MainHud(modes=ModeHud(video="scene one"),
+                          main_hud_model=MainHudModel(main_mode=MainMode.KINO, locked=False))
 
     def test_a_funestra_that_hands_over_no_row_grows_none(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         row = RowHud(position_ms=30_000, duration_ms=60_000, volume=VolumeHud(volume=40))
 
         with_row = painter.rgba(self._hud(), item_row=row)[1][1]
-        without = ConsolePainter().rgba(self._hud())[1][1]
+        without = MainHudPainter().rgba(self._hud())[1][1]
 
         assert with_row > without
 
     def test_the_clip_s_funscript_colors_fill_that_track(self):
         """The Main Funestra laid its heatmap along the lower edge of the video;
-        on the console it is the track's own fill, as it is on a show's HUD."""
-        painter = ConsolePainter()
+        on the Main Funestra's HUD it is the track's own fill, as it is on a show's HUD."""
+        painter = MainHudPainter()
         row = RowHud(position_ms=0, duration_ms=60_000)
         plain = painter.rgba(self._hud(), item_row=row)[0]
         x0, x1 = painter.row.track
         colors = np.array([(200, 40 + x % 150, 30) for x in range(x1 - x0)],
                           dtype=np.uint8)
 
-        colored = ConsolePainter().rgba(self._hud(), item_row=row, heatmap=colors)[0]
+        colored = MainHudPainter().rgba(self._hud(), item_row=row, heatmap=colors)[0]
 
         assert colored != plain
 
     def test_it_lands_at_the_foot_of_the_hud(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         row = RowHud(position_ms=30_000, duration_ms=60_000, volume=VolumeHud(volume=40))
 
         _rgba, (_width, height) = painter.rgba(self._hud(), item_row=row)
@@ -1508,22 +1508,22 @@ class TestTheRowTheConsoleCarriesForItsVideo:
 
 class TestTheHostsControls:
     """A list and a bar only one host has -- the headset's projection list and
-    Angle bar -- drawn at the console's foot, inside the one HUD."""
+    Angle bar -- drawn at the Main Funestra's HUD's foot, inside the one HUD."""
 
     @staticmethod
-    def _hud() -> ConsoleHud:
-        return ConsoleHud(modes=ModeHud(video="scene one"),
-                          console=ConsoleModel(main_mode=MainMode.KINO, locked=False))
+    def _hud() -> MainHud:
+        return MainHud(modes=ModeHud(video="scene one"),
+                          main_hud_model=MainHudModel(main_mode=MainMode.KINO, locked=False))
 
     def test_the_hud_grows_by_the_room_they_take(self):
-        without = ConsolePainter().rgba(self._hud())[1][1]
+        without = MainHudPainter().rgba(self._hud())[1][1]
 
-        with_them = ConsolePainter().rgba(self._hud(), host_controls=a_hud())[1][1]
+        with_them = MainHudPainter().rgba(self._hud(), host_controls=a_hud())[1][1]
 
         assert with_them >= without + HostControlsSection.height
 
     def test_they_land_at_the_foot_under_everything_else(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
         row = RowHud(position_ms=30_000, duration_ms=60_000, volume=VolumeHud(volume=40))
 
         _rgba, (_width, height) = painter.rgba(self._hud(), item_row=row, host_controls=a_hud())
@@ -1536,25 +1536,25 @@ class TestTheHostsControls:
 
     def test_controls_wider_than_the_hud_widen_it_rather_than_being_cut(self):
         wide = replace(a_hud(), choices=("A name far too long for a console held to its width",))
-        painter = ConsolePainter(width=380)
+        painter = MainHudPainter(width=380)
 
         _rgba, (width, _height) = painter.rgba(self._hud(), host_controls=wide)
 
         assert width >= HostControlsSection().least_width(wide) + 2 * PAD > 380
 
     def test_a_change_in_what_the_host_shows_is_on_the_next_paint(self):
-        painter = ConsolePainter()
+        painter = MainHudPainter()
 
         curved = painter.rgba(self._hud(), host_controls=a_hud("Curved"))[0]
         round_ = painter.rgba(self._hud(), host_controls=a_hud("Round"))[0]
 
         assert curved != round_
 
-    def test_a_minimized_console_has_none_to_press(self):
-        painter = ConsolePainter()
+    def test_a_minimized_main_hud_has_none_to_press(self):
+        painter = MainHudPainter()
         painter.rgba(self._hud(), host_controls=a_hud())
         hud = self._hud()
-        minimized = replace(hud, console=replace(hud.console, hud_minimized=True))
+        minimized = replace(hud, main_hud_model=replace(hud.main_hud_model, hud_minimized=True))
 
         painter.rgba(minimized, host_controls=a_hud())
 
@@ -1573,19 +1573,19 @@ def _button_rect(painter, command: str) -> Rect:
     return rects[0]
 
 
-class TestWhereTheConsoleSits:
+class TestWhereTheMainHudSits:
     """The corner the room moved this HUD to, and what that moves with it."""
 
     @staticmethod
-    def _hud(corner, **console) -> ConsoleHud:
-        return ConsoleHud(
+    def _hud(corner, **main_hud_model) -> MainHud:
+        return MainHud(
             modes=ModeHud(video="scene one"),
-            console=ConsoleModel(hud_corner=corner, rows=console_rows(),
-                                 osr2_controls=osr2_controls(broker_running=True), **console))
+            main_hud_model=MainHudModel(hud_corner=corner, rows=main_hud_rows(),
+                                 osr2_controls=osr2_controls(broker_running=True), **main_hud_model))
 
-    def _painted(self, corner, **console):
-        painter = ConsolePainter(width=420)
-        painter.bgra(self._hud(corner, **console))
+    def _painted(self, corner, **main_hud_model):
+        painter = MainHudPainter(width=420)
+        painter.bgra(self._hud(corner, **main_hud_model))
         return painter
 
     @staticmethod
@@ -1661,7 +1661,7 @@ class TestWhereTheConsoleSits:
 
     @pytest.mark.parametrize("corner", [HudCorner.LOWER_LEFT, HudCorner.LOWER_RIGHT])
     def test_the_clips_row_moves_over_for_the_minus_in_a_lower_corner(self, corner):
-        painter = ConsolePainter(width=420)
+        painter = MainHudPainter(width=420)
         painter.bgra(self._hud(corner), item_row=RowHud(position_ms=1_000,
                                                         duration_ms=60_000))
         x, y, w, h = _button_rect(painter, "main_hud_minimize")
@@ -1672,7 +1672,7 @@ class TestWhereTheConsoleSits:
         assert y < ry + rh, beside
         assert (rx + rw <= x) if corner.right else (rx >= x + w)
 
-    def test_a_minimized_console_is_the_restore_button_and_nothing_else(self):
+    def test_a_minimized_main_hud_is_the_restore_button_and_nothing_else(self):
         painter = self._painted(HudCorner.LOWER_LEFT, hud_minimized=True)
         (rect, button), = painter.buttons
 
@@ -1687,9 +1687,9 @@ class TestWhereTheConsoleSits:
                                              minimized=True, inset=(PAD, PAD))
 
     def test_before_it_has_painted_anything_it_says_nowhere(self):
-        assert ConsolePainter().hud_place is None
+        assert MainHudPainter().hud_place is None
 
-    def test_a_minimized_console_keeps_the_plus_in_its_own_corner(self):
+    def test_a_minimized_main_hud_keeps_the_plus_in_its_own_corner(self):
         """The room's corner still pins it, so the plus is where the HUD was:
         the bitmap holds room for the tooltip beside it, and the plus sits at
         the corner of that room the HUD is justified to."""
@@ -1712,13 +1712,13 @@ def _span(rects) -> tuple[int, int]:
 
 
 class TestEverySectionIsSetOffFromTheNextByALine:
-    def test_a_console_carrying_every_section_has_a_line_between_each_and_the_next(self):
-        painter = ConsolePainter()
+    def test_a_main_hud_carrying_every_section_has_a_line_between_each_and_the_next(self):
+        painter = MainHudPainter()
         drive = _drive()
-        bgra = painter.bgra(ConsoleHud(
+        bgra = painter.bgra(MainHud(
             modes=ModeHud(video="scene one"),
-            console=ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND,
-                                 rows=console_rows(), osr2_rows=motion_rows(),
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND,
+                                 rows=main_hud_rows(), osr2_rows=motion_rows(),
                                  osr2_controls=osr2_controls(broker_running=True)),
             drive=drive), item_row=RowHud(duration_ms=60_000))
         controls = _span(rect for rect, button in _declared(painter)
@@ -1737,14 +1737,14 @@ class TestEverySectionIsSetOffFromTheNextByALine:
         assert (_rgb(bgra)[lines[0] + 1:controls[0], 1:-1] == BG_PRIMARY).all()
 
 
-class TestADeviceOnlyConsole:
+class TestADeviceOnlyMainHud:
     @staticmethod
-    def _painted() -> tuple[ConsolePainter, np.ndarray]:
-        painter = ConsolePainter(device_only=True)
-        bgra = painter.bgra(ConsoleHud(
+    def _painted() -> tuple[MainHudPainter, np.ndarray]:
+        painter = MainHudPainter(device_only=True)
+        bgra = painter.bgra(MainHud(
             modes=ModeHud(video="scene one"),
-            console=ConsoleModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
-                                 rows=console_rows("genau"), osr2_rows=motion_rows(),
+            main_hud_model=MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
+                                 rows=main_hud_rows("genau"), osr2_rows=motion_rows(),
                                  osr2_controls=osr2_controls(broker_running=True)),
             drive=_drive()), item_row=RowHud(duration_ms=60_000))
         return painter, bgra
@@ -1767,10 +1767,10 @@ class TestADeviceOnlyConsole:
         assert (_rgb(bgra)[y:y + h, x + w:-1] == BG_PRIMARY).all()
 
     def test_it_keeps_no_room_for_a_minus_in_a_lower_corner(self):
-        painter = ConsolePainter(device_only=True)
-        painter.bgra(ConsoleHud(
+        painter = MainHudPainter(device_only=True)
+        painter.bgra(MainHud(
             modes=ModeHud(video="scene one"),
-            console=ConsoleModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
+            main_hud_model=MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
                                  hud_corner=HudCorner.LOWER_LEFT, osr2_rows=motion_rows(),
                                  osr2_controls=osr2_controls(broker_running=True)),
             drive=_drive()))
@@ -1779,8 +1779,8 @@ class TestADeviceOnlyConsole:
 
     def test_a_long_name_for_the_video_does_not_widen_it(self):
         def width(video: str) -> int:
-            return ConsolePainter(device_only=True).rgba(ConsoleHud(
+            return MainHudPainter(device_only=True).rgba(MainHud(
                 modes=ModeHud(video=video),
-                console=ConsoleModel(osr2_rows=motion_rows()), drive=_drive()))[1][0]
+                main_hud_model=MainHudModel(osr2_rows=motion_rows()), drive=_drive()))[1][0]
 
         assert width("Jane Doe - scene one - " + "a long descriptor " * 6) == width("")

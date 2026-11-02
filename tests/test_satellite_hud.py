@@ -10,11 +10,11 @@ from shared_ui.spacing import BUTTON_GAP, BUTTON_GROUP_GAP
 from shared_ui.testing import icons_lacking
 from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL, SIZE_TINY
 
-from funestra.console import OSR2_PARKED, VALUE_W
 from funestra.hud import load_font
 from funestra.hud_button import Button
 from funestra.hud_icons import MINIMIZE_ICON, shared_icon
 from funestra.hud_placement import HudCorner, HudEdge
+from funestra.main_hud import OSR2_PARKED, VALUE_W
 from funestra.modes import Osr2State
 from funestra.satellite_hud import (
     CTRL_BTN,
@@ -505,7 +505,7 @@ def test_the_speed_row_puts_slower_the_rate_and_faster_after_its_name():
 
 
 def test_the_speed_buttons_say_what_a_press_does_to_the_video():
-    """In the words the main console's own pair says it in."""
+    """In the words the main HUD's own pair says it in."""
     buttons, _rate = speed_row("landscape", 0, 0, label_width=70)
     targets = _targets(buttons=buttons)
 
@@ -514,7 +514,7 @@ def test_the_speed_buttons_say_what_a_press_does_to_the_video():
 
 
 def test_the_speed_buttons_wear_the_familys_minus_and_plus():
-    """The marks the main console's own pair wears, drawn rather than typed."""
+    """The marks the main HUD's own pair wears, drawn rather than typed."""
     buttons, _rate = speed_row("landscape", 0, 0, label_width=70)
 
     assert [button.icon for _rect, button in buttons] == [shared_icon("minus"), shared_icon("plus")]

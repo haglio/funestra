@@ -6,7 +6,6 @@ from functools import partial
 from pathlib import Path
 
 from .broker_feed import snapshot
-from .console import HELD_HEIGHT, HOLD_VERB
 from .device_walk import Walk, the_broker_holding, the_hand_taking_back
 from .file_channel import consume_command_file
 from .flick_advance import set_elapsed, tick_flick_advance
@@ -17,6 +16,7 @@ from .genau_controls import GenauControls, apply_runtime_command
 from .genau_status import GENAU_STATUS_FILENAME, build_status_text, write_status_file
 from .genau_visualizer import AutoMotion, GenauVisualizer
 from .learned_motion import tick_learned_motion
+from .main_hud import HELD_HEIGHT, HOLD_VERB
 from .robot_hand import POSITION_MAX, phase_for_position_fraction
 from .robot_hand_beat import Beat, advance_beat
 from .robot_hand_driver import DeviceHandoff

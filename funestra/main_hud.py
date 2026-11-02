@@ -1,15 +1,15 @@
-"""The controls on the main console, and where they sit.
+"""The controls on the Main Funestra's HUD, and where they sit.
 
-The Main Funestra draws it, whether Kino or Genau runs on it.  The console is the
+The Main Funestra draws it, whether Kino or Genau runs on it.  The Main Funestra's HUD is the
 same under both, so the mode switch and the drive
 controls do not move as you flip between them; only the transport changes,
 because prev/next step Kino's video in kino mode and Genau's flicks in genau.
 
 Kept free of Pillow, so the geometry and the hit-testing are testable
-without a font.  :mod:`funestra.console_hud` paints them; the
+without a font.  :mod:`funestra.main_hud_painter` paints them; the
 OSR2 visualizer's own arrows come from :mod:`funestra.drive_readout`.
 
-The buttons are the source's own (:attr:`ConsoleModel.rows`), each posting its
+The buttons are the source's own (:attr:`MainHudModel.rows`), each posting its
 command verbatim to the command file that source reads; this module places them
 and says which one a press landed on.  The one row built here is the one every
 source with the OSR2 draws alike, :func:`aim_row`.
@@ -42,7 +42,7 @@ from .robot_hand import WaveformShape
 
 VALUE_W = 22  # a value read-out between a pair of buttons (the playback rate)
 # The cell a word naming its row takes: "Playback speed", the longer of the
-# two names the family's consoles carry, measures 80 at the tiny face, plus the
+# two names the family's HUDs carry, measures 80 at the tiny face, plus the
 # family's gap.  One width for every named row, so the pair beside the name
 # sits in the same place whichever row is up; the painter widens a name that
 # outgrows it rather than letting it run under the button beside it.
@@ -88,7 +88,7 @@ class ModeHud:
 
 
 # What this app is doing to the OSR2: driving it, or holding it still at one end
-# of its travel.  The console's one switch is on while driving and off while
+# of its travel.  The Main Funestra's HUD's one switch is on while driving and off while
 # parked; retracted is a hold only Fun Time's relief pause puts the device in,
 # which the switch shows as off.
 OSR2_PARKED = "parked"
@@ -160,8 +160,8 @@ def osr2_controls(*, broker_running: bool) -> tuple[Button, ...]:
 
 
 @dataclass(frozen=True)
-class ConsoleModel:
-    """What Fun Time tells the Main Funestra about its slot, so the console can
+class MainHudModel:
+    """What Fun Time tells the Main Funestra about its slot, so the Main Funestra's HUD can
     draw it — none of which the Funestra can see for itself.
 
     Everything here arrives published (``main_player_console.json``) except
@@ -181,14 +181,14 @@ class ConsoleModel:
     # And what this app is doing to it, which is a different question: driving,
     # parked or retracted, or OSR2_CONTROL_UNANSWERED from a host that has no
     # such switch.  Published like the rest of this, because the
-    # state is the orchestrator's and the Funestra drawing the console is not
+    # state is the orchestrator's and the Funestra drawing the Main Funestra's HUD is not
     # always the one it is about.
     osr2_control: str = OSR2_CONTROL_UNANSWERED
     paused: bool = False
     # Whether what runs on the Main Funestra is holding what is on screen rather
     # than letting it move on -- Kino's video in kino mode, Genau's flick in
     # genau.  On is where both open, so it is the default here
-    # too: a console drawn before the first HUD arrives must not show the lock
+    # too: a Main Funestra's HUD drawn before the first HUD arrives must not show the lock
     # off when it is not.
     locked: bool = True
     # Which browse order the title names: newest-first ("Latest") when
@@ -202,11 +202,11 @@ class ConsoleModel:
     playback_speed: float = 1.0
     # Seconds an unlocked Genau leaves each flick on screen.  Also not published —
     # Genau owns the pace and says it on the OSR2 visualizer, which whoever draws
-    # the console folds in here.
+    # the Main Funestra's HUD folds in here.
     advance_interval: int = 0
     # The buttons the source declares, row by row, and the controls it puts on
     # the OSR2 line: what each posts, its face, its tooltip and its state.  The
-    # console draws nothing it was not handed.
+    # HUD draws nothing it was not handed.
     rows: tuple[tuple[Button, ...], ...] = ()
     osr2_rows: tuple[tuple[Button, ...], ...] = ()
     osr2_controls: tuple[Button, ...] = ()
@@ -220,27 +220,27 @@ class ConsoleModel:
         Neither driver reaches it there: the broker stops forwarding the
         script's T-Code and Genau is not sending.  So the drawing is the
         device's own motion rather than a handoff between the two, which is
-        what every Funestra hanging this console over a video asks before it
+        what every Funestra hanging this Main Funestra's HUD over a video asks before it
         lets the gate fold a script in.
         """
         return self.osr2 == Osr2State.AUTO
 
 
-def read_console(path: Path) -> ConsoleModel | None:
-    """The console HUD Fun Time published, or None when there is not a whole one.
+def read_main_hud(path: Path) -> MainHudModel | None:
+    """The Main Funestra's HUD HUD Fun Time published, or None when there is not a whole one.
 
-    None means "keep the console you have": Fun Time replaces this file while the
+    None means "keep the Main Funestra's HUD you have": Fun Time replaces this file while the
     Funestra polls it, so a lost race must not empty the HUD for a frame.
     """
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
         return None
-    return parse_console(text)
+    return parse_main_hud(text)
 
 
-def console_text(model: ConsoleModel) -> str:
-    """*model* as the text Fun Time publishes, and :func:`parse_console` reads back.
+def main_hud_text(model: MainHudModel) -> str:
+    """*model* as the text Fun Time publishes, and :func:`parse_main_hud` reads back.
 
     Only what the room knows and the Funestra cannot see goes out; the rate and
     the pace, which the drawing host folds in for itself, come back at rest.
@@ -266,7 +266,7 @@ def console_text(model: ConsoleModel) -> str:
     })
 
 
-def parse_console(text: str) -> ConsoleModel | None:
+def parse_main_hud(text: str) -> MainHudModel | None:
     """The HUD *text* carries, or None when it is not a whole one."""
     try:
         raw = json.loads(text)
@@ -274,7 +274,7 @@ def parse_console(text: str) -> ConsoleModel | None:
         return None
     if not isinstance(raw, dict) or "main_mode" not in raw:
         return None
-    return ConsoleModel(
+    return MainHudModel(
         main_mode=read_mode(MainMode, raw.get("main_mode"), MainMode.KINO),
         funestra=str(raw.get("funestra") or "main"),
         hud_corner=read_mode(HudCorner, raw.get("hud_corner"), HudCorner.UPPER_LEFT),

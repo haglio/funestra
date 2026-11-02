@@ -350,7 +350,7 @@ def test_refresh_calls_adopt_pending_flick():
 
 
 def test_a_hand_whose_output_is_switched_off_plays_on_unheard():
-    """A park or retract switches the output off, and the console then draws what
+    """A park or retract switches the output off, and the Main Funestra's HUD then draws what
     the hand would be doing in gray -- a motion it can only draw if it runs."""
     dc = RobotHandState(playing=True, bpm=120.0)
     sink = MagicMock()
@@ -1229,7 +1229,7 @@ def test_the_status_goes_out_with_nothing_but_the_hand_wired(tmp_path):
 
 
 class TestSeekingTheFlicksTimeOnScreen:
-    """A press along the track at the console's foot, which runs the time a flick
+    """A press along the track at the Main Funestra's HUD's foot, which runs the time a flick
     has had of its turn on screen rather than the loop of the flick itself."""
 
     def test_it_puts_the_flick_that_far_into_its_interval(self):

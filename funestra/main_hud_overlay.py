@@ -1,7 +1,7 @@
-"""The console kept on the item: the HUD the room publishes for the main slot,
+"""The Main Funestra's HUD kept on the item: the HUD the room publishes for the main slot,
 read every frame, composited, pressed.
 
-The room's two files -- the console, and the motion whoever drives the OSR2
+The room's two files -- the Main Funestra's HUD, and the motion whoever drives the OSR2
 publishes -- are replaced while this polls them, so a torn read keeps what was
 there: blanking either for a frame is a visible flicker on a HUD redrawn at
 60fps.  The motion is read through the gate before the HUD believes it, or
@@ -14,22 +14,22 @@ from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
 
-from .console import ConsoleModel, ModeHud, kino_shows, read_console
-from .console_hud import ConsoleHud, ConsolePainter, with_playback_speed
 from .dashboard import ask
 from .host_controls import HostControls, HostControlsPress
 from .hud_corners import HudPlace
 from .hud_overlay import HUD_OVERLAY_ID
 from .hud_placement import HudEdge
 from .hud_row import RowHud, RowLayout, RowPress, track_on_screen
+from .main_hud import MainHudModel, ModeHud, kino_shows, read_main_hud
+from .main_hud_painter import MainHud, MainHudPainter, with_playback_speed
 from .osr2_visualizer import DriveHud, DrivePublisher, read_drive
 
 
-class ConsoleOverlay:
+class MainHudOverlay:
     def __init__(
         self,
         *,
-        console_file: Path,
+        main_hud_file: Path,
         drive_file: Path | None,
         command_file: Path | None,
         engine,
@@ -46,7 +46,7 @@ class ConsoleOverlay:
         visualizer: DrivePublisher | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
-        self._console_file = Path(console_file)
+        self._main_hud_file = Path(main_hud_file)
         self._drive_file = None if drive_file is None else Path(drive_file)
         self._command_file = command_file
         self._engine = engine
@@ -55,30 +55,30 @@ class ConsoleOverlay:
         self._clock = clock
         self._top_block = top_block
         self.overlay_id = overlay_id
-        self._painter = ConsolePainter(width=width, minus_on_the_hud=minus_on_the_hud)
+        self._painter = MainHudPainter(width=width, minus_on_the_hud=minus_on_the_hud)
         self._minus_on_the_hud = minus_on_the_hud
-        self._console = ConsoleModel()
+        self._main_hud = MainHudModel()
         self._drive: DriveHud | None = None
         self._shown = False
         self._origin = (0, 0)
         self._hud_height = 0
         self._item_row: RowHud | None = None
-        # The console draws the item's row, so it places a press on it too.
+        # The Main Funestra's HUD draws the item's row, so it places a press on it too.
         self._row = RowPress(seek=seek, seek_loop=seek_loop, set_volume=set_volume,
                              toggle_mute=toggle_mute)
         self._host_controls = HostControlsPress(host_controls)
 
     @property
-    def console(self) -> ConsoleModel:
-        return self._console
+    def main_hud_model(self) -> MainHudModel:
+        return self._main_hud
 
     @property
     def edge(self) -> HudEdge:
-        return self._console.hud_edge
+        return self._main_hud.hud_edge
 
     @property
     def minimized(self) -> bool:
-        return self._console.hud_minimized
+        return self._main_hud.hud_minimized
 
     @property
     def hud_place(self) -> HudPlace | None:
@@ -86,24 +86,24 @@ class ConsoleOverlay:
 
     def tick(self, *, playback_speed: float, window: tuple[int, int],
              item_row: RowHud | None = None, heatmap=None, flash: str = "") -> None:
-        self._console = read_console(self._console_file) or self._console
+        self._main_hud = read_main_hud(self._main_hud_file) or self._main_hud
         if self._drive_file is not None:
             self._drive = read_drive(self._drive_file) or self._drive
         drive = self._drive_gate.visualizer(
-            self._drive, device_drives_itself=self._console.device_drives_itself,
-            video_shows=kino_shows(self._console.main_mode))
-        if self._visualizer is not None and self._console.has_osr2:
+            self._drive, device_drives_itself=self._main_hud.device_drives_itself,
+            video_shows=kino_shows(self._main_hud.main_mode))
+        if self._visualizer is not None and self._main_hud.has_osr2:
             self._visualizer.publish(drive, self._clock())
         self._item_row = item_row
         if self.minimized and not self._minus_on_the_hud:
             self.close()
             return
-        console = with_playback_speed(self._console, playback_speed)
+        main_hud_model = with_playback_speed(self._main_hud, playback_speed)
         if self._visualizer is not None:
-            console = replace(console, has_osr2=False)
-        bgra = self._painter.bgra(ConsoleHud(
+            main_hud_model = replace(main_hud_model, has_osr2=False)
+        bgra = self._painter.bgra(MainHud(
             modes=self._top_block(),
-            console=console,
+            main_hud_model=main_hud_model,
             drive=drive,
             flash=flash,
         ), item_row=item_row, heatmap=heatmap, host_controls=self._host_controls.drawing())

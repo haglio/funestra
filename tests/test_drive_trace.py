@@ -638,7 +638,7 @@ class TestForecastsDieWithTheirWave:
 
 
 class TestThePillFollowsTheLine:
-    """The console's OSR2 pill reads ``driven`` off the returned visualizer — set
+    """The Main Funestra's HUD's OSR2 pill reads ``driven`` off the returned visualizer — set
     here from the same function that drew the line under the dot — so the pill
     flips exactly when the line changes hands, and says Buffer through the
     gray.  Keyed on the round-tripped console state it flipped at the

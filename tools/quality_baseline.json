@@ -40,14 +40,14 @@
     "tests/test_volume.py": 1
   },
   "mutables_imported": {
-    "funestra/console.py": 1
+    "funestra/main_hud.py": 1
   },
   "patches": {
     "tests/test_broker.py": 4,
     "tests/test_funestra.py": 3
   },
   "private_imports": {
-    "funestra/console_hud.py": 1,
+    "funestra/main_hud_painter.py": 1,
     "funestra/render_engine.py": 3
   },
   "private_reaches": {
@@ -62,9 +62,6 @@
     "funestra/audio_outputs.py": 25,
     "funestra/broker.py": 15,
     "funestra/broker_feed.py": 37,
-    "funestra/console.py": 102,
-    "funestra/console_hud.py": 162,
-    "funestra/console_overlay.py": 15,
     "funestra/control_registry.py": 44,
     "funestra/dashboard.py": 7,
     "funestra/descent_latch.py": 42,
@@ -113,6 +110,9 @@
     "funestra/loop_cycle.py": 1,
     "funestra/loop_dial.py": 21,
     "funestra/lost_gpu.py": 8,
+    "funestra/main_hud.py": 102,
+    "funestra/main_hud_overlay.py": 15,
+    "funestra/main_hud_painter.py": 162,
     "funestra/messages.py": 7,
     "funestra/modes.py": 26,
     "funestra/mpv_engine.py": 227,
@@ -147,14 +147,11 @@
     "funestra/video_families.py": 1,
     "funestra/volume.py": 58,
     "funestra/volume_control.py": 12,
-    "tests/console_rows.py": 5,
+    "tests/main_hud_rows.py": 5,
     "tests/satellite_rows.py": 8,
     "tests/test_audio_outputs.py": 2,
     "tests/test_broker.py": 14,
     "tests/test_broker_feed.py": 76,
-    "tests/test_console.py": 29,
-    "tests/test_console_hud.py": 236,
-    "tests/test_console_overlay.py": 3,
     "tests/test_control_registry.py": 4,
     "tests/test_descent_latch.py": 21,
     "tests/test_device_panel.py": 1,
@@ -208,6 +205,9 @@
     "tests/test_loop_cycle.py": 1,
     "tests/test_loop_dial.py": 3,
     "tests/test_lost_gpu.py": 2,
+    "tests/test_main_hud.py": 29,
+    "tests/test_main_hud_overlay.py": 3,
+    "tests/test_main_hud_painter.py": 236,
     "tests/test_messages.py": 13,
     "tests/test_modes.py": 10,
     "tests/test_mpv_control.py": 67,
@@ -246,8 +246,6 @@
     "tools/train_learned_motion.py": 49
   },
   "reach_chains": {
-    "funestra/console_hud.py": 45,
-    "funestra/console_overlay.py": 35,
     "funestra/descent_latch.py": 2,
     "funestra/device_panel.py": 7,
     "funestra/drive_gate.py": 14,
@@ -270,6 +268,8 @@
     "funestra/hud_overlay.py": 43,
     "funestra/hud_row.py": 3,
     "funestra/ken_burns.py": 25,
+    "funestra/main_hud_overlay.py": 35,
+    "funestra/main_hud_painter.py": 45,
     "funestra/mpv_engine.py": 61,
     "funestra/mpv_gate.py": 2,
     "funestra/on_screen_history.py": 1,
@@ -307,8 +307,6 @@
     "funestra/audio_outputs.py": 11,
     "funestra/broker.py": 4,
     "funestra/broker_feed.py": 3,
-    "funestra/console.py": 1,
-    "funestra/console_overlay.py": 1,
     "funestra/dashboard.py": 1,
     "funestra/drive_trace.py": 3,
     "funestra/flick_folder.py": 2,
@@ -331,6 +329,8 @@
     "funestra/learned_motion.py": 3,
     "funestra/libmpv_loader.py": 2,
     "funestra/lost_gpu.py": 1,
+    "funestra/main_hud.py": 1,
+    "funestra/main_hud_overlay.py": 1,
     "funestra/mpv_engine.py": 35,
     "funestra/on_screen_history.py": 2,
     "funestra/osr2_visualizer.py": 9,

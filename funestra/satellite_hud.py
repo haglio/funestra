@@ -40,7 +40,6 @@ from shared_ui.spacing import (
 )
 from shared_ui.type_scale import SIZES
 
-from .console import VALUE_W, max_intensity_from_raw
 from .geometry import Rect, contains
 from .hud import ACTIVE_DOT
 from .hud_button import Button, buttons_from_raw, buttons_raw, rows_from_raw, rows_raw
@@ -49,6 +48,7 @@ from .hud_osr2 import HEIGHT as OSR2_H
 from .hud_placement import HudCorner, HudEdge
 from .hud_sections import blocks_height, stack
 from .hud_title import SEPARATOR
+from .main_hud import VALUE_W, max_intensity_from_raw
 from .modes import read_mode
 from .osr2_visualizer import DriveHud, DriveTrack, TrackGrip
 from .video_families import filter_keeps, normalized_text
@@ -207,7 +207,7 @@ class HudModel:
 
     # --- the device, for a HUD whose Funestra has the OSR2 ----------------
     # Which driver has the OSR2, and the controls that aim it: the same line the
-    # main console draws (:mod:`funestra.hud_osr2`), grown here because a host
+    # Main Funestra's HUD draws (:mod:`funestra.hud_osr2`), grown here because a host
     # can be both the thing browsing a set AND the thing driving the device.
     # Origenerator's shows are: they floated this HUD for the set and the whole
     # console underneath it for the device, which is two titles that
@@ -216,19 +216,19 @@ class HudModel:
     # The rows that AIM the device -- the hands-free switches, the waveform, the
     # four control states.  They sit in the device's own block rather than among
     # the rows above, because they are the OSR2's and the reader looks for them
-    # beside the line naming who has it: on the main console those rows happen to
+    # beside the line naming who has it: on the Main Funestra's HUD those rows happen to
     # be the last ones before that line, so nothing showed, and on a HUD with a
     # map between them they came out as one group of OSR2 controls split in two.
     osr2_rows: tuple[tuple[Button, ...], ...] = ()
     # And what the host is doing to the device, which is a different question:
     # driving, parked or retracted, or empty from a host with no such switch.
-    # The HUD resolves the two into one word exactly as the console does
+    # The HUD resolves the two into one word exactly as the Main Funestra's HUD does
     # (:func:`funestra.hud_osr2.state_for`).
     osr2_control: str = ""
     osr2_controls: tuple[Button, ...] = ()
     max_intensity: int | None = None
     paused: bool = False
-    # The motion being sent, drawn under that line — the main console's visualizer
+    # The motion being sent, drawn under that line — the main HUD's visualizer
     # (:mod:`funestra.drive_readout`), hosted here rather than on a HUD of
     # its own.  None wherever there is nothing to report.
     drive: DriveHud | None = None
@@ -450,7 +450,7 @@ def ellipsis_rects(
 # What a source declares for this Funestra, drawn in bars between the title
 # and the nav map: each row of ``HudModel.rows`` is one bar, a square per button, a
 # word button as wide as its word (the painter measures it), and the wider gap
-# before a button that starts a group -- the way the console's rows break.
+# before a button that starts a group -- the way the Main Funestra's HUD's rows break.
 CTRL_BTN = BUTTON_SIZE_HUD
 MINUS_INSET = (PAD, PAD + (TITLE_ROW_H - CTRL_BTN) // 2)
 CONTROL_ROW_H = CTRL_BTN + BLOCK_GAP

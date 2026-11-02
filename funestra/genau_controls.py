@@ -2,7 +2,7 @@
 
 Genau -- on the Main Funestra, whether on the desktop or in the headset --
 is spoken to from two places: a verb in ``genau_cmd.txt`` and a press on the
-console.  Both of them have to be able to move the same
+HUD.  Both of them have to be able to move the same
 handful of things: the hand's own state, the learned motion, the flick advance,
 the two flags an orchestrator flips, the flick sequence.
 
@@ -24,7 +24,6 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .console import OSR2_PARKED, OSR2_RETRACTED
 from .control_registry import Control, Verb, bind, look_up
 from .device_walk import RoomHold
 from .flag import Flag
@@ -53,6 +52,7 @@ from .learned_motion import (
     disable_learned_motion,
     enable_learned_motion,
 )
+from .main_hud import OSR2_PARKED, OSR2_RETRACTED
 from .playlist import item_from_line
 from .robot_hand import (
     RobotHandState,
@@ -72,7 +72,7 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class GenauControls:
-    """Everything one command or console press may move."""
+    """Everything one command or HUD press may move."""
 
     engine: BeatEngine
     paused: Flag

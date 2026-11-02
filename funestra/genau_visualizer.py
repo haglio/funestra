@@ -1,4 +1,4 @@
-"""What Genau says for the console to draw: the OSR2 visualizer."""
+"""What Genau says for the Main Funestra's HUD to draw: the OSR2 visualizer."""
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
@@ -77,7 +77,7 @@ class GenauVisualizer:
         self._auto_phase: float | None = None
 
     def update(self, now: float, auto: AutoMotion | None = None) -> None:
-        """Build the OSR2 visualizer and publish it for the console.
+        """Build the OSR2 visualizer and publish it for the Main Funestra's HUD.
 
         *auto* is the device running itself, and None while the Robot Hand
         drives.  Either way there is a line: a drawing of whatever is actually
@@ -100,7 +100,7 @@ class GenauVisualizer:
         ds = self.robot_hand
         # Show enough time that one whole cycle is visible at the slowest speed.
         # Published with the visualizer, because a funscript drawn on this same trace
-        # has to be sampled over the same stretch and the console has nowhere
+        # has to be sampled over the same stretch and the Main Funestra's HUD has nowhere
         # else to learn it — two spans would make a handoff look like a jump.
         display_seconds = 60.0 * self.beats_per_loop / MIN_BPM
         # Under the broker the sender's position and its let-go height are both
@@ -151,7 +151,7 @@ class GenauVisualizer:
     def _trace(self, display_seconds: float, start_phase: float,
                phase_per_second: float) -> tuple[list[float], float, float | None]:
         """The motion sampled forward as the visualizer draws it — and as the
-        console draws a funscript over it, which is why both are the same span
+        HUD draws a funscript over it, which is why both are the same span
         — as the samples, how far the line is shifted, and the knot past the
         border.
 

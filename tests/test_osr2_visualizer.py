@@ -88,7 +88,7 @@ class TestControls:
 
     def test_a_mark_at_its_limit_is_dimmed(self):
         """The flag on the visualizer says the axis has run out of range, so the mark
-        that would do nothing is grayed — the console then drops it from the hit
+        that would do nothing is grayed — the Main Funestra's HUD then drops it from the hit
         targets, the same as any dimmed control."""
         by_command = {c.command: c for c in controls(0, 0, _hud(spd_at_max=True, amp_at_min=True))}
 

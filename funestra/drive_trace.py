@@ -27,7 +27,7 @@ Two disciplines keep the trace still while it slides:
   latched in Genau's own publish (``DriveHud.let_go``), captured at the source
   before the resting phase destroys it.
 
-Shared by every Funestra that hangs the console over a video — the Main Funestra's window on
+Shared by every Funestra that hangs the Main Funestra's HUD over a video — the Main Funestra's window on
 the desktop, FunTimeVR's HUD in the headset — so both draw one line by one
 set of rules, and free of Pillow, so the shape of the trace is testable
 without a window or a font.
@@ -97,7 +97,7 @@ def osr2_visualizer(
     *published* is Genau's visualizer as it last said it, or None while it has not
     published one yet.  Who holds the device right now is read off the
     publish itself — ``let_go`` is set exactly while Genau has handed it over —
-    rather than off the console's round-tripped state, which trails the arbiter
+    rather than off the Main Funestra's HUD's round-tripped state, which trails the arbiter
     by a couple of publish intervals.
 
     *latch* is the caller's :class:`funestra.descent_latch.DescentLatch`, one choice
@@ -115,7 +115,7 @@ def osr2_visualizer(
     if script is None:
         return base
     # The window into the script slides continuously, so read at the raw
-    # playhead it would move — and repaint the console — at the Funestra's full frame
+    # playhead it would move — and repaint the Main Funestra's HUD — at the Funestra's full frame
     # rate.  Quantized to the cadence Genau's own publishes already repaint at
     # while the motion scrolls, the green moves exactly as smoothly as the
     # blue, for the same cost; and the status reads the same grid before it
@@ -351,9 +351,9 @@ def osr2_visualizer(
     # only while the playhead is inside live blue — where it IS the line, at the
     # device's own finer rate.  Everywhere else (both ramps, the plan, the
     # rests) the height comes from the same function that drew the line, so the
-    # dot can never ride a line that is not there.  Keyed on the console's osr2
+    # dot can never ride a line that is not there.  Keyed on the Main Funestra's HUD's osr2
     # instead it would sit on Genau's frozen position over a gray ramp at every
-    # handoff, for as long as the console lags the arbiter.
+    # handoff, for as long as the Main Funestra's HUD lags the arbiter.
     height, who_now = at(
         position_ms, script.planned_position_at(position_ms, speed, max_intensity=max_intensity) / 100)
     marker = (base.position if who_now == DRIVEN_BY_ROBOT_HAND
@@ -361,7 +361,7 @@ def osr2_visualizer(
     return replace(
         base,
         # Who has the device AT THE PLAYHEAD, from the same function that drew
-        # the line under the dot — the console's pill reads this, so the pill
+        # the line under the dot — the Main Funestra's HUD's pill reads this, so the pill
         # and the line cannot disagree.  The round-tripped osr2 state flips at
         # the arbiter's decision, seconds before the dot finishes riding the
         # blue it is still drawn on.

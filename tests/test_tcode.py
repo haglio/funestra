@@ -93,7 +93,7 @@ class TestFormatTcodeCommand:
 
 
 class TestToTcodePosition:
-    """Funscripts and the console both measure a motion 0-100; the wire is 0-9999,
+    """Funscripts and the Main Funestra's HUD both measure a motion 0-100; the wire is 0-9999,
     and both ends of the range have to land exactly on it."""
 
     def test_the_ends_of_the_range_are_the_ends_of_the_range(self):

@@ -28,13 +28,13 @@ from test_genau_refresh import (
 )
 
 from funestra.broker_feed import BrokerFeed
-from funestra.console import OSR2_PARKED, OSR2_RETRACTED
 from funestra.flag import Flag
 from funestra.flick_advance import FlickAdvanceState
 from funestra.genau_controls import VERBS, GenauControls
 from funestra.genau_refresh import GenauRefreshController
 from funestra.learned_model import LearnedModel
 from funestra.learned_motion import LearnedMotionState
+from funestra.main_hud import OSR2_PARKED, OSR2_RETRACTED
 from funestra.robot_hand import RobotHandState, WaveformShape
 from funestra.robot_hand_beat import BeatEngine
 

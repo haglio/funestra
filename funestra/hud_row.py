@@ -3,7 +3,7 @@
 Every Funestra here laid this row along the lower edge of its own video, which is
 where a video player has always put it — and where, in this family, it keeps
 turning out to be the wrong place.  A wrapped video smears it into a ring round
-the nadir, out of the controller's reach, so the headset draws it on the console
+the nadir, out of the controller's reach, so the headset draws it on the Main Funestra's HUD
 instead.  Everything else has the same defect in slower form: a row over the
 item is a second HUD, on a screen that already carries one.
 

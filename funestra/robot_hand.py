@@ -353,10 +353,10 @@ class ControlLimits:
     """Which of the hand's arrows would do nothing.
 
     Six booleans, published twice: the status file an orchestrator reads has
-    them so its dashboard can dim a button, and the OSR2 visualizer the console
+    them so its dashboard can dim a button, and the OSR2 visualizer the Main Funestra's HUD
     draws has them so it can dim an arrow.  They are two publications of one
     fact, worked out once here -- the center clamp included, so a change to it
-    cannot leave the console dimming an arrow the status file calls live.
+    cannot leave the Main Funestra's HUD dimming an arrow the status file calls live.
     """
 
     amp_at_max: bool
