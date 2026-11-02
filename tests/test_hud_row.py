@@ -1,4 +1,4 @@
-"""The scrubber, the volume chip, the playhead readout and a flick's dial, laid out on one line of a HUD."""
+"""The scrubber, the volume control, the playhead readout and a flick's dial, laid out on one line of a HUD."""
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -36,15 +36,15 @@ from funestra.timeline import (
     YELLOW,
 )
 from funestra.volume import (
-    CHIP_H,
-    CHIP_W,
     MAX_VOLUME,
     MIN_VOLUME,
     PAD,
     SLOT_W,
     SPEAKER_W,
+    VOLUME_CONTROL_H,
+    VOLUME_CONTROL_W,
     VolumeHud,
-    chip_xy,
+    volume_control_xy,
 )
 
 WIDTH = 400
@@ -61,10 +61,10 @@ def _layout(row: RowHud, width: int = WIDTH, at: tuple[int, int] = (0, 0)):
 
 class TestHowTheRowIsLaidOut:
     """One line, laid out from what is on it: the readout at the row's left
-    end, after the dial on a flick's row, then the track, and the chip at its
+    end, after the dial on a flick's row, then the track, and the volume control at its
     right end."""
 
-    def test_a_videos_row_is_its_readout_then_the_track_then_the_chip(self):
+    def test_a_videos_row_is_its_readout_then_the_track_then_the_volume_control(self):
         layout = _layout(VIDEO)
 
         x, width = layout.readout
@@ -107,11 +107,11 @@ class TestHowTheRowIsLaidOut:
 
         assert layout.track[1] - layout.track[0] == LEAST_TRACK
 
-    def test_a_flicks_track_stays_short_on_a_wide_hud_and_the_chip_keeps_the_end(self):
+    def test_a_flicks_track_stays_short_on_a_wide_hud_and_the_volume_control_keeps_the_end(self):
         layout = _layout(FLICK, width=800)
 
         assert layout.track[1] - layout.track[0] == FLICK_TRACK_W
-        assert chip_xy(win_w=800, win_h=ROW_H, timeline_h=ROW_H)[0] == 800 - CHIP_W
+        assert volume_control_xy(win_w=800, win_h=ROW_H, timeline_h=ROW_H)[0] == 800 - VOLUME_CONTROL_W
 
     def test_the_narrowest_hud_is_one_width_from_one_flick_to_the_next(self):
         def flick(frames: int) -> RowHud:
@@ -149,9 +149,9 @@ def test_it_draws_each_part_where_it_laid_it_out_and_nothing_between_them():
     painted, layout = _painted(FLICK)
     (readout_x, readout_w), dial_x = layout.readout, layout.dial
     track_x0 = layout.track[0]
-    middle = PARTS_Y + CHIP_H // 2
+    middle = PARTS_Y + VOLUME_CONTROL_H // 2
 
-    assert painted[PARTS_Y:PARTS_Y + CHIP_H, readout_x:readout_x + readout_w, 3].any()
+    assert painted[PARTS_Y:PARTS_Y + VOLUME_CONTROL_H, readout_x:readout_x + readout_w, 3].any()
     assert painted[middle, dial_x + DIAL_SIZE // 2, 3] > 0
     assert painted[ROW_H // 2, track_x0 + 5, 3] > 0
     assert painted[middle, dial_x + DIAL_SIZE + GAP // 2, 3] == 0
@@ -163,7 +163,7 @@ def test_a_flicks_readout_says_its_frame_and_then_its_time():
     readout_x, readout_w = layout.readout
     expected = RowSection()._readout.bgra(FRAMED)[:, :, [2, 1, 0, 3]]
 
-    drawn = painted[PARTS_Y:PARTS_Y + CHIP_H, readout_x:readout_x + readout_w].astype(int)
+    drawn = painted[PARTS_Y:PARTS_Y + VOLUME_CONTROL_H, readout_x:readout_x + readout_w].astype(int)
     assert np.abs(drawn - expected).max() <= 1
 
 
@@ -236,10 +236,10 @@ class TestWhatAPressOnTheRowIsOn:
         assert self._part(sum(self.LAYOUT.track) // 2, ROW_H - 4) == SCRUBBER
 
     def test_the_speaker_mutes_and_the_slider_sets_the_level(self):
-        chip_x, chip_y = chip_xy(win_w=WIDTH, win_h=ROW_H, timeline_h=ROW_H)
+        volume_control_x, volume_control_y = volume_control_xy(win_w=WIDTH, win_h=ROW_H, timeline_h=ROW_H)
 
-        assert self._part(chip_x + 4, chip_y + CHIP_H // 2) == MUTE
-        assert self._part(chip_x + CHIP_W - 6, chip_y + CHIP_H // 2) == VOLUME
+        assert self._part(volume_control_x + 4, volume_control_y + VOLUME_CONTROL_H // 2) == MUTE
+        assert self._part(volume_control_x + VOLUME_CONTROL_W - 6, volume_control_y + VOLUME_CONTROL_H // 2) == VOLUME
 
     def test_left_of_the_track_is_the_readout(self):
         """Saturated like a margin, a press on the time would throw the flick
@@ -259,10 +259,10 @@ class TestWhatAPressOnTheRowIsOn:
         assert 29_000 < scrub_to((x0 + x1) // 2, self.LAYOUT, duration_ms=60_000) < 31_000
 
     def test_a_press_along_the_slider_names_the_level_under_it(self):
-        chip_x, chip_y = chip_xy(win_w=WIDTH, win_h=ROW_H, timeline_h=ROW_H)
+        volume_control_x, volume_control_y = volume_control_xy(win_w=WIDTH, win_h=ROW_H, timeline_h=ROW_H)
 
-        assert volume_to(chip_x + SPEAKER_W, chip_y, self.LAYOUT) == MIN_VOLUME
-        assert volume_to(chip_x + CHIP_W, chip_y, self.LAYOUT) == MAX_VOLUME
+        assert volume_to(volume_control_x + SPEAKER_W, volume_control_y, self.LAYOUT) == MIN_VOLUME
+        assert volume_to(volume_control_x + VOLUME_CONTROL_W, volume_control_y, self.LAYOUT) == MAX_VOLUME
 
 
 class TestWhatAPressOnTheRowAsksFor:
@@ -283,9 +283,9 @@ class TestWhatAPressOnTheRowAsksFor:
         if part == "track":
             x0, x1 = self.LAYOUT.track
             return x + (along or (x0 + x1) // 2), y + height - 4
-        cx, cy = chip_xy(win_w=width, win_h=height, timeline_h=TIMELINE_HEIGHT)
-        across = 4 if part == "speaker" else CHIP_W - PAD
-        return x + cx + across, y + cy + CHIP_H // 2
+        cx, cy = volume_control_xy(win_w=width, win_h=height, timeline_h=TIMELINE_HEIGHT)
+        across = 4 if part == "speaker" else VOLUME_CONTROL_W - PAD
+        return x + cx + across, y + cy + VOLUME_CONTROL_H // 2
 
     def _squeeze(self, press, point):
         return press.press(*point, layout=self.LAYOUT, duration_ms=self.DURATION_MS)

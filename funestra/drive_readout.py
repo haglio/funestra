@@ -237,7 +237,7 @@ def controls(x: int, y: int, hud: DriveHud) -> list[DriveControl]:
 
 
 def tracks(x: int, y: int, hud: DriveHud) -> list[DriveTrack]:
-    """The readout's bands at ``(x, y)``, read off *hud* — the three you press to
+    """The readout's bars at ``(x, y)``, read off *hud* — the three you press to
     set a level outright instead of walking to it with the marks."""
     return drive_layout.tracks(
         x, y, hud.center, dim=not hud.driving,
@@ -264,10 +264,10 @@ CONTROL_TIPS = {
 def readout_targets(x: int, y: int, hud: DriveHud,
                     ) -> tuple[list[tuple[Rect, Button]], list[DriveTrack]]:
     """What a readout at ``(x, y)`` leaves for a press to land on: its marks as
-    declared buttons, then its bands.
+    declared buttons, then its bars.
 
-    The marks come first because they sit on top of the bands, and whoever
-    routes a press takes the first rect that contains it.  A band joins the
+    The marks come first because they sit on top of the bars, and whoever
+    routes a press takes the first rect that contains it.  A bar joins the
     buttons with no command to post, purely so it names what it sets on hover —
     nothing else on a HUD in a video says a bar can be dragged — and comes back
     beside them so the press can take hold of it (:class:`TrackGrip`).
@@ -285,7 +285,7 @@ def readout_targets(x: int, y: int, hud: DriveHud,
 
 
 class TrackGrip:
-    """A press that took hold of one of the readout's bands, and the drag that
+    """A press that took hold of one of the readout's bars, and the drag that
     goes on setting it.
 
     Held by whichever HUD routes presses — the main console and the lock HUD
@@ -294,7 +294,7 @@ class TrackGrip:
     """
 
     def __init__(self) -> None:
-        # Which band a press took hold of, and what it last asked for, so a drag
+        # Which bar a press took hold of, and what it last asked for, so a drag
         # keeps setting the one it started on and only speaks when the value moves.
         self._held: DriveTrack | None = None
         self._offset = 0.0
@@ -302,21 +302,21 @@ class TrackGrip:
 
     @property
     def holding(self) -> bool:
-        """Whether a press took hold of a band and has not let go — so the host
+        """Whether a press took hold of a bar and has not let go — so the host
         knows a drag belongs to the readout rather than to whatever else it
         would have offered the pointer."""
         return self._held is not None
 
-    def grab(self, bands: list[DriveTrack], px: int, py: int) -> str:
-        for track in bands:
+    def grab(self, bars: list[DriveTrack], px: int, py: int) -> str:
+        for track in bars:
             if not track.dim and contains(track.rect, px, py):
-                self._held, self._offset = drive_layout.held_band(track, py)
+                self._held, self._offset = drive_layout.held_bar(track, py)
                 self._asked = self._command_at(px, py)
                 return "" if track.handle_of else self._asked
         return ""
 
     def drag_to(self, px: int, py: int) -> str:
-        """The command the pointer posts while a band is held.
+        """The command the pointer posts while a bar is held.
 
         "" while none is, and "" while the level under the pointer is the one
         already asked for — a drag along a bar fires per mouse motion, and every
@@ -332,7 +332,7 @@ class TrackGrip:
         return command
 
     def release(self) -> None:
-        """Let go of whichever band a press took hold of."""
+        """Let go of whichever bar a press took hold of."""
         self._held, self._offset, self._asked = None, 0.0, ""
 
     def _command_at(self, px: int, py: int) -> str:

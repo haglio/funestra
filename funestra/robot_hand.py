@@ -145,7 +145,7 @@ def set_max_intensity(state: RobotHandState, value: int) -> None:
     _push_within_the_max_intensity(state)
 
 
-def set_dials(state: RobotHandState, *, speed: int, amplitude: int, center: int) -> None:
+def set_bars(state: RobotHandState, *, speed: int, amplitude: int, center: int) -> None:
     state.speed = max(MIN_SPEED, min(MAX_SPEED, speed))
     state.bpm = bpm_for_speed(state.speed)
     state.amplitude = max(0, min(100, amplitude))

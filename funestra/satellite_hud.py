@@ -5,7 +5,7 @@ Time's Satellite Funestras composites it into its video, and a hosted
 Origenerator's region shows wear it as a widget — one HUD, one codebase, so
 the two surfaces cannot drift apart.
 
-fun_time owns each Funestra's *model* — which videos sit on the map, whether the
+fun_time owns each Funestra's *model* — which videos sit on the nav map, whether the
 satellite is locked, which axis is looping — because only fun_time has the
 library metadata.  It serializes that to a small JSON file per Funestra; this module
 parses it and lays it out.  (A hosted Origenerator builds its shows' models
@@ -63,25 +63,25 @@ MARGIN = MARGIN_DIALOG
 
 PAD = MARGIN_STANDARD
 BLOCK_GAP = GAP_MEDIUM
-MAP_THUMB_H = 54
-MAP_GAP = GAP_SMALL
+NAV_MAP_THUMB_H = 54
+NAV_MAP_GAP = GAP_SMALL
 ROW_GAP = GAP_DIALOG        # vertical gap between action rows — roomier than the seed gap
 ACT_GAP = GAP_MEDIUM         # gap between two acts stacked in one row label
-COL_LABEL_H = 13    # header strip above the map for the "Seed N" column labels
+COL_LABEL_H = 13    # header strip above the nav map for the "Seed N" column labels
 COL_LABEL_GAP = GAP_SMALL   # breathing room between a column label and its thumbnail
 ROW_LABEL_GUTTER = 100
 LOOP_BTN = 18       # loop-button thickness: below the action column, right of the row
 FILTER_BTN = 18     # act-filter button: at the head of each row, in the gutter
 
-MAP_RIGHT_RESERVE = 2 * (LOOP_BTN + MAP_GAP)
-MAP_LOWER_RESERVE = LOOP_BTN + MAP_GAP
+NAV_MAP_RIGHT_RESERVE = 2 * (LOOP_BTN + NAV_MAP_GAP)
+NAV_MAP_LOWER_RESERVE = LOOP_BTN + NAV_MAP_GAP
 
-MAP_CELLS = 3
+NAV_MAP_CELLS = 3
 WIDEST_FULL_HEIGHT_SHAPE = {"portrait": (4, 5), "landscape": (16, 9)}
 
-TITLE_BAND_H = 24        # the band the title sits in — one line deep, always
+TITLE_ROW_H = 24        # the bar the title sits in — one line deep, always
 TITLE_X = PAD + ACTIVE_DOT + 8  # where the title starts, clear of the active-Funestra dot
-TITLE_BASELINE = 11      # the title's baseline, down from the band's top
+TITLE_BASELINE = 11      # the title's baseline, down from the bar's top
 # The file on screen, muted under the title — the same second line the Main
 # Funestra's console carries, so the two HUDs answer "what am I playing?" in the
 # same corner and the same shape.  Its own height comes from the paint module,
@@ -93,10 +93,10 @@ Cell = tuple[str, int]            # ("corner", 0) | ("seed", i) | ("action", i)
 
 @dataclass(frozen=True)
 class HudCell:
-    """One video drawn on the map: its path, its cached thumbnail, its row label.
+    """One video drawn on the nav map: its path, its cached thumbnail, its row label.
 
     ``thumb`` is "" while fun_time's background prewarm has not produced the
-    frame yet — the map draws a placeholder there rather than waiting.
+    frame yet — the nav map draws a placeholder there rather than waiting.
     """
 
     path: str
@@ -171,14 +171,14 @@ class HudModel:
     active: bool = False
 
     # Whether the video on screen is one of the favorites — marked in the control
-    # band, beside the buttons that act on that video.
+    # bar, beside the buttons that act on that video.
     is_favorite: bool = False
     item_note: str = ""
     corner: HudCell | None = None
     seeds: tuple[HudCell, ...] = ()
     actions: tuple[HudCell, ...] = ()
     current_action: str = ""
-    # The act(s) this Funestra is filtered to, if any: the map lights every row the
+    # The act(s) this Funestra is filtered to, if any: the nav map lights every row the
     # filter keeps and, within a row, the acts the filter actually names.  Pressing
     # a row's button moves the filter onto that row, or lifts it when the filter is
     # already exactly that row.
@@ -188,19 +188,19 @@ class HudModel:
     # vocabulary; a row sets a leading one apart as an act of its own.
     camera_words: tuple[str, ...] = ()
     active_loop: str = ""
-    # How many videos each axis stands for, the video on screen included.  The map
+    # How many videos each axis stands for, the video on screen included.  The nav map
     # draws only MAP_CELLS of them, so it prints these in its top-left corner —
     # the only place the real size of each axis can be read.
     seed_count: int = 0
     action_count: int = 0
-    # The map cell actually on screen — the corner normally, or another cell
+    # The nav nav map cell actually on screen — the corner normally, or another cell
     # while a loop plays a non-anchor video of the group.  Drawn bright; the
     # rest dim.
     playing: Cell = ("corner", 0)
     # The rate this Funestra plays at, folded into its own HUD so the painter draws
-    # the speed row under the bands; None for a surface with no rate to show.
+    # the speed row under the bars; None for a surface with no rate to show.
     playback_speed: float | None = None
-    # The buttons the source declares for this Funestra, in the bands the HUD
+    # The buttons the source declares for this Funestra, in the bars the HUD
     # draws them in: what each posts, its face, its tooltip and its state.  The
     # HUD draws nothing it was not handed.
     rows: tuple[tuple[Button, ...], ...] = ()
@@ -240,28 +240,28 @@ class HudModel:
 # --- map geometry ------------------------------------------------------------
 
 ELLIPSIS = 12
-ELLIPSIS_ROOM = ELLIPSIS + 2 * MAP_GAP
-MAP_COLUMN_H = MAP_CELLS * MAP_THUMB_H + (MAP_CELLS - 1) * ROW_GAP
-MAP_H = (COL_LABEL_H + COL_LABEL_GAP + ELLIPSIS_ROOM + MAP_COLUMN_H
-         + ELLIPSIS_ROOM + MAP_LOWER_RESERVE)
+ELLIPSIS_ROOM = ELLIPSIS + 2 * NAV_MAP_GAP
+NAV_MAP_COLUMN_H = NAV_MAP_CELLS * NAV_MAP_THUMB_H + (NAV_MAP_CELLS - 1) * ROW_GAP
+NAV_MAP_H = (COL_LABEL_H + COL_LABEL_GAP + ELLIPSIS_ROOM + NAV_MAP_COLUMN_H
+         + ELLIPSIS_ROOM + NAV_MAP_LOWER_RESERVE)
 
 
 def slot_width(funestra: str) -> int:
     across, down = WIDEST_FULL_HEIGHT_SHAPE.get(funestra, WIDEST_FULL_HEIGHT_SHAPE["portrait"])
-    return round(MAP_THUMB_H * across / down)
+    return round(NAV_MAP_THUMB_H * across / down)
 
 
-def map_row_width(funestra: str) -> int:
-    return MAP_CELLS * slot_width(funestra) + (MAP_CELLS - 1) * MAP_GAP
+def nav_nav_map_row_width(funestra: str) -> int:
+    return NAV_MAP_CELLS * slot_width(funestra) + (NAV_MAP_CELLS - 1) * NAV_MAP_GAP
 
 
-def map_block_width(funestra: str) -> int:
-    return (ROW_LABEL_GUTTER + ELLIPSIS_ROOM + map_row_width(funestra) + ELLIPSIS_ROOM
-            + MAP_RIGHT_RESERVE)
+def nav_nav_map_block_width(funestra: str) -> int:
+    return (ROW_LABEL_GUTTER + ELLIPSIS_ROOM + nav_nav_map_row_width(funestra) + ELLIPSIS_ROOM
+            + NAV_MAP_RIGHT_RESERVE)
 
 
 def hud_width(funestra: str, name_width: int = 0, *, content_width: int = 0) -> int:
-    return max(2 * PAD + map_block_width(funestra),
+    return max(2 * PAD + nav_nav_map_block_width(funestra),
                TITLE_X + name_width + PAD, content_width)
 
 
@@ -274,27 +274,27 @@ def device_height(osr2: str, drive: DriveHud | None, drive_h: int,
 
 @dataclass(frozen=True)
 class HudLayout:
-    bands: int
+    bars: int
     speed: int
     row: int
     device: int
     foot: int
-    map: int
+    nav_map: int
     height: int
     dividers: tuple[int, ...]
 
 
-def hud_layout(*, title_h: int, bands: int = 0, speed: bool = False,
+def hud_layout(*, title_h: int, bars: int = 0, speed: bool = False,
                row_h: int = 0, device_h: int = 0, foot_h: int = 0) -> HudLayout:
-    stacked = stack(PAD, [title_h, blocks_height([CTRL_BTN] * (bands + speed), BLOCK_GAP),
-                          row_h, device_h, foot_h, MAP_H])
-    _title, bands_top, row_top, device_top, foot_top, map_top = stacked.tops
-    return HudLayout(bands_top, bands_top + bands * CTRL_BAND_H, row_top, device_top,
-                     foot_top, map_top, stacked.end + PAD, stacked.dividers)
+    stacked = stack(PAD, [title_h, blocks_height([CTRL_BTN] * (bars + speed), BLOCK_GAP),
+                          row_h, device_h, foot_h, NAV_MAP_H])
+    _title, bars_top, row_top, device_top, foot_top, nav_nav_map_top = stacked.tops
+    return HudLayout(bars_top, bars_top + bars * CONTROL_ROW_H, row_top, device_top,
+                     foot_top, nav_nav_map_top, stacked.end + PAD, stacked.dividers)
 
 
 @dataclass(frozen=True)
-class MapWindow:
+class NavMapWindow:
     """Which run of an axis is drawn, and whether it runs on past either end."""
 
     start: int
@@ -303,18 +303,18 @@ class MapWindow:
     more_after: bool
 
 
-def map_window(total: int, playing: int, limit: int = MAP_CELLS) -> MapWindow:
+def nav_nav_map_window(total: int, playing: int, limit: int = NAV_MAP_CELLS) -> NavMapWindow:
     """The run of at most *limit* cells to draw from an axis of *total*, keeping
     *playing* near its middle.
 
     The run always holds *playing* and grows outward from it, alternating sides and
     taking the right first: an axis whose head is on screen therefore fills away
     from the corner, while one whose playing cell has moved along keeps that cell in
-    the middle — which is what stops the lit cell walking off the end of the map and
+    the middle — which is what stops the lit cell walking off the end of the nav map and
     leaving nothing highlighted at all.
     """
     if total <= 0 or limit <= 0:
-        return MapWindow(0, 0, False, False)
+        return NavMapWindow(0, 0, False, False)
     playing = max(0, min(playing, total - 1))
     start, end = playing, playing + 1
     while end - start < min(limit, total):
@@ -325,7 +325,7 @@ def map_window(total: int, playing: int, limit: int = MAP_CELLS) -> MapWindow:
             end += 1
         else:
             start -= 1
-    return MapWindow(start, end - start, start > 0, end < total)
+    return NavMapWindow(start, end - start, start > 0, end < total)
 
 
 def column_anchor_rect(playing: Cell, corner_rect: Rect, seed_rects: list[Rect]) -> Rect:
@@ -344,19 +344,19 @@ def column_anchor_rect(playing: Cell, corner_rect: Rect, seed_rects: list[Rect])
 
 def slot_rects(
     *,
-    map_x: int,
-    map_y: int,
+    nav_nav_map_x: int,
+    nav_nav_map_y: int,
     slot_w: int,
     seeds: int,
     actions: int,
     playing: Cell = ("corner", 0),
 ) -> tuple[Rect, list[Rect], list[Rect]]:
-    corner = (map_x, map_y, slot_w, MAP_THUMB_H)
-    seed_rects = [(map_x + step * (slot_w + MAP_GAP), map_y, slot_w, MAP_THUMB_H)
-                  for step in range(1, min(seeds + 1, MAP_CELLS))]
+    corner = (nav_nav_map_x, nav_nav_map_y, slot_w, NAV_MAP_THUMB_H)
+    seed_rects = [(nav_nav_map_x + step * (slot_w + NAV_MAP_GAP), nav_nav_map_y, slot_w, NAV_MAP_THUMB_H)
+                  for step in range(1, min(seeds + 1, NAV_MAP_CELLS))]
     column_x = column_anchor_rect(playing, corner, seed_rects)[0]
-    action_rects = [(column_x, map_y + step * (MAP_THUMB_H + ROW_GAP), slot_w, MAP_THUMB_H)
-                    for step in range(1, min(actions + 1, MAP_CELLS))]
+    action_rects = [(column_x, nav_nav_map_y + step * (NAV_MAP_THUMB_H + ROW_GAP), slot_w, NAV_MAP_THUMB_H)
+                    for step in range(1, min(actions + 1, NAV_MAP_CELLS))]
     return corner, seed_rects, action_rects
 
 
@@ -405,8 +405,8 @@ def loop_button_rects(
         return None, None
     _cx, cy, _cw, ch = corner_rect
     col_x, _col_y, col_w, _col_h = corner_rect if column_rect is None else column_rect
-    loop_action = (col_x, column_end + reserve + MAP_GAP, col_w, LOOP_BTN)
-    loop_seed = (row_end + reserve + MAP_GAP, cy, LOOP_BTN, ch)
+    loop_action = (col_x, column_end + reserve + NAV_MAP_GAP, col_w, LOOP_BTN)
+    loop_seed = (row_end + reserve + NAV_MAP_GAP, cy, LOOP_BTN, ch)
     return loop_action, loop_seed
 
 
@@ -439,21 +439,21 @@ def ellipsis_rects(
     column hangs under (:func:`column_anchor_rect`); it defaults to the corner."""
     cx, cy, cw, ch = corner_rect
     if axis == "seed":
-        return ((cx - MAP_GAP - ELLIPSIS, cy, ELLIPSIS, ch),
-                (_row_right(corner_rect, seed_rects) + MAP_GAP, cy, ELLIPSIS, ch))
+        return ((cx - NAV_MAP_GAP - ELLIPSIS, cy, ELLIPSIS, ch),
+                (_row_right(corner_rect, seed_rects) + NAV_MAP_GAP, cy, ELLIPSIS, ch))
     col_x, _col_y, col_w, _col_h = corner_rect if column_rect is None else column_rect
-    return ((col_x, cy - MAP_GAP - ELLIPSIS, col_w, ELLIPSIS),
-            (col_x, _col_lower(corner_rect, action_rects) + MAP_GAP, col_w, ELLIPSIS))
+    return ((col_x, cy - NAV_MAP_GAP - ELLIPSIS, col_w, ELLIPSIS),
+            (col_x, _col_lower(corner_rect, action_rects) + NAV_MAP_GAP, col_w, ELLIPSIS))
 
 
 # --- the Funestra's own buttons ------------------------------------------------
-# What a source declares for this Funestra, drawn in bands between the title
-# and the map: each row of ``HudModel.rows`` is one band, a square per button, a
+# What a source declares for this Funestra, drawn in bars between the title
+# and the nav map: each row of ``HudModel.rows`` is one bar, a square per button, a
 # word button as wide as its word (the painter measures it), and the wider gap
 # before a button that starts a group -- the way the console's rows break.
 CTRL_BTN = BUTTON_SIZE_HUD
-MINUS_INSET = (PAD, PAD + (TITLE_BAND_H - CTRL_BTN) // 2)
-CTRL_BAND_H = CTRL_BTN + BLOCK_GAP
+MINUS_INSET = (PAD, PAD + (TITLE_ROW_H - CTRL_BTN) // 2)
+CONTROL_ROW_H = CTRL_BTN + BLOCK_GAP
 # Inside a word button, the room either side of its word.
 MODE_LABEL_PAD = BUTTON_PAD_H_TIGHT
 
@@ -489,7 +489,7 @@ _SPEED_BUTTONS = (
 
 
 def speed_row_width(label_width: int) -> int:
-    return label_width + 2 * CTRL_BTN + 2 * MAP_GAP + VALUE_W
+    return label_width + 2 * CTRL_BTN + 2 * NAV_MAP_GAP + VALUE_W
 
 
 def speed_row(funestra: str, x: int, y: int, *,
@@ -497,8 +497,8 @@ def speed_row(funestra: str, x: int, y: int, *,
     """*funestra*'s slower and faster buttons after a name *label_width* wide, and
     the cell between them the rate is written in."""
     down_x = x + label_width
-    rate_x = down_x + CTRL_BTN + MAP_GAP
-    up_x = rate_x + VALUE_W + MAP_GAP
+    rate_x = down_x + CTRL_BTN + NAV_MAP_GAP
+    up_x = rate_x + VALUE_W + NAV_MAP_GAP
     buttons = [
         ((button_x, y, CTRL_BTN, CTRL_BTN), Button(f"{funestra}_{name}", face, tooltip))
         for button_x, (name, face, tooltip) in zip((down_x, up_x), _SPEED_BUTTONS, strict=True)
@@ -513,7 +513,7 @@ def favorite_icon_rect(x: int, y: int, line_h: int) -> Rect:
     """The favorite mark: at the head of the file-name line, under the dot.
 
     A readout, not a button, so it belongs where the HUD keeps readouts and
-    not in the control band: the one column already used for "what is true of
+    not in the control bar: the one column already used for "what is true of
     this Funestra" — the active dot is directly above it — and immediately left of
     the name of the very video it is answering about.
 
@@ -539,7 +539,7 @@ def largest_size_that_fits(largest: int, room: int, width_at: Callable[[int], in
 
 
 # The strike under the current video's act: this act is wrong, ask about it again.
-# Smaller than a control button and in the gutter rather than on the band,
+# Smaller than a control button and in the gutter rather than on the bar,
 # because it is about the words above it rather than about the Funestra — the one
 # place on the HUD where that act is named is the only place the strike can
 # say which act it means.
@@ -576,7 +576,7 @@ def expand_button_rect(loop_seed_rect: Rect | None) -> Rect | None:
     if loop_seed_rect is None:
         return None
     sx, sy, sw, sh = loop_seed_rect
-    return (sx + sw + MAP_GAP, sy, LOOP_BTN, sh)
+    return (sx + sw + NAV_MAP_GAP, sy, LOOP_BTN, sh)
 
 
 # --- hit-testing -------------------------------------------------------------
@@ -596,7 +596,7 @@ class HudTargets:
     favorite: Rect | None = None
     # The strike under the current video's act, or None where no act is named.
     wrong_action: Rect | None = None
-    # The drive readout's three bands, on a host that draws one: pressed to set
+    # The drive readout's three bars, on a host that draws one: pressed to set
     # a level outright, and held while the pointer drags along them.
     tracks: list[DriveTrack] = field(default_factory=list)
     # Where the item's own row landed and how it is laid out, for a press to
@@ -698,7 +698,7 @@ def label_is_filtered(label: str, filter_query: str, camera_words: Sequence[str]
     Within a row an act still matches on a substring ("gamma" catching "theta
     gamma") — the same rule fun_time uses, one act down.
 
-    One rule for the whole row, used by the map to light its button and by the press
+    One rule for the whole row, used by the nav map to light its button and by the press
     to know whether it is already exactly this row, so what looks on and what turns
     off cannot disagree.
     """
@@ -727,7 +727,7 @@ def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
 
     Every icon on this HUD is cryptic on purpose — it is read over moving video
     — so each one names itself on hover: a declared button by the tooltip its
-    source gave it, the map's own chrome by the words here.
+    source gave it, the nav map's own chrome by the words here.
     """
     button = button_under(targets, px, py)
     if button is not None:
@@ -763,7 +763,7 @@ class HudClicks:
     :meth:`due` posts it once no second click has arrived.  Every other press
     (loop buttons, expand, filter buttons) is unambiguous and posts immediately.
 
-    A press inside one of the drive readout's bands, on a host that draws one,
+    A press inside one of the drive readout's bars, on a host that draws one,
     takes hold of it as well as posting: :meth:`drag_to` then goes on setting
     that level as the pointer moves, so a bar can be dragged and not only
     clicked.
@@ -783,15 +783,15 @@ class HudClicks:
 
     @property
     def holding(self) -> bool:
-        """Whether a press took hold of a readout band and has not let go."""
+        """Whether a press took hold of a readout bar and has not let go."""
         return self._grip.holding
 
     def drag_to(self, px: int, py: int) -> str:
-        """The command the pointer posts while a band is held; "" while none is."""
+        """The command the pointer posts while a bar is held; "" while none is."""
         return self._grip.drag_to(px, py)
 
     def release(self) -> None:
-        """Let go of whichever band a press took hold of."""
+        """Let go of whichever bar a press took hold of."""
         self._grip.release()
 
     def press(self, targets: HudTargets, px: int, py: int, *, now: float) -> str:
@@ -799,7 +799,7 @@ class HudClicks:
         yet (a first thumbnail click, or empty space).
 
         Anything already held is let go first, so a press on an ordinary button
-        never leaves a band still latched.
+        never leaves a bar still latched.
         """
         self.release()
         button = button_under(targets, px, py)
@@ -807,8 +807,8 @@ class HudClicks:
             # Verbatim: the source said what a press posts.  A dimmed one is at
             # the end of its range or has nothing to act on, and posts nothing.
             return "" if button.dim else button.command
-        # A target with nothing to post is a readout band, there only to name
-        # itself on hover; the press belongs to the band under it.
+        # A target with nothing to post is a readout bar, there only to name
+        # itself on hover; the press belongs to the bar under it.
         grabbed = self._grip.grab(targets.tracks, px, py)
         if grabbed:
             return grabbed
@@ -818,7 +818,7 @@ class HudClicks:
         if _in(targets.expand, px, py):
             return f"{self._funestra}_more_seeds"
         # Tested before the row's filter button: the strike sits inside the
-        # corner row's own band, and the filter button spans that whole band.
+        # corner row's own bar, and the filter button spans that whole bar.
         if _in(targets.wrong_action, px, py):
             return f"{self._funestra}_wrong_action"
         action = hit_test_targets(targets.filter, px, py)
@@ -826,7 +826,7 @@ class HudClicks:
             # Narrow before you lift: a press on a row the filter only partly keeps
             # ("Side Gamma" under "gamma") moves the filter onto that whole row, and
             # only a press on the row the filter already *is* turns it off, so a
-            # broad filter can be tightened from the map.
+            # broad filter can be tightened from the nav map.
             query = normalized_text(action)
             if query == normalized_text(self.active_filter):
                 self.active_filter = ""

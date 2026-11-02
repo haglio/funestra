@@ -217,7 +217,7 @@ class ConsolePainter:
     near cheap enough for that, so the bitmap is kept until the HUD's contents
     change.  The button rects from the last painting are kept beside it — the
     console's own and the drive readout's arrows — so what is clickable is exactly
-    what was drawn, and the readout's own bands with them, so what is draggable is
+    what was drawn, and the readout's own bars with them, so what is draggable is
     too.
     """
 
@@ -315,10 +315,10 @@ class ConsolePainter:
     def press_at(self, mx: int, my: int) -> str:
         """The command a press at *window* point ``(mx, my)`` posts, "" over none.
 
-        A press inside one of the drive readout's bands takes hold of it as well
+        A press inside one of the drive readout's bars takes hold of it as well
         as posting: :meth:`drag_to` then goes on setting that level as the pointer
         moves, so a bar can be dragged and not only clicked.  Anything already
-        held is let go first, so a press on an ordinary button never leaves a band
+        held is let go first, so a press on an ordinary button never leaves a bar
         still latched.
         """
         self.release()
@@ -331,17 +331,17 @@ class ConsolePainter:
 
     @property
     def holding(self) -> bool:
-        """Whether a press took hold of one of the readout's bands and has not let
+        """Whether a press took hold of one of the readout's bars and has not let
         go — so the Funestra knows a drag belongs here rather than to whatever else
         it would have offered the pointer."""
         return self._grip.holding
 
     def drag_to(self, mx: int, my: int) -> str:
-        """The command the pointer posts while a band is held."""
+        """The command the pointer posts while a bar is held."""
         return self._grip.drag_to(*self._local(mx, my))
 
     def release(self) -> None:
-        """Let go of whichever band a press took hold of."""
+        """Let go of whichever bar a press took hold of."""
         self._grip.release()
 
     def hover_at(self, mx: int, my: int) -> tuple[int, int] | None:
@@ -512,7 +512,7 @@ class ConsolePainter:
             osr2_x = self._block_x(corner, width, self._osr2.width(osr2_line), reserves[2])
             self.buttons.extend(self._osr2.draw(hud.image, draw, osr2_x, y, osr2_line,
                                                 hover=hover))
-            self.tracks.extend(self._osr2.bands(osr2_x, y, osr2_line))
+            self.tracks.extend(self._osr2.bars(osr2_x, y, osr2_line))
             y += _OSR2_H + _BLOCK_GAP
 
         if drive is not None:
@@ -520,12 +520,12 @@ class ConsolePainter:
             # The HUD's image rather than its pen: the readout supersamples
             # its trace and composites it back, which a pen cannot carry.
             self._drive.draw(hud.image, drive_x, y, drive)
-            # The readout draws its own arrows and bands; the console only needs
+            # The readout draws its own arrows and bars; the console only needs
             # them as hit targets, so they answer a press and name themselves on
             # hover.
-            targets, bands = readout_targets(drive_x, y, drive)
+            targets, bars = readout_targets(drive_x, y, drive)
             self.buttons.extend(targets)
-            self.tracks.extend(bands)
+            self.tracks.extend(bars)
 
         if whole and self._minus_on_the_hud:
             minus = (corner_button_rect(corner, hud=(width, height), inset=_MINUS_INSET),

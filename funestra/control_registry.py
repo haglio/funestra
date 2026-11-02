@@ -57,7 +57,7 @@ class Control:
 
 
 def bind(controls: tuple[Control, ...]) -> Mapping[str, tuple[Control, Verb]]:
-    """Flatten a registry to the map a dispatcher looks a verb up in.
+    """Flatten a registry to the nav map a dispatcher looks a verb up in.
 
     Two controls claiming one spelling is refused here rather than resolved: the
     loser would go silently unreachable, which is precisely the drift the

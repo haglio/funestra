@@ -10,7 +10,7 @@ from shared_ui.type_scale import SIZE_TINY
 
 from .hud import KeptBitmap, ink_center_offset, load_font, text_width
 from .hud_title import SEPARATOR
-from .volume import CHIP_H
+from .volume import VOLUME_CONTROL_H
 
 _SECONDS_PER_MINUTE = 60
 _MINUTES_PER_HOUR = 60
@@ -86,14 +86,14 @@ def readout_width(hud: PlayheadHud) -> int:
 
 
 class PlayheadHudPainter(KeptBitmap):
-    """The words alone, as tall as the chip and centered on the digits' ink."""
+    """The words alone, as tall as the volume control and centered on the digits' ink."""
 
     def __init__(self) -> None:
         super().__init__()
-        self._top = (CHIP_H - 1) / 2 - ink_center_offset(_font(), "0")[1]
+        self._top = (VOLUME_CONTROL_H - 1) / 2 - ink_center_offset(_font(), "0")[1]
 
     def _paint(self, hud: PlayheadHud) -> Image.Image:
-        image = Image.new("RGBA", (readout_width(hud), CHIP_H), (0, 0, 0, 0))
+        image = Image.new("RGBA", (readout_width(hud), VOLUME_CONTROL_H), (0, 0, 0, 0))
         ImageDraw.Draw(image).text((0, self._top), hud.text, font=_font(),
                                    fill=(*TEXT_PRIMARY, 255))
         return image

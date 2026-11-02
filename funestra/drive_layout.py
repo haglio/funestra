@@ -3,7 +3,7 @@
 The readout — the trace of the motion with Center down its left, Amplitude down
 its right and Speed under it — is placed here and painted in
 :mod:`funestra.drive_readout`. This module draws nothing: it says how big the
-block is, where each mark and band lands, which marks are dead at the end of
+block is, where each mark and bar lands, which marks are dead at the end of
 their range, and what value a press at a point is asking for.
 
 Kept apart from the painter because the halves fail differently. A painter can
@@ -115,7 +115,7 @@ def geometry(x: int, y: int, center_frac: float) -> Geometry:
     amp_bar = (amp_x + (_CTRL - _BAR_H) // 2, wave_y, _BAR_H, amp_bar_h)
     amp_down = (amp_x, wave_lower + _MARK_GAP, _CTRL, _CTRL)
 
-    # The center marks ride its dotted line, kept inside the trace's band so a
+    # The center marks ride its dotted line, kept inside the trace's bar so a
     # center at either end cannot push one off the block.
     center_y = wave_y + round((1 - center_frac) * (_WAVE_H - 1))
     up_y = min(max(wave_y, center_y - _CTRL - _MARK_GAP // 2), wave_lower - 2 * _CTRL - _MARK_GAP)
@@ -184,12 +184,12 @@ def controls(x: int, y: int, center: int, limits: Limits, *,
 
 def tracks(x: int, y: int, center: int, *, dim: bool = False,
            amplitude_ceiling: int = 100, speed_ceiling: int = 100) -> list[DriveTrack]:
-    """The readout's bands at ``(x, y)`` — the three you press to set a level
+    """The readout's bars at ``(x, y)`` — the three you press to set a level
     outright instead of walking to it with the marks.
 
     A press anywhere on a bar asks for exactly the value drawn under the
     pointer, and holding the button keeps asking as the pointer moves. None of
-    them carries a limit flag: a band sets an absolute value, so there is no end
+    them carries a limit flag: a bar sets an absolute value, so there is no end
     of a range to run out of.
     """
     center_frac = fraction(center)
@@ -211,12 +211,12 @@ def center_handle(x: int, y: int, center: int, *, dim: bool = False) -> DriveTra
                       center_frac, dim, handle_of=g.wave)
 
 
-def held_band(track: DriveTrack, py: float) -> tuple[DriveTrack, float]:
+def held_bar(track: DriveTrack, py: float) -> tuple[DriveTrack, float]:
     if track.handle_of is None:
         return track, 0.0
-    band = replace(track, rect=track.handle_of, handle_of=None)
-    _x, y, _w, h = band.rect
-    return band, py - (y + (1 - band.center) * (h - 1))
+    bar = replace(track, rect=track.handle_of, handle_of=None)
+    _x, y, _w, h = bar.rect
+    return bar, py - (y + (1 - bar.center) * (h - 1))
 
 
 def track_value(track: DriveTrack, px: int, py: float) -> int:
@@ -233,7 +233,7 @@ def _level_under(track: DriveTrack, px: int, py: float) -> int:
     the center in both directions, so a press is how far the motion has to reach
     to arrive there — grab either end of the bar and pull.
 
-    A point outside the band reads as its nearer end, so a drag that wanders off
+    A point outside the bar reads as its nearer end, so a drag that wanders off
     the bar goes on setting it rather than stopping dead at the edge.
     """
     x, y, w, h = track.rect

@@ -2,7 +2,7 @@
 
 Read from the checkouts beside this one that import it, the way the dead-code
 gate reads them: a package of one that imports a painter out of this one is
-drawing a HUD itself.  A painter is what turns a HUD, a row or a chip into pixels; the
+drawing a HUD itself.  A painter is what turns a HUD, a row or a volume control into pixels; the
 models, the verbs and the placements a source hands a Funestra are not.
 """
 from __future__ import annotations

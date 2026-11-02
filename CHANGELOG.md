@@ -373,7 +373,7 @@ the bar held and places each press; the console offers every press to them
 first, as before, and `ConsolePainter.host_controls_layout` says where the
 field, the bar and the list's rows landed. The field and the list are
 `shared_ui.dropdown_pil`'s, the dropdown the headset's dashboard draws, and
-the bar's track is `hud_panel.draw_track`, which the volume chip's slider now
+the bar's track is `hud_panel.draw_track`, which the volume control's slider now
 draws with too.
 
 ## 2026-10-11 — the repo, its folder and its package are all funestra
@@ -427,7 +427,7 @@ as the clock already held still by taking its length's fields; `flick_playhead`
 pads its frame the same way.
 
 The row is one line now wherever it is drawn: a flick's dial, the readout, the
-track, and the volume chip, 64 pixels wide where it was 112, flush with the
+track, and the volume control, 64 pixels wide where it was 112, flush with the
 row's right end as the first part is with its left, a few pixels between each.
 A video's track is what the heatmap and a seek need room on, so a panel too
 narrow to leave it at least as long as everything else on the line widens
@@ -453,7 +453,7 @@ and the overlays (`ConsoleOverlay.row`, `HudOverlay.row`) in place of a rect.
 `bar_track_x(left=)` takes where the track starts, `progress_bar_bgra` takes the
 track, and `HeatmapStrip.update` is handed the track's width rather than the
 row's. `readout_width` is the room a readout takes, and `volume.TRACK_GAP` the
-gap between the track and the chip, which `MARGIN` was. `FlickAdvanceState`'s
+gap between the track and the volume control, which `MARGIN` was. `FlickAdvanceState`'s
 `elapsed` and `set_elapsed` are the track's two halves,
 `FlickRenderController.playhead` the dial's and the readout's frame, and
 `GenauRefreshController.seek_the_time_on_screen` the press reaching the engine;
@@ -677,7 +677,7 @@ gate has never once held this surface.
 
 ## 2026-10-08 — the clip's row is a block of the panel, and nothing is drawn along a lower edge
 
-A Funestra laid the track, the time readout and the volume chip along the lower
+A Funestra laid the track, the time readout and the volume control along the lower
 edge of its video while the panel it wears sat above them: two panels on one
 screen, and in the headset a wrapped video smears such a row round the nadir.
 The row is a block of whichever panel the window wears now -- the room's
@@ -687,7 +687,7 @@ one thing over its picture, plus the loop's two frames hanging under it.
 Gone: `Funestra.SCRUBBER_OVERLAY_ID`, `VOLUME_OVERLAY_ID` and
 `READOUT_OVERLAY_ID`, with `OVERLAY_IDS` down to the panel and the loop's two
 frames; `VolumeControl.press_at` / `drag_at` and `RoomVolume.press_at` /
-`drag_at`, the panel placing the press on the chip instead; and
+`drag_at`, the panel placing the press on the volume control instead; and
 `ConsoleOverlay.tick`'s `lower_edge`, there being nothing down there to clear.
 
 New: `hud_row.RowPress`, the one placement of a press on the row, which both
@@ -709,7 +709,7 @@ nothing for a width of 0, which is a host that has not measured a track yet.
 Both painters lay their panel down as a stack of sections with a line across
 the slab between each (`hud_sections.stack`, `HudPanel.divide`). A player's
 panel stacks its status, its declared buttons with the speed row, the clip's
-row, the device, the source's foot block and the map; the main console stacks
+row, the device, the source's foot block and the nav map; the main console stacks
 its status, its declared buttons, the device and the clip's row.
 `satellite_hud.FAMILY_GAP` is gone, `panel_layout` takes the status section's
 height as `status_h` and a foot's as a plain `foot_h`, and the console's
@@ -730,7 +730,7 @@ read off the console file and the drive file the same way the satellite panel is
 its presses and the drive readout's drags posted on the dashboard's channel), the
 scrubber with a scripted item's colors, the zoom while a stretch is marked and the
 two frames of a running A/B range (`scrubber`, which is the Main Player's
-`overlay` module moved here whole), the room's volume chip beside a Funestra's own
+`overlay` module moved here whole), the room's volume control beside a Funestra's own
 (`volume_control.RoomVolume`), and the black a Funestra shows when the room gives
 its rectangle to another window (`display`).
 
@@ -780,7 +780,7 @@ of them would die on import the moment that venv took this release.
 `funestra.Funestra` is the satellite program's run loop moved here without its
 window: built on a way of playing and the files its User drives it through
 (`Channels`), it plays what it is handed, answers the verbs, publishes the
-status, and draws the published panel, the scrubber, the volume chip and the
+status, and draws the published panel, the scrubber, the volume control and the
 playhead readout as mpv overlays.  With it come fun_time's `satellite/session.py`
 (`playback.Playback`), `satellite/runtime.py` (`funestra_controls`),
 `satellite/status.py` (`funestra_status`), `satellite/versions.py` (the
@@ -909,7 +909,7 @@ signatures, so a checkout still drawing the strip the old way runs as before.
 The panel `satellite_hud_paint.HudRenderer` draws is laid out top down by
 `satellite_hud.panel_layout`, and the nav map is its last block, under the
 clip's row, the device and a source's own block, set off from them by
-`FAMILY_GAP` (which `DEVICE_GAP` was). The map is one fixed box whatever it
+`FAMILY_GAP` (which `DEVICE_GAP` was). The nav map is one fixed box whatever it
 shows: three cells a side are always kept, every cell is a slot
 `slot_width(player)` wide (the widest shape a side's clips take at full height,
 4:5 or 16:9) with the picture centered in it and shrunk when it is wider, the
@@ -1007,14 +1007,14 @@ line, so the next session and the headset show that clip the same way.
 
 ## 2026-09-21 — the clip's row is a block a panel hosts
 
-`hud_row` draws the scrubber, the volume chip and the playhead readout into a
+`hud_row` draws the scrubber, the volume control and the playhead readout into a
 panel at its own width — the same track, chip and pill this package already
 paints — and `row_part` / `scrub_to` / `volume_to` say what a press on it is on
 and what it asks for. Both panels host it: `satellite_hud_paint.render` takes
 `clip_row=` (with a `heatmap` for a host that has a funscript) and reports
 `HudTargets.row`; `ConsolePainter.bgra` / `.rgba` take the same and report
 `row_rect`. A panel narrower than the row is widened for it, the way it is
-widened for its own rows, rather than letting the chip sit over the track.
+widened for its own rows, rather than letting the volume control sit over the track.
 
 Both take it from the PLAYER rather than from the published model, the way the
 file name is taken: what is decoding is the player's own, not what the source
@@ -1041,7 +1041,7 @@ satellite does, and the only place for them was a second panel over the same
 video. Origenerator's shows floated their generation queue that way.
 
 Nothing a player draws moves: 864 made-up panels — both orientations, three clip
-shapes, with and without a map, a device line, a readout, a file name, a rate
+shapes, with and without a nav map, a device line, a readout, a file name, a rate
 and a hover — come out byte for byte identical from v0.1.296 and from this
 version with `foot` unset, targets included.
 

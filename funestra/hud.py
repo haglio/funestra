@@ -6,7 +6,7 @@ so it can neither fall beneath the video nor float above the desktop.
 
 What the HUDs share is the look, not the contents: a rounded translucent slab,
 the Segoe UI face sized the way Qt sized it, and the RGBA -> BGRA hand-off mpv
-wants.  What each one *says* is its own business — the satellite draws a map of
+wants.  What each one *says* is its own business — the satellite draws a nav map of
 videos, the Main Funestra's console a couple of mode lines — so this owns the chrome and stops there.
 """
 from __future__ import annotations

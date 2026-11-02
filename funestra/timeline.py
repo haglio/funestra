@@ -6,7 +6,7 @@ with a dark translucent fill where it has none.  Every Funestra draws it, in
 separate processes and separate repos, so the whole of it lives here.
 
 The track starts where the row's readout and dial end (``bar_track_x`` is told
-how far in by the row that lays them out) and stops short of the volume chip
+how far in by the row that lays them out) and stops short of the volume control
 that shares its row — it subtracts :data:`funestra.volume.SLOT_W` — so none
 of them overlap and click-to-seek maps onto exactly the drawn track.  These
 are plain numpy arrays (BGRA, mpv's overlay format); no pygame.

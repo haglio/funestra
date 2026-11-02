@@ -1,6 +1,6 @@
-"""A Funestra's own volume chip: what it opens showing, and what the two verbs set.
+"""A Funestra's own volume control: what it opens showing, and what the two verbs set.
 
-Where on the chip a press landed is the row's to work out
+Where on the volume control a press landed is the row's to work out
 (:class:`funestra.hud_row.RowPress`, covered in tests/test_hud_row.py); what
 reaches a control is the mute or the level it asks for.
 """
@@ -17,13 +17,13 @@ def _volume(*, live: bool = True):
 
 
 class TestWhatItOpensAt:
-    def test_a_live_chip_opens_muted_at_full(self):
+    def test_a_live_volume_control_opens_muted_at_full(self):
         volume, _engine = _volume()
 
         assert volume.hud.muted is True
         assert volume.hud.volume == 100
 
-    def test_a_silent_chip_opens_empty(self):
+    def test_a_silent_volume_control_opens_empty(self):
         volume, _engine = _volume(live=False)
 
         assert volume.hud.muted is True
@@ -50,7 +50,7 @@ class TestWhatTheTwoVerbsSet:
         assert volume.hud == VolumeHud(volume=50, muted=False)
         assert (engine.volume, engine.muted) == (50, False)
 
-    def test_a_silent_chip_acts_on_neither(self):
+    def test_a_silent_volume_control_acts_on_neither(self):
         volume, engine = _volume(live=False)
 
         volume.toggle_mute()
@@ -59,7 +59,7 @@ class TestWhatTheTwoVerbsSet:
         assert volume.hud.muted is True
         assert engine.muted is True
 
-    def test_a_silent_chip_takes_no_level_it_is_handed_either(self):
+    def test_a_silent_volume_control_takes_no_level_it_is_handed_either(self):
         volume, engine = _volume(live=False)
 
         volume.set(60, False)
@@ -75,7 +75,7 @@ class TestWhatTheTwoVerbsSet:
 
 
 class TestTheRoomsVolume:
-    """The Main Funestra's sound is the room's to decide: the chip shows the level
+    """The Main Funestra's sound is the room's to decide: the volume control shows the level
     the room publishes, a press asks the room for a new one and shows it at once,
     and the room's answer overwrites it either way."""
 
@@ -102,7 +102,7 @@ class TestTheRoomsVolume:
 
         assert engine.muted is True
 
-    def test_the_rooms_answer_is_what_the_chip_shows_and_what_the_engine_plays(self, tmp_path):
+    def test_the_rooms_answer_is_what_the_volume_control_shows_and_what_the_engine_plays(self, tmp_path):
         control, engine = self._control(tmp_path)
 
         control.set(40, muted=False)

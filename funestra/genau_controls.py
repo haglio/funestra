@@ -281,7 +281,7 @@ def _volume_shown(controls: GenauControls, value: str) -> bool:
 
     Genau neither owns the level (the orchestrator does, for the whole primary
     display) nor plays the audio: a companion process carries the flick music.
-    What arrives here is only what the chip Genau draws should show, which is why
+    What arrives here is only what the volume control Genau draws should show, which is why
     the mute rides alongside the level — a level of zero cannot say whether the
     speaker is off or turned all the way down, nor what unmuting returns to.
 

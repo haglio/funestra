@@ -1,12 +1,12 @@
 """A Funestra's declared rows, made up for the tests that lay them out, draw them
-and press them: the shape a source's band takes, every state set here."""
+and press them: the shape a source's bar takes, every state set here."""
 from __future__ import annotations
 
 from funestra.hud_button import FIT_THE_WORD, Button
 from funestra.hud_icons import FMODE_ICON, MINIMIZE_ICON, shared_icon
 
 
-def band(funestra: str = "portrait", *, locked: bool = False, favorites: bool = False,
+def bar(funestra: str = "portrait", *, locked: bool = False, favorites: bool = False,
          enhanced: bool | None = None, newest: bool | None = None,
          minimize: bool = True) -> tuple[Button, ...]:
     """Stepping, the video on screen, the browse -- the enhanced switch and the
@@ -33,10 +33,10 @@ def band(funestra: str = "portrait", *, locked: bool = False, favorites: bool = 
 
 def funestra_rows(funestra: str = "portrait", *, mode: str = "",
                 **state) -> tuple[tuple[Button, ...], ...]:
-    """*Funestra*'s band, under the session's mode pair -- with minimize moved up
+    """*Funestra*'s bar, under the session's mode pair -- with minimize moved up
     beside it -- where a *mode* is named."""
     if not mode:
-        return (band(funestra, **state),)
+        return (bar(funestra, **state),)
     pair = (
         Button("satellites_kino_activate", "Kino", "Kino mode",
                width=FIT_THE_WORD, lit=mode == "kino"),
@@ -44,7 +44,7 @@ def funestra_rows(funestra: str = "portrait", *, mode: str = "",
                width=FIT_THE_WORD, lit=mode == "origenerator"),
         Button(f"{funestra}_minimize", MINIMIZE_ICON, "minimize tip", group_break=True),
     )
-    return pair, band(funestra, minimize=False, **state)
+    return pair, bar(funestra, minimize=False, **state)
 
 
 def short_name(button: Button) -> str:

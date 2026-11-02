@@ -37,7 +37,7 @@ from funestra.satellite_hud import MARGIN, HudModel
 from funestra.session_quit import SESSION_QUIT
 from funestra.testing import FakeEngine
 from funestra.timeline import TIMELINE_HEIGHT
-from funestra.volume import CHIP_H, CHIP_W, PAD, VolumeHud, chip_xy
+from funestra.volume import PAD, VOLUME_CONTROL_H, VOLUME_CONTROL_W, VolumeHud, volume_control_xy
 
 WINDOW = (640, 480)
 
@@ -54,9 +54,9 @@ def _on_the_row(funestra, engine, part: str = "track", *, along: int | None = No
         return left + x + (along if along is not None else (x0 + x1) // 2), top + y + height - 4
     if part == "dial":
         return left + x + row.dial + DIAL_SIZE - 3, top + y + PARTS_Y + DIAL_SIZE // 2  # quarter past
-    cx, cy = chip_xy(win_w=width, win_h=height, timeline_h=TIMELINE_HEIGHT)
-    across = 4 if part == "speaker" else CHIP_W - PAD
-    return left + x + cx + across, top + y + cy + CHIP_H // 2
+    cx, cy = volume_control_xy(win_w=width, win_h=height, timeline_h=TIMELINE_HEIGHT)
+    across = 4 if part == "speaker" else VOLUME_CONTROL_W - PAD
+    return left + x + cx + across, top + y + cy + VOLUME_CONTROL_H // 2
 
 
 def _videos(tmp_path: Path, *names: str) -> list[Path]:
@@ -962,7 +962,7 @@ class TestTheMainFunestra:
 
         assert _asked(tmp_path) == []
 
-    def test_its_sound_is_the_rooms_so_the_chip_asks_rather_than_sets(self, tmp_path):
+    def test_its_sound_is_the_rooms_so_the_volume_control_asks_rather_than_sets(self, tmp_path):
         funestra, engine, _kino = _main(tmp_path)
         funestra.tick(window=WINDOW)
 
@@ -1356,7 +1356,7 @@ class TestAWindowsOwnHud:
 
         assert engine.overlays[HUD_OVERLAY_ID][2] is not first
 
-    def test_the_rows_track_and_chip_are_the_windows_own(self, tmp_path):
+    def test_the_rows_track_and_volume_control_are_the_windows_own(self, tmp_path):
         funestra, engine, _user, _hud = self._own_hud(tmp_path)
         funestra.tick(window=WINDOW)
 
@@ -1439,7 +1439,7 @@ def test_on_a_window_that_can_never_be_heard_the_way_of_playing_takes_no_sound(t
     mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True, audio=False)
 
 
-def test_a_window_told_to_fall_silent_mutes_its_engine_and_its_chip(tmp_path):
+def test_a_window_told_to_fall_silent_mutes_its_engine_and_its_volume_control(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
     funestra.tick(window=WINDOW)
 

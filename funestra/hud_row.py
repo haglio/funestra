@@ -1,4 +1,4 @@
-"""The scrubber, the volume chip, the playhead readout and a flick's loop dial, drawn on a HUD.
+"""The scrubber, the volume control, the playhead readout and a flick's loop dial, drawn on a HUD.
 
 Every Funestra here laid this row along the lower edge of its own video, which is
 where a video player has always put it — and where, in this family, it keeps
@@ -12,7 +12,7 @@ readout are: one line, laid out from what is on it against the block's own
 width rather than the window's.  The track is what the room is for -- the
 heatmap and a seek need it wide -- so everything else takes only what it
 must: the readout of the frame and the time at the left end, after a
-flick's dial; the chip flush with the right end.  A flick's track has no
+flick's dial; the volume control flush with the right end.  A flick's track has no
 heatmap and nothing to find along it, so it stays short and no HUD widens
 for it.
 """
@@ -34,17 +34,17 @@ from .playhead import (
 )
 from .timeline import TIMELINE_HEIGHT, bar_track_x, progress_bar_bgra
 from .volume import (
-    CHIP_H,
     SLOT_W,
+    VOLUME_CONTROL_H,
     VolumeHud,
     VolumeHudPainter,
-    chip_local,
-    chip_xy,
     hit_part,
     volume_at,
+    volume_control_local,
+    volume_control_xy,
 )
 
-# What a press on the row is on.  The chip's two halves are named apart because
+# What a press on the row is on.  The volume control's two halves are named apart because
 # they do different things to the same control: the speaker mutes, the slider
 # sets the level.
 SCRUBBER = "scrubber"
@@ -56,8 +56,8 @@ DIAL = "dial"
 _CHIP_PARTS = {"mute": MUTE, "track": VOLUME}
 
 ROW_H = TIMELINE_HEIGHT
-# The readout, the dial and the chip are as tall as each other, centered in the row.
-PARTS_Y = (ROW_H - CHIP_H) // 2
+# The readout, the dial and the volume control are as tall as each other, centered in the row.
+PARTS_Y = (ROW_H - VOLUME_CONTROL_H) // 2
 # Between a readout and the control it reads out.
 GAP = GAP_SMALL
 
@@ -103,7 +103,7 @@ _WIDEST_ROWS = (
 @dataclass(frozen=True)
 class RowLayout:
     """Where the row lies in its HUD, and where each part lands across it,
-    left to right: a flick's dial, the readout, the track, and the chip."""
+    left to right: a flick's dial, the readout, the track, and the volume control."""
 
     rect: tuple[int, int, int, int]
     readout: tuple[int, int] | None  # its x and width, in the row's own pixels
@@ -193,8 +193,8 @@ class RowSection:
                                 heatmap=fitting(heatmap, layout.track), track=layout.track)
         image.alpha_composite(_rgba(bar), (x, y))
         if row.volume is not None:
-            chip = _rgba(self._volume.bgra(row.volume))
-            image.alpha_composite(chip, _offset((x, y), chip_xy(
+            volume_control = _rgba(self._volume.bgra(row.volume))
+            image.alpha_composite(volume_control, _offset((x, y), volume_control_xy(
                 win_w=width, win_h=ROW_H, timeline_h=ROW_H)))
         if layout.dial is not None:
             played, count = row.loop
@@ -254,7 +254,7 @@ def row_part(px: int, py: int, layout: RowLayout) -> str:
     """
     if not 0 <= py < ROW_H:
         return ""
-    part = hit_part(*chip_local(px, py, win_w=layout.width, win_h=ROW_H, timeline_h=ROW_H))
+    part = hit_part(*volume_control_local(px, py, win_w=layout.width, win_h=ROW_H, timeline_h=ROW_H))
     if part:
         return _CHIP_PARTS[part]
     if layout.dial is not None and on_dial(px, py, at=(layout.dial, PARTS_Y)):
@@ -327,7 +327,7 @@ def scrub_to(px: int, layout: RowLayout, *, duration_ms: float) -> float:
 
 def volume_to(px: int, py: int, layout: RowLayout) -> int:
     """The level a press along the slider asks for."""
-    return volume_at(chip_local(px, py, win_w=layout.width, win_h=ROW_H, timeline_h=ROW_H)[0])
+    return volume_at(volume_control_local(px, py, win_w=layout.width, win_h=ROW_H, timeline_h=ROW_H)[0])
 
 
 def turn_to(px: int, py: int, layout: RowLayout) -> float:

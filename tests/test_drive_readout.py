@@ -78,7 +78,7 @@ class TestControls:
 
     def test_the_speed_controls_sit_below_the_trace(self):
         """Speed is out from between center and amplitude, under the trace, so the
-        three axes do not crowd one band."""
+        three axes do not crowd one bar."""
         by_command = {c.command: c.rect for c in controls(0, 0, _hud())}
         _x, trace_y, _w, trace_h = next(t.rect for t in tracks(0, 0, _hud()) if t.axis == CENTER)
         wave_lower = trace_y + trace_h
@@ -176,23 +176,23 @@ class TestTheCenterLabel:
 
 
 class TestTracks:
-    """The bands themselves take a level from where you press in them, so a bar
+    """The bars themselves take a level from where you press in them, so a bar
     is set outright instead of walked to with the marks beside it."""
 
     @staticmethod
-    def _band(hud: DriveHud, axis: str):
+    def _bar(hud: DriveHud, axis: str):
         return next(t for t in tracks(PAD, PAD, hud) if t.axis == axis)
 
     def test_it_offers_a_band_for_each_of_the_three_axes(self):
         assert {t.axis for t in tracks(0, 0, _hud())} == {AMPLITUDE, CENTER, SPEED}
 
     def test_each_band_covers_the_bar_the_axis_is_drawn_as(self):
-        """The trace's band is the trace; the speed band sits between its two
-        marks, and the amplitude band between its own."""
+        """The trace's bar is the trace; the speed bar sits between its two
+        marks, and the amplitude bar between its own."""
         hud = _hud()
         marks = {c.command: c.rect for c in controls(PAD, PAD, hud)}
-        speed = self._band(hud, SPEED).rect
-        amp = self._band(hud, AMPLITUDE).rect
+        speed = self._bar(hud, SPEED).rect
+        amp = self._bar(hud, AMPLITUDE).rect
         down_x, down_y, down_w, _h = marks["robot_hand_speed_down"]
 
         assert speed[0] >= down_x + down_w
@@ -202,45 +202,45 @@ class TestTracks:
         assert amp[1] + amp[3] <= marks["robot_hand_amplitude_down"][1]
 
     def test_a_press_along_the_speed_bar_asks_for_how_far_along_it_sits(self):
-        band = self._band(_hud(), SPEED)
-        x, y, w, h = band.rect
+        bar = self._bar(_hud(), SPEED)
+        x, y, w, h = bar.rect
 
-        assert track_value(band, x, y + h // 2) == 0
-        assert abs(track_value(band, x + (w - 1) // 2, y + h // 2) - 50) <= 1
-        assert track_value(band, x + w - 1, y + h // 2) == 100
+        assert track_value(bar, x, y + h // 2) == 0
+        assert abs(track_value(bar, x + (w - 1) // 2, y + h // 2) - 50) <= 1
+        assert track_value(bar, x + w - 1, y + h // 2) == 100
 
     def test_a_press_in_the_trace_asks_for_the_height_it_sits_at(self):
         """The center's dotted line is drawn at its own height across the trace,
         so pressing there is asking for the line to come to the pointer.
 
-        Within a pixel in the middle of the band: the trace is fewer rows tall
+        Within a pixel in the middle of the bar: the trace is fewer rows tall
         than the hundred values it spans, so a row lands between two of them.
         """
-        band = self._band(_hud(), CENTER)
-        x, y, w, h = band.rect
+        bar = self._bar(_hud(), CENTER)
+        x, y, w, h = bar.rect
 
-        assert track_value(band, x + w // 2, y) == 100
-        assert track_value(band, x + w // 2, y + h - 1) == 0
-        assert abs(track_value(band, x + w // 2, y + (h - 1) // 2) - 50) <= 1
+        assert track_value(bar, x + w // 2, y) == 100
+        assert track_value(bar, x + w // 2, y + h - 1) == 0
+        assert abs(track_value(bar, x + w // 2, y + (h - 1) // 2) - 50) <= 1
 
     def test_a_press_up_the_amplitude_bar_asks_for_a_motion_that_reaches_it(self):
         """The bar is drawn out from the center both ways, so its ends are the
         handles: pressing where one is asks for the amplitude already set, and
         pressing past it asks for a longer motion.  Pressing at the center itself
         asks for no motion at all."""
-        band = self._band(_hud(amplitude=50, center=50), AMPLITUDE)
-        x, y, w, h = band.rect
+        bar = self._bar(_hud(amplitude=50, center=50), AMPLITUDE)
+        x, y, w, h = bar.rect
         top_of_bar = y + round(0.25 * (h - 1))
 
-        assert abs(track_value(band, x + w // 2, top_of_bar) - 50) <= 1
-        assert track_value(band, x + w // 2, y) == 100
-        assert track_value(band, x + w // 2, y + h - 1) == 100
-        assert abs(track_value(band, x + w // 2, y + (h - 1) // 2)) <= 2
+        assert abs(track_value(bar, x + w // 2, top_of_bar) - 50) <= 1
+        assert track_value(bar, x + w // 2, y) == 100
+        assert track_value(bar, x + w // 2, y + h - 1) == 100
+        assert abs(track_value(bar, x + w // 2, y + (h - 1) // 2)) <= 2
 
     def test_the_amplitude_bar_mirrors_about_wherever_the_center_is(self):
         """A motion centered low reaches the top of the bar only by growing to the
         full range and back, so the same press means different amplitudes."""
-        low = self._band(_hud(center=25), AMPLITUDE)
+        low = self._bar(_hud(center=25), AMPLITUDE)
         x, y, w, _h = low.rect
 
         assert track_value(low, x + w // 2, y) == 100
@@ -248,29 +248,29 @@ class TestTracks:
     def test_a_press_beyond_a_band_reads_as_its_nearer_end(self):
         """A drag that wanders off the bar goes on setting it rather than stopping
         dead at the edge, the way every slider behaves."""
-        band = self._band(_hud(), SPEED)
-        x, y, w, h = band.rect
+        bar = self._bar(_hud(), SPEED)
+        x, y, w, h = bar.rect
 
-        assert track_value(band, x - 400, y + h // 2) == 0
-        assert track_value(band, x + w + 400, y + h // 2) == 100
+        assert track_value(bar, x - 400, y + h // 2) == 0
+        assert track_value(bar, x + w + 400, y + h // 2) == 100
 
     def test_a_press_past_the_speed_the_max_intensity_leaves_asks_for_no_more_than_that(self):
-        band = self._band(_hud(speed=30, amplitude=20, max_intensity=5), SPEED)
-        x, y, w, h = band.rect
+        bar = self._bar(_hud(speed=30, amplitude=20, max_intensity=5), SPEED)
+        x, y, w, h = bar.rect
 
-        assert track_value(band, x + w - 1, y + h // 2) == speed_ceiling(5, 20)
+        assert track_value(bar, x + w - 1, y + h // 2) == speed_ceiling(5, 20)
 
     def test_a_press_past_the_amplitude_the_max_intensity_leaves_asks_for_no_more_than_that(self):
-        band = self._band(_hud(speed=50, amplitude=20, center=50, max_intensity=5), AMPLITUDE)
-        x, y, w, _h = band.rect
+        bar = self._bar(_hud(speed=50, amplitude=20, center=50, max_intensity=5), AMPLITUDE)
+        x, y, w, _h = bar.rect
 
-        assert track_value(band, x + w // 2, y) == amplitude_ceiling(5, 50)
+        assert track_value(bar, x + w // 2, y) == amplitude_ceiling(5, 50)
 
     def test_a_press_posts_the_set_command_fun_time_already_routes(self):
-        band = self._band(_hud(), SPEED)
-        x, y, _w, h = band.rect
+        bar = self._bar(_hud(), SPEED)
+        x, y, _w, h = bar.rect
 
-        assert track_command(band, x, y + h // 2) == "robot_hand_speed_0"
+        assert track_command(bar, x, y + h // 2) == "robot_hand_speed_0"
 
     def test_every_band_is_dimmed_while_a_funscript_has_the_device(self):
         """A motion Genau is not sending cannot be dragged, for the same reason
@@ -340,10 +340,10 @@ class TestTheAmplitudeBarBesideTheTrace:
         hud = _hud(amplitude=60, center=40,
                    waveform=tuple(0.4 + 0.3 * np.sin(i / 6) for i in range(80)))
         rgb = _rendered(hud).astype(int)
-        bands = {t.axis: t.rect for t in tracks(PAD, PAD, hud)}
+        bars = {t.axis: t.rect for t in tracks(PAD, PAD, hud)}
 
-        line = self._blue_rows(rgb, bands[CENTER])
-        bar = self._blue_rows(rgb, bands[AMPLITUDE])
+        line = self._blue_rows(rgb, bars[CENTER])
+        bar = self._blue_rows(rgb, bars[AMPLITUDE])
 
         assert abs(line[0] - bar[0]) <= 1
         assert abs(line[-1] - bar[-1]) <= 1

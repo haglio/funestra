@@ -11,7 +11,7 @@ from funestra.playhead import (
     readout_width,
     video_playhead,
 )
-from funestra.volume import CHIP_H
+from funestra.volume import VOLUME_CONTROL_H
 
 
 class TestWhatAVideosReadoutSays:
@@ -78,10 +78,10 @@ class TestTheReadout:
         assert not painted[0].any()
         assert not painted[-1].any()
 
-    def test_it_is_as_tall_as_the_volume_chip_at_the_other_end_of_the_row(self):
+    def test_it_is_as_tall_as_the_volume_volume_control_at_the_other_end_of_the_row(self):
         bgra = PlayheadHudPainter().bgra(video_playhead(42_000.0, 195_000.0, 30.0))
 
-        assert bgra.shape[0] == CHIP_H
+        assert bgra.shape[0] == VOLUME_CONTROL_H
 
     def test_it_takes_the_room_its_widest_words_need(self):
         hud = video_playhead(0.0, 7_200_000.0, 60.0)
@@ -123,5 +123,5 @@ class TestTheReadout:
         first_digit = bgra[:, :6, 3] > 128
         rows = np.flatnonzero(first_digit.any(axis=1))
 
-        assert abs((rows[0] + rows[-1]) / 2 - (CHIP_H - 1) / 2) <= 0.5
+        assert abs((rows[0] + rows[-1]) / 2 - (VOLUME_CONTROL_H - 1) / 2) <= 0.5
 
