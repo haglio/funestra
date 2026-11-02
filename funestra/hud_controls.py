@@ -34,6 +34,7 @@ FUNSCRIPT_JUMP_ICON = shared_mark("funscript_jump")
 # Said after a faded button's words, so it reads as out of range rather than broken.
 NONE_FOR_THIS_ONE = " (none for this one)"
 AN_IMAGE = "this is an image"
+TRASH_TOOLTIP = "Unfavorite it — or send it to Trash when it is not a favorite"
 RESET_TOOLTIP = "Reset — no filter, no lock, no loop, no F-Mode, normal speed, shuffled from the top"
 
 
@@ -103,8 +104,8 @@ def lock_button(funestra: str, *, locked: bool, tooltip: str) -> Button:
                   group_break=True)
 
 
-def trash_button(funestra: str, tooltip: str) -> Button:
-    return Button(f"{funestra}_trash", TRASH_ICON, tooltip, danger=True)
+def trash_button(funestra: str) -> Button:
+    return Button(f"{funestra}_trash", TRASH_ICON, TRASH_TOOLTIP, danger=True)
 
 
 def favorites_only_tooltip() -> str:
