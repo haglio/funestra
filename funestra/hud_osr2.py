@@ -267,21 +267,21 @@ class Osr2Section:
         # word beside two real buttons reads as a third one you can press.
         draw.text((pill_x + _PILL_PAD // 2, y + HEIGHT / 2), word,
                   font=self._tiny, anchor="lm", fill=(*color, 255))
-        for band in self.bands(x, y, line):
-            self._draw_max_intensity(draw, band, line.max_intensity)
-            placed.append((band.rect, Button("", "", band.tooltip)))
+        for bar in self.bars(x, y, line):
+            self._draw_max_intensity(draw, bar, line.max_intensity)
+            placed.append((bar.rect, Button("", "", bar.tooltip)))
         return placed
 
-    def _draw_max_intensity(self, draw: ImageDraw.ImageDraw, band: DriveTrack, max_intensity: int) -> None:
-        bx, by, bw, _bh = band.rect
+    def _draw_max_intensity(self, draw: ImageDraw.ImageDraw, bar: DriveTrack, max_intensity: int) -> None:
+        bx, by, bw, _bh = bar.rect
         mid = by + HEIGHT // 2
         number_x = bx - _LABEL_GAP - self._widest_number
         draw.text((number_x - _LABEL_GAP, mid), MAX_INTENSITY_LABEL, font=self._tiny, anchor="rm",
                   fill=(*TEXT_MUTED, 255))
         draw.text((number_x, mid), str(max_intensity), font=self._tiny, anchor="lm",
-                  fill=DISABLED_INK if band.dim else (*TEXT_PRIMARY, 255))
+                  fill=DISABLED_INK if bar.dim else (*TEXT_PRIMARY, 255))
         draw_level_bar(draw, (bx, mid - BAR_H // 2, bw, BAR_H), fill=fraction(max_intensity),
-                       color=DISABLED_INK if band.dim else (*BLUE, 255))
+                       color=DISABLED_INK if bar.dim else (*BLUE, 255))
 
     @staticmethod
     def _controls_width(controls: tuple[Button, ...]) -> int:
@@ -291,7 +291,7 @@ class Osr2Section:
             return 0
         return sum(b.width for b in controls) + GAP * (len(controls) - 1) + _GROUP_GAP
 
-    def bands(self, x: int, y: int, line: Osr2Line) -> list[DriveTrack]:
+    def bars(self, x: int, y: int, line: Osr2Line) -> list[DriveTrack]:
         if line.max_intensity is None:
             return []
         return [DriveTrack(

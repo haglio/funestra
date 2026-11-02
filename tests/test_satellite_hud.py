@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import math
 
-from satellite_rows import band, funestra_rows
+from satellite_rows import bar, funestra_rows
 from shared_ui.icon_geometry import tooltip_for
 from shared_ui.spacing import BUTTON_GAP, BUTTON_GROUP_GAP
 from shared_ui.testing import icons_lacking
@@ -22,8 +22,8 @@ from funestra.satellite_hud import (
     ELLIPSIS,
     FILTER_BTN,
     LOOP_BTN,
-    MAP_CELLS,
-    MAP_GAP,
+    NAV_MAP_CELLS,
+    NAV_MAP_GAP,
     PAD,
     ROW_GAP,
     TITLE_X,
@@ -47,9 +47,9 @@ from funestra.satellite_hud import (
     largest_size_that_fits,
     loop_button_rects,
     looped_group_rect,
-    map_row_width,
-    map_window,
     name_line,
+    nav_nav_map_row_width,
+    nav_nav_map_window,
     parse_hud,
     slot_rects,
     slot_width,
@@ -69,12 +69,12 @@ def _squares(x: int, y: int, buttons) -> list:
 # --- the title ---------------------------------------------------------
 
 
-def test_the_hud_is_as_wide_as_its_map_or_its_file_name_whichever_asks_for_more():
-    for_map = hud_width("portrait")
-    room = for_map - TITLE_X - PAD
+def test_the_hud_is_as_wide_as_its_nav_map_or_its_file_name_whichever_asks_for_more():
+    for_nav_map = hud_width("portrait")
+    room = for_nav_map - TITLE_X - PAD
 
-    assert hud_width("portrait", name_width=room) == for_map
-    assert hud_width("portrait", name_width=room + 20) == for_map + 20
+    assert hud_width("portrait", name_width=room) == for_nav_map
+    assert hud_width("portrait", name_width=room + 20) == for_nav_map + 20
 
 
 def test_a_text_naming_no_funestra_is_not_a_hud():
@@ -149,9 +149,9 @@ _LOOP = 12
 
 
 def test_a_loop_short_enough_to_fit_is_drawn_whole():
-    window = map_window(MAP_CELLS, playing=0)
+    window = nav_nav_map_window(NAV_MAP_CELLS, playing=0)
 
-    assert (window.start, window.count) == (0, MAP_CELLS)
+    assert (window.start, window.count) == (0, NAV_MAP_CELLS)
     assert window.more_before is False
     assert window.more_after is False
 
@@ -159,18 +159,18 @@ def test_a_loop_short_enough_to_fit_is_drawn_whole():
 def test_a_loop_just_started_opens_on_the_clip_on_screen():
     """The loop's head is the video it started on, so at that moment the window opens
     there — the video you pressed loop on is drawn in the corner, never mid-row."""
-    window = map_window(_LOOP, playing=0)
+    window = nav_nav_map_window(_LOOP, playing=0)
 
-    assert (window.start, window.count) == (0, MAP_CELLS)
+    assert (window.start, window.count) == (0, NAV_MAP_CELLS)
     assert window.more_after is True
     assert window.more_before is False
 
 
 def test_a_loop_partway_through_keeps_the_clip_on_screen_in_the_middle():
     """Once the loop has advanced past the first cells the window slides with it, so
-    the lit thumbnail stays in the middle instead of walking off the end of the map
+    the lit thumbnail stays in the middle instead of walking off the end of the nav map
     and leaving nothing highlighted."""
-    window = map_window(_LOOP, playing=5)
+    window = nav_nav_map_window(_LOOP, playing=5)
 
     assert (window.start, window.count) == (4, 3)  # 4, 5, 6 — the playing one centerd
     assert window.more_before is True
@@ -178,7 +178,7 @@ def test_a_loop_partway_through_keeps_the_clip_on_screen_in_the_middle():
 
 
 def test_a_loop_near_its_end_clamps_rather_than_running_off():
-    window = map_window(_LOOP, playing=11)
+    window = nav_nav_map_window(_LOOP, playing=11)
 
     assert (window.start, window.count) == (9, 3)
     assert window.more_before is True
@@ -186,14 +186,14 @@ def test_a_loop_near_its_end_clamps_rather_than_running_off():
 
 
 def test_an_axis_shorter_than_the_window_gives_only_what_it_has():
-    window = map_window(2, playing=0)
+    window = nav_nav_map_window(2, playing=0)
 
     assert (window.start, window.count) == (0, 2)
     assert window.more_after is False
 
 
 def test_an_empty_axis_has_no_window():
-    window = map_window(0, playing=0)
+    window = nav_nav_map_window(0, playing=0)
 
     assert (window.start, window.count) == (0, 0)
 
@@ -234,7 +234,7 @@ def test_pressing_a_partly_matching_button_narrows_the_filter_before_lifting_it(
     """A row the filter keeps without being exactly it ("Side Gamma" under "gamma") is
     the act you reached for, so the first press moves the filter onto that whole row
     and only a press on the row the filter already is turns it off.  Lifting on the
-    first press left no way to tighten a broad filter from the map."""
+    first press left no way to tighten a broad filter from the nav map."""
     clicks = HudClicks("portrait")
     clicks.active_filter = "gamma"
 
@@ -256,22 +256,22 @@ def test_pressing_a_two_act_rows_button_filters_to_both_of_its_acts():
 
 
 def test_slot_rects_lays_the_row_and_the_column_out_in_fixed_slots_three_to_a_side():
-    corner, seeds, actions = slot_rects(map_x=100, map_y=50, slot_w=30, seeds=5, actions=5)
+    corner, seeds, actions = slot_rects(nav_nav_map_x=100, nav_nav_map_y=50, slot_w=30, seeds=5, actions=5)
 
     assert corner == (100, 50, 30, 54)
-    assert seeds == [(100 + 30 + MAP_GAP, 50, 30, 54), (100 + 2 * (30 + MAP_GAP), 50, 30, 54)]
+    assert seeds == [(100 + 30 + NAV_MAP_GAP, 50, 30, 54), (100 + 2 * (30 + NAV_MAP_GAP), 50, 30, 54)]
     assert actions == [(100, 50 + 54 + ROW_GAP, 30, 54), (100, 50 + 2 * (54 + ROW_GAP), 30, 54)]
 
 
 def test_slot_rects_draws_only_the_slots_an_axis_has_clips_for():
-    _corner, seeds, actions = slot_rects(map_x=0, map_y=0, slot_w=30, seeds=1, actions=0)
+    _corner, seeds, actions = slot_rects(nav_nav_map_x=0, nav_nav_map_y=0, slot_w=30, seeds=1, actions=0)
 
     assert len(seeds) == 1
     assert actions == []
 
 
 def test_the_action_column_hangs_under_the_playing_seed():
-    _corner, seeds, actions = slot_rects(map_x=100, map_y=50, slot_w=30, seeds=2, actions=2,
+    _corner, seeds, actions = slot_rects(nav_nav_map_x=100, nav_nav_map_y=50, slot_w=30, seeds=2, actions=2,
                                          playing=("seed", 0))
 
     assert [x for x, _y, _w, _h in actions] == [seeds[0][0]] * 2
@@ -279,24 +279,24 @@ def test_the_action_column_hangs_under_the_playing_seed():
 
 def test_the_column_stays_under_the_corner_off_the_seed_row():
     for playing in (("corner", 0), ("action", 0)):
-        _corner, _seeds, actions = slot_rects(map_x=100, map_y=50, slot_w=30, seeds=1,
+        _corner, _seeds, actions = slot_rects(nav_nav_map_x=100, nav_nav_map_y=50, slot_w=30, seeds=1,
                                               actions=1, playing=playing)
         assert actions[0][0] == 100
 
 
 def test_a_playing_seed_that_was_not_drawn_leaves_the_column_on_the_corner():
-    _corner, _seeds, actions = slot_rects(map_x=100, map_y=50, slot_w=30, seeds=1, actions=1,
+    _corner, _seeds, actions = slot_rects(nav_nav_map_x=100, nav_nav_map_y=50, slot_w=30, seeds=1, actions=1,
                                           playing=("seed", 5))
 
     assert actions[0][0] == 100
 
 
 def test_a_column_under_the_rows_last_seed_ends_where_the_row_does():
-    _corner, seeds, actions = slot_rects(map_x=0, map_y=0, slot_w=slot_width("portrait"),
+    _corner, seeds, actions = slot_rects(nav_nav_map_x=0, nav_nav_map_y=0, slot_w=slot_width("portrait"),
                                          seeds=2, actions=1, playing=("seed", 1))
     ax, _ay, aw, _ah = actions[0]
 
-    assert ax + aw == seeds[-1][0] + seeds[-1][2] == map_row_width("portrait")
+    assert ax + aw == seeds[-1][0] + seeds[-1][2] == nav_nav_map_row_width("portrait")
 
 
 def test_a_thumbnail_stands_in_the_middle_of_its_slot():
@@ -311,29 +311,29 @@ def test_the_columns_chrome_follows_it_under_the_playing_seed():
 
     loop_action, _loop_seed = loop_button_rects(
         corner, row_end=300, column_end=250, column_rect=column)
-    assert loop_action == (40, 250 + MAP_GAP, 24, LOOP_BTN)
+    assert loop_action == (40, 250 + NAV_MAP_GAP, 24, LOOP_BTN)
 
     rect = looped_group_rect(corner, [column], actions, "action", column_rect=column)
     assert rect == (40, 10, 24, (42 + 20) - 10)
 
     before, after = ellipsis_rects(corner, [column], actions, "action", column_rect=column)
-    assert before == (40, 10 - MAP_GAP - ELLIPSIS, 24, ELLIPSIS)
-    assert after == (40, 42 + 20 + MAP_GAP, 24, ELLIPSIS)
+    assert before == (40, 10 - NAV_MAP_GAP - ELLIPSIS, 24, ELLIPSIS)
+    assert after == (40, 42 + 20 + NAV_MAP_GAP, 24, ELLIPSIS)
 
 
 def test_the_loop_buttons_stand_past_the_rows_and_the_columns_fixed_ends():
     corner = (10, 10, 20, 20)
     loop_action, loop_seed = loop_button_rects(corner, row_end=150, column_end=180, reserve=7)
 
-    assert loop_action == (10, 180 + 7 + MAP_GAP, 20, LOOP_BTN)
-    assert loop_seed == (150 + 7 + MAP_GAP, 10, LOOP_BTN, 20)
+    assert loop_action == (10, 180 + 7 + NAV_MAP_GAP, 20, LOOP_BTN)
+    assert loop_seed == (150 + 7 + NAV_MAP_GAP, 10, LOOP_BTN, 20)
     assert loop_button_rects(None, row_end=150, column_end=180) == (None, None)
 
 
 def test_expand_button_sits_in_the_row_right_of_the_seed_loop_button():
     loop_seed = (60, 10, 18, 30)
 
-    assert expand_button_rect(loop_seed) == (60 + 18 + MAP_GAP, 10, LOOP_BTN, 30)
+    assert expand_button_rect(loop_seed) == (60 + 18 + NAV_MAP_GAP, 10, LOOP_BTN, 30)
     assert expand_button_rect(None) is None
 
 
@@ -431,14 +431,14 @@ def test_act_is_filtered_picks_out_which_of_a_rows_acts_the_filter_named():
 
 def test_button_tooltip_names_each_button():
     """Every icon on the HUD is cryptic on purpose, so each one names itself on
-    hover — a declared button by the tooltip its source gave it, the map's own
+    hover — a declared button by the tooltip its source gave it, the nav map's own
     chrome and the favorite mark by the words the HUD has for them."""
     targets = HudTargets(
         click=[],
         loop=[((0, 0, 20, 20), "action"), ((30, 0, 20, 20), "seed")],
         filter=[((0, 100, FILTER_BTN, 54), "gamma")],
         expand=(30, 30, 18, 18),
-        buttons=_squares(0, 60, band(newest=False)),
+        buttons=_squares(0, 60, bar(newest=False)),
         favorite=(300, 60, CTRL_BTN, CTRL_BTN),
     )
 
@@ -447,7 +447,7 @@ def test_button_tooltip_names_each_button():
     assert button_tooltip(targets, 5, 105) == "Filter to this action"
     assert button_tooltip(targets, 35, 35) == "More seeds — widen the net"
     # Probed off the rects the row was actually laid out at rather than off a
-    # fixed pitch: the band breaks into groups, so a stride is not the answer.
+    # fixed pitch: the bar breaks into groups, so a stride is not the answer.
     for (bx, by, _w, _h), button in targets.buttons:
         assert button_tooltip(targets, bx + 5, by + 5) == button.tooltip
     assert button_tooltip(targets, 305, 65) == "In the favorites"
@@ -462,7 +462,7 @@ def test_a_declared_button_wearing_a_mark_this_version_lacks_says_why_on_hover()
     assert button_tooltip(targets, 5, 5) == auto.tooltip_on_hover
 
 
-def test_the_map_s_own_controls_say_why_when_this_version_lacks_their_marks():
+def test_the_nav_map_s_own_controls_say_why_when_this_version_lacks_their_marks():
     targets = _targets(loop=[((0, 0, 20, 20), "action")], wrong_action=(30, 0, 20, 20),
                        expand=(60, 0, 20, 20), favorite=(90, 0, 20, 20))
 
@@ -500,8 +500,8 @@ def test_the_speed_row_puts_slower_the_rate_and_faster_after_its_name():
         "portrait_speed_down", "portrait_speed_up"]
     (down, _), (up, _) = buttons
     assert down == (80, 40, CTRL_BTN, CTRL_BTN)
-    assert rate == (80 + CTRL_BTN + MAP_GAP, 40, VALUE_W, CTRL_BTN)
-    assert up == (rate[0] + VALUE_W + MAP_GAP, 40, CTRL_BTN, CTRL_BTN)
+    assert rate == (80 + CTRL_BTN + NAV_MAP_GAP, 40, VALUE_W, CTRL_BTN)
+    assert up == (rate[0] + VALUE_W + NAV_MAP_GAP, 40, CTRL_BTN, CTRL_BTN)
 
 
 def test_the_speed_buttons_say_what_a_press_does_to_the_video():
@@ -633,7 +633,7 @@ def test_clicking_a_declared_button_posts_what_it_declares():
     "landscape_trash" — so the dispatch loop needs no new verbs for a button,
     only for the thing it does."""
     for funestra in ("portrait", "landscape"):
-        targets = _targets(buttons=_squares(0, 0, band(funestra)))
+        targets = _targets(buttons=_squares(0, 0, bar(funestra)))
 
         for rect, button in targets.buttons:
             assert HudClicks(funestra).press(
@@ -655,7 +655,7 @@ def test_a_side_control_posts_at_once_rather_than_waiting_out_a_double_click():
     button means one thing, so it fires on the press and leaves nothing pending."""
     clicks = HudClicks("portrait")
 
-    assert clicks.press(_targets(buttons=_squares(0, 0, band())), 5, 5, now=0.0) == "portrait_prev"
+    assert clicks.press(_targets(buttons=_squares(0, 0, bar())), 5, 5, now=0.0) == "portrait_prev"
     assert clicks.due(now=5.0) == ""
 
 
@@ -759,7 +759,7 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
         assert parse_hud(hud_text(model)) == model
 
     def test_a_key_the_hud_no_longer_carries_is_passed_over(self):
-        """The switches a Funestra's band was once lit from still come from a
+        """The switches a Funestra's bar was once lit from still come from a
         publisher on an older release; the HUD reads the same without them."""
         parsed = parse_hud(json.dumps({
             "funestra": "portrait", "favorites_filter": True, "latest": False,

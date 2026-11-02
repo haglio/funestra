@@ -316,7 +316,7 @@ class TestTheRoomsLevel:
 
         assert (engine.volume, volume.hud.volume, volume.hud.muted) == (70, 70, False)
 
-    def test_a_mute_plays_silent_but_the_chip_still_shows_where_it_was_set(self, tmp_path):
+    def test_a_mute_plays_silent_but_the_volume_control_still_shows_where_it_was_set(self, tmp_path):
         controls, engine, volume = self._controls(tmp_path)
 
         assert apply_command(f"{SET_VOLUME} 70 1", controls) is True

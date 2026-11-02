@@ -68,17 +68,17 @@ from .satellite_hud import (
     BLOCK_GAP,
     COL_LABEL_GAP,
     COL_LABEL_H,
-    CTRL_BAND_H,
+    CONTROL_ROW_H,
     CTRL_BTN,
     ELLIPSIS_ROOM,
     EXPAND_ICON,
     FAVORITE_ICON,
     LOOP_ICON,
-    MAP_COLUMN_H,
-    MAP_GAP,
-    MAP_THUMB_H,
     MINUS_INSET,
     MODE_LABEL_PAD,
+    NAV_MAP_COLUMN_H,
+    NAV_MAP_GAP,
+    NAV_MAP_THUMB_H,
     PAD,
     ROW_LABEL_GUTTER,
     SUBTITLE_GAP,
@@ -91,7 +91,7 @@ from .satellite_hud import (
     HudCell,
     HudModel,
     HudTargets,
-    MapWindow,
+    NavMapWindow,
     act_is_filtered,
     action_label_blocks,
     build_click_targets,
@@ -110,10 +110,10 @@ from .satellite_hud import (
     largest_size_that_fits,
     loop_button_rects,
     looped_group_rect,
-    map_block_width,
-    map_row_width,
-    map_window,
     name_line,
+    nav_nav_map_block_width,
+    nav_nav_map_row_width,
+    nav_nav_map_window,
     playing_rect,
     seed_column_label,
     slot_rects,
@@ -128,7 +128,7 @@ _PLACEHOLDER = BG_TERTIARY  # a thumbnail fun_time has not produced yet
 
 _DIM = 0.5      # non-playing thumbnails; the one on screen stays full
 _BORDER_W = 2   # the lock ring around the held video
-_COUNT_LINE_H = 11  # line pitch of the axis counts in the map's top-left corner
+_COUNT_LINE_H = 11  # line pitch of the axis counts in the nav map's top-left corner
 
 _LOOP_ICON = shared_icon(LOOP_ICON)
 _EXPAND_ICON = shared_icon(EXPAND_ICON)
@@ -211,15 +211,15 @@ class HudRenderer:
                 except OSError:
                     image = None
                 if image is not None:
-                    scale = min(slot_w / max(1, image.width), MAP_THUMB_H / max(1, image.height))
+                    scale = min(slot_w / max(1, image.width), NAV_MAP_THUMB_H / max(1, image.height))
                     cached = image.resize((max(1, round(image.width * scale)),
                                            max(1, round(image.height * scale))))
                     self._thumbs[cell.thumb] = cached
             if cached is not None:
                 return cached
-        return Image.new("RGBA", (slot_w, MAP_THUMB_H), (*_PLACEHOLDER, 255))
+        return Image.new("RGBA", (slot_w, NAV_MAP_THUMB_H), (*_PLACEHOLDER, 255))
 
-    def _map_thumbnails(
+    def _nav_nav_map_thumbnails(
         self, model: HudModel
     ) -> tuple[Image.Image | None, list[Image.Image], list[Image.Image]]:
         if model.corner is None:
@@ -249,7 +249,7 @@ class HudRenderer:
     ) -> RenderedHud:
         """The HUD as a BGRA bitmap plus the rects its controls occupy.
 
-        The current video anchors the map — its seed family runs right along the row
+        The current video anchors the nav map — its seed family runs right along the row
         and distinct other actions run down the column, so stepping an action
         moves down and the row reloads with that action's seeds.  The column hangs
         under whichever row cell is playing (fun_time builds it from that seed's
@@ -291,8 +291,8 @@ class HudRenderer:
                      heatmap: np.ndarray | None, drawn_with: _DrawnWith) -> RenderedHud:
         counts = self._count_lines(model)
         model, seed_win, action_win = self._window(model)
-        corner_thumb, seed_thumbs, action_thumbs = self._map_thumbnails(model)
-        # The bands' own demand: a row the HUD cannot hold clips away in
+        corner_thumb, seed_thumbs, action_thumbs = self._nav_nav_map_thumbnails(model)
+        # The bars' own demand: a row the HUD cannot hold clips away in
         # silence — the buttons past the edge are simply not there, with nothing
         # raised — so the HUD is measured around the widest row.
         rows = [list(row) for row in model.rows]
@@ -302,13 +302,13 @@ class HudRenderer:
         # them away just as silently.
         device_rows = [list(row) for row in model.osr2_rows]
         device_row_widths = [[self._button_width(b) for b in row] for row in device_rows]
-        band_width = max((
+        bar_width = max((
             2 * PAD + button_row_width(row, row_widths)
             for row, row_widths in zip(rows + device_rows, widths + device_row_widths, strict=True)
             if row
         ), default=0)
         # The device's own blocks, on a host that drives it: the OSR2 line and
-        # the readout ask for width the way the bands do, and for room under them.
+        # the readout ask for width the way the bars do, and for room under them.
         composed = (model.drive if model.drive_composed and model.drive is not None
                     and model.drive.segments else None)
         osr2_line = Osr2Line(
@@ -321,7 +321,7 @@ class HudRenderer:
         foot_w, foot_h = model.foot.size() if model.foot is not None else (0, 0)
         width = hud_width(model.funestra, text_width(self._tiny, drawn_with.video),
                           content_width=max(
-                                band_width,
+                                bar_width,
                                 2 * PAD + device_w if device_w else 0,
                                 2 * PAD + foot_w if foot_w else 0,
                                 2 * PAD + self._item_row.least_width(item_row)
@@ -329,7 +329,7 @@ class HudRenderer:
         row_h = ROW_H if item_row is not None else 0
         layout = hud_layout(
             title_h=self._title_height(),
-            bands=len(rows), speed=model.playback_speed is not None, row_h=row_h,
+            bars=len(rows), speed=model.playback_speed is not None, row_h=row_h,
             device_h=device_height(model.osr2, model.drive, drive_h, len(device_rows)),
             foot_h=foot_h)
         height = layout.height
@@ -349,7 +349,7 @@ class HudRenderer:
             image, draw, PAD, model, width, title_font,
             name_line(drawn_with.video, model.item_note, room, self._tiny),
             reserve=0 if model.hud_corner.lower else minus_room)
-        y = layout.bands
+        y = layout.bars
         buttons: list[tuple[Rect, Button]] = []
         if drawn_with.minus_on_the_hud:
             minus = (corner_button_rect(model.hud_corner, hud=(width, height),
@@ -359,8 +359,8 @@ class HudRenderer:
                         icon_font=self._icon, word_font=self._tiny)
             buttons.append(minus)
 
-        # Laid out against the HUD rather than against the map: they act on the
-        # side and the video on screen, and are there whether or not there is a map.
+        # Laid out against the HUD rather than against the nav map: they act on the
+        # side and the video on screen, and are there whether or not there is a nav map.
         for row, row_widths in zip(rows, widths, strict=True):
             placed = button_row_rects(
                 self._block_x(model, width, button_row_width(row, row_widths)),
@@ -370,9 +370,9 @@ class HudRenderer:
                             icon_font=self._icon, word_font=self._tiny,
                             row_label=index == 0)
             buttons.extend(placed)
-            y += CTRL_BAND_H
+            y += CONTROL_ROW_H
 
-        # The rate this side plays at, its own row under the bands -- drawn here
+        # The rate this side plays at, its own row under the bars -- drawn here
         # rather than declared, since only the drawing Funestra knows the number.
         # Its two buttons still register as declared buttons, so a press posts
         # the side's speed verb and a hover names it like any other.
@@ -394,7 +394,7 @@ class HudRenderer:
         row = None
         if item_row is not None:
             row = row_layout(item_row, rect=(x, layout.row, width - 2 * PAD, row_h))
-        device_buttons, bands = self._draw_device(
+        device_buttons, bars = self._draw_device(
             image, draw, width, layout.device, model, osr2_line, drive_h,
             rows=device_rows, widths=device_row_widths)
         buttons.extend(device_buttons)
@@ -404,12 +404,12 @@ class HudRenderer:
             buttons.extend(model.foot.paint(image, x, layout.foot, width - 2 * PAD,
                                             self._pointer))
 
-        map_targets = (self._draw_map(image, draw, model, layout.map, width, counts,
+        nav_nav_map_targets = (self._draw_nav_map(image, draw, model, layout.nav_map, width, counts,
                                       (corner_thumb, seed_thumbs, action_thumbs),
                                       (seed_win, action_win), drawn_with.hover_loop)
                        if corner_thumb is not None
                        else HudTargets(click=[], loop=[], filter=[], expand=None))
-        targets = replace(map_targets, tracks=bands, row=row, foot=foot_rect, buttons=buttons,
+        targets = replace(nav_nav_map_targets, tracks=bars, row=row, foot=foot_rect, buttons=buttons,
                           favorite=favorite)
         if drawn_for is not None:
             self._drawn = _DrawnButTheRow(drawn_for, image, to_bgra(image), row.rect, targets)
@@ -437,16 +437,16 @@ class HudRenderer:
         return RenderedHud(bgra, replace(drawn.targets,
                                          row=row_layout(item_row, rect=drawn.row_rect)))
 
-    def _draw_map(self, image, draw, model: HudModel, top: int, width: int,
+    def _draw_nav_map(self, image, draw, model: HudModel, top: int, width: int,
                   counts: tuple[str, ...], thumbs, windows, hover_loop: str) -> HudTargets:
         corner_thumb, seed_thumbs, action_thumbs = thumbs
         seed_win, action_win = windows
-        gutter_x = self._block_x(model, width, map_block_width(model.funestra))
+        gutter_x = self._block_x(model, width, nav_nav_map_block_width(model.funestra))
         self._draw_counts(draw, gutter_x, top, counts)
-        map_x = gutter_x + ROW_LABEL_GUTTER + ELLIPSIS_ROOM
-        map_y = top + COL_LABEL_H + COL_LABEL_GAP + ELLIPSIS_ROOM
+        nav_nav_map_x = gutter_x + ROW_LABEL_GUTTER + ELLIPSIS_ROOM
+        nav_nav_map_y = top + COL_LABEL_H + COL_LABEL_GAP + ELLIPSIS_ROOM
         corner_rect, seed_rects, action_rects = slot_rects(
-            map_x=map_x, map_y=map_y, slot_w=slot_width(model.funestra),
+            nav_nav_map_x=nav_nav_map_x, nav_nav_map_y=nav_nav_map_y, slot_w=slot_width(model.funestra),
             seeds=len(seed_thumbs), actions=len(action_thumbs), playing=model.playing)
         column_rect = column_anchor_rect(model.playing, corner_rect, seed_rects)
 
@@ -466,8 +466,8 @@ class HudRenderer:
         self._draw_filter_buttons(image, draw, filter_rects, model)
 
         loop_action_rect, loop_seed_rect = loop_button_rects(
-            corner_rect, row_end=map_x + map_row_width(model.funestra),
-            column_end=map_y + MAP_COLUMN_H, reserve=ELLIPSIS_ROOM, column_rect=column_rect)
+            corner_rect, row_end=nav_nav_map_x + nav_nav_map_row_width(model.funestra),
+            column_end=nav_nav_map_y + NAV_MAP_COLUMN_H, reserve=ELLIPSIS_ROOM, column_rect=column_rect)
         expand_rect = expand_button_rect(loop_seed_rect)
         self._draw_loop_controls(image, draw, corner_rect, column_rect, loop_action_rect,
                                  loop_seed_rect, seed_rects, action_rects,
@@ -493,7 +493,7 @@ class HudRenderer:
                      osr2_line: Osr2Line, drive_h: int, *, rows, widths,
                      ) -> tuple[list[tuple[Rect, Button]], list[DriveTrack]]:
         buttons: list[tuple[Rect, Button]] = []
-        bands: list[DriveTrack] = []
+        bars: list[DriveTrack] = []
         for row, row_widths in zip(rows, widths, strict=True):
             placed = button_row_rects(
                 self._block_x(model, width, button_row_width(row, row_widths)),
@@ -503,22 +503,22 @@ class HudRenderer:
                             icon_font=self._icon, word_font=self._tiny,
                             row_label=index == 0)
             buttons.extend(placed)
-            y += CTRL_BAND_H
-        max_intensity_bands: list[DriveTrack] = []
+            y += CONTROL_ROW_H
+        max_intensity_bars: list[DriveTrack] = []
         if model.osr2:
             osr2_x = self._block_x(model, width, self._osr2.width(osr2_line))
             buttons.extend(self._osr2.draw(image, draw, osr2_x, y, osr2_line,
                                            hover=self._pointer))
-            max_intensity_bands = self._osr2.bands(osr2_x, y, osr2_line)
+            max_intensity_bars = self._osr2.bars(osr2_x, y, osr2_line)
             y += OSR2_H + BLOCK_GAP
         if model.drive is not None:
             drive_x = self._block_x(model, width, section_size()[0])
             # The HUD's image rather than its pen: the readout supersamples its
             # trace and composites it back, which a pen cannot carry.
             self._drive.draw(image, drive_x, y, model.drive)
-            drive_targets, bands = readout_targets(drive_x, y, model.drive)
+            drive_targets, bars = readout_targets(drive_x, y, model.drive)
             buttons.extend(drive_targets)
-        return buttons, bands + max_intensity_bands
+        return buttons, bars + max_intensity_bars
 
     def _button_width(self, button: Button) -> int:
         """A declared button's width: its own, or -- asking to fit its word --
@@ -561,13 +561,13 @@ class HudRenderer:
 
     def _window(
         self, model: HudModel
-    ) -> tuple[HudModel, MapWindow | None, MapWindow | None]:
+    ) -> tuple[HudModel, NavMapWindow | None, NavMapWindow | None]:
         """*model* narrowed to the cells actually drawn, plus each axis's window.
 
-        An axis can hold far more videos than the map draws — a loop's group
+        An axis can hold far more videos than the nav map draws — a loop's group
         especially — so each axis is drawn through a window of MAP_CELLS that keeps
         the playing cell near the middle, rather than drawing the first few and
-        leaving the video on screen off the map once playback moves past them.
+        leaving the video on screen off the nav map once playback moves past them.
         Narrowing the model here means everything downstream — rects, labels, hit
         targets and the bright cell — works off the drawn cells alone.
         """
@@ -578,8 +578,8 @@ class HudRenderer:
         action_strip = [model.corner, *model.actions]
         seed_at = index + 1 if bucket == "seed" else 0
         action_at = index + 1 if bucket == "action" else 0
-        seed_win = map_window(len(seed_strip), seed_at)
-        action_win = map_window(len(action_strip), action_at)
+        seed_win = nav_nav_map_window(len(seed_strip), seed_at)
+        action_win = nav_nav_map_window(len(action_strip), action_at)
         # The corner slot belongs to whichever axis the video on screen sits on: that
         # is the only axis whose window can have moved off the corner.  Both strips
         # hold the corner, so both windows hold at least it.
@@ -612,11 +612,11 @@ class HudRenderer:
         return (f"Seeds: {model.seed_count}", f"Actions: {model.action_count}")
 
     def _draw_counts(self, draw, x: int, y: int, lines: tuple[str, ...]) -> None:
-        """The axis counts, in the corner left of the map and above its first row.
+        """The axis counts, in the corner left of the nav map and above its first row.
 
-        The map draws only MAP_CELLS of each axis — and a window can hide a whole
+        The nav map draws only MAP_CELLS of each axis — and a window can hide a whole
         loop's worth — so this is the only place its real size can be read.  It sits
-        outside the map proper, in the gutter's own column, and is there whether or
+        outside the nav map proper, in the gutter's own column, and is there whether or
         not a loop is running.
         """
         for line_no, text in enumerate(lines, start=1):
@@ -697,7 +697,7 @@ class HudRenderer:
                     " ".join(block), model.filter_query, model.camera_words)
                 color = TEXT_PRIMARY if lit else TEXT_MUTED
                 for line in block:
-                    draw.text((x + ROW_LABEL_GUTTER - MAP_GAP, ty + line_h / 2), line,
+                    draw.text((x + ROW_LABEL_GUTTER - NAV_MAP_GAP, ty + line_h / 2), line,
                               font=self._tiny, anchor="rm", fill=(*color, 255))
                     ty += line_h
                 ty += ACT_GAP
@@ -711,7 +711,7 @@ class HudRenderer:
         # whose act would be wrong, and the rows under it are other videos'.
         strike = WRONG_BTN + WRONG_GAP if model.current_action else 0
         words_end = row(cy, ch, model.current_action, extra=strike)
-        wrong = (wrong_action_rect(x + ROW_LABEL_GUTTER - MAP_GAP, words_end)
+        wrong = (wrong_action_rect(x + ROW_LABEL_GUTTER - NAV_MAP_GAP, words_end)
                  if model.current_action else None)
         if wrong is not None:
             self._strike_button(image, draw, wrong)
@@ -783,7 +783,7 @@ class HudRenderer:
         """The strike under the current video's act: the family's cross, drawn red.
 
         Red because it takes something away — the same red the bin on the control
-        band wears, and the one color on this HUD worth stopping at before
+        bar wears, and the one color on this HUD worth stopping at before
         pressing.  Never lit: striking an act is a thing done, not a state the
         side sits in, and the act is relabeled out from under it.
         """

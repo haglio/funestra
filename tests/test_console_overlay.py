@@ -326,7 +326,7 @@ class TestAPress:
 
 
 class TestTheBandsOnTheOsr2Line:
-    def _max_intensity_band(self, tmp_path):
+    def _max_intensity_bar(self, tmp_path):
         overlay = _published(tmp_path, max_intensity=50)
         left, top, _bgra = overlay._engine.overlays[HUD_OVERLAY_ID]
         track = next(track for track in overlay._painter.tracks)
@@ -334,7 +334,7 @@ class TestTheBandsOnTheOsr2Line:
         return overlay, (left + x, top + y + h // 2), (left + x + w - 1, top + y + h // 2)
 
     def test_a_press_on_a_band_takes_hold_of_it_and_posts_what_it_asks(self, tmp_path):
-        overlay, start, _end = self._max_intensity_band(tmp_path)
+        overlay, start, _end = self._max_intensity_bar(tmp_path)
 
         assert overlay.press(*start) is True
 
@@ -342,7 +342,7 @@ class TestTheBandsOnTheOsr2Line:
         assert len(_asked(tmp_path)) == 1
 
     def test_a_drag_along_the_held_band_posts_the_new_level(self, tmp_path):
-        overlay, start, end = self._max_intensity_band(tmp_path)
+        overlay, start, end = self._max_intensity_bar(tmp_path)
         overlay.press(*start)
 
         dragged = overlay.drag_to(*end)
@@ -351,14 +351,14 @@ class TestTheBandsOnTheOsr2Line:
         assert _asked(tmp_path) == [_asked(tmp_path)[0], dragged]
 
     def test_a_drag_that_moves_nothing_posts_nothing(self, tmp_path):
-        overlay, start, _end = self._max_intensity_band(tmp_path)
+        overlay, start, _end = self._max_intensity_bar(tmp_path)
         overlay.press(*start)
 
         assert overlay.drag_to(*start) == ""
         assert len(_asked(tmp_path)) == 1
 
     def test_letting_go_ends_the_hold(self, tmp_path):
-        overlay, start, _end = self._max_intensity_band(tmp_path)
+        overlay, start, _end = self._max_intensity_bar(tmp_path)
         overlay.press(*start)
 
         overlay.release()

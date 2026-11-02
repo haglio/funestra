@@ -31,7 +31,7 @@ def test_the_block_is_as_big_as_the_parts_it_places(center):
 
 def test_the_center_marks_ride_the_line_they_move_and_stay_on_the_block():
     # The dotted center line moves with the value, and its marks travel with it —
-    # but a center at either extreme must not push one off the trace's band.
+    # but a center at either extreme must not push one off the trace's bar.
     for center in (0, 25, 50, 75, 100):
         g = layout.geometry(0, 0, layout.fraction(center))
         wave_x, wave_y, _w, wave_h = g.wave
@@ -93,10 +93,10 @@ def _overlap(a, b) -> bool:
 @pytest.mark.parametrize("center", [0, 50, 100])
 def test_no_mark_sits_on_another_mark_or_on_a_band(center):
     marks = [mark.rect for mark in layout.controls(0, 0, center, layout.Limits())]
-    bands = [track.rect for track in layout.tracks(0, 0, center)]
+    bars = [track.rect for track in layout.tracks(0, 0, center)]
 
     for index, mark in enumerate(marks):
-        assert not any(_overlap(mark, other) for other in marks[index + 1:] + bands)
+        assert not any(_overlap(mark, other) for other in marks[index + 1:] + bars)
 
 
 def test_a_mark_at_the_end_of_its_range_is_dimmed_and_only_that_one():

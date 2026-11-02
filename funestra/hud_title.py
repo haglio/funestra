@@ -3,7 +3,7 @@
 Three Funestras draw a HUD in this family — the two satellites and the Main
 Funestra, whichever of Kino or Genau runs on it — and each one's title says what is
 selecting what you are looking at.  They say different *things*: a satellite has a
-loop over a map of videos, an act filter and a browse order; the primary has a
+loop over a nav map of videos, an act filter and a browse order; the primary has a
 compilation, a length mode and a pace.  What they must not differ on is the
 *grammar* — which fact comes first, which word names the lock, when a fact is worth
 saying at all — because a reader glancing between two screens is reading one
@@ -50,7 +50,7 @@ def looping_label(axis: str) -> str:
     The lit loop button on a HUD's map and this phrase are the same fact said
     twice, once as a light and once in words, so a reader who saw the light on
     one screen finds the same sentence on the other.  Named here because more
-    than one Funestra draws that map now: a satellite looping a seed row, and a
+    than one Funestra draws that nav map now: a satellite looping a seed row, and a
     hosted Origenerator's show, which IS a seed row played round and round.
     """
     return f"Looping {axis}s"

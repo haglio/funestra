@@ -21,7 +21,13 @@ from funestra.satellite_hud import MARGIN, MINUS_INSET, PAD, HudModel
 from funestra.satellite_hud_paint import HudRenderer
 from funestra.testing import FakeEngine
 from funestra.timeline import TIMELINE_HEIGHT
-from funestra.volume import CHIP_H, CHIP_W, SPEAKER_W, VolumeHud, chip_xy
+from funestra.volume import (
+    SPEAKER_W,
+    VOLUME_CONTROL_H,
+    VOLUME_CONTROL_W,
+    VolumeHud,
+    volume_control_xy,
+)
 
 
 @pytest.fixture
@@ -132,10 +138,10 @@ class TestTheClipsRowAtItsFoot:
         )
         overlay.tick(item_row=self._ROW)
         _x, _y, width, height = overlay.targets.row.rect
-        cx, cy = chip_xy(win_w=width, win_h=height, timeline_h=TIMELINE_HEIGHT)
+        cx, cy = volume_control_xy(win_w=width, win_h=height, timeline_h=TIMELINE_HEIGHT)
 
-        overlay.press(*self._on_the_row(overlay, cx + SPEAKER_W // 2, cy + CHIP_H // 2))
-        overlay.drag_to(*self._on_the_row(overlay, cx + CHIP_W - 2, cy + CHIP_H // 2))
+        overlay.press(*self._on_the_row(overlay, cx + SPEAKER_W // 2, cy + VOLUME_CONTROL_H // 2))
+        overlay.drag_to(*self._on_the_row(overlay, cx + VOLUME_CONTROL_W - 2, cy + VOLUME_CONTROL_H // 2))
 
         assert mutes == [1]
         assert levels == []
@@ -222,7 +228,7 @@ def test_tick_redraws_only_when_the_published_hud_changes(tmp_path: Path, hud: P
 
 def test_tick_redraws_when_the_clip_on_screen_changes(tmp_path: Path, hud: Path):
     """The HUD names the file the engine has open, and a Funestra left alone walks
-    its playlist by itself — the source republishes the HUD only when the map under
+    its playlist by itself — the source republishes the HUD only when the nav map under
     it moves, so the name has to redraw off the engine's own answer or it would sit
     on a video that had already rolled past."""
     engine = FakeEngine()
@@ -282,7 +288,7 @@ def test_the_overlay_is_removed_when_the_hud_goes_away(tmp_path: Path, hud: Path
     assert engine.overlays == {}
 
 
-def test_a_hud_that_cannot_be_read_this_frame_keeps_the_map_up(
+def test_a_hud_that_cannot_be_read_this_frame_keeps_the_nav_map_up(
     tmp_path: Path, hud: Path, monkeypatch: pytest.MonkeyPatch
 ):
     """The source replaces this file while the Funestra polls it 60x/s, so a read can
@@ -516,7 +522,7 @@ def test_hovering_a_button_redraws_with_its_tooltip(tmp_path: Path, hud: Path):
 
 def test_pressing_the_lit_filter_button_lifts_the_filter(tmp_path: Path, hud: Path):
     """The published filter is what makes the button a toggle, so a filter set any
-    other way — spoken, or from the other side of the map — is lifted by pressing the
+    other way — spoken, or from the other side of the nav map — is lifted by pressing the
     button it lit."""
     engine = FakeEngine()
     hud.write_text(hud.read_text(encoding="utf-8").replace(
@@ -613,7 +619,7 @@ class TestAHudWithTheOsr2:
         _publish_motion(tmp_path / "drive.txt", 0.0)
         overlay = _overlay_with_the_motion(tmp_path, hud, FakeEngine())
         overlay.tick()
-        x, y, w, h = next(band.rect for band in overlay.targets.tracks if band.axis == "speed")
+        x, y, w, h = next(bar.rect for bar in overlay.targets.tracks if bar.axis == "speed")
 
         overlay.press(MARGIN + x + 1, MARGIN + y + h // 2)
         dragged = overlay.drag_to(MARGIN + x + w - 2, MARGIN + y + h // 2)

@@ -294,7 +294,7 @@ class TestPainter:
         assert rows.max() - rows.min() + 1 > one_line_height  # having wrapped to fit
 
     def test_the_top_line_sits_tight_to_the_top(self):
-        """The old console left a tall empty band above its first line; the status
+        """The old console left a tall empty bar above its first line; the status
         line now heads the console within a body line-height of the slab's top, the
         way each satellite's does."""
         painter = ConsolePainter()
@@ -303,8 +303,8 @@ class TestPainter:
 
         # There is ink (the title) within the first line-height below the pad.
         line_h = sum(load_font(11).getmetrics())
-        band = rgb[PAD:PAD + line_h, :, :]
-        assert (band > 200).any()
+        bar = rgb[PAD:PAD + line_h, :, :]
+        assert (bar > 200).any()
 
     def test_the_status_leads_and_the_file_name_is_the_muted_line_under_it(self):
         """The satellites lead with what they are showing, not with a file name, so
@@ -744,7 +744,7 @@ class TestDrags:
         return painter
 
     @staticmethod
-    def _band(painter: ConsolePainter, axis: str):
+    def _bar(painter: ConsolePainter, axis: str):
         return next(track for track in painter.tracks if track.axis == axis)
 
     @staticmethod
@@ -763,26 +763,26 @@ class TestDrags:
     def test_a_press_along_the_speed_bar_sets_the_speed(self):
         painter = self._painted()
 
-        point = self._at(self._band(painter, SPEED), 1.0)
+        point = self._at(self._bar(painter, SPEED), 1.0)
         assert painter.press_at(*point) == "robot_hand_speed_100"
 
     def test_a_press_in_the_trace_moves_the_motion_s_center(self):
         painter = self._painted()
 
-        point = self._at(self._band(painter, CENTER), 1.0)
+        point = self._at(self._bar(painter, CENTER), 1.0)
         assert painter.press_at(*point) == "robot_hand_center_100"
 
     def test_a_press_up_the_amplitude_bar_sets_how_far_the_motion_reaches(self):
         painter = self._painted()
 
-        point = self._at(self._band(painter, AMPLITUDE), 1.0)
+        point = self._at(self._bar(painter, AMPLITUDE), 1.0)
         assert painter.press_at(*point) == "robot_hand_amp_100"
 
     def test_the_bar_a_press_took_hold_of_keeps_the_drag(self):
         """A press latches its bar, so a drag that wanders off it — past its end,
         or out over another one — goes on setting the level it started on."""
         painter = self._painted()
-        speed = self._band(painter, SPEED)
+        speed = self._bar(painter, SPEED)
         painter.press_at(*self._at(speed, 1.0))
 
         assert painter.holding is True
@@ -794,25 +794,25 @@ class TestDrags:
         """Every mouse motion fires, and each one that repeats the level is a line
         in the command file for Fun Time to route to where Genau already is."""
         painter = self._painted()
-        speed = self._band(painter, SPEED)
+        speed = self._bar(painter, SPEED)
         painter.press_at(*self._at(speed, 1.0))
 
         assert painter.drag_to(*self._at(speed, 1.0)) == ""
 
     def test_letting_go_ends_the_drag(self):
         painter = self._painted()
-        painter.press_at(*self._at(self._band(painter, SPEED), 0.0))
+        painter.press_at(*self._at(self._bar(painter, SPEED), 0.0))
 
         painter.release()
 
         assert painter.holding is False
-        assert painter.drag_to(*self._at(self._band(painter, SPEED), 1.0)) == ""
+        assert painter.drag_to(*self._at(self._bar(painter, SPEED), 1.0)) == ""
 
     def test_a_press_on_a_button_leaves_no_bar_still_latched(self):
         """Otherwise the bar a previous press held would keep taking the pointer
         long after the gesture that grabbed it was over."""
         painter = self._painted()
-        painter.press_at(*self._at(self._band(painter, SPEED), 0.0))
+        painter.press_at(*self._at(self._bar(painter, SPEED), 0.0))
 
         painter.press_at(*_over(painter, "main_next"))
 
@@ -823,7 +823,7 @@ class TestDrags:
         Genau is not sending cannot be dragged any more than it can be stepped."""
         painter = self._painted(osr2=Osr2State.FUNSCRIPT)
 
-        point = self._at(self._band(painter, SPEED), 1.0)
+        point = self._at(self._bar(painter, SPEED), 1.0)
         assert painter.press_at(*point) == ""
         assert painter.holding is False
 
@@ -833,13 +833,13 @@ class TestDrags:
             console=ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND,
                                  max_intensity=50),
             drive=_drive()))
-        max_intensity = self._band(painter, MAX_INTENSITY)
+        max_intensity = self._bar(painter, MAX_INTENSITY)
 
         assert painter.press_at(*self._at(max_intensity, 1.0)) == "max_intensity_100"
         assert painter.drag_to(*self._at(max_intensity, 0.0)) == "max_intensity_0"
 
     def test_there_are_no_bars_at_all_where_nothing_is_driving(self):
-        """With nothing driving, the readout is not drawn, so its bands must not linger as
+        """With nothing driving, the readout is not drawn, so its bars must not linger as
         targets over whatever the console puts in that space instead."""
         painter = ConsolePainter()
         painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO)))
@@ -852,7 +852,7 @@ class TestDrags:
         left, top = hud_xy()
 
         for axis in (SPEED, CENTER, AMPLITUDE):
-            x, y, w, h = self._band(painter, axis).rect
+            x, y, w, h = self._bar(painter, axis).rect
             assert painter.hover_at(left + x + w // 2, top + y + h // 2) is not None
 
 
@@ -1595,21 +1595,21 @@ class TestWhereTheConsoleSits:
         The device line's controls sit inside that line rather than along the
         HUD's edge, so they are not one of these rows."""
         on_the_line = {button.command for button in osr2_controls(broker_running=True)}
-        bands: dict[int, tuple[int, int]] = {}
+        bars: dict[int, tuple[int, int]] = {}
         for (x, y, w, _h), button in _declared(painter):
             if button.command in on_the_line:
                 continue
-            left, end = bands.get(y, (x, x + w))
-            bands[y] = (min(left, x), max(end, x + w))
-        return bands
+            left, end = bars.get(y, (x, x + w))
+            bars[y] = (min(left, x), max(end, x + w))
+        return bars
 
     def test_every_row_ends_at_the_right_pad_in_a_right_hand_corner(self):
         right = self._painted(HudCorner.LOWER_RIGHT)
         width = right._image.size[0]
-        bands = self._declared_bands(right)
+        bars = self._declared_bands(right)
 
-        assert bands, "the console drew no buttons"
-        assert {end for _left, end in bands.values()} == {width - PAD}
+        assert bars, "the console drew no buttons"
+        assert {end for _left, end in bars.values()} == {width - PAD}
 
     def test_every_row_starts_at_the_left_pad_in_a_left_hand_corner(self):
         left = self._painted(HudCorner.UPPER_LEFT)
@@ -1634,7 +1634,7 @@ class TestWhereTheConsoleSits:
 
     def test_the_max_intensity_moves_with_its_line(self):
         def slider_past_broker(painter) -> int:
-            (max_intensity,) = [band for band in painter.tracks if band.axis == MAX_INTENSITY]
+            (max_intensity,) = [bar for bar in painter.tracks if bar.axis == MAX_INTENSITY]
             return max_intensity.rect[0] - _button_rect(painter, "broker_panel")[0]
 
         left = self._painted(HudCorner.UPPER_LEFT, max_intensity=35)
@@ -1650,9 +1650,9 @@ class TestWhereTheConsoleSits:
         x, y, w, h = _button_rect(painter, "main_hud_minimize")
         rgba = np.asarray(painter._image).astype(int)
         fill = rgba[y + h // 2, rgba.shape[1] // 2]
-        band = rgba[y:y + h, 2:rgba.shape[1] - 2]
+        bar = rgba[y:y + h, 2:rgba.shape[1] - 2]
         drawn = [column + 2 for column in np.nonzero(
-            (np.abs(band - fill).sum(axis=2) > 12).any(axis=0))[0]
+            (np.abs(bar - fill).sum(axis=2) > 12).any(axis=0))[0]
             if not x <= column + 2 < x + w]
 
         assert drawn, "the title drew nothing"

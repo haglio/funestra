@@ -1,6 +1,6 @@
-"""A Funestra's volume chip: its own level and mute, or the room's.
+"""A Funestra's volume control: its own level and mute, or the room's.
 
-A Funestra whose sound is its own sets mpv's level and mute from the chip it
+A Funestra whose sound is its own sets mpv's level and mute from the volume control it
 draws, and from a level and mute the room hands it back at startup, and
 publishes both in its status for the room to keep.  One whose sound is the
 room's -- the Main Funestra, whose mpv is one of
@@ -8,7 +8,7 @@ two sinks the room drives -- shows the level the room publishes and asks the
 room for a new one; the ask shows at once so the slider does not trail the
 pointer, and the room's answer overwrites it either way.
 
-The chip is a part of the row the HUD draws, so the HUD is what places a
+The volume control is a part of the row the HUD draws, so the HUD is what places a
 press on it (:class:`funestra.hud_row.RowPress`): both controls answer the
 same two verbs, and neither hit-tests a window of its own any more.
 """

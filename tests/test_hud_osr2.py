@@ -97,11 +97,11 @@ class TestTheMaxIntensityOnIt:
 
     def test_a_press_along_the_slider_asks_for_the_max_intensity_under_it(self):
         line = Osr2Line(state=Osr2State.ROBOT_HAND, max_intensity=60)
-        (band,) = Osr2Section().bands(10, 10, line)
-        x, y, w, h = band.rect
+        (bar,) = Osr2Section().bars(10, 10, line)
+        x, y, w, h = bar.rect
 
-        assert track_command(band, x, y + h // 2) == "max_intensity_0"
-        assert track_command(band, x + w - 1, y + h // 2) == "max_intensity_100"
+        assert track_command(bar, x, y + h // 2) == "max_intensity_0"
+        assert track_command(bar, x + w - 1, y + h // 2) == "max_intensity_100"
         assert 10 + Osr2Section().width(Osr2Line(state=Osr2State.ROBOT_HAND)) < x
         assert (y, h) == (10, HEIGHT)
 
@@ -110,18 +110,18 @@ class TestTheMaxIntensityOnIt:
         lines = [Osr2Line(state=state, max_intensity=60) for state in LABELS]
 
         assert len({section.width(line) for line in lines}) == 1
-        assert len({section.bands(10, 10, line)[0].rect for line in lines}) == 1
+        assert len({section.bars(10, 10, line)[0].rect for line in lines}) == 1
 
     def test_a_line_with_no_max_intensity_has_no_slider_to_press(self):
-        assert Osr2Section().bands(10, 10, Osr2Line(state=Osr2State.ROBOT_HAND)) == []
+        assert Osr2Section().bars(10, 10, Osr2Line(state=Osr2State.ROBOT_HAND)) == []
 
 
     def test_the_slider_is_filled_in_blue_as_far_as_the_max_intensity_goes(self):
         def filled(max_intensity: int) -> int:
             line = Osr2Line(state=Osr2State.ROBOT_HAND, max_intensity=max_intensity)
             hud, _ = _drawn(line)
-            (band,) = Osr2Section().bands(10, 10, line)
-            x, y, w, h = band.rect
+            (bar,) = Osr2Section().bars(10, 10, line)
+            x, y, w, h = bar.rect
             pixels = np.array(hud.image.convert("RGB"))[y:y + h, x:x + w]
             return int((pixels == np.array(BLUE)).all(axis=-1).sum())
 
@@ -131,8 +131,8 @@ class TestTheMaxIntensityOnIt:
         def left_of_the_bar(max_intensity: int) -> np.ndarray:
             line = Osr2Line(state=Osr2State.ROBOT_HAND, max_intensity=max_intensity)
             hud, _ = _drawn(line)
-            (band,) = Osr2Section().bands(10, 10, line)
-            x, y, _w, h = band.rect
+            (bar,) = Osr2Section().bars(10, 10, line)
+            x, y, _w, h = bar.rect
             return np.array(hud.image.convert("RGB"))[y:y + h, :x]
 
         assert (left_of_the_bar(23) > 200).all(axis=-1).any()
@@ -141,15 +141,15 @@ class TestTheMaxIntensityOnIt:
     def test_the_slider_names_itself_where_it_was_drawn(self):
         line = Osr2Line(state=Osr2State.ROBOT_HAND, max_intensity=60)
         _hud, placed = _drawn(line)
-        (band,) = Osr2Section().bands(10, 10, line)
+        (bar,) = Osr2Section().bars(10, 10, line)
 
-        assert (band.rect, Button("", "", MAX_INTENSITY_TIP)) in placed
+        assert (bar.rect, Button("", "", MAX_INTENSITY_TIP)) in placed
 
 
     def test_the_device_running_itself_leaves_nothing_for_the_max_intensity_to_hold(self):
-        (band,) = Osr2Section().bands(10, 10, Osr2Line(state=Osr2State.AUTO, max_intensity=60))
+        (bar,) = Osr2Section().bars(10, 10, Osr2Line(state=Osr2State.AUTO, max_intensity=60))
 
-        assert band.dim is True
+        assert bar.dim is True
 
 
 def _park() -> Button:

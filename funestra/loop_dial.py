@@ -15,10 +15,10 @@ from PIL import Image, ImageDraw
 from shared_ui.palette import BG_PRIMARY, BORDER_PANEL, TEXT_MUTED, TEXT_PRIMARY
 
 from .hud import PILL_ALPHA, KeptBitmap
-from .volume import CHIP_H
+from .volume import VOLUME_CONTROL_H
 
-# As tall as the chip and the readout it shares the row with.
-DIAL_SIZE = CHIP_H
+# As tall as the volume control and the readout it shares the row with.
+DIAL_SIZE = VOLUME_CONTROL_H
 # The positions the hand can show -- four degrees apart, which is as fine as a
 # dial this size draws -- so a turn is repainted only when it moves a step.
 HAND_STEPS = 90

@@ -201,8 +201,8 @@ class TestWhatItDraws:
 
         def blue_across(row) -> bool:
             x, y, width, height = row
-            band = opened[y + height // 2, x + 2:x + width - 2, :3]
-            return bool((band == np.asarray(BLUE, dtype=band.dtype)).all(axis=1).any())
+            bar = opened[y + height // 2, x + 2:x + width - 2, :3]
+            return bool((bar == np.asarray(BLUE, dtype=bar.dtype)).all(axis=1).any())
 
         assert blue_across(layout.rows[CHOICES.index("Round")])
         assert not blue_across(layout.rows[CHOICES.index("Plain")])

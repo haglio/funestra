@@ -116,9 +116,9 @@ class TestProgressBar:
 
     def test_the_track_ends_before_the_volume_slot(self):
         """The whole point of reserving SLOT_W: the fill and border stop clear of
-        where the volume chip sits, so the two never draw over each other."""
+        where the volume control sits, so the two never draw over each other."""
         bar = progress_bar_bgra(10_000, 10_000, None, 1000)
         my = bar.shape[0] // 2
         _x0, x1 = bar_track_x(1000)
-        # Just past the track's right edge is transparent, all the way to the chip.
+        # Just past the track's right edge is transparent, all the way to the volume control.
         assert bar[my, x1 + 2, 3] == 0

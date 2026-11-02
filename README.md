@@ -63,7 +63,7 @@ another application's internals to get it. By what it is:
   a satellite's (`hud_overlay`) or the main slot's console (`console_overlay`),
   whichever file it was given — the scrubber (`scrubber`: a scripted item's
   colors, the zoom while a stretch is marked, the frames of a running A/B
-  range), the volume chip (`volume_control`: its own level, or the room's,
+  range), the volume control (`volume_control`: its own level, or the room's,
   asked for on the dashboard's channel, `dashboard`), the playhead readout and
   the black it shows when the room gives its rectangle away (`display`),
   placing a press against them (`pointer`).  A User runs on a Funestra in the

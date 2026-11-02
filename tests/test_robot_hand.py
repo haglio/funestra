@@ -20,8 +20,8 @@ from funestra.robot_hand import (
     phase_to_position,
     position_fraction,
     set_amplitude,
+    set_bars,
     set_center,
-    set_dials,
     set_max_intensity,
     set_speed,
     trace_window,
@@ -344,7 +344,7 @@ class TestPuttingTheDialsBack:
         held = RobotHandState(amplitude=0, speed=MIN_SPEED, intended_center=0)
         set_max_intensity(held, 40)
 
-        set_dials(held, speed=90, amplitude=90, center=60)
+        set_bars(held, speed=90, amplitude=90, center=60)
 
         assert (held.speed, held.amplitude, held.center) == (
             lowered.speed, lowered.amplitude, lowered.center)

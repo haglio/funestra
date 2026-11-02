@@ -546,7 +546,7 @@ class TestFlickAdvanceCommands:
         assert self._apply("FLICK_SECONDS_DOWN", aa) is True
         assert aa.interval == 10
 
-    def test_the_published_sound_level_reaches_the_chip(self):
+    def test_the_published_sound_level_reaches_the_volume_control(self):
         """Genau draws the primary display's volume but owns neither the level
         nor the audio, so Fun Time tells it what to show.  The mute comes with
         the level: a zero cannot say whether the speaker is off or turned all the
@@ -559,7 +559,7 @@ class TestFlickAdvanceCommands:
 
     def test_a_level_with_no_mute_still_moves_the_slider(self):
         """An orchestrator that sends the level alone is answered rather than
-        ignored — the chip has a level to show either way."""
+        ignored — the volume control has a level to show either way."""
         shown = []
         assert self._apply_volume("SET_VOLUME 55", shown.append) is True
         assert shown == [(55, False)]
