@@ -1,7 +1,37 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Any
+from unittest.mock import patch
+
+
+def software_outputs_are(names: frozenset[str]):
+    return patch("funestra.audio_outputs.software_outputs", return_value=names)
+
+
+def broker_pressed(**how: Any):
+    return patch("funestra.broker.press", **how)
+
+
+def engine_will_not_open(refusal: Exception):
+    return patch("funestra.mpv_engine.MpvEngine", side_effect=refusal)
+
+
+def station_opened(**how: Any):
+    return patch("funestra.mpv_engine.MpvStation.opened", **how)
+
+
+def render_engine_radio_station(**how: Any):
+    return patch("funestra.render_engine.MpvRenderEngine.radio_station", **how)
+
+
+@contextmanager
+def render_engine_without_mpv(*, sound_routed_to: str | None) -> Iterator[tuple]:
+    with patch("funestra.render_engine.MpvRenderEngine.__init__", return_value=None) as built,             patch("funestra.render_engine.MpvRenderEngine.set_muted") as set_muted,             patch("funestra.render_engine.MpvRenderEngine.set_audio_device_matching",
+                  return_value=sound_routed_to) as routed:
+        yield built, set_muted, routed
 
 
 class RefusesSeeks:

@@ -4,7 +4,17 @@ from pathlib import Path
 
 import pytest
 
-from funestra.testing import FakeEngine, FakeStation
+from funestra import audio_outputs, broker, mpv_engine, render_engine
+from funestra.testing import (
+    FakeEngine,
+    FakeStation,
+    broker_pressed,
+    engine_will_not_open,
+    render_engine_radio_station,
+    render_engine_without_mpv,
+    software_outputs_are,
+    station_opened,
+)
 
 ONE, TWO, THREE = Path("one.mp4"), Path("two.mp4"), Path("three.mp4")
 
@@ -230,3 +240,37 @@ def test_a_radio_station_is_made_and_kept():
 
     assert isinstance(station, FakeStation)
     assert (engine.stations, station.clips) == ([station], [ONE, TWO])
+
+
+def test_the_software_outputs_are_the_ones_the_test_names():
+    with software_outputs_are(frozenset({"a stream"})):
+        assert audio_outputs.software_outputs() == frozenset({"a stream"})
+
+
+def test_no_broker_is_pressed():
+    with broker_pressed() as pressed:
+        broker.press(Path("state"), None)
+    pressed.assert_called_once_with(Path("state"), None)
+
+
+def test_an_engine_that_will_not_open_says_why():
+    with engine_will_not_open(OSError("no engine")), pytest.raises(OSError, match="no engine"):
+        mpv_engine.MpvEngine()
+
+
+def test_no_station_opens():
+    with station_opened(return_value="a station") as opened:
+        assert mpv_engine.MpvStation.opened([ONE]) == "a station"
+    opened.assert_called_once_with([ONE])
+
+
+def test_a_render_engine_is_built_with_no_mpv_behind_it():
+    with render_engine_without_mpv(sound_routed_to="Example Headset") as (built, set_muted, routed),             render_engine_radio_station(return_value="a station"):
+        engine = render_engine.MpvRenderEngine(muted=True)
+        engine.set_muted(False)
+
+        assert engine.set_audio_device_matching("Example") == "Example Headset"
+        assert engine.radio_station([ONE]) == "a station"
+    assert built.call_args.kwargs["muted"] is True
+    set_muted.assert_called_once_with(False)
+    routed.assert_called_once_with("Example")
