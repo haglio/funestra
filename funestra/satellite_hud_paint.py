@@ -193,7 +193,7 @@ class HudRenderer:
         self._pointer: tuple[int, int] | None = None
         self._icon = load_font(SIZE_BODY, SYMBOL_FONT)
         self._thumbs: dict[str, Image.Image] = {}
-        # The main console's own two blocks, hosted here for a HUD whose
+        # The main HUD's own two blocks, hosted here for a HUD whose
         # Funestra has the OSR2 -- see HudModel.osr2.
         self._osr2 = Osr2Section()
         self._drive = DriveSection()
@@ -268,7 +268,7 @@ class HudRenderer:
         the Funestra rather than from *model*: the published HUD is fun_time's answer
         to what this side is browsing, and what is actually decoding is the Funestra's
         own — the same split the Main Funestra draws, which names its file from its own
-        session and takes the rest of its console off the wire.
+        session and takes the rest of its Main Funestra's HUD off the wire.
         """
         self._pointer = hover_pos
         if model.hud_minimized:
@@ -740,9 +740,9 @@ class HudRenderer:
         Off, the square sits on the family's own button ground -- an outline over
         the slab and nothing else read as a gap cut in the HUD rather than as
         the raised button every window here offers -- with an edge in the muted
-        gray the rest of the chrome uses, and the MARK is full-strength -- the same way the Main Funestra's console
+        gray the rest of the chrome uses, and the MARK is full-strength -- the same way the Main Funestra's HUD
         draws its own.  Both were muted here, which left these HUDs reading as
-        dim and half-disabled beside the console's, for controls that were
+        dim and half-disabled beside the Main Funestra's HUD's, for controls that were
         neither.  On, the square fills *on_color*: the family's ACTIVE ground, one
         step up from the resting one, which is the step Origenerator's checked
         buttons take and now the step every HUD here takes with them.  It used to

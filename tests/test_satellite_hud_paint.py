@@ -13,7 +13,6 @@ from shared_ui.palette import BLUE, BORDER_PANEL, GREEN, TEXT_MUTED, TEXT_PRIMAR
 from shared_ui.spacing import BUTTON_GAP
 
 from funestra import satellite_hud_paint
-from funestra.console import OSR2_DRIVING, OSR2_PARKED
 from funestra.drive_layout import MAX_INTENSITY, SECTION_W
 from funestra.geometry import Rect
 from funestra.hud import ACTIVE_DOT
@@ -23,6 +22,7 @@ from funestra.hud_minimize import ROOM as MINUS_ROOM
 from funestra.hud_placement import HudCorner
 from funestra.hud_row import SCRUBBER, RowHud, row_part
 from funestra.hud_sections import DIVIDER_H, SECTION_GAP
+from funestra.main_hud import OSR2_DRIVING, OSR2_PARKED
 from funestra.modes import Osr2State
 from funestra.osr2_visualizer import (
     CONTROL_TIPS,
@@ -538,7 +538,7 @@ def test_the_bin_draws_red_because_it_takes_something_away():
 
 def test_f_mode_wears_its_own_badge_rather_than_a_typed_letter():
     """`fmode_icon.ico` is a magenta five-by-five "F" — the mark the mode has on the
-    taskbar and on the main console — and a letter set in the body face is a
+    taskbar and on the Main Funestra's HUD — and a letter set in the body face is a
     thin thing beside it.  The mark holds whether or not the mode is on; only what
     is beneath it changes."""
     for favorites in (False, True):
@@ -1108,7 +1108,7 @@ def test_column_labels_are_clipped_to_their_column(thumb):
 
 
 def test_the_mode_pair_renders_and_is_pressable(thumb):
-    # The satellite counterpart of the console's Video/Genau row: with a
+    # The satellite counterpart of the Main Funestra's HUD's Video/Genau row: with a
     # session mode published, the pair is on the control bar with real hit
     # targets, and a press posts the other mode's activation verbatim.
     rendered = HudRenderer("portrait").render(
@@ -1124,7 +1124,7 @@ def test_the_mode_pair_renders_and_is_pressable(thumb):
 
 
 def test_the_mode_row_leads_and_minimize_rides_it(thumb):
-    """Like the main console: the mode pair gets a row of its own above the
+    """Like the Main Funestra's HUD: the mode pair gets a row of its own above the
     controls, and minimize — being about the side's window, not the video —
     rides that row rather than sitting among the transport."""
     rendered = HudRenderer("portrait").render(
@@ -1149,7 +1149,7 @@ def test_the_mode_row_leads_and_minimize_rides_it(thumb):
 
 def test_a_mode_label_stays_white_on_its_blue(thumb):
     """The mark reverses out of a LIGHT fill only.  Dark ink on the mode pair's
-    blue turned those labels black while the main console's stayed white for
+    blue turned those labels black while the main HUD's stayed white for
     the same state, which is the inconsistency the shared dressing exists to
     prevent."""
 
@@ -1294,11 +1294,11 @@ def test_the_enhanced_switch_keeps_its_place_under_a_mode_row(thumb):
 class TestTheDeviceOnAHostThatDrivesItself:
     """A host that drives the OSR2 itself wears ONE HUD, not two.
 
-    Origenerator's shows floated this HUD for the set and the main console
+    Origenerator's shows floated this HUD for the set and the Main Funestra's HUD
     underneath it for the device, which put two titles that disagreed
     and two copies of prev/next/lock/trash on one screen.  So a source that
     has a device to report says so on its own HUD: the same line and the
-    same visualizer the main console draws, from the same code.
+    same visualizer the Main Funestra's HUD draws, from the same code.
     """
 
     @staticmethod
@@ -1331,8 +1331,8 @@ class TestTheDeviceOnAHostThatDrivesItself:
 
     def test_a_hold_is_named_ahead_of_whoever_would_have_been_driving(self):
         """The host says what the wire says AND what it is doing to the device,
-        the way the main console's source does, and the HUD resolves the two
-        the same way the console resolves them."""
+        the way the main HUD's source does, and the HUD resolves the two
+        the same way the Main Funestra's HUD resolves them."""
         driving = _rgb(self._rendered(osr2=Osr2State.FUNSCRIPT).bgra)
         parked = _rgb(self._rendered(osr2=Osr2State.FUNSCRIPT,
                                      osr2_control=OSR2_PARKED).bgra)
@@ -1431,7 +1431,7 @@ def _wave(offset: float = 0.0) -> DriveHud:
                     waveform=tuple(0.5 + 0.4 * np.sin(i / 6 + offset) for i in range(80)))
 
 
-class TestTheVisualizerIsDrawnAsTheMainConsoleDrawsIt:
+class TestTheVisualizerIsDrawnAsTheMainMainHudDrawsIt:
     def test_the_trace_holds_still_while_nothing_is_driving(self):
         renderer = HudRenderer("portrait")
         first = renderer.render(_model(osr2=Osr2State.OFF, drive=_wave(0.0))).bgra.copy()
@@ -1638,7 +1638,7 @@ class TestTheRowTheHudCarriesForItsClip:
 
     A row over the item is a second HUD on a screen that already carries
     one -- and on a wrapped video it is smeared round the nadir, which is why
-    the headset put it on the console first.
+    the headset put it on the Main Funestra's HUD first.
     """
 
     @staticmethod

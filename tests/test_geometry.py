@@ -14,7 +14,7 @@ def test_a_press_anywhere_inside_the_rect_is_in_it():
 
 def test_the_far_edges_belong_to_whatever_starts_there():
     """Half-open, so two rects sharing an edge leave no pixel claimed by both —
-    which is how the console's rows of touching buttons stay one press each."""
+    which is how the Main Funestra's HUD's rows of touching buttons stay one press each."""
     rect = (10, 20, 30, 40)
 
     assert not contains(rect, 40, 40)  # one past the right edge

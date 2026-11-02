@@ -1,6 +1,6 @@
-"""The main console — the HUD the Main Funestra draws.
+"""The Main Funestra's HUD — the HUD the Main Funestra draws.
 
-The same console is drawn whether Kino or Genau runs on the Main Funestra: over
+The same HUD is drawn whether Kino or Genau runs on the Main Funestra: over
 Kino's video in kino mode, over Genau's flicks in genau mode.  So the mode switch
 and the drive controls keep their places as you flip between modes — only the
 transport changes, because it steps Kino's video in one and Genau's flicks in the other.
@@ -9,8 +9,8 @@ Its top block is Kino's own answer to "what am I playing?" — the title (the
 length mode, or the compilation and your place in it) beside the active-Funestra
 dot, with the file on screen as a muted line under it, the same shape each
 satellite's HUD leads with.  Both are empty in genau mode, where there is no Kino
-playlist backing the screen.  Everything else is the console the orchestrator
-publishes (:mod:`funestra.console`) plus the Robot Hand's OSR2 visualizer
+playlist backing the screen.  Everything else is the Main Funestra's HUD the orchestrator
+publishes (:mod:`funestra.main_hud`) plus the Robot Hand's OSR2 visualizer
 (:mod:`funestra.drive_readout`) with its own controls.
 
 The wording and shape are pure functions; the drawing goes onto the slab
@@ -35,17 +35,6 @@ from shared_ui.palette import (
 from shared_ui.spacing import BUTTON_GAP, GAP_MEDIUM, GAP_SMALL, MARGIN_STANDARD
 from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
-from .console import (
-    Button,
-    ConsoleModel,
-    ModeHud,
-    _row_width,
-    hit_test,
-    kino_shows,
-    place_rows,
-    rows_height,
-    tooltip_at,
-)
 from .geometry import Rect, contains
 from .host_controls import HostControlsHud, HostControlsLayout, HostControlsSection
 from .hud import (
@@ -78,6 +67,17 @@ from .hud_title import (
     SEPARATOR,
     SHUFFLE_LABEL,
     hud_title,
+)
+from .main_hud import (
+    Button,
+    MainHudModel,
+    ModeHud,
+    _row_width,
+    hit_test,
+    kino_shows,
+    place_rows,
+    rows_height,
+    tooltip_at,
 )
 from .modes import LengthMode
 from .osr2_visualizer import (
@@ -129,8 +129,8 @@ def hud_xy() -> tuple[int, int]:
 
 
 @dataclass(frozen=True)
-class ConsoleHud:
-    """Everything on the main console: the top line, the room's controls, and
+class MainHud:
+    """Everything on the Main Funestra's HUD: the top line, the room's controls, and
     the Robot Hand's OSR2 visualizer.
 
     *modes* is drawn only where it applies (kino mode); *console* is what Fun
@@ -139,7 +139,7 @@ class ConsoleHud:
     """
 
     modes: ModeHud = field(default_factory=ModeHud)
-    console: ConsoleModel = field(default_factory=ConsoleModel)
+    main_hud_model: MainHudModel = field(default_factory=MainHudModel)
     drive: DriveHud | None = None
     # The gray the slab is made of, or None for the canvas color every Funestra
     # floating this over a video wants (see hud.Hud).  Part of the
@@ -152,13 +152,13 @@ class ConsoleHud:
         """How long an unlocked Genau leaves each flick up.
 
         Genau owns the pace, so it rides its own OSR2 visualizer rather than the
-        console HUD Fun Time publishes — and is read back off the visualizer
-        wherever the console needs it, which is both the auto-advance button and
+        Main Funestra's HUD Fun Time publishes — and is read back off the visualizer
+        wherever the Main Funestra's HUD needs it, which is both the auto-advance button and
         the title.
         """
         if self.drive is not None:
             return self.drive.advance_interval
-        return self.console.advance_interval
+        return self.main_hud_model.advance_interval
 
     @property
     def title(self) -> str:
@@ -184,24 +184,24 @@ class ConsoleHud:
         # The browse order, said the same way whether Kino or Genau is on this slot:
         # both of them browse in these two orders, so a reader who has just asked
         # for Latest reads the same word back wherever they asked it.  Nothing at
-        # all for a host with no browse order (see :attr:`ConsoleModel.latest`) —
+        # all for a host with no browse order (see :attr:`MainHudModel.latest`) —
         # an empty slot takes no room, the way every other optional slot here does.
-        order = "" if self.console.latest is None else (
-            LATEST_LABEL if self.console.latest else SHUFFLE_LABEL)
+        order = "" if self.main_hud_model.latest is None else (
+            LATEST_LABEL if self.main_hud_model.latest else SHUFFLE_LABEL)
         # The pace an unheld Genau flick moves on at, after the order rather than in
         # place of it: the order says which flick is next, the pace says when.  Only
         # while Genau is the one showing — kino mode draws the OSR2 visualizer too, but
         # an unlocked Kino plays through a playlist rather than on a timer —
         # and only unheld, since nothing is going to move a held flick.
-        if not kino_shows(self.console.main_mode) and not self.console.locked and self.advance_interval:
+        if not kino_shows(self.main_hud_model.main_mode) and not self.main_hud_model.locked and self.advance_interval:
             pace = f"{self.advance_interval}s"
             order = f"{order}{SEPARATOR}{pace}" if order else pace
         return hud_title(
             playing_set=compilation,
-            locked=self.console.locked,
+            locked=self.main_hud_model.locked,
             order=order,
             f_mode=self.modes.scripted_filter,
-            filters=self.console.filters or (_LENGTH_LABELS.get(self.modes.length_mode, ""),),
+            filters=self.main_hud_model.filters or (_LENGTH_LABELS.get(self.modes.length_mode, ""),),
         )
 
 
@@ -210,13 +210,13 @@ def _section_rect(corner: HudCorner, width: int, reserve: int, top: int,
     return (_PAD + (0 if corner.right else reserve), top, width - 2 * _PAD - reserve, height)
 
 
-class ConsolePainter:
-    """Paints the main console, and only when something on it has moved.
+class MainHudPainter:
+    """Paints the Main Funestra's HUD, and only when something on it has moved.
 
     A Funestra redraws its overlays every frame at 60 fps and Pillow is nowhere
     near cheap enough for that, so the bitmap is kept until the HUD's contents
     change.  The button rects from the last painting are kept beside it — the
-    console's own and the OSR2 visualizer's arrows — so what is clickable is exactly
+    HUD's own and the OSR2 visualizer's arrows — so what is clickable is exactly
     what was drawn, and the visualizer's own bars with them, so what is draggable is
     too.
     """
@@ -262,7 +262,7 @@ class ConsolePainter:
         self._origin = hud_xy()
         self._pointer: PointerReading[tuple[int, int] | None] = PointerReading(None)
 
-    def bgra(self, hud: ConsoleHud, *, hover: tuple[int, int] | None = None,
+    def bgra(self, hud: MainHud, *, hover: tuple[int, int] | None = None,
              item_row: RowHud | None = None, heatmap=None,
              host_controls: HostControlsHud | None = None) -> np.ndarray:
         """*hud* as an mpv overlay bitmap — what the Main Funestra composites into its video."""
@@ -271,7 +271,7 @@ class ConsolePainter:
             self._bgra = to_bgra(self._image)
         return self._bgra
 
-    def rgba(self, hud: ConsoleHud, *, hover: tuple[int, int] | None = None,
+    def rgba(self, hud: MainHud, *, hover: tuple[int, int] | None = None,
              item_row: RowHud | None = None, heatmap=None,
              host_controls: HostControlsHud | None = None) -> tuple[bytes, tuple[int, int]]:
         """*hud* as ``(rgba_bytes, size)`` — what pygame takes, for Genau to blit
@@ -280,7 +280,7 @@ class ConsolePainter:
         self._ensure(self._resolve(hud), hover, item_row, heatmap, host_controls)
         return self._image.tobytes(), self._image.size
 
-    def _resolve(self, hud: ConsoleHud) -> ConsoleHud:
+    def _resolve(self, hud: MainHud) -> MainHud:
         """*hud* with everything the drawing Funestra knows folded into it, before
         anything asks whether the HUD has moved.
 
@@ -290,13 +290,13 @@ class ConsolePainter:
         after the comparison it would repaint the whole HUD forty times a
         second to draw the same still image.
         """
-        console = hud.console
+        main_hud_model = hud.main_hud_model
         return replace(hud, drive=self._visualizer.resolve(
-            hud.drive if console.has_osr2 else None,
-            osr2=console.osr2, control=console.osr2_control, paused=console.paused,
-            composed=kino_shows(console.main_mode)))
+            hud.drive if main_hud_model.has_osr2 else None,
+            osr2=main_hud_model.osr2, control=main_hud_model.osr2_control, paused=main_hud_model.paused,
+            composed=kino_shows(main_hud_model.main_mode)))
 
-    def _ensure(self, hud: ConsoleHud, hover: tuple[int, int] | None,
+    def _ensure(self, hud: MainHud, hover: tuple[int, int] | None,
                 item_row: RowHud | None = None, heatmap=None,
                 host_controls: HostControlsHud | None = None) -> bool:
         """Repaint if *hud*/*hover*/the item's row/the host's controls moved; report whether it did
@@ -304,7 +304,7 @@ class ConsolePainter:
         minute at most — Pillow is too slow to run every frame — so the image is
         kept until it changes.  The row is the one part that moves with playback,
         which is why a Funestra redrawing on its beat gets a fresh HUD."""
-        hover = hover if hover is not None else self._pointer.on(hud.console)
+        hover = hover if hover is not None else self._pointer.on(hud.main_hud_model)
         if ((hud, hover, item_row, host_controls) == self._painted[:4]
                 and heatmap is self._painted[4] and self._image is not None):
             return False
@@ -364,9 +364,9 @@ class ConsolePainter:
         painted = self._painted[0]
         if painted is None:
             return None
-        console = painted.console
-        return HudPlace(console.funestra, console.hud_corner, MARGIN,
-                        minimized=console.hud_minimized, inset=_MINUS_INSET)
+        main_hud_model = painted.main_hud_model
+        return HudPlace(main_hud_model.funestra, main_hud_model.hud_corner, MARGIN,
+                        minimized=main_hud_model.hud_minimized, inset=_MINUS_INSET)
 
     def place(self, *, window: tuple[int, int], lower_edge: int = 0) -> tuple[int, int]:
         place = self.hud_place or HudPlace("", HudCorner.UPPER_LEFT, MARGIN)
@@ -424,24 +424,24 @@ class ConsolePainter:
             row_top = rect[1]
         return placed
 
-    def _paint(self, console_hud: ConsoleHud, hover: tuple[int, int] | None = None,
+    def _paint(self, main_hud: MainHud, hover: tuple[int, int] | None = None,
                item_row: RowHud | None = None, heatmap=None,
                host_controls: HostControlsHud | None = None) -> Image.Image:
-        console, drive = console_hud.console, console_hud.drive
-        if console.hud_minimized:
-            return self._paint_minimized(console.funestra, console.hud_corner, hover, console_hud.flash)
+        main_hud_model, drive = main_hud.main_hud_model, main_hud.drive
+        if main_hud_model.hud_minimized:
+            return self._paint_minimized(main_hud_model.funestra, main_hud_model.hud_corner, hover, main_hud.flash)
         # Held for the OSR2 pill: with a composed trace on the HUD the pill
         # reads the trace's own answer to who has the device (see _osr2_state),
         # and the width helpers need it before the pill is drawn.
         self._composed_drive = (
             drive if (drive is not None and drive.segments
-                      and kino_shows(console.main_mode)) else None)
+                      and kino_shows(main_hud_model.main_mode)) else None)
         whole = not self._device_only
-        rows = [[self._filled(button, console_hud) for button in row]
-                for row in (console.rows if whole else ())]
-        aim_rows = [[self._filled(button, console_hud) for button in row] for row in console.osr2_rows]
-        title = console_hud.title if whole else ""
-        filename = console_hud.modes.video if whole else ""
+        rows = [[self._filled(button, main_hud) for button in row]
+                for row in (main_hud_model.rows if whole else ())]
+        aim_rows = [[self._filled(button, main_hud) for button in row] for row in main_hud_model.osr2_rows]
+        title = main_hud.title if whole else ""
+        filename = main_hud.modes.video if whole else ""
         item_row = item_row if whole else None
         drive_w, drive_h = section_size() if drive is not None else (0, 0)
         body_ascent, body_descent = self._body.getmetrics()
@@ -449,16 +449,16 @@ class ConsolePainter:
         tiny_h = sum(self._tiny.getmetrics())
         filename_h = (_SUBTITLE_GAP + tiny_h) if filename else 0
 
-        corner = console.hud_corner
+        corner = main_hud_model.hud_corner
         text_x = ACTIVE_DOT + DOT_GAP
         widths = [0, _row_width(rows),
                   max(_row_width(aim_rows), drive_w,
-                      self._osr2_width(console) if console.has_osr2 else 0),
+                      self._osr2_width(main_hud_model) if main_hud_model.has_osr2 else 0),
                   self._item_row.least_width(item_row) if item_row is not None else 0,
                   self._host_controls.least_width(host_controls) if host_controls is not None else 0]
         minus_room = MINUS_ROOM if whole and self._minus_on_the_hud else 0
         last = max(index for index, used in enumerate(
-            (True, bool(rows), bool(aim_rows) or console.has_osr2 or drive is not None,
+            (True, bool(rows), bool(aim_rows) or main_hud_model.has_osr2 or drive is not None,
              item_row is not None, host_controls is not None)) if used)
         reserves = [0] * len(widths)
         reserves[last if corner.lower else 0] = minus_room
@@ -476,14 +476,14 @@ class ConsolePainter:
             room = width - 2 * _PAD - text_x - reserves[0]
             title = fit_text(self._body, title, room)
             filename = fit_text(self._tiny, filename, room)
-        # The item's own row, under everything the console says about the room:
+        # The item's own row, under everything the Main Funestra's HUD says about the room:
         # where the video is and how loud it is, drawn here rather than along
         # the lower edge of the item (:mod:`funestra.hud_row`).
         row_h = ROW_H if item_row is not None else 0
         sections = stack(_PAD, [
             top_h + filename_h,
             rows_height(rows),
-            blocks_height([rows_height(aim_rows), _OSR2_H if console.has_osr2 else 0,
+            blocks_height([rows_height(aim_rows), _OSR2_H if main_hud_model.has_osr2 else 0,
                            drive_h], _BLOCK_GAP),
             row_h,
             HostControlsSection.height if host_controls is not None else 0,
@@ -491,13 +491,13 @@ class ConsolePainter:
         title_top, rows_top, device_top, row_top, host_top = sections.tops
         height = sections.end + _PAD
 
-        hud = Hud(width, height, ground=console_hud.ground or BG_PRIMARY)
+        hud = Hud(width, height, ground=main_hud.ground or BG_PRIMARY)
         for divider in sections.dividers:
             hud.divide(divider)
         draw = hud.draw
 
         if whole:
-            self._draw_top_block(hud, title_top, title, filename, console.active,
+            self._draw_top_block(hud, title_top, title, filename, main_hud_model.active,
                                  width, corner, reserve=reserves[0])
         self.buttons = self._draw_rows(hud, rows, rows_top, corner, hover, reserves[1])
         self.tracks = []
@@ -507,8 +507,8 @@ class ConsolePainter:
             self.buttons.extend(self._draw_rows(hud, aim_rows, y, corner, hover, reserves[2]))
             y += rows_height(aim_rows) + _BLOCK_GAP
 
-        if console.has_osr2:
-            osr2_line = self._osr2_line(console)
+        if main_hud_model.has_osr2:
+            osr2_line = self._osr2_line(main_hud_model)
             osr2_x = self._block_x(corner, width, self._osr2.width(osr2_line), reserves[2])
             self.buttons.extend(self._osr2.draw(hud.image, draw, osr2_x, y, osr2_line,
                                                 hover=hover))
@@ -520,7 +520,7 @@ class ConsolePainter:
             # The HUD's image rather than its pen: the visualizer supersamples
             # its trace and composites it back, which a pen cannot carry.
             self._drive.draw(hud.image, drive_x, y, drive)
-            # The visualizer draws its own arrows and bars; the console only needs
+            # The visualizer draws its own arrows and bars; the Main Funestra's HUD only needs
             # them as hit targets, so they answer a press and name themselves on
             # hover.
             targets, bars = visualizer_targets(drive_x, y, drive)
@@ -529,7 +529,7 @@ class ConsolePainter:
 
         if whole and self._minus_on_the_hud:
             minus = (corner_button_rect(corner, hud=(width, height), inset=_MINUS_INSET),
-                     minimize_button(console.funestra))
+                     minimize_button(main_hud_model.funestra))
             draw_button(hud.image, draw, *minus,
                         hovered=hover is not None and contains(minus[0], *hover),
                         icon_font=self._icon, word_font=self._tiny)
@@ -565,7 +565,7 @@ class ConsolePainter:
         self.buttons, self.tracks, self.row, self.host_controls_layout = buttons, [], None, None
         return image
 
-    def _osr2_state(self, model: ConsoleModel) -> str:
+    def _osr2_state(self, model: MainHudModel) -> str:
         """What the pill says has the device — the drawn line's own answer
         when a composed trace is on the HUD, so the pill flips exactly when
         the line under the dot changes hands, and says Buffer through the gray
@@ -579,16 +579,16 @@ class ConsolePainter:
                          driving=driving_at_the_playhead(self._composed_drive, model.osr2),
                          paused=model.paused)
 
-    def _osr2_line(self, model: ConsoleModel) -> Osr2Line:
+    def _osr2_line(self, model: MainHudModel) -> Osr2Line:
         """The device's line as the shared section takes it — the controls the
-        source put on it, and this console's own answer to who has the OSR2."""
+        source put on it, and this Main Funestra's HUD's own answer to who has the OSR2."""
         return Osr2Line(state=self._osr2_state(model), controls=model.osr2_controls,
                         max_intensity=model.max_intensity)
 
-    def _osr2_width(self, model: ConsoleModel) -> int:
+    def _osr2_width(self, model: MainHudModel) -> int:
         return self._osr2.width(self._osr2_line(model))
 
-    def _filled(self, button: Button, hud: ConsoleHud) -> Button:
+    def _filled(self, button: Button, hud: MainHud) -> Button:
         """A read-out as it is drawn: the host's own number written in where the
         source named one, and a word's cell widened to hold it.  A button comes
         back as it was.
@@ -603,7 +603,7 @@ class ConsolePainter:
             return button
         icon = button.icon
         if button.host_value == "playback_speed":
-            icon = _format_rate(hud.console.playback_speed)
+            icon = _format_rate(hud.main_hud_model.playback_speed)
         elif button.host_value == "advance_interval":
             icon = f"{hud.advance_interval}s"
         width = button.width
@@ -612,7 +612,7 @@ class ConsolePainter:
         return replace(button, icon=icon, width=width)
 
 
-def with_playback_speed(console: ConsoleModel, speed: float) -> ConsoleModel:
+def with_playback_speed(main_hud_model: MainHudModel, speed: float) -> MainHudModel:
     """*console* with the drawing Funestra's own video rate folded in — Kino knows
     its rate, Fun Time does not publish it, so it is added at draw time."""
-    return replace(console, playback_speed=speed)
+    return replace(main_hud_model, playback_speed=speed)

@@ -13,10 +13,9 @@ import numpy as np
 import pytest
 from app_support.osr2_slot import Osr2Slot
 from app_support.threading_utils import start_daemon_thread
-from console_rows import console_rows
 from host_controls_fakes import AHost, middle_of
+from main_hud_rows import main_hud_rows
 
-from funestra.console import ConsoleModel, ModeHud, console_text
 from funestra.flick_overlay import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, FlickFrame
 from funestra.funestra import Channels, Funestra, User, _Nobody, osr2_line
 from funestra.hud_button import Button
@@ -26,6 +25,7 @@ from funestra.hud_overlay import HUD_OVERLAY_ID
 from funestra.hud_placement import HudEdge
 from funestra.hud_row import PARTS_Y
 from funestra.loop_dial import DIAL_SIZE
+from funestra.main_hud import MainHudModel, ModeHud, main_hud_text
 from funestra.modes import LengthMode, MainMode, Osr2State
 from funestra.osr2_visualizer import DriveHud, publish_drive, read_drive
 from funestra.outside_buttons import OutsideButtons
@@ -599,7 +599,7 @@ class TestACornerTheHudIsNotIn:
 
         assert _asked(tmp_path) == ["omnipause_toggle"]
 
-    def test_on_the_main_funestra_the_press_opens_the_console_there(self, tmp_path):
+    def test_on_the_main_funestra_the_press_opens_the_main_hud_there(self, tmp_path):
         funestra, _engine, _kino = _main(tmp_path)
         funestra.tick(window=WINDOW)
 
@@ -685,9 +685,9 @@ class TestTheNameOfWhatHasJustStarted:
         assert np.array_equal(engine.overlays[HUD_OVERLAY_ID][2],
                               collapsed_hud("portrait", flash="scene two")[0])
 
-    def test_the_main_funestras_console_names_what_runs_on_it_says_is_playing(self, tmp_path):
+    def test_the_main_funestras_main_hud_names_what_runs_on_it_says_is_playing(self, tmp_path):
         funestra, engine, kino = _main(tmp_path, clock=_Clock())
-        _publish_console(tmp_path, hud_minimized=True)
+        _publish_main_hud(tmp_path, hud_minimized=True)
 
         funestra.tick(window=WINDOW)
 
@@ -800,19 +800,19 @@ def test_on_a_window_the_way_of_playing_is_mpv_opened_on_that_window(tmp_path):
     assert funestra.playback.current_video == videos[0]
 
 
-def _console_channels(tmp_path: Path, lines: list[str], *, commands: str = "") -> Channels:
+def _main_hud_channels(tmp_path: Path, lines: list[str], *, commands: str = "") -> Channels:
     channels = _channels(tmp_path, lines, commands=commands, in_a_session=True)
-    return replace(channels, console=tmp_path / "console.json", drive=tmp_path / "drive.txt")
+    return replace(channels, main_hud_model=tmp_path / "main_hud.json", drive=tmp_path / "drive.txt")
 
 
-def _publish_console(tmp_path: Path, **over) -> None:
-    model = ConsoleModel(main_mode=MainMode.KINO, rows=console_rows(), osr2=Osr2State.ROBOT_HAND, **over)
-    (tmp_path / "console.json").write_text(console_text(model), encoding="utf-8")
+def _publish_main_hud(tmp_path: Path, **over) -> None:
+    model = MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows(), osr2=Osr2State.ROBOT_HAND, **over)
+    (tmp_path / "main_hud.json").write_text(main_hud_text(model), encoding="utf-8")
 
 
 class Kino:
     """What runs on a Funestra, as the Funestra sees it: its own verbs, a pass
-    of its own each frame, lines in the status file, and the console's top block."""
+    of its own each frame, lines in the status file, and the Main Funestra's HUD's top block."""
 
     def __init__(self, playback) -> None:
         self.playback = playback
@@ -879,9 +879,9 @@ class Genau(Kino):
 def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
           host_controls=None, clock=time.monotonic,
           osr2_visualizer: Path | None = None) -> tuple[Funestra, FakeEngine, Kino]:
-    channels = replace(_console_channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1")],
+    channels = replace(_main_hud_channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1")],
                                          commands=commands), osr2_visualizer=osr2_visualizer)
-    _publish_console(tmp_path)
+    _publish_main_hud(tmp_path)
     engine = FakeEngine()
     made: list[Kino] = []
 
@@ -897,7 +897,7 @@ def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
 
 
 class TestTheMainFunestra:
-    """A Funestra handed a console file draws the room's console in place of a
+    """A Funestra handed a Main Funestra's HUD file draws the Main Funestra's HUD in place of a
     satellite HUD, opens holding its item, and leaves its sound to the room."""
 
     def test_it_opens_holding_its_item(self, tmp_path):
@@ -908,21 +908,21 @@ class TestTheMainFunestra:
 
     def test_handed_a_place_for_the_osr2_visualizer_it_hands_on_the_one_it_composed(self, tmp_path):
         funestra, _engine, _kino = _main(tmp_path, osr2_visualizer=tmp_path / "visualizer.txt")
-        _publish_console(tmp_path, has_osr2=True)
+        _publish_main_hud(tmp_path, has_osr2=True)
         publish_drive(tmp_path / "drive.txt", DriveHud(speed=40))
 
         funestra.tick(window=WINDOW)
 
         assert read_drive(tmp_path / "visualizer.txt").speed == 40
 
-    def test_it_draws_the_console_the_room_published(self, tmp_path):
+    def test_it_draws_the_main_hud_the_room_published(self, tmp_path):
         funestra, engine, _kino = _main(tmp_path)
 
         funestra.tick(window=WINDOW)
 
         assert list(engine.overlays) == [HUD_OVERLAY_ID]
 
-    def test_the_controls_its_host_hands_it_are_on_the_console_and_pressed_there(self, tmp_path):
+    def test_the_controls_its_host_hands_it_are_on_the_main_hud_and_pressed_there(self, tmp_path):
         host = AHost()
         funestra, engine, _kino = _main(tmp_path, host_controls=host)
         funestra.tick(window=WINDOW)
@@ -933,7 +933,7 @@ class TestTheMainFunestra:
 
         assert host.set_to == [pytest.approx(110.0, abs=1.0)]
 
-    def test_the_console_leads_with_what_runs_on_the_funestra_says_it_is_playing(self, tmp_path):
+    def test_the_main_hud_leads_with_what_runs_on_the_funestra_says_it_is_playing(self, tmp_path):
         funestra, engine, kino = _main(tmp_path)
         funestra.tick(window=WINDOW)
         before = engine.overlays[HUD_OVERLAY_ID][2]
@@ -943,7 +943,7 @@ class TestTheMainFunestra:
 
         assert engine.overlays[HUD_OVERLAY_ID][2] is not before
 
-    def test_a_press_on_a_console_button_asks_the_room_and_never_pauses_it(self, tmp_path):
+    def test_a_press_on_a_main_hud_button_asks_the_room_and_never_pauses_it(self, tmp_path):
         funestra, engine, _kino = _main(tmp_path)
         funestra.tick(window=WINDOW)
         left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
@@ -985,7 +985,7 @@ class TestTheMainFunestra:
 
     def test_a_held_band_is_let_go_when_the_button_comes_up(self, tmp_path):
         funestra, engine, _kino = _main(tmp_path)
-        _publish_console(tmp_path, max_intensity=50)
+        _publish_main_hud(tmp_path, max_intensity=50)
         funestra.tick(window=WINDOW)
         left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
         x, y, _w, h = funestra._hud._painter.tracks[0].rect
@@ -1051,8 +1051,8 @@ def _scripted_main(tmp_path: Path) -> tuple[Funestra, FakeEngine]:
     script = tmp_path / "v0.funscript"
     script.write_text('{"actions": [{"at": 0, "pos": 0}, {"at": 900, "pos": 100}, '
                       '{"at": 2400, "pos": 10}]}', encoding="utf-8")
-    channels = _console_channels(tmp_path, [f"{video}\t{script}"])
-    _publish_console(tmp_path)
+    channels = _main_hud_channels(tmp_path, [f"{video}\t{script}"])
+    _publish_main_hud(tmp_path)
     engine = FakeEngine(duration_ms=600_000.0)
     engine.screenshot = np.zeros((10, 20, 4), dtype=np.uint8)
     return Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
@@ -1176,13 +1176,13 @@ class TestAUsersOwnFrame:
         funestra.tick(window=WINDOW)
         return funestra, engine, funestra._users["genau"]
 
-    def test_its_frame_goes_up_over_the_video_under_the_console(self, tmp_path):
+    def test_its_frame_goes_up_over_the_video_under_the_main_hud(self, tmp_path):
         _funestra, engine, _genau = self._genau_in_front(tmp_path)
 
         assert {BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, HUD_OVERLAY_ID} <= set(engine.overlays)
         assert engine.overlays[FIRST_TILE_OVERLAY_ID][2].shape[1] == WINDOW[0]
 
-    def test_a_corner_the_console_is_not_in_still_shows_its_plus_over_the_frame(
+    def test_a_corner_the_main_hud_is_not_in_still_shows_its_plus_over_the_frame(
             self, tmp_path):
         funestra, engine, _genau = self._genau_in_front(tmp_path)
 
@@ -1191,7 +1191,7 @@ class TestAUsersOwnFrame:
 
         assert CORNER_PLUS_OVERLAY_ID in engine.overlays
 
-    def test_a_press_in_a_corner_the_console_is_not_in_asks_for_the_console_there(
+    def test_a_press_in_a_corner_the_main_hud_is_not_in_asks_for_the_main_hud_there(
             self, tmp_path):
         funestra, _engine, _genau = self._genau_in_front(tmp_path)
 
@@ -1199,7 +1199,7 @@ class TestAUsersOwnFrame:
 
         assert _asked(tmp_path) == ["main_hud_restore_at|lower_right"]
 
-    def test_the_console_leads_with_what_it_says_it_is_playing(self, tmp_path):
+    def test_the_main_hud_leads_with_what_it_says_it_is_playing(self, tmp_path):
         funestra, engine, genau = self._genau_in_front(tmp_path)
         before = engine.overlays[HUD_OVERLAY_ID][2]
 
@@ -1504,9 +1504,9 @@ class TestAHudBesideTheItem:
 
     def _main_beside(self, tmp_path, surface, *, genau: bool = False, commands: str = "",
                      users_frames=None):
-        channels = _console_channels(
+        channels = _main_hud_channels(
             tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1")], commands=commands)
-        _publish_console(tmp_path)
+        _publish_main_hud(tmp_path)
         engine = FakeEngine()
         users = {"kino": Kino, **({"genau": Genau} if genau else {})}
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
@@ -1515,7 +1515,7 @@ class TestAHudBesideTheItem:
         funestra.tick(window=WINDOW)
         return funestra, engine
 
-    def test_the_console_is_held_to_the_surfaces_width(self, tmp_path):
+    def test_the_main_hud_is_held_to_the_surfaces_width(self, tmp_path):
         """A console sized to its contents changes size between the modes and
         with the title, and a screen that grows and shrinks is a screen that
         moves; the surface says the one width it is held to."""
@@ -1531,7 +1531,7 @@ class TestAHudBesideTheItem:
         funestra, _engine = self._main_beside(tmp_path, _ASurface())
         assert funestra.hud_edge is HudEdge.LOWER
 
-        _publish_console(tmp_path, hud_edge=HudEdge.RIGHT)
+        _publish_main_hud(tmp_path, hud_edge=HudEdge.RIGHT)
         funestra.tick(window=WINDOW)
 
         assert funestra.hud_edge is HudEdge.RIGHT
@@ -1554,10 +1554,10 @@ class TestAHudBesideTheItem:
         assert HUD_OVERLAY_ID not in surface.overlays
         assert funestra.hud_minimized
 
-    def test_minimized_beside_the_item_the_console_leaves_its_plus_to_the_window(self, tmp_path):
+    def test_minimized_beside_the_item_the_main_hud_leaves_its_plus_to_the_window(self, tmp_path):
         surface = _ASurface(width=380)
         funestra, _engine = self._main_beside(tmp_path, surface)
-        _publish_console(tmp_path, hud_minimized=True)
+        _publish_main_hud(tmp_path, hud_minimized=True)
 
         funestra.tick(window=WINDOW)
 
@@ -1591,7 +1591,7 @@ class TestAHudBesideTheItem:
         assert np.array_equal(funestra.outside_buttons.name_flash(),
                               OutsideButtons("portrait", minimized=True, flash="v0").name_flash())
 
-    def test_the_console_beside_the_item_hands_the_window_its_minus_too(self, tmp_path):
+    def test_the_main_hud_beside_the_item_hands_the_window_its_minus_too(self, tmp_path):
         funestra, _engine = self._main_beside(tmp_path, _ASurface(width=380))
 
         assert funestra.outside_buttons.toggle(pointed=False).command == "main_hud_minimize"
@@ -1687,9 +1687,9 @@ class TestTheWindowsOwnVerbs:
             heard.append(command)
             return command.startswith("TILT_")
 
-        channels = _console_channels(
+        channels = _main_hud_channels(
             tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1")], commands=commands)
-        _publish_console(tmp_path)
+        _publish_main_hud(tmp_path)
         engine = FakeEngine()
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
                             locked=True, sound_is_the_rooms=True, users={"kino": Kino},

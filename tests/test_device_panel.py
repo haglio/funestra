@@ -1,8 +1,8 @@
-"""The OSR2 part of the console, drawn by a host on a surface of its own and pressed there."""
+"""The OSR2 part of the Main Funestra's HUD, drawn by a host on a surface of its own and pressed there."""
 from __future__ import annotations
 
-from funestra.console_hud import ConsoleHud, hud_xy
 from funestra.device_panel import DevicePanel
+from funestra.main_hud_painter import MainHud, hud_xy
 
 MARGIN_X, MARGIN_Y = hud_xy()
 
@@ -30,7 +30,7 @@ class _Painter:
     def leave(self) -> None:
         self.calls.append(("leave",))
 
-    def rgba(self, hud: ConsoleHud) -> tuple[bytes, tuple[int, int]]:
+    def rgba(self, hud: MainHud) -> tuple[bytes, tuple[int, int]]:
         self.calls.append(("rgba", hud))
         return b"\x00" * 16, (2, 2)
 
@@ -100,10 +100,10 @@ class TestLettingGo:
 
 
 class TestTheDrawing:
-    def test_is_the_painter_s_drawing_of_the_console_it_is_handed(self):
+    def test_is_the_painter_s_drawing_of_the_main_hud_it_is_handed(self):
         painter = _Painter()
         panel, _posted = _panel(painter)
-        hud = ConsoleHud()
+        hud = MainHud()
 
         drawn = panel.drawing(hud)
 

@@ -4,7 +4,7 @@ The status file Fun Time reads and the OSR2 visualizer the Main Funestra draws a
 publications of one fact, and they used to work it out separately: the same six
 booleans and the same `half = amplitude // 2` center clamp, in two modules, with
 a comment in one of them naming the duplication.  A change to the clamp had to
-be made in both or the console dimmed an arrow the status file called live.
+be made in both or the Main Funestra's HUD dimmed an arrow the status file called live.
 """
 from __future__ import annotations
 
@@ -115,7 +115,7 @@ class TestTheCeilingsAMaxIntensityLeaves:
 
 
 class TestBothPublicationsReadTheSameSix:
-    """The point of the type: what the status file says and what the console
+    """The point of the type: what the status file says and what the Main Funestra's HUD
     draws cannot disagree, because there is one answer."""
 
     HANDS = (

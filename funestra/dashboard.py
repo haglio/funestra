@@ -1,6 +1,6 @@
 """The channel a Funestra asks the room on: the dashboard's command file.
 
-Every control a Funestra draws for the room asks rather than acts -- a console
+Every control a Funestra draws for the room asks rather than acts -- a Main Funestra's HUD
 button posts the room's verb, the room's volume control posts the level it wants,
 a press on the item asks for the room's pause -- and all of it goes out on
 the one file the dashboard's own buttons write to.  With no file there is no

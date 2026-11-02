@@ -1,18 +1,18 @@
-"""The OSR2 part of the console -- its aim row, its OSR2 line and its visualizer --
+"""The OSR2 part of the Main Funestra's HUD -- its aim row, its OSR2 line and its visualizer --
 drawn by a host on a surface of its own, and pressed there."""
 from __future__ import annotations
 
 from collections.abc import Callable
 
-from .console_hud import ConsoleHud, ConsolePainter, hud_xy
+from .main_hud_painter import MainHud, MainHudPainter, hud_xy
 
 
 class DevicePanel:
     def __init__(self, *, post: Callable[[str], None], painter=None) -> None:
         self._post = post
-        self._painter = painter if painter is not None else ConsolePainter(device_only=True)
+        self._painter = painter if painter is not None else MainHudPainter(device_only=True)
 
-    def drawing(self, hud: ConsoleHud) -> tuple[bytes, tuple[int, int]]:
+    def drawing(self, hud: MainHud) -> tuple[bytes, tuple[int, int]]:
         return self._painter.rgba(hud)
 
     def press(self, x: int, y: int) -> None:

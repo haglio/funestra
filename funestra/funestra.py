@@ -14,8 +14,6 @@ from typing import Protocol, runtime_checkable
 
 from app_support.osr2_slot import Osr2Sender
 
-from .console import ModeHud
-from .console_overlay import ConsoleOverlay
 from .control_registry import look_up
 from .dashboard import ask
 from .drive_gate import DriveGate
@@ -30,6 +28,8 @@ from .hud_minimize import NameFlash
 from .hud_overlay import HudOverlay
 from .hud_placement import HudEdge
 from .hud_row import RowHud
+from .main_hud import ModeHud
+from .main_hud_overlay import MainHudOverlay
 from .messages import MessageWriter
 from .mpv_engine import MpvEngine
 from .osr2_visualizer import DrivePublisher
@@ -64,7 +64,7 @@ class Channels:
     message: Path | None = None
     play_points: Path | None = None
     hud: Path | None = None
-    console: Path | None = None
+    main_hud_model: Path | None = None
     dashboard_cmd: Path | None = None
     drive: Path | None = None
     tcode_host: str | None = None
@@ -252,9 +252,9 @@ class Funestra:
         return self._front.top_block()
 
     def _hud_for(self, channels: Channels, drawn_on,
-                 hud: Callable[[], HudModel | None] | None) -> HudOverlay | ConsoleOverlay | None:
+                 hud: Callable[[], HudModel | None] | None) -> HudOverlay | MainHudOverlay | None:
         """The one HUD this window wears, which carries the item's row: the
-        room's console on the main slot, the published HUD, or the window's
+        Main Funestra's HUD on the main slot, the published HUD, or the window's
         own program's HUD where no room publishes one.  Each places a press
         on the row itself, so each is handed what it asks of the window when
         one lands.
@@ -268,9 +268,9 @@ class Funestra:
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
                 **self._volume_presses(),
             )
-        if channels.console is not None:
-            return ConsoleOverlay(
-                console_file=channels.console, drive_file=channels.drive,
+        if channels.main_hud_model is not None:
+            return MainHudOverlay(
+                main_hud_file=channels.main_hud_model, drive_file=channels.drive,
                 command_file=channels.dashboard_cmd, engine=drawn_on,
                 drive_gate=self._drive_gate, top_block=self._top_block,
                 width=None if self._hud_surface is None else self._hud_surface.width,
@@ -539,7 +539,7 @@ class Funestra:
                    playback_speed: float) -> None:
         if self._hud is None:
             return
-        if isinstance(self._hud, ConsoleOverlay):
+        if isinstance(self._hud, MainHudOverlay):
             self._flash = self._name_flash.showing(self._top_block().video)
             self._hud.tick(playback_speed=playback_speed, window=window,
                            item_row=row, heatmap=colors, flash=self._flash)

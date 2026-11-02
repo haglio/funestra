@@ -1,4 +1,4 @@
-"""A list and a bar a host hands a Funestra for its console: drawn here, pressed here, and
+"""A list and a bar a host hands a Funestra for its Main Funestra's HUD: drawn here, pressed here, and
 what was picked or set handed back."""
 from __future__ import annotations
 
@@ -72,7 +72,7 @@ class TestTheField:
 
         assert press.drawing().list_open
 
-    def test_a_press_off_the_closed_controls_is_left_for_the_console(self):
+    def test_a_press_off_the_closed_controls_is_left_for_the_main_hud(self):
         press, _host, layout = _pressing()
 
         assert not press.press(*_off_the_closed_controls(), layout=layout)
@@ -126,7 +126,7 @@ class TestTheBar:
         assert len(host.set_to) == 1
 
 
-class TestBeforeTheConsoleHasPlacedThem:
+class TestBeforeTheMainHudHasPlacedThem:
     def test_they_take_no_press(self):
         press, host, layout = _pressing()
 

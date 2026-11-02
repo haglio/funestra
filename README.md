@@ -15,7 +15,7 @@ Origenerator hands it to one of Fun Time's Satellite Funestras.
 | Fun Time's satellites | `../fun_time` | a Funestra, on each satellite's window |
 | Fun Time's headset | `../fun_time` | the same three Funestras over the offscreen engine, drawn into the headset |
 | Fun Time itself | `../fun_time` | the file channel, the playlist, the HUD's title |
-| Origenerator | `../origenerator` | a Funestra for a Standalone Slideshow, and the console and OSR2 visualizer over its shows |
+| Origenerator | `../origenerator` | a Funestra for a Standalone Slideshow, and the Main Funestra's HUD and OSR2 visualizer over its shows |
 
 Everything they had to agree on lives here, so none of them has to import
 another application's internals to get it. By what it is:
@@ -53,7 +53,7 @@ another application's internals to get it. By what it is:
   `satellite_hud` / `satellite_hud_paint`.  Two of those are sections rather
   than HUDs — the OSR2 visualizer and `hud_osr2`'s device line — because a host
   that both browses a set and drives the OSR2 (Origenerator's shows) says all of
-  it on ONE HUD rather than stacking a console under a lock HUD.
+  it on ONE HUD rather than stacking a Main Funestra's HUD under a lock HUD.
 - **the Funestra** — the window: `funestra` builds one on a way of
   playing (`Funestra.on_window` opens mpv on a window handle; the base takes
   any engine with the same interface) and the files its User drives it through
@@ -68,7 +68,7 @@ another application's internals to get it. By what it is:
   the black it shows when the room gives its rectangle away (`display`),
   placing a press against them (`pointer`).  A User runs on a Funestra in the
   same process (`funestra.User`: its verbs, a pass of its own each frame, its
-  lines in the status file, the console's top block) or drives it through its
+  lines in the status file, the Main Funestra's HUD's top block) or drives it through its
   files from another; none draws on it.  `tests/test_hud_drawers.py` holds the
   consumers to that: a package that imports a painter out of here is drawing a
   HUD itself, and only the ones still to move onto a Funestra are listed.
@@ -100,7 +100,7 @@ and a reader in one module — so the two sides cannot spell a thing differently
 | verbs on its command file, spelled in `funestra_verbs` | `file_channel` (`append_command` / `consume_command_file`); the Funestra answers the ones it declares in a `control_registry` | |
 | the pace an image holds the screen for: `SET_PACE <seconds>`, 0 holding it | `funestra_verbs.pace_seconds` reads the value, `set_pace` hands it to mpv | |
 | the paused flag | `app_support.file_channel.write_flag` / `file_channel.read_paused_state` | |
-| its HUD: a `HudModel` for a satellite, a `ConsoleModel` for the main slot, each carrying the buttons the source declares — rows of `hud_button.Button`: the verb a press posts, the face, the tooltip, lit or dim, where a group starts | `satellite_hud` (`hud_text` / `parse_hud`), `console` (`console_text` / `parse_console`) | |
+| its HUD: a `HudModel` for a satellite, a `MainHudModel` for the main slot, each carrying the buttons the source declares — rows of `hud_button.Button`: the verb a press posts, the face, the tooltip, lit or dim, where a group starts | `satellite_hud` (`hud_text` / `parse_hud`), `console` (`console_text` / `parse_main_hud`) | |
 | | `status` (`status_fields` / `parse_status`, published by `StatusWriter`) | a `FunestraStatus`: the item on screen, the playhead, paused, locked, the rate it plays at, whether the item is an image — and after those seven lines, whatever that Funestra adds of its own |
 
 A Funestra answers the verbs it can (`TRASH` is a satellite's, `TOGGLE_LOCK` the

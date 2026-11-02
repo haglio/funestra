@@ -1,7 +1,7 @@
 """The closed sets a Funestra and Fun Time agree on, each as the words on the wire.
 
 Each of these travels between two processes as a bare word in a published file
--- the main console's JSON, the shared state INI, a status file -- and was
+-- the main HUD's JSON, the shared state INI, a status file -- and was
 compared by literal at every site that read it.  Each entry's value IS that
 word: a writer hands the entry to ``json.dumps`` and the word comes out, and
 :func:`read_mode` turns the word back into the entry on the way in.
@@ -43,7 +43,7 @@ class LoopState(StrEnum):
 
 
 class Osr2State(StrEnum):
-    """What has the OSR2, as the console badges it: nothing, the broker's auto
+    """What has the OSR2, as the Main Funestra's HUD badges it: nothing, the broker's auto
     mode, the video's funscript, or the Robot Hand filling in."""
 
     OFF = "off"

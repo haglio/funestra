@@ -26,7 +26,7 @@ DEFAULT_INTERVAL_S = 10
 MIN_INTERVAL_S = 1
 MAX_INTERVAL_S = 60
 
-# How many times a second the track at the console's foot moves.  The console
+# How many times a second the track at the Main Funestra's HUD's foot moves.  The Main Funestra's HUD
 # is repainted whenever its row moves, and the count moves every tick.
 TRACK_STEPS_PER_S = 20
 

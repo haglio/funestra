@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 from shared_ui.palette import BLUE, GREEN, TEXT_MUTED
 
-from funestra.console import OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED
 from funestra.hud import Hud
 from funestra.hud_button import Button
 from funestra.hud_osr2 import (
@@ -20,6 +19,7 @@ from funestra.hud_osr2 import (
     driving_at_the_playhead,
     state_for,
 )
+from funestra.main_hud import OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED
 from funestra.modes import Osr2State
 from funestra.osr2_visualizer import DRIVEN_BY_NOTHING, DriveHud, track_command
 

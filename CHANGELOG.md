@@ -69,10 +69,10 @@ handed out their modules (`renamed.answer_as`); the ten `funestra.clip_*`
 modules, `mpv_player`, `render_player` and `player_verbs`; `PlayerStatus` and
 `clip_playhead`; every class's clip-era keywords and attributes, and its
 `player=` for the engine or the Funestra; `cruise_control` and `wave_stack`,
-with the cruise arguments the console's aim row, Genau's controls and the
+with the cruise arguments the Main Funestra's HUD's aim row, Genau's controls and the
 driver dropped (`renamed.drops_retired_arguments`); and the notifier asked by
 `notify_clip` (`renamed.method_of`). What went between processes goes too: the
-console's `player` key, the status's `clip=` line, the notifier's `CLIP` datagram
+HUD's `player` key, the status's `clip=` line, the notifier's `CLIP` datagram
 and the `CLIP_SECONDS` verbs. So does what only the headset's copies of the row
 from before haglio/fun_time#391 reached (`lower_edge_height`, `readout_xy`,
 `on_readout`, `timeline_x`, `timeline_bgra`, `time_at`, both `row_rect`s, and the
@@ -194,7 +194,7 @@ family's marks), and `timeline.RED`; `drive_readout.DISABLED_INK` and
 `hud_icons.MINIMIZE_ICON` keep their names over the family's gray and minus.
 
 Numbers that moved: the act labels down a satellite's map 7 to 8 points, a
-flick's loading message 13 to 14; the console's row gap 5 to 8, a satellite
+flick's loading message 13 to 14; the Main Funestra's HUD's row gap 5 to 8, a satellite
 panel's inset 12 to 16 and its padding 10 to 8, the satellite map's row gap
 12 to 16, the panels' and tooltips' corners 8 and 4 to the family's 4. A
 satellite's title steps down through the family's four sizes to fit and is cut
@@ -358,18 +358,18 @@ still hands them (`renamed.drops_retired_arguments`). Its keys and words for
 cruise reach Genau as verbs it refuses and logs. None of those is declared;
 they go once no checkout names them.
 
-## 2026-10-12 — the console draws the host's list and bar itself
+## 2026-10-12 — the Main Funestra's HUD draws the host's list and bar itself
 
-Only a Funestra draws a HUD, and the console's `host_block` let a host paint
+Only a Funestra draws a HUD, and the Main Funestra's HUD's `host_block` let a host paint
 its own block into it, which FunTimeVR's headset did for its projection list
 and Angle bar. `host_block` is gone. A Funestra takes `host_controls` instead
 (`host_controls.HostControls`): something that says what its list and bar
 show now (`hud()`, a `HostControlsHud` naming what is chosen, the list in
 order and an optional `BarHud` with its label, value, ends and unit), and is
 handed back the row picked (`pick(index)`) and the value the bar is set to
-(`set_bar(value)`). `HostControlsSection` paints them at the console's foot,
+(`set_bar(value)`). `HostControlsSection` paints them at the Main Funestra's HUD's foot,
 exactly as the headset did, and `HostControlsPress` keeps the list open or
-the bar held and places each press; the console offers every press to them
+the bar held and places each press; the Main Funestra's HUD offers every press to them
 first, as before, and `ConsolePainter.host_controls_layout` says where the
 field, the bar and the list's rows landed. The field and the list are
 `shared_ui.dropdown_pil`'s, the dropdown the headset's dashboard draws, and
@@ -387,10 +387,10 @@ module reached through either is the very module `funestra` holds. `timeline`
 no longer declares `bar_track_x`: only this package's own `hud_row` and
 `pointer` reach it now, so the consumer gate called it published for nobody.
 
-## 2026-10-10 — the console makes room for a block its host paints
+## 2026-10-10 — the Main Funestra's HUD makes room for a block its host paints
 
 `ConsolePainter.rgba` and `bgra` take a `host_block`: anything with a `height`,
-a `least_width` and a `draw(image, rect)`, compared by value. The console widens
+a `least_width` and a `draw(image, rect)`, compared by value. The Main Funestra's HUD widens
 to its `least_width`, gives its `height` a section of its own at its foot, under
 the clip's row, has it draw itself there before any tooltip, and says where in
 `host_block_rect`, which the host reads to place a press. A control only one
@@ -403,7 +403,7 @@ console offers every press to it before anything of its own.
 
 ## 2026-10-10 — a flick's track runs its time on screen, a dial beside it goes round with the loop, and the row is one line
 
-A flick has two senses of time, and its row at the console's foot showed the
+A flick has two senses of time, and its row at the Main Funestra's HUD's foot showed the
 wrong one on the track: how far round its loop the motion had taken it, counted
 in frames. The track is a scrubber, so it now runs the time the flick has had of
 its turn on screen -- filled left to right over the seconds the flick gets, and
@@ -505,7 +505,7 @@ them. The distribution and the repository keep the name player_core for now.
 A panel's minus is in its corner nearest the window's, on the very spot the
 plus takes once the panel is minimized, so a second click without moving the
 mouse opens it again. In an upper corner the title moves over to make room; in
-a lower corner the console's last block does, and a satellite panel's map leaves
+a lower corner the Main Funestra's HUD's last block does, and a satellite panel's map leaves
 that corner free already. The minimized plus, and the plus a corner shows, sit
 that far in from the window's corner too.
 
@@ -532,7 +532,7 @@ tooltip with it.
 
 A panel says where its HUD sits as a `HudPlace` (whose HUD, which corner, how
 far in from the edges, whether minimized): `HudOverlay.hud_place`, and
-`ConsolePainter.hud_place` for the console. `plus_button` and `plus_bgra` draw
+`ConsolePainter.hud_place` for the Main Funestra's HUD. `plus_button` and `plus_bgra` draw
 the plus for a corner or a side, which is what the headset hangs beside its
 players.
 
@@ -588,17 +588,17 @@ Genau has no window of its own since v0.1.414, so nothing arrives beside the
 Genau that has the room any more. `crossing.py` and `genau_arrival.py` are
 gone with the tests that drove them; `GenauRefreshController` no longer takes
 `arriving`, `let_go`, `present_scene`, `set_hud_mode`, `console_file` or
-`set_console` (the Funestra draws the console now, off the console file);
+`set_console` (the Funestra draws the Main Funestra's HUD now, off the Main Funestra's HUD file);
 `GenauReadout` no longer takes `console_file`, `set_console`, `current_clip` or
 `publishing`, and keeps the `DriveHud` it last built as `drive`;
 `GenauNotifier` no longer takes `held` and has no `let_go`; `ClipSelection.follow`
 and `Flag.moved` are gone with their callers. No sibling reached any of these.
 
-## 2026-10-09 — a console can be drawn as the device's section alone
+## 2026-10-09 — a Main Funestra's HUD can be drawn as the device's section alone
 
 `ConsolePainter(device_only=True)` draws the rows that aim the device, the line
 naming who has it, and the visualizer, and nothing else: no minus, no status line
-or file name, none of the source's rows and no clip row. It is for a console a
+or file name, none of the source's rows and no clip row. It is for a Main Funestra's HUD a
 host sets into its own window with nothing playing under it -- Origenerator's
 main window, whose console drew a minus that did nothing and a status line about
 a slideshow that was not open.
@@ -704,7 +704,7 @@ letting `timeline.progress_bar_bgra` raise -- which took mpv's render loop with
 it and left a window showing no picture at all. `HeatmapStrip.update` builds
 nothing for a width of 0, which is a host that has not measured a track yet.
 
-## 2026-10-08 — a HUD is divided into sections, and the console's device rows ride apart
+## 2026-10-08 — a HUD is divided into sections, and the Main Funestra's HUD's device rows ride apart
 
 Both painters lay their panel down as a stack of sections with a line across
 the slab between each (`hud_sections.stack`, `HudPanel.divide`). A player's
@@ -712,21 +712,21 @@ panel stacks its status, its declared buttons with the speed row, the clip's
 row, the device, the source's foot block and the nav map; the main console stacks
 its status, its declared buttons, the device and the clip's row.
 `satellite_hud.FAMILY_GAP` is gone, `panel_layout` takes the status section's
-height as `status_h` and a foot's as a plain `foot_h`, and the console's
+height as `status_h` and a foot's as a plain `foot_h`, and the Main Funestra's HUD's
 `_ROW_GAP` is `_BLOCK_GAP`, the gap between the device's own parts.
 
 `ConsoleModel.osr2_rows` is new and published as `osr2_rows`: the rows that aim
 the device, drawn at the head of the device's section as `HudModel.osr2_rows`
 already were. A console older than this one drops the key, so a source that
-publishes its aim row there waits until every app drawing its console runs
+publishes its aim row there waits until every app drawing its Main Funestra's HUD runs
 this version.
 
 ## 2026-10-08 — the Funestra draws the main slot's console, and everything else the Main Player drew
 
 Everything Fun Time's Main Player painted over its video is the Funestra's drawing
 now, so the Main Player can become the Main Funestra in the fun_time landing that
-follows: the console the room publishes for the main slot (`console_overlay`,
-read off the console file and the drive file the same way the satellite panel is,
+follows: the Main Funestra's HUD the room publishes for the main slot (`console_overlay`,
+read off the Main Funestra's HUD file and the drive file the same way the satellite panel is,
 its presses and the OSR2 visualizer's drags posted on the dashboard's channel), the
 scrubber with a scripted item's colors, the zoom while a stretch is marked and the
 two frames of a running A/B range (`scrubber`, which is the Main Player's
@@ -824,7 +824,7 @@ until no branch of genau or fun_time still passes or imports them.
 
 ## 2026-10-06 — the Robot Hand's Amp, Speed and Center are bars, not dials
 
-The console draws them as bars, and the code called them dials, a word the
+The Main Funestra's HUD draws them as bars, and the code called them dials, a word the
 screen never shows. So
 `wave_stack.bars` and `wave_stack.Bars` are what `wave_stack.dials` and
 `wave_stack.Dials` were, `RobotHandState.exact_bars` is `exact_dials`, and the
@@ -1023,7 +1023,7 @@ published.
 What it is for: every player here laid that row along the last rows of its own
 video, which on a screen that already carries a HUD is a second panel — and on a
 wrapped video it is smeared round the nadir, which is why the headset already
-draws it on the console. Nothing a panel already draws moves: 864 made-up panels
+draws it on the Main Funestra's HUD. Nothing a panel already draws moves: 864 made-up panels
 are byte for byte identical with `clip_row` unset.
 
 ## 2026-09-21 — a source may hang a block of its own at the panel's foot
@@ -1121,7 +1121,7 @@ through declares its API in `__all__`: `hud_button` (`Button`, `BUTTON`,
 `FIT_THE_WORD`), `hud_icons` (the shared-mark and app-mark names), `hud_panel`
 (`SYMBOL_FONT`, `load_font`), and `console`'s layout names (`GAP`, `GROUP_GAP`,
 `ROW_LABEL_W`, `VALUE_W`, `place_rows`, `hit_test`, `parse_console`). The OSR2
-control states a console consumer reaches, `robot_hand`'s two hold centers and
+control states a Main Funestra's HUD consumer reaches, `robot_hand`'s two hold centers and
 `drive_readout.publish_drive` are declared for the same reason; `console` drops
 `CONSOLE_VERBS` from its list, which no consumer imports. The fixed fallback
 rows stay until Origenerator declares its own buttons. Nothing here does
@@ -1144,18 +1144,18 @@ about one.
 ## 2026-09-13 — the buttons a source declares
 
 A satellite's HUD drew a fixed band (`CONTROL_GROUPS`, `MODE_BUTTONS`,
-`CONTROL_TOOLTIPS`) and the console fixed rows (`console_rows`), each lit
+`CONTROL_TOOLTIPS`) and the Main Funestra's HUD fixed rows (`console_rows`), each lit
 off the panel's switches. A source now declares its buttons — rows of
 `hud_button.Button` on `HudModel.rows` and `ConsoleModel.rows` (with the
 OSR2 line's controls on `osr2_controls`), published by `hud_text` and
 `console_text` — and the players draw from them and nothing else, posting
-each one's verb verbatim. The two numbers on the console only the drawing host
+each one's verb verbatim. The two numbers on the Main Funestra's HUD only the drawing host
 knows, the video's rate and a clip's pace, are read-outs that name their
 number (`host_value`) for the painter to fill; that fixed the clip-seconds
 read-out in Genau's window and the headset, which read the pace off the
 published panel and so always said "0s". Both painters draw a button through
 one `hud_panel.draw_button`; the minimize bar is the satellite's nine pixels
-on the console too, and hovering a console button no longer recolors its edge.
+on the Main Funestra's HUD too, and hovering a Main Funestra's HUD button no longer recolors its edge.
 
 The fixed rows stay for now, as `satellite_hud.standard_rows` and
 `console.console_rows`, drawing a panel that declares none — Fun Time's move
@@ -1164,7 +1164,7 @@ onto declaring its own is the next landing, and they go with it.
 ## 2026-09-13 — the player contract, written where it is read
 
 What a content source hands a player and what it gets back was spread across
-two repos: Fun Time wrote the playlist line, the console's JSON and each
+two repos: Fun Time wrote the playlist line, the Main Funestra's HUD's JSON and each
 player's verbs by hand, and this package read them. Each format is now one
 pair in one module — `playlist` (`PlaylistItem`, `write_playlist`,
 `item_line` / `item_from_line`), `player_verbs`, `status` (`PlayerStatus`,
@@ -1314,7 +1314,7 @@ kept the invariant a war story was protecting and dropped the story.
 | `funscript`'s three bounds explained by the incident that set them | 0.7590 → 0.7579 |
 | `HudRenderer.render`'s section headings became `_draw_status_band` and `_draw_mode_row` | 0.7579 → 0.7528 |
 | `ConsolePainter._paint`'s top block became `_draw_top_block` (CC 18 → 15) | 0.7528 → 0.7525 |
-| The console's eight histories cut to the rules they guarded | 0.7525 → 0.7439 |
+| The Main Funestra's HUD's eight histories cut to the rules they guarded | 0.7525 → 0.7439 |
 | The OSR2 visualizer's five attempts, and `drive_layout`'s and `tcode`'s | 0.7439 → 0.7403 |
 | The satellite explaining itself by the dashboard it replaced, thirteen times | 0.7403 → 0.7364 |
 | Seventeen more across nine files with one war story each | 0.7364 → 0.7267 |

@@ -1,6 +1,6 @@
 """A rectangle, and the one question every HUD asks of one.
 
-Its own module because ``console`` and ``satellite_hud`` are deliberately free
+Its own module because ``main_hud`` and ``satellite_hud`` are deliberately free
 of Pillow, so this cannot live beside the painters that also want it.
 """
 from __future__ import annotations

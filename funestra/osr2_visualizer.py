@@ -11,7 +11,7 @@ one (:class:`funestra.hud.Hud`) and blits the result, so a second
 app shows this drawing instead of its own idea of it.
 
 It is a block, not a HUD: it hosts inside whatever slab is showing it rather
-than carrying one of its own, so a console is one HUD and not two stacked.
+than carrying one of its own, so a Main Funestra's HUD is one HUD and not two stacked.
 """
 from __future__ import annotations
 
@@ -40,7 +40,7 @@ from .drive_layout import (
     TRACE_SAMPLES,  # noqa: F401 — re-exported: genau reads it from here
     DriveControl,
     DriveTrack,
-    section_size,  # noqa: F401 — re-exported: the console painter reads it here
+    section_size,  # noqa: F401 — re-exported: the Main Funestra's HUD painter reads it here
     track_value,
 )
 from .drive_layout import fraction as _fraction
@@ -142,10 +142,10 @@ class DriveHud:
     shape: str = "sine"
     position: int = 0
     # Seconds between auto-advances.  Carried here because Fun Time does not know
-    # it — Genau owns the pace — and the console's auto-advance button says it.
+    # it — Genau owns the pace — and the Main Funestra's HUD's auto-advance button says it.
     advance_interval: int = 0
     # What has the device.  Genau cannot see the handoff, so its publish leaves
-    # this at the default; whoever draws the console knows it from the OSR2
+    # this at the default; whoever draws the Main Funestra's HUD knows it from the OSR2
     # state and folds it in, and a Funestra publishing the line it composed
     # says it with the stretches below.  Anything
     # but the Robot Hand dims every control here, because a motion it is not
@@ -186,7 +186,7 @@ class DriveHud:
     # takes the device back.  Published, because this is the one fact the trace
     # cannot recompute: a paused Genau publishes the motion it will resume with,
     # not the position it stopped at, and reconstructing the height downstream
-    # from the console's laggy flip recorded the parked floor instead.
+    # from the Main Funestra's HUD's laggy flip recorded the parked floor instead.
     let_go: float | None = None
     max_intensity: int = FULL_INTENSITY
 
@@ -224,7 +224,7 @@ class DriveHud:
 def controls(x: int, y: int, hud: DriveHud) -> list[DriveControl]:
     """The visualizer's marks at ``(x, y)``, read off *hud* — the visualizer's own view of
     :func:`funestra.drive_layout.controls`, which is where the rects and the
-    dimming live.  The console adds these to its hit targets, so a press posts
+    dimming live.  The Main Funestra's HUD adds these to its hit targets, so a press posts
     exactly what is drawn."""
     return drive_layout.controls(
         x, y, hud.center,
@@ -288,7 +288,7 @@ class TrackGrip:
     """A press that took hold of one of the visualizer's bars, and the drag that
     goes on setting it.
 
-    Held by whichever HUD routes presses — the main console and the lock HUD
+    Held by whichever HUD routes presses — the Main Funestra's HUD and the lock HUD
     both do — so a bar can be dragged and not only clicked, and so the two
     cannot answer a drag differently.
     """
@@ -511,7 +511,7 @@ class DriveSection:
 
 
 # --- publishing --------------------------------------------------------------
-# In kino mode the visualizer is drawn by the Main Funestra, inside its console, under the
+# In kino mode the visualizer is drawn by the Main Funestra, inside its Main Funestra's HUD, under the
 # controls that move it — so Genau stops drawing and starts saying.  A file, like every
 # other channel between these Funestras: the reader polls per frame, and a torn or
 # missing read simply means "keep the visualizer you have".

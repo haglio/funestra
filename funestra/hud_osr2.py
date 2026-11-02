@@ -1,8 +1,8 @@
 """The device's own line: who has the OSR2, and the controls that aim it.
 
 Every HUD whose host drives the device draws this line, so the word for a
-parked OSR2 is the same word wherever it is read — the Main Funestra's console
-(:mod:`funestra.console_hud`) and a HUD over a host that drives it itself
+parked OSR2 is the same word wherever it is read — the Main Funestra's HUD
+(:mod:`funestra.main_hud_painter`) and a HUD over a host that drives it itself
 (:mod:`funestra.satellite_hud_paint`) share this one rather than each
 spelling the states again.
 
@@ -29,12 +29,12 @@ from shared_ui.palette import (
 from shared_ui.spacing import BUTTON_GROUP_GAP, BUTTON_PAD_H_TIGHT, GAP_SMALL
 from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
-from .console import GAP, HELD_HEIGHT, HOLD_VERB, OSR2_PARKED, OSR2_RETRACTED
 from .device_walk import Walk, the_broker_holding, the_hand_taking_back
 from .drive_layout import BAR_H, MAX_INTENSITY, DriveTrack, fraction
 from .geometry import Rect, contains
 from .hud import SYMBOL_FONT, draw_button, load_font, text_width
 from .hud_button import BUTTON, Button
+from .main_hud import GAP, HELD_HEIGHT, HOLD_VERB, OSR2_PARKED, OSR2_RETRACTED
 from .modes import UNHEARD, Osr2State
 from .osr2_visualizer import (
     DISABLED_INK,
@@ -51,7 +51,7 @@ from .robot_hand import FULL_INTENSITY, POSITION_MAX
 
 # Package-internal: the two HUDs that draw this line are both in here, and a
 # host says what its line shows through the model it already hands over
-# (:class:`funestra.console.ConsoleModel`,
+# (:class:`funestra.main_hud.MainHudModel`,
 # :class:`funestra.satellite_hud.HudModel`) rather than by building one.
 
 # The line is as deep as the controls sharing it.

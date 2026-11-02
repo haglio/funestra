@@ -1,4 +1,4 @@
-"""The main console: the HUD whichever Funestra holds the slot draws, and where
+"""The Main Funestra's HUD: the HUD whichever Funestra holds the slot draws, and where
 a press on it lands."""
 from __future__ import annotations
 
@@ -8,7 +8,16 @@ from pathlib import Path
 import pytest
 from shared_ui.icon_geometry import icon_names
 
-from funestra.console import (
+from funestra.hud_button import FIT_THE_WORD, Button
+from funestra.hud_icons import (
+    BROKER_ICON,
+    MINIMIZE_ICON,
+    TOGGLE_SWITCH,
+    shared_icon,
+    shared_icon_name,
+)
+from funestra.hud_placement import HudCorner, HudEdge
+from funestra.main_hud import (
     BROKER_PRESS,
     BUTTON,
     GAP,
@@ -20,28 +29,19 @@ from funestra.console import (
     OSR2_RETRACTED,
     ROW_LABEL_W,
     VALUE_W,
-    ConsoleModel,
+    MainHudModel,
     aim_row,
-    console_text,
     hit_test,
     kino_shows,
+    main_hud_text,
     osr2_controls,
-    parse_console,
+    parse_main_hud,
     place_rows,
-    read_console,
+    read_main_hud,
     rows_height,
     shape_label,
     tooltip_at,
 )
-from funestra.hud_button import FIT_THE_WORD, Button
-from funestra.hud_icons import (
-    BROKER_ICON,
-    MINIMIZE_ICON,
-    TOGGLE_SWITCH,
-    shared_icon,
-    shared_icon_name,
-)
-from funestra.hud_placement import HudCorner, HudEdge
 from funestra.modes import MainMode, Osr2State
 from funestra.robot_hand import WaveformShape
 
@@ -69,7 +69,7 @@ def _rect(command: str):
 
 class TestShapeLabel:
     """The control that cycles the waveform names it on hover, so the name lives
-    with the console rather than with the visualizer that no longer prints it."""
+    with the Main Funestra's HUD rather than with the visualizer that no longer prints it."""
 
     def test_names_the_waveform_instead_of_leaving_it_to_the_curve(self):
         assert shape_label("sine") == "Sine"
@@ -202,12 +202,12 @@ class TestTheDeviceRunningItself:
     package draw a drawing that depends on the answer."""
 
     def test_auto_is_the_device_driving_itself(self):
-        assert ConsoleModel(osr2=Osr2State.AUTO).device_drives_itself is True
+        assert MainHudModel(osr2=Osr2State.AUTO).device_drives_itself is True
 
     @pytest.mark.parametrize("osr2", [Osr2State.OFF, Osr2State.FUNSCRIPT,
                                       Osr2State.ROBOT_HAND])
     def test_nothing_else_is(self, osr2):
-        assert ConsoleModel(osr2=osr2).device_drives_itself is False
+        assert MainHudModel(osr2=osr2).device_drives_itself is False
 
 
 class TestModePredicates:
@@ -216,17 +216,17 @@ class TestModePredicates:
         assert not kino_shows(MainMode.GENAU)
 
 
-class TestReadConsole:
+class TestReadMainHud:
     def test_it_reads_back_what_fun_time_published(self, tmp_path: Path):
-        path = tmp_path / "main_player_console.json"
+        path = tmp_path / "main_player_main_hud.json"
         path.write_text(json.dumps({
             "main_mode": MainMode.KINO, "active": True, "osr2": Osr2State.ROBOT_HAND,
             "osr2_control": OSR2_RETRACTED, "locked": False, "latest": True,
         }), encoding="utf-8")
 
-        model = read_console(path)
+        model = read_main_hud(path)
 
-        assert model == ConsoleModel(main_mode=MainMode.KINO, active=True,
+        assert model == MainHudModel(main_mode=MainMode.KINO, active=True,
                                      osr2=Osr2State.ROBOT_HAND,
                                      osr2_control=OSR2_RETRACTED, locked=False,
                                      latest=True)
@@ -234,40 +234,40 @@ class TestReadConsole:
     def test_a_hud_that_says_nothing_about_the_lock_reads_as_locked(self, tmp_path: Path):
         """Which is where both Funestras open, and what a Fun Time too old to
         publish the flag is still describing."""
-        path = tmp_path / "main_player_console.json"
+        path = tmp_path / "main_player_main_hud.json"
         path.write_text(json.dumps({"main_mode": MainMode.KINO}), encoding="utf-8")
 
-        assert read_console(path).locked is True
-        assert ConsoleModel().locked is True
+        assert read_main_hud(path).locked is True
+        assert MainHudModel().locked is True
 
     def test_a_hud_that_says_nothing_about_the_order_names_none(self, tmp_path: Path):
         """Fun Time publishes the flag every tick; a file that says nothing
         about it is from a host with no browse order to name."""
-        path = tmp_path / "main_player_console.json"
+        path = tmp_path / "main_player_main_hud.json"
         path.write_text(json.dumps({"main_mode": MainMode.KINO}), encoding="utf-8")
 
-        assert read_console(path).latest is None
+        assert read_main_hud(path).latest is None
 
     def test_a_hud_from_a_fun_time_that_still_says_video_reads_as_kino(self):
-        assert parse_console(json.dumps({"main_mode": "video"})).main_mode is MainMode.KINO
+        assert parse_main_hud(json.dumps({"main_mode": "video"})).main_mode is MainMode.KINO
 
     def test_a_key_the_hud_no_longer_carries_is_passed_over(self):
-        """The switches the console's buttons were once lit from still come
+        """The switches the Main Funestra's HUD's buttons were once lit from still come
         from a publisher on an older release; the HUD reads the same without
         them."""
-        parsed = parse_console(json.dumps({
+        parsed = parse_main_hud(json.dumps({
             "main_mode": MainMode.GENAU, "scripted_filter": True, "broker": True,
             "loop_state": "looping", "cruise": True, "learned": True,
             "shape": "sawtooth", "plays_vr": True}))
 
-        assert parsed == ConsoleModel(main_mode=MainMode.GENAU)
+        assert parsed == MainHudModel(main_mode=MainMode.GENAU)
 
-    def test_a_torn_or_missing_file_keeps_the_console_you_have(self, tmp_path: Path):
-        path = tmp_path / "main_player_console.json"
-        assert read_console(path) is None
+    def test_a_torn_or_missing_file_keeps_the_main_hud_you_have(self, tmp_path: Path):
+        path = tmp_path / "main_player_main_hud.json"
+        assert read_main_hud(path) is None
 
         path.write_text('{"main_mode": "kino"', encoding="utf-8")
-        assert read_console(path) is None
+        assert read_main_hud(path) is None
 
 
 class TestLayout:
@@ -312,34 +312,34 @@ class TestLayout:
         assert tooltip_at(place_rows([[button]], x=0, y=0), 1, 1) == button.tooltip_on_hover
 
 
-class TestThePublishedConsoleIsWrittenWhereItIsRead:
-    """Fun Time publishes a ConsoleModel as text and the Main Funestra parses it
+class TestThePublishedMainHudIsWrittenWhereItIsRead:
+    """Fun Time publishes a MainHudModel as text and the Main Funestra parses it
     back; the keys are spelled once, here."""
 
     def test_every_published_field_survives_the_round_trip(self):
-        model = ConsoleModel(
+        model = MainHudModel(
             main_mode=MainMode.GENAU, active=True, osr2=Osr2State.AUTO,
             osr2_control=OSR2_RETRACTED, paused=True, locked=False, latest=True,
         )
 
-        assert parse_console(console_text(model)) == model
+        assert parse_main_hud(main_hud_text(model)) == model
 
     def test_the_rows_a_source_declares_survive_it_too(self):
         """The buttons themselves ride the HUD: what each posts, its face,
         its tooltip and its state, row by row, and the controls on the OSR2
         line beside them."""
-        model = ConsoleModel(
+        model = MainHudModel(
             rows=ROWS,
             osr2_controls=(Button("broker_panel", BROKER_ICON, "Broker", warn=True),),
         )
 
-        assert parse_console(console_text(model)) == model
+        assert parse_main_hud(main_hud_text(model)) == model
 
     def test_the_rows_that_aim_the_device_survive_it_apart_from_the_rest(self):
         aim = ((Button("robot_hand_park", "P", "Parked"),),)
-        model = ConsoleModel(rows=ROWS, osr2_rows=aim)
+        model = MainHudModel(rows=ROWS, osr2_rows=aim)
 
-        parsed = parse_console(console_text(model))
+        parsed = parse_main_hud(main_hud_text(model))
 
         assert (parsed.rows, parsed.osr2_rows) == (ROWS, aim)
 
@@ -347,47 +347,47 @@ class TestThePublishedConsoleIsWrittenWhereItIsRead:
         """The playback rate and the video pace are the drawing host's own --
         Fun Time neither sets them nor hears about them -- so the text does not
         carry them and they come back at rest."""
-        model = ConsoleModel(playback_speed=1.5, advance_interval=12)
+        model = MainHudModel(playback_speed=1.5, advance_interval=12)
 
-        parsed = parse_console(console_text(model))
+        parsed = parse_main_hud(main_hud_text(model))
 
-        assert parsed == ConsoleModel()
-        assert "playback_speed" not in json.loads(console_text(model))
+        assert parsed == MainHudModel()
+        assert "playback_speed" not in json.loads(main_hud_text(model))
 
     def test_what_the_room_narrowed_the_browse_to_rides_the_hud(self):
-        model = ConsoleModel(filters=("VR", "Clips", "Portrait"))
+        model = MainHudModel(filters=("VR", "Clips", "Portrait"))
 
-        assert parse_console(console_text(model)).filters == ("VR", "Clips", "Portrait")
+        assert parse_main_hud(main_hud_text(model)).filters == ("VR", "Clips", "Portrait")
 
     def test_an_order_the_session_does_not_offer_stays_absent(self):
-        assert parse_console(console_text(ConsoleModel(latest=None))).latest is None
-        assert parse_console(console_text(ConsoleModel(latest=False))).latest is False
+        assert parse_main_hud(main_hud_text(MainHudModel(latest=None))).latest is None
+        assert parse_main_hud(main_hud_text(MainHudModel(latest=False))).latest is False
 
-    def test_a_console_another_funestra_took_the_osr2_from_says_so(self):
-        assert parse_console(console_text(ConsoleModel(has_osr2=False))).has_osr2 is False
+    def test_a_main_hud_another_funestra_took_the_osr2_from_says_so(self):
+        assert parse_main_hud(main_hud_text(MainHudModel(has_osr2=False))).has_osr2 is False
 
     def test_the_max_intensity_a_session_holds_rides_the_hud(self):
-        assert parse_console(console_text(ConsoleModel(max_intensity=35))).max_intensity == 35
+        assert parse_main_hud(main_hud_text(MainHudModel(max_intensity=35))).max_intensity == 35
 
     def test_a_hud_that_says_nothing_about_the_max_intensity_has_no_slider(self):
-        assert parse_console(json.dumps({"main_mode": MainMode.KINO})).max_intensity is None
+        assert parse_main_hud(json.dumps({"main_mode": MainMode.KINO})).max_intensity is None
 
     def test_a_max_intensity_that_is_not_a_number_is_no_slider_rather_than_no_hud(self):
-        parsed = parse_console(json.dumps({"main_mode": MainMode.KINO, "max_intensity": "loud"}))
+        parsed = parse_main_hud(json.dumps({"main_mode": MainMode.KINO, "max_intensity": "loud"}))
 
         assert parsed is not None
         assert parsed.max_intensity is None
 
     def test_a_hud_that_says_nothing_about_the_osr2_has_it(self):
-        assert parse_console(json.dumps({"main_mode": MainMode.KINO})).has_osr2 is True
+        assert parse_main_hud(json.dumps({"main_mode": MainMode.KINO})).has_osr2 is True
 
     def test_a_torn_read_is_no_hud(self):
-        assert parse_console('{"main_mode": "kino"') is None
-        assert parse_console("") is None
+        assert parse_main_hud('{"main_mode": "kino"') is None
+        assert parse_main_hud("") is None
 
 
-def test_the_published_console_carries_where_it_sits_and_whether_it_is_minimized():
-    read_back = parse_console(console_text(ConsoleModel(
+def test_the_published_main_hud_carries_where_it_sits_and_whether_it_is_minimized():
+    read_back = parse_main_hud(main_hud_text(MainHudModel(
         hud_corner=HudCorner.UPPER_RIGHT, hud_edge=HudEdge.UPPER, hud_minimized=True)))
 
     assert read_back.hud_corner is HudCorner.UPPER_RIGHT

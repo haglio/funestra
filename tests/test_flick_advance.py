@@ -145,7 +145,7 @@ class TestTheInterval:
 
 
 class TestHowLongTheFlickHasBeenUp:
-    """What the track at the console's foot draws: how far the flick has got
+    """What the track at the Main Funestra's HUD's foot draws: how far the flick has got
     through its turn on screen."""
 
     def test_it_counts_the_seconds_since_the_flick_came_on_screen(self):
@@ -209,7 +209,7 @@ class TestAPressAlongTheTrack:
         assert state.elapsed >= 3.0
 
     def test_it_moves_twenty_times_a_second_rather_than_every_tick(self):
-        """The console is repainted whenever the row moves, so the time the
+        """The Main Funestra's HUD is repainted whenever the row moves, so the time the
         track draws is kept to the step it falls on."""
         state = FlickAdvanceState(locked=False, interval=10)
 

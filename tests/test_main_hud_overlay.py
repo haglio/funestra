@@ -1,4 +1,4 @@
-"""The console a Funestra keeps on its item: what the room published, read whole, drawn where the room put it, pressed."""
+"""The Main Funestra's HUD a Funestra keeps on its item: what the room published, read whole, drawn where the room put it, pressed."""
 from __future__ import annotations
 
 import json
@@ -6,19 +6,19 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-from console_rows import console_rows
 from host_controls_fakes import BAR, AHost, middle_of
+from main_hud_rows import main_hud_rows
 from shared_ui.palette import BG_BUTTON
 from shared_ui.spacing import BUTTON_SIZE_HUD
 
-from funestra.console import ConsoleModel, ModeHud, console_text
-from funestra.console_hud import _PAD as PAD
-from funestra.console_hud import MARGIN
-from funestra.console_overlay import ConsoleOverlay
 from funestra.hud_corners import HudPlace
 from funestra.hud_minimize import collapsed_hud
 from funestra.hud_overlay import HUD_OVERLAY_ID
 from funestra.hud_placement import HudCorner
+from funestra.main_hud import MainHudModel, ModeHud, main_hud_text
+from funestra.main_hud_overlay import MainHudOverlay
+from funestra.main_hud_painter import _PAD as PAD
+from funestra.main_hud_painter import MARGIN
 from funestra.modes import LengthMode, MainMode, Osr2State
 from funestra.osr2_visualizer import DriveHud, DrivePublisher, drive_text, read_drive
 from funestra.testing import FakeEngine
@@ -41,7 +41,7 @@ class SpyGate:
         return published if published is not None else DriveHud()
 
 
-def _console_file(path: Path, mode: str = KINO_MODE, **over) -> Path:
+def _main_hud_file(path: Path, mode: str = KINO_MODE, **over) -> Path:
     payload = {"main_mode": mode, "active": True, "osr2": "off"}
     payload.update(over)
     path.write_text(json.dumps(payload), encoding="utf-8")
@@ -54,11 +54,11 @@ def _drive_file(path: Path, position: int = 4_000) -> Path:
 
 
 def _overlay(tmp_path: Path, *, top_block=None, gate=None, drive: bool = True,
-             host_controls=None, visualizer=None) -> tuple[ConsoleOverlay, FakeEngine, SpyGate]:
+             host_controls=None, visualizer=None) -> tuple[MainHudOverlay, FakeEngine, SpyGate]:
     engine = FakeEngine()
     gate = gate or SpyGate()
-    overlay = ConsoleOverlay(
-        console_file=tmp_path / "console.json",
+    overlay = MainHudOverlay(
+        main_hud_file=tmp_path / "main_hud.json",
         drive_file=tmp_path / "drive.txt" if drive else None,
         command_file=tmp_path / "dashboard_cmd.txt",
         engine=engine, drive_gate=gate, top_block=top_block or ModeHud,
@@ -67,7 +67,7 @@ def _overlay(tmp_path: Path, *, top_block=None, gate=None, drive: bool = True,
     return overlay, engine, gate
 
 
-def _tick(overlay: ConsoleOverlay, speed: float = 1.0) -> None:
+def _tick(overlay: MainHudOverlay, speed: float = 1.0) -> None:
     overlay.tick(playback_speed=speed, window=WINDOW)
 
 
@@ -79,16 +79,16 @@ def _asked(tmp_path: Path) -> list[str]:
 class TestAConsoleWhoseHostDrawsTheOsr2:
     def test_hands_its_host_the_visualizer_it_composed(self, tmp_path):
         overlay, _engine, _gate = _overlay(tmp_path, visualizer=DrivePublisher(tmp_path / "visualizer.txt"))
-        _console_file(tmp_path / "console.json", has_osr2=True)
+        _main_hud_file(tmp_path / "main_hud.json", has_osr2=True)
         _drive_file(tmp_path / "drive.txt", position=1234)
 
         _tick(overlay)
 
         assert read_drive(tmp_path / "visualizer.txt").position == 1234
 
-    def test_a_console_without_the_osr2_hands_on_nothing(self, tmp_path):
+    def test_a_main_hud_without_the_osr2_hands_on_nothing(self, tmp_path):
         overlay, _engine, _gate = _overlay(tmp_path, visualizer=DrivePublisher(tmp_path / "visualizer.txt"))
-        _console_file(tmp_path / "console.json", has_osr2=False)
+        _main_hud_file(tmp_path / "main_hud.json", has_osr2=False)
         _drive_file(tmp_path / "drive.txt")
 
         _tick(overlay)
@@ -103,7 +103,7 @@ class TestAConsoleWhoseHostDrawsTheOsr2:
         handing, handing_engine, _gate = _overlay(
             handing_dir, visualizer=DrivePublisher(handing_dir / "visualizer.txt"))
         for folder, has_osr2 in ((plain_dir, False), (handing_dir, True)):
-            _console_file(folder / "console.json", has_osr2=has_osr2)
+            _main_hud_file(folder / "main_hud.json", has_osr2=has_osr2)
             _drive_file(folder / "drive.txt")
 
         _tick(plain)
@@ -113,48 +113,48 @@ class TestAConsoleWhoseHostDrawsTheOsr2:
                               plain_engine.overlays[HUD_OVERLAY_ID][2])
 
 
-class TestReadingTheConsole:
+class TestReadingTheMainHud:
     def test_what_the_room_said_is_what_the_hud_shows(self, tmp_path):
         overlay, _engine, _gate = _overlay(tmp_path)
-        _console_file(tmp_path / "console.json", GENAU_MODE)
+        _main_hud_file(tmp_path / "main_hud.json", GENAU_MODE)
 
         _tick(overlay)
 
-        assert overlay.console.main_mode == MainMode.GENAU
+        assert overlay.main_hud_model.main_mode == MainMode.GENAU
 
     def test_a_torn_read_keeps_the_hud_that_was_there(self, tmp_path):
         overlay, _engine, _gate = _overlay(tmp_path)
-        _console_file(tmp_path / "console.json", GENAU_MODE)
+        _main_hud_file(tmp_path / "main_hud.json", GENAU_MODE)
         _tick(overlay)
 
-        (tmp_path / "console.json").write_text("{ half a fi", encoding="utf-8")
+        (tmp_path / "main_hud.json").write_text("{ half a fi", encoding="utf-8")
         _tick(overlay)
 
-        assert overlay.console.main_mode == MainMode.GENAU
+        assert overlay.main_hud_model.main_mode == MainMode.GENAU
 
     def test_a_file_that_vanished_keeps_it_too(self, tmp_path):
         overlay, _engine, _gate = _overlay(tmp_path)
-        _console_file(tmp_path / "console.json", GENAU_MODE)
+        _main_hud_file(tmp_path / "main_hud.json", GENAU_MODE)
         _tick(overlay)
 
-        (tmp_path / "console.json").unlink()
+        (tmp_path / "main_hud.json").unlink()
         _tick(overlay)
 
-        assert overlay.console.main_mode == MainMode.GENAU
+        assert overlay.main_hud_model.main_mode == MainMode.GENAU
 
     def test_before_the_room_has_published_the_hud_is_drawn_at_rest(self, tmp_path):
         overlay, engine, _gate = _overlay(tmp_path)
 
         _tick(overlay)
 
-        assert overlay.console == ConsoleModel()
+        assert overlay.main_hud_model == MainHudModel()
         assert HUD_OVERLAY_ID in engine.overlays
 
 
 class TestReadingTheMotion:
     def test_the_motion_published_is_handed_to_the_gate_the_same_frame(self, tmp_path):
         overlay, _engine, gate = _overlay(tmp_path)
-        _console_file(tmp_path / "console.json", GENAU_MODE)
+        _main_hud_file(tmp_path / "main_hud.json", GENAU_MODE)
         _drive_file(tmp_path / "drive.txt", position=4_000)
 
         _tick(overlay)
@@ -163,7 +163,7 @@ class TestReadingTheMotion:
 
     def test_a_torn_read_keeps_the_motion_that_was_there(self, tmp_path):
         overlay, _engine, gate = _overlay(tmp_path)
-        _console_file(tmp_path / "console.json", GENAU_MODE)
+        _main_hud_file(tmp_path / "main_hud.json", GENAU_MODE)
         _drive_file(tmp_path / "drive.txt", position=4_000)
         _tick(overlay)
 
@@ -174,7 +174,7 @@ class TestReadingTheMotion:
 
     def test_the_motion_is_read_in_kino_mode_too(self, tmp_path):
         overlay, _engine, gate = _overlay(tmp_path)
-        _console_file(tmp_path / "console.json", KINO_MODE)
+        _main_hud_file(tmp_path / "main_hud.json", KINO_MODE)
         _drive_file(tmp_path / "drive.txt", position=4_000)
 
         _tick(overlay)
@@ -198,7 +198,7 @@ class TestReadingTheMotion:
 
     def test_the_gate_is_told_when_the_device_is_running_itself(self, tmp_path):
         overlay, _engine, gate = _overlay(tmp_path)
-        _console_file(tmp_path / "console.json", KINO_MODE, osr2=Osr2State.AUTO)
+        _main_hud_file(tmp_path / "main_hud.json", KINO_MODE, osr2=Osr2State.AUTO)
 
         _tick(overlay)
 
@@ -206,7 +206,7 @@ class TestReadingTheMotion:
 
     def test_the_gate_composes_the_script_in_every_other_state(self, tmp_path):
         overlay, _engine, gate = _overlay(tmp_path)
-        _console_file(tmp_path / "console.json", KINO_MODE, osr2=Osr2State.FUNSCRIPT)
+        _main_hud_file(tmp_path / "main_hud.json", KINO_MODE, osr2=Osr2State.FUNSCRIPT)
 
         _tick(overlay)
 
@@ -215,7 +215,7 @@ class TestReadingTheMotion:
 
     def test_the_gate_is_told_when_genau_has_the_screen(self, tmp_path):
         overlay, _engine, gate = _overlay(tmp_path)
-        _console_file(tmp_path / "console.json", GENAU_MODE, osr2=Osr2State.ROBOT_HAND)
+        _main_hud_file(tmp_path / "main_hud.json", GENAU_MODE, osr2=Osr2State.ROBOT_HAND)
 
         _tick(overlay)
 
@@ -227,7 +227,7 @@ class TestWhatTheHudSays:
         said = {"video": "one"}
         overlay, engine, _gate = _overlay(
             tmp_path, top_block=lambda: ModeHud(video=said["video"], length_mode=LengthMode.MIXED))
-        _console_file(tmp_path / "console.json")
+        _main_hud_file(tmp_path / "main_hud.json")
 
         _tick(overlay)
         first = engine.overlays[HUD_OVERLAY_ID][2]
@@ -238,7 +238,7 @@ class TestWhatTheHudSays:
 
     def test_the_funestras_own_rate_is_folded_into_the_hud(self, tmp_path):
         overlay, engine, _gate = _overlay(tmp_path)
-        _console_file(tmp_path / "console.json")
+        _main_hud_file(tmp_path / "main_hud.json")
 
         _tick(overlay, speed=1.0)
         first = engine.overlays[HUD_OVERLAY_ID][2]
@@ -248,7 +248,7 @@ class TestWhatTheHudSays:
 
     def test_an_unchanged_hud_is_not_repainted(self, tmp_path):
         overlay, engine, _gate = _overlay(tmp_path)
-        _console_file(tmp_path / "console.json")
+        _main_hud_file(tmp_path / "main_hud.json")
 
         _tick(overlay)
         first = engine.overlays[HUD_OVERLAY_ID][2]
@@ -258,20 +258,20 @@ class TestWhatTheHudSays:
 
 
 def _publish(tmp_path: Path, corner: HudCorner = HudCorner.UPPER_LEFT, **over) -> None:
-    model = ConsoleModel(main_mode=MainMode.KINO, hud_corner=corner, rows=console_rows(),
+    model = MainHudModel(main_mode=MainMode.KINO, hud_corner=corner, rows=main_hud_rows(),
                          osr2=Osr2State.ROBOT_HAND, **over)
-    (tmp_path / "console.json").write_text(console_text(model), encoding="utf-8")
+    (tmp_path / "main_hud.json").write_text(main_hud_text(model), encoding="utf-8")
 
 
 def _published(tmp_path: Path, corner: HudCorner = HudCorner.UPPER_LEFT, *, host_controls=None,
-               **over) -> ConsoleOverlay:
+               **over) -> MainHudOverlay:
     _publish(tmp_path, corner, **over)
     overlay, _engine, _gate = _overlay(tmp_path, host_controls=host_controls)
     _tick(overlay)
     return overlay
 
 
-class TestWhereTheConsoleIsDrawn:
+class TestWhereTheMainHudIsDrawn:
     def test_the_hud_is_drawn_in_the_corner_the_room_moved_it_to(self, tmp_path):
         overlay = _published(tmp_path, HudCorner.LOWER_RIGHT)
         engine = overlay._engine
@@ -388,7 +388,7 @@ class TestNamingTheButtonUnderThePointer:
 
         assert engine.overlays[HUD_OVERLAY_ID][2] is before
 
-    def test_a_console_collapsed_by_a_press_on_its_minus_draws_the_plus_alone(self, tmp_path):
+    def test_a_main_hud_collapsed_by_a_press_on_its_minus_draws_the_plus_alone(self, tmp_path):
         overlay = _published(tmp_path)
         left, top, _bgra = overlay._engine.overlays[HUD_OVERLAY_ID]
         (x, y, w, h), _minus = next((rect, b) for rect, b in overlay._painter.buttons
@@ -423,7 +423,7 @@ class TestANameFlashingWhileMinimized:
 
 
 class TestTheHostsControls:
-    def test_are_drawn_inside_the_console(self, tmp_path):
+    def test_are_drawn_inside_the_main_hud(self, tmp_path):
         overlay = _published(tmp_path, host_controls=AHost())
         _left, _top, bgra = overlay._engine.overlays[HUD_OVERLAY_ID]
         x, y, _width, height = overlay._painter.host_controls_layout.field
@@ -472,8 +472,8 @@ class TestTheHostsControls:
 
 
 @pytest.mark.parametrize("corner", list(HudCorner))
-def test_the_minus_sits_where_the_plus_of_the_minimized_console_sits(tmp_path, corner):
-    """So a click that minimizes the console, made again without moving the
+def test_the_minus_sits_where_the_plus_of_the_minimized_main_hud_sits(tmp_path, corner):
+    """So a click that minimizes the Main Funestra's HUD, made again without moving the
     mouse, opens it again."""
     overlay = _published(tmp_path, corner)
     left, top, _bgra = overlay._engine.overlays[HUD_OVERLAY_ID]
