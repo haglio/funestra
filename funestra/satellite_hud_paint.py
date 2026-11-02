@@ -74,11 +74,11 @@ from .satellite_hud import (
     EXPAND_ICON,
     FAVORITE_ICON,
     LOOP_ICON,
+    MAP_THUMB_H,
     MINUS_INSET,
     MODE_LABEL_PAD,
     NAV_MAP_COLUMN_H,
     NAV_MAP_GAP,
-    NAV_MAP_THUMB_H,
     PAD,
     ROW_LABEL_GUTTER,
     SUBTITLE_GAP,
@@ -110,10 +110,10 @@ from .satellite_hud import (
     largest_size_that_fits,
     loop_button_rects,
     looped_group_rect,
+    map_block_width,
     name_line,
-    nav_nav_map_block_width,
-    nav_nav_map_row_width,
-    nav_nav_map_window,
+    nav_map_row_width,
+    nav_map_window,
     place_rects,
     place_width,
     playing_rect,
@@ -211,15 +211,15 @@ class HudRenderer:
                 except OSError:
                     image = None
                 if image is not None:
-                    scale = min(place_w / max(1, image.width), NAV_MAP_THUMB_H / max(1, image.height))
+                    scale = min(place_w / max(1, image.width), MAP_THUMB_H / max(1, image.height))
                     cached = image.resize((max(1, round(image.width * scale)),
                                            max(1, round(image.height * scale))))
                     self._thumbs[cell.thumb] = cached
             if cached is not None:
                 return cached
-        return Image.new("RGBA", (place_w, NAV_MAP_THUMB_H), (*_PLACEHOLDER, 255))
+        return Image.new("RGBA", (place_w, MAP_THUMB_H), (*_PLACEHOLDER, 255))
 
-    def _nav_nav_map_thumbnails(
+    def _nav_map_thumbnails(
         self, model: HudModel
     ) -> tuple[Image.Image | None, list[Image.Image], list[Image.Image]]:
         if model.corner is None:
@@ -291,7 +291,7 @@ class HudRenderer:
                      heatmap: np.ndarray | None, drawn_with: _DrawnWith) -> RenderedHud:
         counts = self._count_lines(model)
         model, seed_win, action_win = self._window(model)
-        corner_thumb, seed_thumbs, action_thumbs = self._nav_nav_map_thumbnails(model)
+        corner_thumb, seed_thumbs, action_thumbs = self._nav_map_thumbnails(model)
         # The bars' own demand: a row the HUD cannot hold clips away in
         # silence — the buttons past the edge are simply not there, with nothing
         # raised — so the HUD is measured around the widest row.
@@ -404,12 +404,12 @@ class HudRenderer:
             buttons.extend(model.foot.paint(image, x, layout.foot, width - 2 * PAD,
                                             self._pointer))
 
-        nav_nav_map_targets = (self._draw_nav_map(image, draw, model, layout.nav_map, width, counts,
+        nav_map_targets = (self._draw_nav_map(image, draw, model, layout.nav_map, width, counts,
                                       (corner_thumb, seed_thumbs, action_thumbs),
                                       (seed_win, action_win), drawn_with.hover_loop)
                        if corner_thumb is not None
                        else HudTargets(click=[], loop=[], filter=[], expand=None))
-        targets = replace(nav_nav_map_targets, tracks=bars, row=row, foot=foot_rect, buttons=buttons,
+        targets = replace(nav_map_targets, tracks=bars, row=row, foot=foot_rect, buttons=buttons,
                           favorite=favorite)
         if drawn_for is not None:
             self._drawn = _DrawnButTheRow(drawn_for, image, to_bgra(image), row.rect, targets)
@@ -441,12 +441,12 @@ class HudRenderer:
                   counts: tuple[str, ...], thumbs, windows, hover_loop: str) -> HudTargets:
         corner_thumb, seed_thumbs, action_thumbs = thumbs
         seed_win, action_win = windows
-        gutter_x = self._block_x(model, width, nav_nav_map_block_width(model.funestra))
+        gutter_x = self._block_x(model, width, map_block_width(model.funestra))
         self._draw_counts(draw, gutter_x, top, counts)
-        nav_nav_map_x = gutter_x + ROW_LABEL_GUTTER + ELLIPSIS_ROOM
-        nav_nav_map_y = top + COL_LABEL_H + COL_LABEL_GAP + ELLIPSIS_ROOM
+        nav_map_x = gutter_x + ROW_LABEL_GUTTER + ELLIPSIS_ROOM
+        nav_map_y = top + COL_LABEL_H + COL_LABEL_GAP + ELLIPSIS_ROOM
         corner_rect, seed_rects, action_rects = place_rects(
-            nav_nav_map_x=nav_nav_map_x, nav_nav_map_y=nav_nav_map_y, place_w=place_width(model.funestra),
+            nav_map_x=nav_map_x, nav_map_y=nav_map_y, place_w=place_width(model.funestra),
             seeds=len(seed_thumbs), actions=len(action_thumbs), playing=model.playing)
         column_rect = column_anchor_rect(model.playing, corner_rect, seed_rects)
 
@@ -466,8 +466,8 @@ class HudRenderer:
         self._draw_filter_buttons(image, draw, filter_rects, model)
 
         loop_action_rect, loop_seed_rect = loop_button_rects(
-            corner_rect, row_end=nav_nav_map_x + nav_nav_map_row_width(model.funestra),
-            column_end=nav_nav_map_y + NAV_MAP_COLUMN_H, reserve=ELLIPSIS_ROOM, column_rect=column_rect)
+            corner_rect, row_end=nav_map_x + nav_map_row_width(model.funestra),
+            column_end=nav_map_y + NAV_MAP_COLUMN_H, reserve=ELLIPSIS_ROOM, column_rect=column_rect)
         expand_rect = expand_button_rect(loop_seed_rect)
         self._draw_loop_controls(image, draw, corner_rect, column_rect, loop_action_rect,
                                  loop_seed_rect, seed_rects, action_rects,
@@ -578,8 +578,8 @@ class HudRenderer:
         action_strip = [model.corner, *model.actions]
         seed_at = index + 1 if bucket == "seed" else 0
         action_at = index + 1 if bucket == "action" else 0
-        seed_win = nav_nav_map_window(len(seed_strip), seed_at)
-        action_win = nav_nav_map_window(len(action_strip), action_at)
+        seed_win = nav_map_window(len(seed_strip), seed_at)
+        action_win = nav_map_window(len(action_strip), action_at)
         # The corner place belongs to whichever axis the video on screen sits on: that
         # is the only axis whose window can have moved off the corner.  Both strips
         # hold the corner, so both windows hold at least it.

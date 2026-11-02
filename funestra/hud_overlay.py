@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import NamedTuple
 
 from .dashboard import ask
+from .hud_button import Button
 from .hud_corners import HudPlace
 from .hud_placement import HudCorner, HudEdge, PointerReading
 from .hud_row import RowHud, RowLayout, RowPress, track_on_screen

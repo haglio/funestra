@@ -31,7 +31,7 @@ class TestPlacement:
         into the scrubber row, hard against the right, and the scrubber's track
         makes room for it (timeline.bar_track_x reserves SLOT_W there)."""
         tl = 40
-        x, y = volume_control_xy(win_w=1200, win_h=900, scrubber_h=tl)
+        x, y = volume_control_xy(win_w=1200, win_h=900, timeline_h=tl)
 
         assert x + VOLUME_CONTROL_W == 1200                    # flush with the right edge
         assert 900 - tl <= y
@@ -52,7 +52,7 @@ class TestPlacement:
 
     def test_a_window_narrower_than_the_volume_control_still_places_it(self):
         """Clamped rather than pushed off the left edge, so it stays clickable."""
-        x, _y = volume_control_xy(win_w=80, win_h=200, scrubber_h=40)
+        x, _y = volume_control_xy(win_w=80, win_h=200, timeline_h=40)
 
         assert x >= 0
 
@@ -62,8 +62,8 @@ class TestPlacement:
         than where the same session shows it in kino mode, which is the row
         The Main Funestra draws.  Measuring its own margin off the lower edge instead put it
         nine pixels above that."""
-        assert volume_control_xy(win_w=1200, win_h=900, scrubber_h=0) == volume_control_xy(
-            win_w=1200, win_h=900, scrubber_h=ROW_H)
+        assert volume_control_xy(win_w=1200, win_h=900, timeline_h=0) == volume_control_xy(
+            win_w=1200, win_h=900, timeline_h=ROW_H)
 
     def test_the_row_it_falls_back_to_is_the_one_the_scrubber_draws(self):
         """ROW_H is restated rather than imported — timeline reads SLOT_W from
@@ -74,7 +74,7 @@ class TestPlacement:
     def test_a_window_shorter_than_the_volume_control_still_places_it(self):
         """Clamped at the top for the reason the left edge is: still on screen,
         still clickable."""
-        _x, y = volume_control_xy(win_w=1200, win_h=10, scrubber_h=0)
+        _x, y = volume_control_xy(win_w=1200, win_h=10, timeline_h=0)
 
         assert y >= 0
 
@@ -85,7 +85,7 @@ class TestWindowPoints:
     origin moves with the window and with the scrubber beneath it — which is why
     undoing `chip_xy` belongs beside `chip_xy` and not at each call site."""
 
-    GEOMETRY: ClassVar[dict[str, int]] = {"win_w": 1200, "win_h": 900, "scrubber_h": 40}
+    GEOMETRY: ClassVar[dict[str, int]] = {"win_w": 1200, "win_h": 900, "timeline_h": 40}
 
     def test_the_chips_own_corner_reads_as_its_origin(self):
         assert volume_control_local(*volume_control_xy(**self.GEOMETRY), **self.GEOMETRY) == (0, 0)

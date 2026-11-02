@@ -138,7 +138,7 @@ class TestTheClipsRowAtItsFoot:
         )
         overlay.tick(item_row=self._ROW)
         _x, _y, width, height = overlay.targets.row.rect
-        cx, cy = volume_control_xy(win_w=width, win_h=height, scrubber_h=SCRUBBER_HEIGHT)
+        cx, cy = volume_control_xy(win_w=width, win_h=height, timeline_h=SCRUBBER_HEIGHT)
 
         overlay.press(*self._on_the_row(overlay, cx + SPEAKER_W // 2, cy + VOLUME_CONTROL_H // 2))
         overlay.drag_to(*self._on_the_row(overlay, cx + VOLUME_CONTROL_W - 2, cy + VOLUME_CONTROL_H // 2))

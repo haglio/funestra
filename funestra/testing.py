@@ -157,7 +157,7 @@ class FakeEngine(RefusesSeeks):
     def set_pace(self, seconds: float) -> None:
         self.pace_s = seconds
 
-    def push_image(self) -> None:
+    def push_still(self) -> None:
         self.pushes += 1
 
     def seek_image(self, ms: float) -> None:

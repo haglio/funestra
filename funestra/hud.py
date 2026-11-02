@@ -365,3 +365,17 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
         draw_character(draw, x + w / 2, y + h / 2, icon, icon_font, ink)
     else:
         draw.text((x + w / 2, y + h / 2), icon, font=word_font, anchor="mm", fill=ink)
+
+
+
+
+_draw_button = draw_button
+
+
+def draw_button(*args, glyph_font=None, **kwargs):
+    if glyph_font is not None:
+        kwargs["icon_font"] = glyph_font
+    return _draw_button(*args, **kwargs)
+
+
+draw_mark = draw_icon

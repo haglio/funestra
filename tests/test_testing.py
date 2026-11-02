@@ -200,7 +200,7 @@ def test_a_hold_of_nothing_is_no_hold():
 def test_a_still_counts_what_it_is_asked():
     engine = FakeEngine()
 
-    engine.push_image()
+    engine.push_still()
     engine.seek_image(500.0)
 
     assert (engine.pushes, engine.image_seeks) == (1, [500.0])
