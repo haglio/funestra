@@ -1,13 +1,13 @@
-"""What Genau says for the console to draw: the drive readout."""
+"""What Genau says for the console to draw: the OSR2 visualizer."""
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
 from pathlib import Path
 
 from . import learned_motion
-from .drive_readout import TRACE_SAMPLES, DriveHud, DrivePublisher
 from .flick_flip import HALF_A_LOOP
 from .genau_controls import GenauControls
+from .osr2_visualizer import TRACE_SAMPLES, DriveHud, DrivePublisher
 from .robot_hand import (
     MIN_BPM,
     POSITION_MAX,
@@ -45,7 +45,7 @@ class AutoMotion:
 
     def trace(self, seconds: float, beats_per_loop: float,
               ) -> tuple[list[float], float, float]:
-        """The swing over *seconds* as the readout draws every trace: the
+        """The swing over *seconds* as the visualizer draws every trace: the
         heights on knots, how far the line is shifted, and the knot past the
         border."""
         heights, slide = trace_window(
@@ -55,7 +55,7 @@ class AutoMotion:
         return heights[:TRACE_SAMPLES], slide, heights[TRACE_SAMPLES]
 
 
-class GenauReadout:
+class GenauVisualizer:
     def __init__(
         self,
         *,
@@ -77,7 +77,7 @@ class GenauReadout:
         self._auto_phase: float | None = None
 
     def update(self, now: float, auto: AutoMotion | None = None) -> None:
-        """Build the drive readout and publish it for the console.
+        """Build the OSR2 visualizer and publish it for the console.
 
         *auto* is the device running itself, and None while the Robot Hand
         drives.  Either way there is a line: a drawing of whatever is actually
@@ -99,7 +99,7 @@ class GenauReadout:
     def _build_drive_hud(self, auto: AutoMotion | None = None) -> DriveHud:
         ds = self.robot_hand
         # Show enough time that one whole cycle is visible at the slowest speed.
-        # Published with the readout, because a funscript drawn on this same trace
+        # Published with the visualizer, because a funscript drawn on this same trace
         # has to be sampled over the same stretch and the console has nowhere
         # else to learn it — two spans would make a handoff look like a jump.
         display_seconds = 60.0 * self.beats_per_loop / MIN_BPM
@@ -122,7 +122,7 @@ class GenauReadout:
                 display_seconds, start_phase,
                 ds.bpm / 60.0 / self.beats_per_loop if ds.bpm > 0 else 1.0)
 
-        # Which arrow would do nothing — the readout dims those.  The same six
+        # Which arrow would do nothing — the visualizer dims those.  The same six
         # the status file publishes, from the same answer.
         limits = control_limits(ds)
         return DriveHud(
@@ -150,7 +150,7 @@ class GenauReadout:
 
     def _trace(self, display_seconds: float, start_phase: float,
                phase_per_second: float) -> tuple[list[float], float, float | None]:
-        """The motion sampled forward as the readout draws it — and as the
+        """The motion sampled forward as the visualizer draws it — and as the
         console draws a funscript over it, which is why both are the same span
         — as the samples, how far the line is shifted, and the knot past the
         border.

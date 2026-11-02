@@ -7,7 +7,7 @@ import numpy as np
 from shared_ui.palette import TEXT_MUTED, TEXT_PRIMARY
 
 from funestra import volume
-from funestra.timeline import TIMELINE_HEIGHT
+from funestra.scrubber_bar import SCRUBBER_HEIGHT
 from funestra.volume import (
     PAD,
     ROW_H,
@@ -28,10 +28,10 @@ from funestra.volume import (
 class TestPlacement:
     def test_the_volume_control_sits_in_the_timeline_row_at_its_right_end(self):
         """VLC put the volume beside the seek bar, not above it — so the volume control drops
-        into the timeline row, hard against the right, and the scrubber's track
+        into the scrubber row, hard against the right, and the scrubber's track
         makes room for it (timeline.bar_track_x reserves SLOT_W there)."""
         tl = 40
-        x, y = volume_control_xy(win_w=1200, win_h=900, timeline_h=tl)
+        x, y = volume_control_xy(win_w=1200, win_h=900, scrubber_h=tl)
 
         assert x + VOLUME_CONTROL_W == 1200                    # flush with the right edge
         assert 900 - tl <= y
@@ -52,7 +52,7 @@ class TestPlacement:
 
     def test_a_window_narrower_than_the_volume_control_still_places_it(self):
         """Clamped rather than pushed off the left edge, so it stays clickable."""
-        x, _y = volume_control_xy(win_w=80, win_h=200, timeline_h=40)
+        x, _y = volume_control_xy(win_w=80, win_h=200, scrubber_h=40)
 
         assert x >= 0
 
@@ -62,19 +62,19 @@ class TestPlacement:
         than where the same session shows it in kino mode, which is the row
         The Main Funestra draws.  Measuring its own margin off the lower edge instead put it
         nine pixels above that."""
-        assert volume_control_xy(win_w=1200, win_h=900, timeline_h=0) == volume_control_xy(
-            win_w=1200, win_h=900, timeline_h=ROW_H)
+        assert volume_control_xy(win_w=1200, win_h=900, scrubber_h=0) == volume_control_xy(
+            win_w=1200, win_h=900, scrubber_h=ROW_H)
 
     def test_the_row_it_falls_back_to_is_the_one_the_scrubber_draws(self):
         """ROW_H is restated rather than imported — timeline reads SLOT_W from
         volume, so the dependency cannot run both ways — and a fallback row of a
         different height would leave the volume control off-center in the real one."""
-        assert ROW_H == TIMELINE_HEIGHT
+        assert ROW_H == SCRUBBER_HEIGHT
 
     def test_a_window_shorter_than_the_volume_control_still_places_it(self):
         """Clamped at the top for the reason the left edge is: still on screen,
         still clickable."""
-        _x, y = volume_control_xy(win_w=1200, win_h=10, timeline_h=0)
+        _x, y = volume_control_xy(win_w=1200, win_h=10, scrubber_h=0)
 
         assert y >= 0
 
@@ -82,10 +82,10 @@ class TestPlacement:
 class TestWindowPoints:
     """Presses arrive in the window's coordinates; every hit test here takes the
     chip's.  The volume control is placed from the window's lower-right corner, so its
-    origin moves with the window and with the timeline beneath it — which is why
+    origin moves with the window and with the scrubber beneath it — which is why
     undoing `chip_xy` belongs beside `chip_xy` and not at each call site."""
 
-    GEOMETRY: ClassVar[dict[str, int]] = {"win_w": 1200, "win_h": 900, "timeline_h": 40}
+    GEOMETRY: ClassVar[dict[str, int]] = {"win_w": 1200, "win_h": 900, "scrubber_h": 40}
 
     def test_the_chips_own_corner_reads_as_its_origin(self):
         assert volume_control_local(*volume_control_xy(**self.GEOMETRY), **self.GEOMETRY) == (0, 0)

@@ -6,7 +6,7 @@ from pathlib import Path
 
 from funestra.funscript import Funscript
 from funestra.funscript_jumps import FunscriptJumps
-from funestra.modes import NoticeLevel
+from funestra.modes import MessageLevel
 
 # Two runs of dense action with a long quiet stretch between them — the shape
 # these jumps exist for.
@@ -57,13 +57,13 @@ class FakeNotices:
     def __init__(self) -> None:
         self.said: list[tuple[str, str]] = []
 
-    def say(self, message: str, *, level: NoticeLevel) -> None:
+    def say(self, message: str, *, level: MessageLevel) -> None:
         self.said.append((message, level))
 
 
 def _jumps(session):
-    notices = FakeNotices()
-    return FunscriptJumps(session, notices), notices
+    messages = FakeNotices()
+    return FunscriptJumps(session, messages), messages
 
 
 def _scripted(tmp_path: Path, name: str) -> tuple[Path, Path]:
@@ -75,19 +75,19 @@ class TestJumpToFunscript:
         video, script = _scripted(tmp_path, "alpha")
         session = FakeSession([(video, script)], funscripts={script: _TWO_RUNS})
         session.position_ms = 25000.0
-        jumps, notices = _jumps(session)
+        jumps, messages = _jumps(session)
 
         jumps.jump_to_funscript()
 
         assert session.seeks == [40000]
-        # A highlight, not a notice: Fun Time flashes that level green, which is
+        # A highlight, not a message: Fun Time flashes that level green, which is
         # what it reserves for the favorites and the funscripts.
-        assert notices.said == [("funscript jump", NoticeLevel.HIGHLIGHT)]
+        assert messages.said == [("funscript jump", MessageLevel.HIGHLIGHT)]
 
     def test_the_quiet_lead_in_counts_as_a_lull(self, tmp_path):
         video, script = _scripted(tmp_path, "alpha")
         session = FakeSession([(video, script)], funscripts={script: _LATE})
-        jumps, _notices = _jumps(session)
+        jumps, _messages = _jumps(session)
 
         jumps.jump_to_funscript()
 
@@ -97,22 +97,22 @@ class TestJumpToFunscript:
         video, script = _scripted(tmp_path, "alpha")
         session = FakeSession([(video, script)], funscripts={script: _TWO_RUNS})
         session.position_ms = 50000.0  # past the last run
-        jumps, notices = _jumps(session)
+        jumps, messages = _jumps(session)
 
         jumps.jump_to_funscript()
 
         assert session.seeks == []
-        assert notices.said == [("no funscripting ahead", NoticeLevel.WARNING)]
+        assert messages.said == [("no funscripting ahead", MessageLevel.WARNING)]
 
     def test_an_unscripted_clip_has_nowhere_to_jump(self, tmp_path):
         video = tmp_path / "beta.mp4"
         session = FakeSession([(video, None)])
-        jumps, notices = _jumps(session)
+        jumps, messages = _jumps(session)
 
         jumps.jump_to_funscript()
 
         assert session.seeks == []
-        assert notices.said == [("no funscripting ahead", NoticeLevel.WARNING)]
+        assert messages.said == [("no funscripting ahead", MessageLevel.WARNING)]
 
     def test_it_never_goes_backward_into_the_run_already_playing(self, tmp_path):
         """Mid-run, "next" is the run after this one — a jump that landed on the
@@ -120,7 +120,7 @@ class TestJumpToFunscript:
         video, script = _scripted(tmp_path, "alpha")
         session = FakeSession([(video, script)], funscripts={script: _TWO_RUNS})
         session.position_ms = 10300.0
-        jumps, _notices = _jumps(session)
+        jumps, _messages = _jumps(session)
 
         jumps.jump_to_funscript()
 
@@ -136,12 +136,12 @@ class TestNextFunscripted:
             [(video0, script0), (video1, None), (clip2, script2)],
             funscripts={script0: _TWO_RUNS, script2: _LATE},
         )
-        jumps, notices = _jumps(session)
+        jumps, messages = _jumps(session)
 
         jumps.next_funscripted()
 
         assert session.loads == [2]
-        assert notices.said == [("next funscripted", NoticeLevel.HIGHLIGHT)]
+        assert messages.said == [("next funscripted", MessageLevel.HIGHLIGHT)]
 
     def test_lands_where_the_new_clip_s_action_begins(self, tmp_path):
         video0 = tmp_path / "alpha.mp4"
@@ -149,7 +149,7 @@ class TestNextFunscripted:
         session = FakeSession(
             [(video0, None), (video1, script1)], funscripts={script1: _LATE},
         )
-        jumps, _notices = _jumps(session)
+        jumps, _messages = _jumps(session)
 
         jumps.next_funscripted()
 
@@ -163,7 +163,7 @@ class TestNextFunscripted:
         session = FakeSession(
             [(video0, None), (video1, script1)], funscripts={script1: _PROMPT},
         )
-        jumps, _notices = _jumps(session)
+        jumps, _messages = _jumps(session)
 
         jumps.next_funscripted()
 
@@ -178,7 +178,7 @@ class TestNextFunscripted:
             [(video0, script0), (video1, None), (clip2, None)],
             index=1, funscripts={script0: _LATE},
         )
-        jumps, _notices = _jumps(session)
+        jumps, _messages = _jumps(session)
 
         jumps.next_funscripted()
 
@@ -194,21 +194,21 @@ class TestNextFunscripted:
             [(video0, None), (video1, script1)], index=1,
             funscripts={script1: _TWO_RUNS},
         )
-        jumps, notices = _jumps(session)
+        jumps, messages = _jumps(session)
 
         jumps.next_funscripted()
 
         assert session.loads == []
         assert session.seeks == []
-        assert notices.said == [("no other funscripted video", NoticeLevel.WARNING)]
+        assert messages.said == [("no other funscripted video", MessageLevel.WARNING)]
 
     def test_an_entirely_unscripted_playlist_says_so(self, tmp_path):
         session = FakeSession([
             (tmp_path / "alpha.mp4", None), (tmp_path / "beta.mp4", None),
         ])
-        jumps, notices = _jumps(session)
+        jumps, messages = _jumps(session)
 
         jumps.next_funscripted()
 
         assert session.loads == []
-        assert notices.said == [("no other funscripted video", NoticeLevel.WARNING)]
+        assert messages.said == [("no other funscripted video", MessageLevel.WARNING)]

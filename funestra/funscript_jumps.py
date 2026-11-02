@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from .modes import NoticeLevel
+from .modes import MessageLevel
 
 __all__: list[str] = []
 
@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 class FunscriptJumps:
-    def __init__(self, playback, notices) -> None:
+    def __init__(self, playback, messages) -> None:
         self._playback = playback
-        self._notices = notices
+        self._messages = messages
 
     def jump_to_funscript(self) -> None:
         funscript = self._playback.current_funscript
@@ -23,15 +23,15 @@ class FunscriptJumps:
             else funscript.next_active_ms(int(self._playback.position_ms))
         )
         if target is None:
-            self._notices.say("no funscripting ahead", level=NoticeLevel.WARNING)
+            self._messages.say("no funscripting ahead", level=MessageLevel.WARNING)
             return
         self._playback.seek_to(target)
-        self._notices.say("funscript jump", level=NoticeLevel.HIGHLIGHT)
+        self._messages.say("funscript jump", level=MessageLevel.HIGHLIGHT)
 
     def next_funscripted(self) -> None:
         entry = self._next_funscripted_entry()
         if entry is None:
-            self._notices.say("no other funscripted video", level=NoticeLevel.WARNING)
+            self._messages.say("no other funscripted video", level=MessageLevel.WARNING)
             return
         index, video = entry
         self._playback.load(index)
@@ -40,7 +40,7 @@ class FunscriptJumps:
         if onset is not None:
             self._playback.seek_to(onset)
         logger.info("Next funscripted: %s", video.name)
-        self._notices.say("next funscripted", level=NoticeLevel.HIGHLIGHT)
+        self._messages.say("next funscripted", level=MessageLevel.HIGHLIGHT)
 
     def _next_funscripted_entry(self):
         playlist = self._playback.playlist

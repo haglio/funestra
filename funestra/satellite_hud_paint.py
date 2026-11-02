@@ -47,7 +47,6 @@ from funestra.hud import (
 from funestra.hud_button import Button
 from funestra.hud_icons import SHARED_ICON, shared_icon, shared_icon_name
 
-from .drive_readout import DriveSection, DriveTrack, readout_targets, section_size
 from .geometry import Rect, contains
 from .hud_minimize import ROOM as MINIMIZE_ROOM
 from .hud_minimize import collapsed_hud, corner_button_rect, minimize_button
@@ -55,13 +54,14 @@ from .hud_osr2 import HEIGHT as OSR2_H
 from .hud_osr2 import (
     Osr2Line,
     Osr2Section,
-    ReadoutResolver,
+    VisualizerResolver,
     driving_at_the_playhead,
     state_for,
 )
 from .hud_placement import block_x
 from .hud_row import ROW_H, RowHud, RowSection, row_layout
 from .hud_title import PLAYBACK_SPEED_LABEL
+from .osr2_visualizer import DriveSection, DriveTrack, section_size, visualizer_targets
 from .playback_rate import format_rate
 from .satellite_hud import (
     ACT_GAP,
@@ -197,7 +197,7 @@ class HudRenderer:
         # Funestra has the OSR2 -- see HudModel.osr2.
         self._osr2 = Osr2Section()
         self._drive = DriveSection()
-        self._readout = ReadoutResolver()
+        self._visualizer = VisualizerResolver()
         self._item_row = RowSection()
         self._drawn: _DrawnButTheRow | None = None
 
@@ -277,7 +277,7 @@ class HudRenderer:
                 room_for_the_tooltip=not may_grow_on_hover, flash=flash)
             return RenderedHud(bgra, HudTargets(click=[], loop=[], filter=[], expand=None,
                                                 buttons=buttons))
-        model = replace(model, drive=self._readout.resolve(
+        model = replace(model, drive=self._visualizer.resolve(
             model.drive, osr2=model.osr2, control=model.osr2_control, paused=model.paused,
             composed=model.drive_composed))
         drawn_with = _DrawnWith(video, hover_loop, hover_tip, hover_pos, may_grow_on_hover,
@@ -308,7 +308,7 @@ class HudRenderer:
             if row
         ), default=0)
         # The device's own blocks, on a host that drives it: the OSR2 line and
-        # the readout ask for width the way the bars do, and for room under them.
+        # the visualizer ask for width the way the bars do, and for room under them.
         composed = (model.drive if model.drive_composed and model.drive is not None
                     and model.drive.segments else None)
         osr2_line = Osr2Line(
@@ -513,10 +513,10 @@ class HudRenderer:
             y += OSR2_H + BLOCK_GAP
         if model.drive is not None:
             drive_x = self._block_x(model, width, section_size()[0])
-            # The HUD's image rather than its pen: the readout supersamples its
+            # The HUD's image rather than its pen: the visualizer supersamples its
             # trace and composites it back, which a pen cannot carry.
             self._drive.draw(image, drive_x, y, model.drive)
-            drive_targets, bars = readout_targets(drive_x, y, model.drive)
+            drive_targets, bars = visualizer_targets(drive_x, y, model.drive)
             buttons.extend(drive_targets)
         return buttons, bars + max_intensity_bars
 

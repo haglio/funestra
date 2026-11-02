@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from shared_ui.palette import RED, YELLOW
 
-from funestra.timeline import (
+from funestra.scrubber_bar import (
     BAR_INSET_Y,
     HEATMAP_ALPHA,
     bar_track_x,
@@ -23,11 +23,11 @@ class TestBarTrackX:
         assert bar_track_x(1000)[1] == 1000 - SLOT_W
 
     def test_the_track_starts_where_the_row_laying_it_out_says(self):
-        """After whatever the row puts before it: its readout, a flick's dial."""
+        """After whatever the row puts before it: its visualizer, a flick's dial."""
         assert bar_track_x(1920, left=183) == (183, 1920 - SLOT_W)
 
-    def test_the_track_starts_after_a_readout_wider_than_half_the_row(self):
-        """A flick's row is mostly readout, and its track must not run under it."""
+    def test_the_track_starts_after_a_visualizer_wider_than_half_the_row(self):
+        """A flick's row is mostly visualizer, and its track must not run under it."""
         assert bar_track_x(302, left=172) == (172, 302 - SLOT_W)
 
     def test_a_row_with_nothing_before_the_track_starts_it_at_the_edge(self):

@@ -14,7 +14,7 @@ from funestra.scrubber import (
     loop_thumbnail_xys,
     time_to_x,
 )
-from funestra.timeline import BAR_INSET_Y, bar_track_x, progress_bar_bgra
+from funestra.scrubber_bar import BAR_INSET_Y, bar_track_x, progress_bar_bgra
 
 
 def _funscript():

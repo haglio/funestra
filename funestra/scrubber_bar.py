@@ -5,7 +5,7 @@ marks, filled with the colors of the video's funscript where it has one and
 with a dark translucent fill where it has none.  Every Funestra draws it, in
 separate processes and separate repos, so the whole of it lives here.
 
-The track starts where the row's readout and dial end (``bar_track_x`` is told
+The track starts where the row's visualizer and dial end (``bar_track_x`` is told
 how far in by the row that lays them out) and stops short of the volume control
 that shares its row — it subtracts :data:`funestra.volume.SLOT_W` — so none
 of them overlap and click-to-seek maps onto exactly the drawn track.  These
@@ -21,9 +21,9 @@ from funestra.volume import SLOT_W as _VOLUME_SLOT_W
 RED = (*palette.RED, 245)
 YELLOW = (*palette.YELLOW, 245)
 
-# The timeline — heatmap strip or plain bar — is drawn as one shared frame: an
+# The scrubber — heatmap strip or plain bar — is drawn as one shared frame: an
 # inset, floated, bordered track with full-height marks.
-BAR_INSET_Y = 3      # upper/lower margin so the timeline floats off the edge
+BAR_INSET_Y = 3      # upper/lower margin so the scrubber floats off the edge
 BAR_FILL = (*palette.BG_SECONDARY, 165)     # dark translucent fill (plain bar only)
 BAR_BORDER = (*palette.BORDER_DEFAULT, 235)  # light inner border (reads on the dark fill)
 BAR_EDGE = (*palette.BLACK, 235)            # dark outer edge (reads on the bright heatmap)
@@ -33,11 +33,11 @@ CURSOR = (*palette.WHITE, 255)  # prominent white playcursor
 CURSOR_W = 3
 MARK_W = 4                      # prominent loop in/out and record marks
 
-TIMELINE_HEIGHT = 24  # lower strip height when not recording
+SCRUBBER_HEIGHT = 24  # lower strip height when not recording
 
 
 def bar_track_x(width: int, *, left: int = 0) -> tuple[int, int]:
-    """Left/right pixel bounds of the timeline track.
+    """Left/right pixel bounds of the scrubber track.
 
     The start is *left*, where whatever the row lays out before the track
     ends -- the row's own edge when nothing does; the end stops short of the
@@ -119,7 +119,7 @@ def draw_track_marks(bgra, *, x0, x1, y0, y1, to_x, position_ms,
 
 
 def progress_bar_bgra(position_ms, duration_ms, loop_bounds, width,
-                      record_in_ms=None, height=TIMELINE_HEIGHT, *, heatmap=None,
+                      record_in_ms=None, height=SCRUBBER_HEIGHT, *, heatmap=None,
                       track=None):
     """A bordered, inset seek bar: the track floated in from the window edges
     under a light border, with a full-height white playcursor and full-height

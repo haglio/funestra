@@ -64,7 +64,7 @@ class RobotHandTCodeDriver:
         self._rise = 1.0
         self._rise_started: float | None = None
         # Where the device was when this driver last handed it over, in T-Code
-        # units; None while it holds the device.  Published with the readout —
+        # units; None while it holds the device.  Published with the visualizer —
         # see :meth:`hand_over`.
         self._let_go_position: int | None = None
         self._output_was_off = False
@@ -118,7 +118,7 @@ class RobotHandTCodeDriver:
         and amplitude reach, and the nearest the motion comes to the park.
 
         Called when the hand loses the device as well as when it takes it back
-        (:meth:`take_over`), so the readout published through a funscript's
+        (:meth:`take_over`), so the visualizer published through a funscript's
         turn shows the motion that will actually resume, not wherever the
         swing froze.
         """
@@ -144,7 +144,7 @@ class RobotHandTCodeDriver:
 
     def current_position(self) -> int:
         """Where the device is being sent right now — scaled by the rise while
-        it is still climbing out of the park, so the published readout and the
+        it is still climbing out of the park, so the published visualizer and the
         dot riding it follow the climb rather than sitting on the floor."""
         return round(self._compute_position() * self._rise)
 
@@ -215,7 +215,7 @@ class DeviceHandoff:
     The hand drives the device while it is playing and lets go of it when it is
     not, and the driver is told on that edge, so it can climb out of the park or
     walk the motion down and rest it -- deliberately asymmetric: letting go
-    latches where the device was, which is the one number the drive readout's
+    latches where the device was, which is the one number the OSR2 visualizer's
     trace cannot recompute afterwards.  The broker is the orchestrator's to park
     and resume.
 

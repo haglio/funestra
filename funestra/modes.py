@@ -79,15 +79,15 @@ class LengthMode(StrEnum):
     NONE = "none"
 
 
-class NoticeLevel(StrEnum):
-    """What kind of thing a one-shot notice from the Main Funestra is, for Fun
+class MessageLevel(StrEnum):
+    """What kind of thing a one-shot message from the Main Funestra is, for Fun
     Time to pick the color: a request with nowhere to go, an ordinary word, or
     one about a funscript -- which wears the green this family keeps for the
     favorites and the funscripts, and travels under that word.
     """
 
     WARNING = "warning"
-    NOTICE = "notice"
+    NORMAL = "notice"
     HIGHLIGHT = "favorite"
 
 

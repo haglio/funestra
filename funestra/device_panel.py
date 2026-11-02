@@ -1,4 +1,4 @@
-"""The OSR2 part of the console -- its aim row, its OSR2 line and its readout --
+"""The OSR2 part of the console -- its aim row, its OSR2 line and its visualizer --
 drawn by a host on a surface of its own, and pressed there."""
 from __future__ import annotations
 

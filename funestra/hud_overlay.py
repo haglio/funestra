@@ -14,12 +14,11 @@ from pathlib import Path
 from typing import NamedTuple
 
 from .dashboard import ask
-from .drive_readout import DriveHud, DrivePublisher, read_drive
-from .hud_button import Button
 from .hud_corners import HudPlace
 from .hud_placement import HudCorner, HudEdge, PointerReading
 from .hud_row import RowHud, RowLayout, RowPress, track_on_screen
 from .modes import Osr2State
+from .osr2_visualizer import DriveHud, DrivePublisher, read_drive
 from .satellite_hud import (
     MARGIN,
     MINUS_INSET,
@@ -113,7 +112,7 @@ class HudOverlay:
         clock=time.monotonic,
         drive_file: Path | None = None,
         drive_gate=None,
-        readout: DrivePublisher | None = None,
+        visualizer: DrivePublisher | None = None,
         over_the_video: bool = True,
         minus_on_the_hud: bool = True,
         seek=None,
@@ -125,7 +124,7 @@ class HudOverlay:
                         else _PublishedHud(hud_file, command_file))
         self._drive_file = None if drive_file is None else Path(drive_file)
         self._drive_gate = drive_gate
-        self._readout = readout
+        self._visualizer = visualizer
         self._published_drive: DriveHud | None = None
         self._drive: DriveHud | None = None
         self._engine = engine
@@ -195,8 +194,8 @@ class HudOverlay:
             self._model = model
             redraw = True
         drive = self._motion()
-        if drive is not None and self._readout is not None:
-            self._readout.publish(drive, self._clock())
+        if drive is not None and self._visualizer is not None:
+            self._visualizer.publish(drive, self._clock())
         elif drive != self._drive:
             self._drive = drive
             redraw = True
@@ -337,7 +336,7 @@ class HudOverlay:
         self._published_drive = read_drive(self._drive_file) or self._published_drive
         if self._drive_gate is None:
             return self._published_drive
-        return self._drive_gate.readout(
+        return self._drive_gate.visualizer(
             self._published_drive, device_drives_itself=self._model.osr2 == Osr2State.AUTO)
 
     def _draw(self) -> None:
@@ -351,7 +350,7 @@ class HudOverlay:
         drive = self._model.drive if self._drive_file is None else self._drive
         model = replace(self._model, playback_speed=self._playback_speed, drive=drive,
                         drive_composed=self._drive_gate is not None, hud_corner=corner)
-        if self._readout is not None:
+        if self._visualizer is not None:
             model = replace(model, osr2="", drive=None)
         self._draw_owed = True
         rendered = self._renderer.render(

@@ -17,7 +17,7 @@ from shared_ui.palette import BG_PRIMARY, BORDER_PANEL, TEXT_MUTED, TEXT_PRIMARY
 from .hud import PILL_ALPHA, KeptBitmap
 from .volume import VOLUME_CONTROL_H
 
-# As tall as the volume control and the readout it shares the row with.
+# As tall as the volume control and the visualizer it shares the row with.
 DIAL_SIZE = VOLUME_CONTROL_H
 # The positions the hand can show -- four degrees apart, which is as fine as a
 # dial this size draws -- so a turn is repainted only when it moves a step.
@@ -48,7 +48,7 @@ def turn_at(px: int, py: int, *, at: tuple[int, int]) -> float:
 class LoopDialPainter(KeptBitmap):
     """The dial, kept until the hand moves a step.
 
-    Drawn larger and scaled back down, the way the drive readout draws its
+    Drawn larger and scaled back down, the way the OSR2 visualizer draws its
     trace: Pillow's lines have no antialiasing of their own, and a hand two
     pixels wide turning on a dial this small would otherwise jump between
     staircases.

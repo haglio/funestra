@@ -10,7 +10,7 @@ length mode, or the compilation and your place in it) beside the active-Funestra
 dot, with the file on screen as a muted line under it, the same shape each
 satellite's HUD leads with.  Both are empty in genau mode, where there is no Kino
 playlist backing the screen.  Everything else is the console the orchestrator
-publishes (:mod:`funestra.console`) plus the Robot Hand's drive readout
+publishes (:mod:`funestra.console`) plus the Robot Hand's OSR2 visualizer
 (:mod:`funestra.drive_readout`) with its own controls.
 
 The wording and shape are pure functions; the drawing goes onto the slab
@@ -46,14 +46,6 @@ from .console import (
     rows_height,
     tooltip_at,
 )
-from .drive_readout import (
-    DriveHud,
-    DriveSection,
-    DriveTrack,
-    TrackGrip,
-    readout_targets,
-    section_size,
-)
 from .geometry import Rect, contains
 from .host_controls import HostControlsHud, HostControlsLayout, HostControlsSection
 from .hud import (
@@ -74,7 +66,7 @@ from .hud_osr2 import HEIGHT as _OSR2_H
 from .hud_osr2 import (
     Osr2Line,
     Osr2Section,
-    ReadoutResolver,
+    VisualizerResolver,
     driving_at_the_playhead,
     state_for,
 )
@@ -88,6 +80,14 @@ from .hud_title import (
     hud_title,
 )
 from .modes import LengthMode
+from .osr2_visualizer import (
+    DriveHud,
+    DriveSection,
+    DriveTrack,
+    TrackGrip,
+    section_size,
+    visualizer_targets,
+)
 
 # What the two length modes are called on the line.  MIXED is absent: it
 # applies no length filter at all, so it narrows nothing and prints nothing --
@@ -131,10 +131,10 @@ def hud_xy() -> tuple[int, int]:
 @dataclass(frozen=True)
 class ConsoleHud:
     """Everything on the main console: the top line, the room's controls, and
-    the Robot Hand's drive readout.
+    the Robot Hand's OSR2 visualizer.
 
     *modes* is drawn only where it applies (kino mode); *console* is what Fun
-    Time published; *drive* is the live readout, present once the Robot Hand has
+    Time published; *drive* is the live visualizer, present once the Robot Hand has
     published one.
     """
 
@@ -151,8 +151,8 @@ class ConsoleHud:
     def advance_interval(self) -> int:
         """How long an unlocked Genau leaves each flick up.
 
-        Genau owns the pace, so it rides its own drive readout rather than the
-        console HUD Fun Time publishes — and is read back off the readout
+        Genau owns the pace, so it rides its own OSR2 visualizer rather than the
+        console HUD Fun Time publishes — and is read back off the visualizer
         wherever the console needs it, which is both the auto-advance button and
         the title.
         """
@@ -190,7 +190,7 @@ class ConsoleHud:
             LATEST_LABEL if self.console.latest else SHUFFLE_LABEL)
         # The pace an unheld Genau flick moves on at, after the order rather than in
         # place of it: the order says which flick is next, the pace says when.  Only
-        # while Genau is the one showing — kino mode draws the drive readout too, but
+        # while Genau is the one showing — kino mode draws the OSR2 visualizer too, but
         # an unlocked Kino plays through a playlist rather than on a timer —
         # and only unheld, since nothing is going to move a held flick.
         if not kino_shows(self.console.main_mode) and not self.console.locked and self.advance_interval:
@@ -216,8 +216,8 @@ class ConsolePainter:
     A Funestra redraws its overlays every frame at 60 fps and Pillow is nowhere
     near cheap enough for that, so the bitmap is kept until the HUD's contents
     change.  The button rects from the last painting are kept beside it — the
-    console's own and the drive readout's arrows — so what is clickable is exactly
-    what was drawn, and the readout's own bars with them, so what is draggable is
+    console's own and the OSR2 visualizer's arrows — so what is clickable is exactly
+    what was drawn, and the visualizer's own bars with them, so what is draggable is
     too.
     """
 
@@ -228,7 +228,7 @@ class ConsolePainter:
         hanging in a scene as a screen of its own (FunTimeVR's) otherwise changes
         size with its contents — the genau-mode rows are narrower than the
         kino-mode ones, and a long title widens the HUD — and a screen that
-        grows and shrinks is a screen that moves.  The rows, the readout and
+        grows and shrinks is a screen that moves.  The rows, the visualizer and
         the OSR2 line must fit, so a width narrower than them is widened, never
         clipped; the two text lines give way instead, elided to fit.  None
         sizes the HUD to its contents, as one drawn over the Funestra's own
@@ -258,7 +258,7 @@ class ConsolePainter:
         self.row: RowLayout | None = None
         self.host_controls_layout: HostControlsLayout | None = None
         self._grip = TrackGrip()
-        self._readout = ReadoutResolver(clock=clock)
+        self._visualizer = VisualizerResolver(clock=clock)
         self._origin = hud_xy()
         self._pointer: PointerReading[tuple[int, int] | None] = PointerReading(None)
 
@@ -284,14 +284,14 @@ class ConsolePainter:
         """*hud* with everything the drawing Funestra knows folded into it, before
         anything asks whether the HUD has moved.
 
-        Folded here rather than at paint time because a readout that is *not*
+        Folded here rather than at paint time because a visualizer that is *not*
         moving has to compare equal: the trace held still while nothing is being
         sent arrives as a fresh scroll of Genau's phase every publish, and folded
         after the comparison it would repaint the whole HUD forty times a
         second to draw the same still image.
         """
         console = hud.console
-        return replace(hud, drive=self._readout.resolve(
+        return replace(hud, drive=self._visualizer.resolve(
             hud.drive if console.has_osr2 else None,
             osr2=console.osr2, control=console.osr2_control, paused=console.paused,
             composed=kino_shows(console.main_mode)))
@@ -315,7 +315,7 @@ class ConsolePainter:
     def press_at(self, mx: int, my: int) -> str:
         """The command a press at *window* point ``(mx, my)`` posts, "" over none.
 
-        A press inside one of the drive readout's bars takes hold of it as well
+        A press inside one of the OSR2 visualizer's bars takes hold of it as well
         as posting: :meth:`drag_to` then goes on setting that level as the pointer
         moves, so a bar can be dragged and not only clicked.  Anything already
         held is let go first, so a press on an ordinary button never leaves a bar
@@ -331,7 +331,7 @@ class ConsolePainter:
 
     @property
     def holding(self) -> bool:
-        """Whether a press took hold of one of the readout's bars and has not let
+        """Whether a press took hold of one of the visualizer's bars and has not let
         go — so the Funestra knows a drag belongs here rather than to whatever else
         it would have offered the pointer."""
         return self._grip.holding
@@ -517,13 +517,13 @@ class ConsolePainter:
 
         if drive is not None:
             drive_x = self._block_x(corner, width, drive_w, reserves[2])
-            # The HUD's image rather than its pen: the readout supersamples
+            # The HUD's image rather than its pen: the visualizer supersamples
             # its trace and composites it back, which a pen cannot carry.
             self._drive.draw(hud.image, drive_x, y, drive)
-            # The readout draws its own arrows and bars; the console only needs
+            # The visualizer draws its own arrows and bars; the console only needs
             # them as hit targets, so they answer a press and name themselves on
             # hover.
-            targets, bars = readout_targets(drive_x, y, drive)
+            targets, bars = visualizer_targets(drive_x, y, drive)
             self.buttons.extend(targets)
             self.tracks.extend(bars)
 

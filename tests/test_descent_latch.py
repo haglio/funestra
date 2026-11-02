@@ -13,7 +13,7 @@ there.  Here is only the holding.
 from __future__ import annotations
 
 from funestra.descent_latch import DescentChoice, DescentLatch, DriveKey
-from funestra.drive_readout import DriveHud
+from funestra.osr2_visualizer import DriveHud
 
 TURN_MS = 3_000
 KEY = DriveKey(center=50, amplitude=100, speed=50, let_go=None)

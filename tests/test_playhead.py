@@ -1,4 +1,4 @@
-"""The readout at the left end of the timeline row: where the video is, and how long it runs."""
+"""The time at the left end of the scrubber row: where the video is, and how long it runs."""
 from __future__ import annotations
 
 import numpy as np
@@ -8,13 +8,13 @@ from funestra.playhead import (
     PlayheadHudPainter,
     flick_playhead,
     framed_playhead,
-    readout_width,
+    time_text_width,
     video_playhead,
 )
 from funestra.volume import VOLUME_CONTROL_H
 
 
-class TestWhatAVideosReadoutSays:
+class TestWhatAVideosVisualizerSays:
     def test_where_it_is_of_how_long_it_runs(self):
         assert video_playhead(42_000.0, 195_000.0, 0.0).text == "0:42 / 3:15"
 
@@ -41,32 +41,32 @@ class TestWhatAVideosReadoutSays:
 
         assert playhead.text == "frame 239 / 240 · 0:07 / 0:08"
 
-    def test_a_video_whose_length_mpv_has_not_said_yet_has_no_readout(self):
+    def test_a_video_whose_length_mpv_has_not_said_yet_has_no_time_text(self):
         assert video_playhead(0.0, 0.0, 0.0) is None
 
     def test_a_video_whose_frame_rate_mpv_has_not_said_reads_its_clock_alone(self):
         assert video_playhead(1_000.0, 5_000.0, 0.0).text == "0:01 / 0:05"
 
     def test_the_widest_it_gets_is_what_it_says_on_the_last_frame(self):
-        """The readout's room is sized to this, so a frame count that gains a
+        """The time's room is sized to this, so a frame count that gains a
         digit partway through the video never pushes the clock along the row."""
         playhead = video_playhead(42_000.0, 2_715_000.0, 60.0)
 
         assert playhead.widest == "frame 162900 / 162900 · 45:15 / 45:15"
 
 
-class TestWhatAClipsReadoutSays:
+class TestWhatAClipsVisualizerSays:
     def test_a_clip_has_frames_and_no_clock(self):
         """Genau's videos are frames the Robot Hand scrubs through, with no time in them."""
         playhead = flick_playhead(7, 20)
 
         assert (playhead.text, playhead.widest) == (f"frame {FIGURE_SPACE}7 / 20", "frame 20 / 20")
 
-    def test_a_clip_still_decoding_has_no_readout(self):
+    def test_a_clip_still_decoding_has_no_time_text(self):
         assert flick_playhead(0, 0) is None
 
 
-class TestTheReadout:
+class TestTheVisualizer:
     def test_it_is_the_words_alone_with_nothing_drawn_round_them(self):
         """He asked that the time and the frames not sit in a bubble as if
         they were a button: the HUD under them is ground enough."""
@@ -86,8 +86,8 @@ class TestTheReadout:
     def test_it_takes_the_room_its_widest_words_need(self):
         hud = video_playhead(0.0, 7_200_000.0, 60.0)
 
-        assert PlayheadHudPainter().bgra(hud).shape[1] == readout_width(hud)
-        assert readout_width(hud) > readout_width(video_playhead(0.0, 195_000.0, 30.0))
+        assert PlayheadHudPainter().bgra(hud).shape[1] == time_text_width(hud)
+        assert time_text_width(hud) > time_text_width(video_playhead(0.0, 195_000.0, 30.0))
 
     def test_it_shows_where_the_video_has_got_to_without_changing_size(self):
         painter = PlayheadHudPainter()
@@ -107,8 +107,8 @@ class TestTheReadout:
 
         assert np.array_equal(nine[:, half:], ten[:, half:])
 
-    def test_a_readout_that_has_not_moved_is_not_repainted(self):
-        """Asked for on every frame a Funestra paints; a paused video's readout
+    def test_a_time_text_that_has_not_moved_is_not_repainted(self):
+        """Asked for on every frame a Funestra paints; a paused video's visualizer
         holds still for as long as the pause does."""
         painter = PlayheadHudPainter()
         hud = video_playhead(1_000.0, 195_000.0, 30.0)

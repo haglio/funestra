@@ -132,10 +132,10 @@ def test_nothing_decoded_yet_shows_the_backdrop_and_what_is_loading():
     FlickOverlay(engine).show(FlickFrame(frame=None, loading="Loading alpha.mp4"), window=(640, 480))
 
     assert sorted(engine.overlays) == [BACKDROP_OVERLAY_ID, LOADING_OVERLAY_ID]
-    x, y, notice = engine.overlays[LOADING_OVERLAY_ID]
+    x, y, message = engine.overlays[LOADING_OVERLAY_ID]
     assert y == 8
-    assert x + notice.shape[1] <= 640 - 8
-    assert notice[:, :, 3].max() > 0
+    assert x + message.shape[1] <= 640 - 8
+    assert message[:, :, 3].max() > 0
 
 
 def test_the_loading_notice_comes_down_with_the_flick_decoded():

@@ -1,8 +1,8 @@
-"""The one-shot notices a Funestra raises for the room to flash over it."""
+"""The one-shot messages a Funestra raises for the room to flash over it."""
 from __future__ import annotations
 
-from funestra.modes import NoticeLevel
-from funestra.notices import NoticeWriter
+from funestra.messages import MessageWriter
+from funestra.modes import MessageLevel
 
 
 def _read(path):
@@ -25,7 +25,7 @@ def test_the_record_it_writes_is_what_fun_time_parses(tmp_path):
     """
     path = tmp_path / "main_player_notice.txt"
 
-    NoticeWriter(path, clock=lambda: 1234.5).say("no full video", level=NoticeLevel.NOTICE)
+    MessageWriter(path, clock=lambda: 1234.5).say("no full video", level=MessageLevel.NORMAL)
 
     written = path.read_text(encoding="utf-8")
     assert written.splitlines() == [
@@ -36,7 +36,7 @@ def test_the_record_it_writes_is_what_fun_time_parses(tmp_path):
 def test_say_publishes_the_message_and_level(tmp_path):
     path = tmp_path / "state" / "main_player_notice.txt"
 
-    NoticeWriter(path, clock=lambda: 10.0).say("full video not available", level=NoticeLevel.WARNING)
+    MessageWriter(path, clock=lambda: 10.0).say("full video not available", level=MessageLevel.WARNING)
 
     assert _read(path) == {"seq": "10.000", "level": "warning",
                            "message": "full video not available"}
@@ -45,26 +45,26 @@ def test_say_publishes_the_message_and_level(tmp_path):
 def test_each_say_advances_the_sequence(tmp_path):
     path = tmp_path / "main_player_notice.txt"
     ticks = iter([10.0, 20.0])
-    writer = NoticeWriter(path, clock=lambda: next(ticks))
-    writer.say("first", level=NoticeLevel.NOTICE)
-    writer.say("second", level=NoticeLevel.NOTICE)
+    writer = MessageWriter(path, clock=lambda: next(ticks))
+    writer.say("first", level=MessageLevel.NORMAL)
+    writer.say("second", level=MessageLevel.NORMAL)
 
     assert _read(path) == {"seq": "20.000", "level": "notice", "message": "second"}
 
 
 def test_a_restarted_writer_still_reads_as_newer(tmp_path):
-    """A counter restarts at 1 whenever the Funestra does, so its notices read
+    """A counter restarts at 1 whenever the Funestra does, so its messages read
     as older than the previous session's and never flashed. A clock stamp cannot."""
     path = tmp_path / "main_player_notice.txt"
-    NoticeWriter(path, clock=lambda: 100.0).say("before the restart", level=NoticeLevel.NOTICE)
-    NoticeWriter(path, clock=lambda: 101.0).say("after the restart", level=NoticeLevel.NOTICE)
+    MessageWriter(path, clock=lambda: 100.0).say("before the restart", level=MessageLevel.NORMAL)
+    MessageWriter(path, clock=lambda: 101.0).say("after the restart", level=MessageLevel.NORMAL)
 
     assert float(_read(path)["seq"]) > 100.0
 
 
 def test_without_a_path_it_is_inert(tmp_path):
     """Nothing to say to, nothing written, and nothing raised at the caller: a
-    Funestra given no notice channel still jumps, and says nothing about it."""
-    NoticeWriter(None).say("nothing doing", level=NoticeLevel.NOTICE)
+    Funestra given no message channel still jumps, and says nothing about it."""
+    MessageWriter(None).say("nothing doing", level=MessageLevel.NORMAL)
 
     assert list(tmp_path.iterdir()) == []

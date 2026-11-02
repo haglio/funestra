@@ -1,6 +1,6 @@
 """Which of the hand's arrows would do nothing — computed once, published twice.
 
-The status file Fun Time reads and the drive readout the Main Funestra draws are two
+The status file Fun Time reads and the OSR2 visualizer the Main Funestra draws are two
 publications of one fact, and they used to work it out separately: the same six
 booleans and the same `half = amplitude // 2` center clamp, in two modules, with
 a comment in one of them naming the duplication.  A change to the clamp had to
@@ -129,7 +129,7 @@ class TestBothPublicationsReadTheSameSix:
     )
 
     @pytest.mark.parametrize("hand", HANDS, ids=[str(sorted(h)) for h in HANDS])
-    def test_the_status_file_says_what_the_readout_was_told(self, hand):
+    def test_the_status_file_says_what_the_visualizer_was_told(self, hand):
 
         direct = RobotHandState(**hand)
         limits = control_limits(direct)

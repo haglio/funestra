@@ -1,6 +1,6 @@
-"""Where the drive readout's parts sit, and what a press on one of them asks for.
+"""Where the OSR2 visualizer's parts sit, and what a press on one of them asks for.
 
-The readout — the trace of the motion with Center down its left, Amplitude down
+The visualizer — the trace of the motion with Center down its left, Amplitude down
 its right and Speed under it — is placed here and painted in
 :mod:`funestra.drive_readout`. This module draws nothing: it says how big the
 block is, where each mark and bar lands, which marks are dead at the end of
@@ -10,7 +10,7 @@ Kept apart from the painter because the halves fail differently. A painter can
 be wrong and look wrong; this can be wrong and look right — a hit target that
 has drifted a few pixels from the mark over it is invisible until a press lands
 on the wrong thing. So it is plain functions over plain numbers, and every HUD
-showing the readout is a thin painter over one tested layout.
+showing the visualizer is a thin painter over one tested layout.
 """
 from __future__ import annotations
 
@@ -58,7 +58,7 @@ GAP = _GAP
 
 
 def section_size() -> tuple[int, int]:
-    """How much room the readout needs."""
+    """How much room the visualizer needs."""
     return SECTION_W, SECTION_H
 
 
@@ -83,7 +83,7 @@ class DriveTrack:
 
 @dataclass(frozen=True)
 class Geometry:
-    """Every rect the readout draws or hit-tests, placed once from the block's
+    """Every rect the visualizer draws or hit-tests, placed once from the block's
     top-left corner, so the trace and the mark over it cannot drift apart."""
 
     wave: Rect
@@ -148,7 +148,7 @@ class Limits:
 
     Carried as a bundle so a caller cannot hand six booleans over in the wrong
     order: what they do is dim the mark that would now do nothing, and a
-    transposed pair dims the wrong end of the wrong axis — a readout that is
+    transposed pair dims the wrong end of the wrong axis — a visualizer that is
     only quietly wrong.
     """
 
@@ -162,13 +162,13 @@ class Limits:
 
 def controls(x: int, y: int, center: int, limits: Limits, *,
              dim: bool = False) -> list[DriveControl]:
-    """The readout's marks at ``(x, y)`` — a −/+ pair for each of speed,
+    """The visualizer's marks at ``(x, y)`` — a −/+ pair for each of speed,
     amplitude and center — each carrying the command it posts and whether it is
     dimmed at the end of its range.
 
     The commands are the ones Fun Time routes to the Robot Hand, written out so
     a verb can be grepped from either end.  *dim* dims all of them at once,
-    which is what a readout nobody can adjust looks like — a funscript has the
+    which is what a visualizer nobody can adjust looks like — a funscript has the
     device, or the motion is not running.
     """
     g = geometry(x, y, fraction(center))
@@ -184,7 +184,7 @@ def controls(x: int, y: int, center: int, limits: Limits, *,
 
 def tracks(x: int, y: int, center: int, *, dim: bool = False,
            amplitude_ceiling: int = 100, speed_ceiling: int = 100) -> list[DriveTrack]:
-    """The readout's bars at ``(x, y)`` — the three you press to set a level
+    """The visualizer's bars at ``(x, y)`` — the three you press to set a level
     outright instead of walking to it with the marks.
 
     A press anywhere on a bar asks for exactly the value drawn under the

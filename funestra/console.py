@@ -7,7 +7,7 @@ because prev/next step Kino's video in kino mode and Genau's flicks in genau.
 
 Kept free of Pillow, so the geometry and the hit-testing are testable
 without a font.  :mod:`funestra.console_hud` paints them; the
-drive readout's own arrows come from :mod:`funestra.drive_readout`.
+OSR2 visualizer's own arrows come from :mod:`funestra.drive_readout`.
 
 The buttons are the source's own (:attr:`ConsoleModel.rows`), each posting its
 command verbatim to the command file that source reads; this module places them
@@ -201,7 +201,7 @@ class ConsoleModel:
     # Kino knows its own rate and folds it in; Genau leaves it at 1.
     playback_speed: float = 1.0
     # Seconds an unlocked Genau leaves each flick on screen.  Also not published —
-    # Genau owns the pace and says it on the drive readout, which whoever draws
+    # Genau owns the pace and says it on the OSR2 visualizer, which whoever draws
     # the console folds in here.
     advance_interval: int = 0
     # The buttons the source declares, row by row, and the controls it puts on

@@ -22,7 +22,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .drive_readout import DriveHud
+from .osr2_visualizer import DriveHud
 from .robot_hand import FULL_INTENSITY
 
 # How many entries make it worth scanning for ones to drop.  Housekeeping, not

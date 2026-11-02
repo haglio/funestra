@@ -10,7 +10,7 @@ from funestra.modes import (
     LengthMode,
     LoopState,
     MainMode,
-    NoticeLevel,
+    MessageLevel,
     Osr2State,
     SatellitesMode,
     read_mode,
@@ -22,7 +22,7 @@ _WIRE_WORDS = {
     LoopState: {"normal", "recording", "looping"},
     Osr2State: {"off", "auto", "funscript", "robot_hand", "unplugged", "no_answer"},
     LengthMode: {"mixed", "clips", "full", "none"},
-    NoticeLevel: {"warning", "notice", "favorite"},
+    MessageLevel: {"warning", "notice", "favorite"},
 }
 
 

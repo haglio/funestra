@@ -118,7 +118,7 @@ An item is an image or a video, so nothing here says picture any more. A still a
 Funestra shows is an image: `showing_image`, `image_time`, `seek_image` and
 `hold_image_for` on the engines and `Playback`, `Tuner.tick(image=...)`,
 `FunestraStatus.image` and `KenBurns.new_image`. What a window
-shows, video or image, is the item, and the trace the readout draws is the trace
+shows, video or image, is the item, and the trace the visualizer draws is the trace
 or a drawing. A frame a User puts up itself is a `FlickFrame`, asked for with
 `User.own_frame()`, put up over mpv by `FlickOverlay` (`funestra.flick_overlay`)
 or wherever a window's `UsersFrames` puts it (`Funestra(users_frames=...)`);
@@ -194,7 +194,7 @@ family's marks), and `timeline.RED`; `drive_readout.DISABLED_INK` and
 `hud_icons.MINIMIZE_ICON` keep their names over the family's gray and minus.
 
 Numbers that moved: the act labels down a satellite's map 7 to 8 points, a
-flick's loading notice 13 to 14; the console's row gap 5 to 8, a satellite
+flick's loading message 13 to 14; the console's row gap 5 to 8, a satellite
 panel's inset 12 to 16 and its padding 10 to 8, the satellite map's row gap
 12 to 16, the panels' and tooltips' corners 8 and 4 to the family's 4. A
 satellite's title steps down through the family's four sizes to fit and is cut
@@ -290,7 +290,7 @@ since nothing but this repo's own tests reached them: `loading_mark` whole,
 
 ## 2026-10-17 — a picture keeps its row, and a Funestra plays a radio
 
-A picture no longer takes the row off its panel: the row's track and readout
+A picture no longer takes the row off its panel: the row's track and visualizer
 are the picture's time on screen, read off the engine (`picture_time`), and a
 press along the track moves that time (`seek_picture`), its slow zoom with it.
 For that the engine keeps a still's time itself: mpv holds every still up
@@ -342,7 +342,7 @@ waves (`cruise_control`'s `CruiseControlState`, `enable_cruise_control`,
 `disable_cruise_control` and `tick_cruise_control`; `wave_stack`'s `bars`,
 `position`, `position_ahead` and `trace_window`), Genau's `TOGGLE_CRUISE`,
 `CRUISE_ON` and `CRUISE_OFF`, the status file's `cruise` line, the drive
-readout's picture of the stack, the driver's stack position, the cc button on
+visualizer's picture of the stack, the driver's stack position, the cc button on
 `aim_row`, and `GenauControls`' `cruise_control_state` and `set_motion_phase`,
 whose one caller was cruise control letting go. So did the verb-name
 constants nothing has read since the crossing a second Genau made went on
@@ -422,11 +422,11 @@ from a video's by its dial alone, and its frames sit beside the dial and its
 time beside the track. `framed_playhead` says it, and `video_playhead` says it
 for a video whose frame rate is known. The frame counts up in the room its last
 frame takes, right-aligned behind figure spaces (`FIGURE_SPACE`, as wide as a
-digit in the readout's face), so nothing after it moves as it gains a digit,
+digit in the visualizer's face), so nothing after it moves as it gains a digit,
 as the clock already held still by taking its length's fields; `flick_playhead`
 pads its frame the same way.
 
-The row is one line now wherever it is drawn: a flick's dial, the readout, the
+The row is one line now wherever it is drawn: a flick's dial, the visualizer, the
 track, and the volume control, 64 pixels wide where it was 112, flush with the
 row's right end as the first part is with its left, a few pixels between each.
 A video's track is what the heatmap and a seek need room on, so a panel too
@@ -434,8 +434,8 @@ narrow to leave it at least as long as everything else on the line widens
 until it does, sized for a video of under an hour so it keeps one width from
 one to the next. A flick's track has no heatmap and nothing to find along it,
 so it is at most 96 pixels and no panel widens for it past the 60 it needs to
-be pressed. `bar_track_x` now starts a track after a readout wider than half
-the row, where it used to start it at the middle, under the readout.
+be pressed. `bar_track_x` now starts a track after a visualizer wider than half
+the row, where it used to start it at the middle, under the visualizer.
 A console held to one width, as the headset holds its own, is held at least as
 wide as the widest row it can carry (`RowSection.least_width_for_any_row`), so
 it keeps that one width whichever row it carries, or none.
@@ -452,10 +452,10 @@ part of the row landed, and `row_part`, `scrub_to`, `turn_to`, `volume_to` and
 and the overlays (`ConsoleOverlay.row`, `HudOverlay.row`) in place of a rect.
 `bar_track_x(left=)` takes where the track starts, `progress_bar_bgra` takes the
 track, and `HeatmapStrip.update` is handed the track's width rather than the
-row's. `readout_width` is the room a readout takes, and `volume.TRACK_GAP` the
+row's. `readout_width` is the room a visualizer takes, and `volume.TRACK_GAP` the
 gap between the track and the volume control, which `MARGIN` was. `FlickAdvanceState`'s
 `elapsed` and `set_elapsed` are the track's two halves,
-`FlickRenderController.playhead` the dial's and the readout's frame, and
+`FlickRenderController.playhead` the dial's and the visualizer's frame, and
 `GenauRefreshController.seek_the_time_on_screen` the press reaching the engine;
 `set_locked` and `toggle_lock` are gone, the flag being all that was left of
 them, and nothing outside this package ever called them. A `Picture` a User
@@ -597,7 +597,7 @@ and `Flag.moved` are gone with their callers. No sibling reached any of these.
 ## 2026-10-09 — a console can be drawn as the device's section alone
 
 `ConsolePainter(device_only=True)` draws the rows that aim the device, the line
-naming who has it, and the readout, and nothing else: no minus, no status line
+naming who has it, and the visualizer, and nothing else: no minus, no status line
 or file name, none of the source's rows and no clip row. It is for a console a
 host sets into its own window with nothing playing under it -- Origenerator's
 main window, whose console drew a minus that did nothing and a status line about
@@ -624,7 +624,7 @@ callable answering the `HudModel` to wear, and draws it where a session would
 have published one; its presses come back through `apply_command`, the way the
 window's file verbs do, and a press on the picture asks what runs on the window
 to pause (`OMNIPAUSE_TOGGLE`) where there is no room to ask. `HudOverlay` takes
-the same pair (`panel=`, `post=`) beside its file pair, keeps the readout a
+the same pair (`panel=`, `post=`) beside its file pair, keeps the visualizer a
 program composes into its model (a session's panel never carries one, and the
 room's motion file fills it in), and hands the pointer on the block its source
 paints at the foot back to that source -- `foot_press`, `foot_drag`,
@@ -677,7 +677,7 @@ gate has never once held this surface.
 
 ## 2026-10-08 — the clip's row is a block of the panel, and nothing is drawn along a lower edge
 
-A Funestra laid the track, the time readout and the volume control along the lower
+A Funestra laid the track, the time visualizer and the volume control along the lower
 edge of its video while the panel it wears sat above them: two panels on one
 screen, and in the headset a wrapped video smears such a row round the nadir.
 The row is a block of whichever panel the window wears now -- the room's
@@ -727,7 +727,7 @@ Everything Fun Time's Main Player painted over its video is the Funestra's drawi
 now, so the Main Player can become the Main Funestra in the fun_time landing that
 follows: the console the room publishes for the main slot (`console_overlay`,
 read off the console file and the drive file the same way the satellite panel is,
-its presses and the drive readout's drags posted on the dashboard's channel), the
+its presses and the OSR2 visualizer's drags posted on the dashboard's channel), the
 scrubber with a scripted item's colors, the zoom while a stretch is marked and the
 two frames of a running A/B range (`scrubber`, which is the Main Player's
 `overlay` module moved here whole), the room's volume control beside a Funestra's own
@@ -781,7 +781,7 @@ of them would die on import the moment that venv took this release.
 window: built on a way of playing and the files its User drives it through
 (`Channels`), it plays what it is handed, answers the verbs, publishes the
 status, and draws the published panel, the scrubber, the volume control and the
-playhead readout as mpv overlays.  With it come fun_time's `satellite/session.py`
+playhead visualizer as mpv overlays.  With it come fun_time's `satellite/session.py`
 (`playback.Playback`), `satellite/runtime.py` (`funestra_controls`),
 `satellite/status.py` (`funestra_status`), `satellite/versions.py` (the
 `NEXT_VERSION` / `PREV_VERSION` verbs, in `player_verbs`), `satellite/hud_overlay.py`,
@@ -959,7 +959,7 @@ the picture where the hand let go. `GenauControls.room_hold` is built by
 default, so no shell wires anything.
 
 Where each hold keeps the device is `console.HELD_HEIGHT` now, one table the
-readout's dot and the picture both read.
+visualizer's dot and the picture both read.
 
 `clip_renderer.display_index_for_phase` is now only the phase-to-frame
 arithmetic. Whether the picture holds still is the tick's to decide, since only
@@ -1007,7 +1007,7 @@ line, so the next session and the headset show that clip the same way.
 
 ## 2026-09-21 — the clip's row is a block a panel hosts
 
-`hud_row` draws the scrubber, the volume control and the playhead readout into a
+`hud_row` draws the scrubber, the volume control and the playhead visualizer into a
 panel at its own width — the same track, chip and pill this package already
 paints — and `row_part` / `scrub_to` / `volume_to` say what a press on it is on
 and what it asks for. Both panels host it: `satellite_hud_paint.render` takes
@@ -1041,7 +1041,7 @@ satellite does, and the only place for them was a second panel over the same
 video. Origenerator's shows floated their generation queue that way.
 
 Nothing a player draws moves: 864 made-up panels — both orientations, three clip
-shapes, with and without a nav map, a device line, a readout, a file name, a rate
+shapes, with and without a nav map, a device line, a visualizer, a file name, a rate
 and a hover — come out byte for byte identical from v0.1.296 and from this
 version with `foot` unset, targets included.
 
@@ -1259,13 +1259,13 @@ commit, a checkout with no blocklist -- behave exactly as before.
 
 **Pins.** All seven mutation survivors the audit recorded against this suite are
 now killed: the two tooltip-bounds tests, the satellite's reset button, the drive
-readout's numbers, the funscript park glide and lead-in boundary, cruise
+visualizer's numbers, the funscript park glide and lead-in boundary, cruise
 control's stalled-clock cap, and `adjust_center`'s low edge with `HudClicks`'
 double-click window. Each was confirmed by re-running the audit's own mutation in
 a throwaway worktree, first against the old test (green, as recorded) and then
 against the new one (red).
 
-The audit's suggested fix for the drive readout — asserting `TEXT_PRIMARY` is
+The audit's suggested fix for the OSR2 visualizer — asserting `TEXT_PRIMARY` is
 absent from the section's set of colours — does not work and was not used: the
 values are 8px text, so no pixel of a digit lands on the ink exactly and the
 section's brightest pixel with the numbers forced white is 235. The test reads
@@ -1315,7 +1315,7 @@ kept the invariant a war story was protecting and dropped the story.
 | `HudRenderer.render`'s section headings became `_draw_status_band` and `_draw_mode_row` | 0.7579 → 0.7528 |
 | `ConsolePainter._paint`'s top block became `_draw_top_block` (CC 18 → 15) | 0.7528 → 0.7525 |
 | The console's eight histories cut to the rules they guarded | 0.7525 → 0.7439 |
-| The drive readout's five attempts, and `drive_layout`'s and `tcode`'s | 0.7439 → 0.7403 |
+| The OSR2 visualizer's five attempts, and `drive_layout`'s and `tcode`'s | 0.7439 → 0.7403 |
 | The satellite explaining itself by the dashboard it replaced, thirteen times | 0.7403 → 0.7364 |
 | Seventeen more across nine files with one war story each | 0.7364 → 0.7267 |
 

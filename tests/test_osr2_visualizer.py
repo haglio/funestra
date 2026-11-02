@@ -1,4 +1,4 @@
-"""The Robot Hand's drive readout: what it says, and the controls it carries."""
+"""The Robot Hand's OSR2 visualizer: what it says, and the controls it carries."""
 from __future__ import annotations
 
 import numpy as np
@@ -12,7 +12,12 @@ from funestra.drive_layout import (
     SECTION_W,
     SPEED,
 )
-from funestra.drive_readout import (
+from funestra.hud import (
+    Hud,
+    load_font,
+    text_width,
+)
+from funestra.osr2_visualizer import (
     DISABLED_INK,
     DRIVEN_BY_AUTO,
     DRIVEN_BY_FUNSCRIPT,
@@ -26,15 +31,10 @@ from funestra.drive_readout import (
     label_pair_x,
     publish_drive,
     read_drive,
-    readout_targets,
     track_command,
     track_value,
     tracks,
-)
-from funestra.hud import (
-    Hud,
-    load_font,
-    text_width,
+    visualizer_targets,
 )
 from funestra.robot_hand import amplitude_ceiling, speed_ceiling
 
@@ -87,7 +87,7 @@ class TestControls:
         assert by_command["robot_hand_speed_up"][1] >= wave_lower
 
     def test_a_mark_at_its_limit_is_dimmed(self):
-        """The flag on the readout says the axis has run out of range, so the mark
+        """The flag on the visualizer says the axis has run out of range, so the mark
         that would do nothing is grayed — the console then drops it from the hit
         targets, the same as any dimmed control."""
         by_command = {c.command: c for c in controls(0, 0, _hud(spd_at_max=True, amp_at_min=True))}
@@ -157,7 +157,7 @@ class TestTheCenterLabel:
         hud = _hud(center=50)
         grip = TrackGrip()
 
-        _buttons, grabbable = readout_targets(PAD, PAD, hud)
+        _buttons, grabbable = visualizer_targets(PAD, PAD, hud)
 
         assert grip.grab(grabbable, *self._on_the_word(hud)) == ""
         assert grip.holding
@@ -166,7 +166,7 @@ class TestTheCenterLabel:
         hud = _hud(center=50)
         grip = TrackGrip()
         px, py = self._on_the_word(hud)
-        grip.grab(readout_targets(PAD, PAD, hud)[1], px, py)
+        grip.grab(visualizer_targets(PAD, PAD, hud)[1], px, py)
         trace_h = next(t.rect for t in tracks(PAD, PAD, hud) if t.axis == CENTER)[3]
         rows_per_ten = (trace_h - 1) / 10
 
@@ -287,7 +287,7 @@ class TestTracks:
                 assert y + h <= PAD + SECTION_H
 
 
-class TestReadout:
+class TestVisualizer:
     @pytest.mark.parametrize("center", [0, 100])
     def test_it_draws_nothing_outside_the_block_it_declares(self, center):
         size = (SECTION_W + 2 * PAD, SECTION_H + 4 * PAD)
@@ -392,9 +392,9 @@ class TestTheStretchesTheMaxIntensityRulesOut:
 
 
 class TestPublishing:
-    """In kino mode the readout is drawn by the Main Funestra, so Genau says it instead of drawing it."""
+    """In kino mode the visualizer is drawn by the Main Funestra, so Genau says it instead of drawing it."""
 
-    def test_a_published_readout_reads_back_whole_including_its_limits(self, tmp_path):
+    def test_a_published_visualizer_reads_back_whole_including_its_limits(self, tmp_path):
         hud = _hud(shape="sawtooth", advance_interval=7,
                    spd_at_max=True, ctr_at_min=True)
         path = tmp_path / "genau_drive.txt"
@@ -446,7 +446,7 @@ class TestPublishing:
         assert (read.slide, read.edge) == (0.0, None)
 
     def test_who_drives_each_stretch_of_the_line_goes_over_the_wire(self, tmp_path):
-        path = tmp_path / "portrait_osr2_readout.txt"
+        path = tmp_path / "portrait_osr2_visualizer.txt"
         stretches = ((0, DRIVEN_BY_FUNSCRIPT), (40, DRIVEN_BY_ROBOT_HAND))
         publish_drive(path, _hud(driven=DRIVEN_BY_FUNSCRIPT, segments=stretches))
 
@@ -454,7 +454,7 @@ class TestPublishing:
 
         assert (read.driven, read.segments) == (DRIVEN_BY_FUNSCRIPT, stretches)
 
-    def test_a_readout_that_has_been_over_the_wire_survives_going_again(self, tmp_path):
+    def test_a_visualizer_that_has_been_over_the_wire_survives_going_again(self, tmp_path):
         path = tmp_path / "genau_drive.txt"
         publish_drive(path, _hud())
         once = read_drive(path)
@@ -510,7 +510,7 @@ class TestWhoseMotion:
         assert GREEN not in colors
 
     def test_a_motion_nobody_is_sending_is_the_muted_gray_of_a_dead_control(self):
-        """The readout is switched off whole rather than a live trace sitting in
+        """The visualizer is switched off whole rather than a live trace sitting in
         the middle of dead furniture."""
         assert TEXT_MUTED in self._line_colors(_hud(driven=DRIVEN_BY_NOTHING))
 
@@ -529,7 +529,7 @@ class TestWhoseMotion:
 
 
 class TestSwitchedOff:
-    """With the OSR2 off nothing here is being sent, so no part of the readout may
+    """With the OSR2 off nothing here is being sent, so no part of the visualizer may
     look live: not the trace, not the bars, not the numbers, and not the marker
     that was still bobbing after the trace had stopped."""
 
@@ -575,7 +575,7 @@ class TestSwitchedOff:
 
     def test_the_position_marker_is_not_left_white(self):
         """It bobbed on: Genau keeps publishing a position it cannot know is going
-        nowhere, and a dot still moving is the last thing on a stopped readout
+        nowhere, and a dot still moving is the last thing on a stopped visualizer
         claiming to be live."""
         off = _rendered(_hud(driven=DRIVEN_BY_NOTHING, waveform=()))
         trace_x = next(t.rect for t in tracks(PAD, PAD, _hud()) if t.axis == CENTER)[0]
@@ -604,7 +604,7 @@ class TestDimmedForTheScript:
         """"Very dimmed" is the ask, and the first try got it backwards: muted
         ink at part alpha let the video beneath shine through, so the "disabled"
         controls glowed bright white.  Disabled ink is a dark gray laid down
-        opaque — darker than the muted gray a live readout's key labels wear —
+        opaque — darker than the muted gray a live visualizer's key labels wear —
         so it reads as switched off over any video."""
         dimmed = _rendered(_hud(driven=DRIVEN_BY_FUNSCRIPT))
         live = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND))

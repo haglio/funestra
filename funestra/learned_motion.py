@@ -32,7 +32,7 @@ from .robot_hand import MAX_TICK_SECONDS, RobotHandState, bpm_for_speed
 # The trained model that ships with the package.
 DEFAULT_MODEL = Path(__file__).with_name("learned_motion.json.gz")
 # How far past the clock the phrases are laid out, in script seconds, so the
-# readout's trace and a command aimed ahead always have motion to read.
+# visualizer's trace and a command aimed ahead always have motion to read.
 _AHEAD_S = 30.0
 
 
@@ -117,7 +117,7 @@ def position(state: LearnedMotionState, robot_hand: RobotHandState | None,
 
 def trace_window(state: LearnedMotionState, robot_hand: RobotHandState | None,
                  samples: int, span_s: float) -> tuple[list[float], float]:
-    """The coming motion as the readout draws it: *samples* + 1 heights (0-1)
+    """The coming motion as the visualizer draws it: *samples* + 1 heights (0-1)
     on knots a fixed stretch of script apart, the last one just past the far
     edge, and how far past the first knot the clock sits as a fraction of one.
 
@@ -142,7 +142,7 @@ def trace_window(state: LearnedMotionState, robot_hand: RobotHandState | None,
 def rest_at_floor(state: LearnedMotionState) -> None:
     """Put the motion at the floor of its envelope and lay the phrases out
     again from there -- what it resumes with after something else has had
-    the device, and what the readout shows while it waits."""
+    the device, and what the visualizer shows while it waits."""
     _clear(state)
     if state.active and state.model:
         _begin(state, 0.0)

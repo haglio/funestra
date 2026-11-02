@@ -10,17 +10,17 @@ import pytest
 from PIL import Image
 from shared_ui.spacing import BUTTON_SIZE_HUD
 
-from funestra.drive_readout import DriveHud, DrivePublisher, publish_drive, read_drive
 from funestra.hud_button import Button
 from funestra.hud_corners import HudPlace
 from funestra.hud_minimize import collapsed_hud
 from funestra.hud_overlay import HudOverlay
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.hud_row import UNDER_THE_HUD_GAP, RowHud
+from funestra.osr2_visualizer import DriveHud, DrivePublisher, publish_drive, read_drive
 from funestra.satellite_hud import MARGIN, MINUS_INSET, PAD, HudModel
 from funestra.satellite_hud_paint import HudRenderer
+from funestra.scrubber_bar import SCRUBBER_HEIGHT
 from funestra.testing import FakeEngine
-from funestra.timeline import TIMELINE_HEIGHT
 from funestra.volume import (
     SPEAKER_W,
     VOLUME_CONTROL_H,
@@ -108,7 +108,7 @@ class TestTheClipsRowAtItsFoot:
         x0, x1 = overlay.targets.row.track
 
         overlay.press(*self._on_the_row(overlay, (x0 + x1) // 2,
-                                        height - TIMELINE_HEIGHT // 2))
+                                        height - SCRUBBER_HEIGHT // 2))
 
         assert seeks == [pytest.approx(5_000.0, abs=200)]
 
@@ -121,7 +121,7 @@ class TestTheClipsRowAtItsFoot:
         overlay.tick(item_row=self._ROW)
         _x, _y, _width, height = overlay.targets.row.rect
         x0, x1 = overlay.targets.row.track
-        along = height - TIMELINE_HEIGHT // 2
+        along = height - SCRUBBER_HEIGHT // 2
 
         overlay.press(*self._on_the_row(overlay, x0, along))
         overlay.drag_to(*self._on_the_row(overlay, (x0 + x1) // 2, along))
@@ -138,7 +138,7 @@ class TestTheClipsRowAtItsFoot:
         )
         overlay.tick(item_row=self._ROW)
         _x, _y, width, height = overlay.targets.row.rect
-        cx, cy = volume_control_xy(win_w=width, win_h=height, timeline_h=TIMELINE_HEIGHT)
+        cx, cy = volume_control_xy(win_w=width, win_h=height, scrubber_h=SCRUBBER_HEIGHT)
 
         overlay.press(*self._on_the_row(overlay, cx + SPEAKER_W // 2, cy + VOLUME_CONTROL_H // 2))
         overlay.drag_to(*self._on_the_row(overlay, cx + VOLUME_CONTROL_W - 2, cy + VOLUME_CONTROL_H // 2))
@@ -614,7 +614,7 @@ class TestAHudWithTheOsr2:
 
         assert overlay.targets.tracks == []
 
-    def test_a_band_of_the_readout_keeps_a_drag_until_it_is_let_go(self, tmp_path: Path, hud: Path):
+    def test_a_band_of_the_visualizer_keeps_a_drag_until_it_is_let_go(self, tmp_path: Path, hud: Path):
         _give_it_the_osr2(hud)
         _publish_motion(tmp_path / "drive.txt", 0.0)
         overlay = _overlay_with_the_motion(tmp_path, hud, FakeEngine())
@@ -633,7 +633,7 @@ class TestAHudWithTheOsr2:
 def _overlay_handing_on_the_motion(tmp_path: Path, hud: Path, engine) -> HudOverlay:
     return HudOverlay(hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
                       engine=engine, clock=lambda: 0.0, drive_file=tmp_path / "drive.txt",
-                      readout=DrivePublisher(tmp_path / "readout.txt"))
+                      visualizer=DrivePublisher(tmp_path / "visualizer.txt"))
 
 
 class TestAHudWhoseHostDrawsTheOsr2:
@@ -644,7 +644,7 @@ class TestAHudWhoseHostDrawsTheOsr2:
 
         overlay.tick()
 
-        assert read_drive(tmp_path / "readout.txt") == read_drive(tmp_path / "drive.txt")
+        assert read_drive(tmp_path / "visualizer.txt") == read_drive(tmp_path / "drive.txt")
 
     def test_a_hud_without_the_osr2_hands_on_nothing(self, tmp_path: Path, hud: Path):
         _publish_motion(tmp_path / "drive.txt", 0.0)
@@ -652,7 +652,7 @@ class TestAHudWhoseHostDrawsTheOsr2:
 
         overlay.tick()
 
-        assert not (tmp_path / "readout.txt").exists()
+        assert not (tmp_path / "visualizer.txt").exists()
 
     def test_draws_its_own_hud_as_one_without_the_osr2(self, tmp_path: Path, hud: Path):
         plain_engine, handing_engine = FakeEngine(), FakeEngine()
@@ -686,7 +686,7 @@ class _Gate:
         self.asked: list[tuple[DriveHud | None, bool]] = []
         self._composed = composed
 
-    def readout(self, published, *, device_drives_itself: bool = False) -> DriveHud:
+    def visualizer(self, published, *, device_drives_itself: bool = False) -> DriveHud:
         self.asked.append((published, device_drives_itself))
         return self._composed
 
@@ -978,15 +978,15 @@ class TestAWindowsOwnHud:
 
         assert posted == ["portrait_next"]
 
-    def test_it_keeps_the_readout_the_program_drew_into_it(self):
-        """A session publishes no readout and the room's motion file fills one
-        in; the window's own program composes the readout itself, and nothing
+    def test_it_keeps_the_visualizer_the_program_drew_into_it(self):
+        """A session publishes no visualizer and the room's motion file fills one
+        in; the window's own program composes the visualizer itself, and nothing
         here may wipe it."""
         engine = FakeEngine()
-        readout = DriveHud(speed=50, amplitude=80, center=50,
+        visualizer = DriveHud(speed=50, amplitude=80, center=50,
                            waveform=tuple(0.5 for _ in range(80)))
         model = HudModel(funestra="portrait", title="Unlocked", osr2="robot_hand",
-                         osr2_control="driving", drive=readout)
+                         osr2_control="driving", drive=visualizer)
         overlay = HudOverlay(hud=lambda: model, post=lambda command: None, engine=engine,
                              clock=lambda: 0.0)
 

@@ -2,7 +2,7 @@
 
 Auto-advance is the one move mpv makes itself: the item after the one on
 screen is staged as mpv's prefetch entry, mpv rolls onto it at end-of-file,
-and each tick :meth:`Playback.advance` notices the roll, moves the index onto
+and each tick :meth:`Playback.advance` messages the roll, moves the index onto
 it and stages the item after that.  A deliberate step still cold-loads.
 """
 from __future__ import annotations

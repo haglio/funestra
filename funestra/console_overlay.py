@@ -17,12 +17,12 @@ from pathlib import Path
 from .console import ConsoleModel, ModeHud, kino_shows, read_console
 from .console_hud import ConsoleHud, ConsolePainter, with_playback_speed
 from .dashboard import ask
-from .drive_readout import DriveHud, DrivePublisher, read_drive
 from .host_controls import HostControls, HostControlsPress
 from .hud_corners import HudPlace
 from .hud_overlay import HUD_OVERLAY_ID
 from .hud_placement import HudEdge
 from .hud_row import RowHud, RowLayout, RowPress, track_on_screen
+from .osr2_visualizer import DriveHud, DrivePublisher, read_drive
 
 
 class ConsoleOverlay:
@@ -43,7 +43,7 @@ class ConsoleOverlay:
         set_volume=None,
         toggle_mute=None,
         host_controls: HostControls | None = None,
-        readout: DrivePublisher | None = None,
+        visualizer: DrivePublisher | None = None,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
         self._console_file = Path(console_file)
@@ -51,7 +51,7 @@ class ConsoleOverlay:
         self._command_file = command_file
         self._engine = engine
         self._drive_gate = drive_gate
-        self._readout = readout
+        self._visualizer = visualizer
         self._clock = clock
         self._top_block = top_block
         self.overlay_id = overlay_id
@@ -89,17 +89,17 @@ class ConsoleOverlay:
         self._console = read_console(self._console_file) or self._console
         if self._drive_file is not None:
             self._drive = read_drive(self._drive_file) or self._drive
-        drive = self._drive_gate.readout(
+        drive = self._drive_gate.visualizer(
             self._drive, device_drives_itself=self._console.device_drives_itself,
             video_shows=kino_shows(self._console.main_mode))
-        if self._readout is not None and self._console.has_osr2:
-            self._readout.publish(drive, self._clock())
+        if self._visualizer is not None and self._console.has_osr2:
+            self._visualizer.publish(drive, self._clock())
         self._item_row = item_row
         if self.minimized and not self._minus_on_the_hud:
             self.close()
             return
         console = with_playback_speed(self._console, playback_speed)
-        if self._readout is not None:
+        if self._visualizer is not None:
             console = replace(console, has_osr2=False)
         bgra = self._painter.bgra(ConsoleHud(
             modes=self._top_block(),

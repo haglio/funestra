@@ -15,12 +15,12 @@ from funestra.console import ConsoleModel, ModeHud, console_text
 from funestra.console_hud import _PAD as PAD
 from funestra.console_hud import MARGIN
 from funestra.console_overlay import ConsoleOverlay
-from funestra.drive_readout import DriveHud, DrivePublisher, drive_text, read_drive
 from funestra.hud_corners import HudPlace
 from funestra.hud_minimize import collapsed_hud
 from funestra.hud_overlay import HUD_OVERLAY_ID
 from funestra.hud_placement import HudCorner
 from funestra.modes import LengthMode, MainMode, Osr2State
+from funestra.osr2_visualizer import DriveHud, DrivePublisher, drive_text, read_drive
 from funestra.testing import FakeEngine
 
 WINDOW = (1000, 600)
@@ -33,7 +33,7 @@ class SpyGate:
         self.told_the_device_drives_itself: list[bool] = []
         self.told_the_video_shows: list[bool] = []
 
-    def readout(self, published, *, device_drives_itself: bool = False,
+    def visualizer(self, published, *, device_drives_itself: bool = False,
                 video_shows: bool = True):
         self.handed.append(published)
         self.told_the_device_drives_itself.append(device_drives_itself)
@@ -54,7 +54,7 @@ def _drive_file(path: Path, position: int = 4_000) -> Path:
 
 
 def _overlay(tmp_path: Path, *, top_block=None, gate=None, drive: bool = True,
-             host_controls=None, readout=None) -> tuple[ConsoleOverlay, FakeEngine, SpyGate]:
+             host_controls=None, visualizer=None) -> tuple[ConsoleOverlay, FakeEngine, SpyGate]:
     engine = FakeEngine()
     gate = gate or SpyGate()
     overlay = ConsoleOverlay(
@@ -62,7 +62,7 @@ def _overlay(tmp_path: Path, *, top_block=None, gate=None, drive: bool = True,
         drive_file=tmp_path / "drive.txt" if drive else None,
         command_file=tmp_path / "dashboard_cmd.txt",
         engine=engine, drive_gate=gate, top_block=top_block or ModeHud,
-        host_controls=host_controls, readout=readout, clock=lambda: 0.0,
+        host_controls=host_controls, visualizer=visualizer, clock=lambda: 0.0,
     )
     return overlay, engine, gate
 
@@ -77,23 +77,23 @@ def _asked(tmp_path: Path) -> list[str]:
 
 
 class TestAConsoleWhoseHostDrawsTheOsr2:
-    def test_hands_its_host_the_readout_it_composed(self, tmp_path):
-        overlay, _engine, _gate = _overlay(tmp_path, readout=DrivePublisher(tmp_path / "readout.txt"))
+    def test_hands_its_host_the_visualizer_it_composed(self, tmp_path):
+        overlay, _engine, _gate = _overlay(tmp_path, visualizer=DrivePublisher(tmp_path / "visualizer.txt"))
         _console_file(tmp_path / "console.json", has_osr2=True)
         _drive_file(tmp_path / "drive.txt", position=1234)
 
         _tick(overlay)
 
-        assert read_drive(tmp_path / "readout.txt").position == 1234
+        assert read_drive(tmp_path / "visualizer.txt").position == 1234
 
     def test_a_console_without_the_osr2_hands_on_nothing(self, tmp_path):
-        overlay, _engine, _gate = _overlay(tmp_path, readout=DrivePublisher(tmp_path / "readout.txt"))
+        overlay, _engine, _gate = _overlay(tmp_path, visualizer=DrivePublisher(tmp_path / "visualizer.txt"))
         _console_file(tmp_path / "console.json", has_osr2=False)
         _drive_file(tmp_path / "drive.txt")
 
         _tick(overlay)
 
-        assert not (tmp_path / "readout.txt").exists()
+        assert not (tmp_path / "visualizer.txt").exists()
 
     def test_draws_its_own_hud_as_one_without_the_osr2(self, tmp_path):
         plain_dir, handing_dir = tmp_path / "plain", tmp_path / "handing"
@@ -101,7 +101,7 @@ class TestAConsoleWhoseHostDrawsTheOsr2:
         handing_dir.mkdir()
         plain, plain_engine, _gate = _overlay(plain_dir)
         handing, handing_engine, _gate = _overlay(
-            handing_dir, readout=DrivePublisher(handing_dir / "readout.txt"))
+            handing_dir, visualizer=DrivePublisher(handing_dir / "visualizer.txt"))
         for folder, has_osr2 in ((plain_dir, False), (handing_dir, True)):
             _console_file(folder / "console.json", has_osr2=has_osr2)
             _drive_file(folder / "drive.txt")

@@ -129,7 +129,7 @@ def draw_icon(image: Image.Image, name: str, rect: tuple[int, int, int, int],
     and each side renders it -- so a trash can on a HUD is the trash can on
     Origenerator's toolbar rather than whatever character a symbol font had.
 
-    Takes the HUD's IMAGE rather than its pen, the way the drive readout does:
+    Takes the HUD's IMAGE rather than its pen, the way the OSR2 visualizer does:
     the mark is supersampled and composited back, which a pen cannot carry.
     """
     x, y, w, h = rect
@@ -327,7 +327,7 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
     typed icon out of *glyph_font*, or a word in *word_font*.
 
     An item with nothing to post is a READ-OUT, not a control: bare text with no
-    button under it, in the readout's own key/value colors -- a muted word names
+    button under it, in the visualizer's own key/value colors -- a muted word names
     the value beside it, which is bright.  Drawn as a button it invites a press
     that does nothing, which is what "Clip seconds" looked like on the one HUD
     a show wears.  *row_label* is a read-out at the HUD's left edge, naming

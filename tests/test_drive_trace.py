@@ -19,7 +19,9 @@ import pytest
 
 from funestra.descent_latch import DescentLatch
 from funestra.drive_gate import next_handoff_touch
-from funestra.drive_readout import (
+from funestra.drive_trace import osr2_visualizer
+from funestra.funscript import HANDOFF_RAMP_MS, Funscript
+from funestra.osr2_visualizer import (
     DRIVEN_BY_FUNSCRIPT,
     DRIVEN_BY_NEUTRAL,
     DRIVEN_BY_NOTHING,
@@ -28,8 +30,6 @@ from funestra.drive_readout import (
     TRACE_SAMPLES,
     DriveHud,
 )
-from funestra.drive_trace import drive_readout
-from funestra.funscript import HANDOFF_RAMP_MS, Funscript
 from funestra.playback_rate import MAX_RATE
 
 # A 7.9-second trace: 79 steps of a round 100ms each, so a whole-step slide in
@@ -40,7 +40,7 @@ RAMP_STEPS = HANDOFF_RAMP_MS // STEP_MS
 
 
 def _motion(**over) -> DriveHud:
-    """Genau's readout as a LIVE Genau publishes it: its own motion, forward
+    """Genau's visualizer as a LIVE Genau publishes it: its own motion, forward
     from now, ``let_go`` unset because it still has the device.
 
     Amplitude 80 around center 50, so the motion's floor is at 10% — above the
@@ -55,7 +55,7 @@ def _motion(**over) -> DriveHud:
 
 def _motion_at(ms: int, **over) -> DriveHud:
     """The motion as Genau publishes it *ms* into the video: the same wave, its
-    phase advanced by however much time has gone by — a published readout is a
+    phase advanced by however much time has gone by — a published visualizer is a
     window forward from now, so it moves on its own."""
     steps = ms / STEP_MS
     return _motion(
@@ -90,7 +90,7 @@ def _script_ahead(*, from_ms: int = 8_000, to_ms: int = 9_000) -> Funscript:
 
 
 def _read(script, *, at: int, published=None, latch=None) -> DriveHud:
-    return drive_readout(
+    return osr2_visualizer(
         published if published is not None else _motion(),
         script=script, position_ms=at, latch=latch)
 
@@ -116,7 +116,7 @@ class TestOneLineTwoDrivers:
     def test_a_script_under_a_max_intensity_is_drawn_as_shallow_as_the_device_is_sent(self):
         script = _script(until_ms=120_000)
 
-        hud = drive_readout(_motion(), script=script, position_ms=0, max_intensity=30)
+        hud = osr2_visualizer(_motion(), script=script, position_ms=0, max_intensity=30)
 
         assert hud.waveform == script.planned_trace_window(
             0, round(SPAN_S * 1000), TRACE_SAMPLES, max_intensity=30)[0][:TRACE_SAMPLES]
@@ -149,7 +149,7 @@ class TestOneLineTwoDrivers:
         """Nothing published yet, and the script's own driver rests the device
         — so past the buffer the trace is the park, not a motion that is not
         coming."""
-        hud = drive_readout(None, script=_script(until_ms=2_000), position_ms=0)
+        hud = osr2_visualizer(None, script=_script(until_ms=2_000), position_ms=0)
         gap_start = hud.runs[-1][0]
 
         assert _colors(hud) == [
@@ -638,7 +638,7 @@ class TestForecastsDieWithTheirWave:
 
 
 class TestThePillFollowsTheLine:
-    """The console's OSR2 pill reads ``driven`` off the returned readout — set
+    """The console's OSR2 pill reads ``driven`` off the returned visualizer — set
     here from the same function that drew the line under the dot — so the pill
     flips exactly when the line changes hands, and says Buffer through the
     gray.  Keyed on the round-tripped console state it flipped at the
@@ -731,17 +731,17 @@ class TestALoopingFunestra:
     def test_the_loop_fills_the_trace_to_its_far_edge_at_the_fastest_rate(self):
         swings = Funscript(actions=[(0, 0), (1_250, 100), (2_500, 0), (3_760, 100), (5_010, 0)])
 
-        hud = drive_readout(_motion(trace_seconds=DriveHud.trace_seconds),
+        hud = osr2_visualizer(_motion(trace_seconds=DriveHud.trace_seconds),
                             script=swings.looped(0, 5_000), position_ms=4_999, speed=MAX_RATE)
 
         assert hud.segments == ((0, DRIVEN_BY_FUNSCRIPT),)
 
 
 class TestNothingToFoldIn:
-    def test_an_unscripted_video_leaves_the_readout_alone(self):
+    def test_an_unscripted_video_leaves_the_visualizer_alone(self):
         published = _motion()
 
-        assert drive_readout(published, script=None, position_ms=0) == published
+        assert osr2_visualizer(published, script=None, position_ms=0) == published
 
     def test_a_single_run_still_names_its_driver(self):
         """The painter's fallback color for empty segments is the OSR2 state,

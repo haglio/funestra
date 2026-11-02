@@ -17,7 +17,6 @@ from console_rows import console_rows
 from host_controls_fakes import AHost, middle_of
 
 from funestra.console import ConsoleModel, ModeHud, console_text
-from funestra.drive_readout import DriveHud, publish_drive, read_drive
 from funestra.flick_overlay import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, FlickFrame
 from funestra.funestra import Channels, Funestra, User, _Nobody, osr2_line
 from funestra.hud_button import Button
@@ -28,15 +27,16 @@ from funestra.hud_placement import HudEdge
 from funestra.hud_row import PARTS_Y
 from funestra.loop_dial import DIAL_SIZE
 from funestra.modes import LengthMode, MainMode, Osr2State
+from funestra.osr2_visualizer import DriveHud, publish_drive, read_drive
 from funestra.outside_buttons import OutsideButtons
 from funestra.playhead import FIGURE_SPACE
 from funestra.playlist import PlaylistItem, read_playlist
 from funestra.pointer import OMNIPAUSE_TOGGLE
 from funestra.radio import radio_file_for, write_radio
 from funestra.satellite_hud import MARGIN, HudModel
+from funestra.scrubber_bar import SCRUBBER_HEIGHT
 from funestra.session_quit import SESSION_QUIT
 from funestra.testing import FakeEngine
-from funestra.timeline import TIMELINE_HEIGHT
 from funestra.volume import PAD, VOLUME_CONTROL_H, VOLUME_CONTROL_W, VolumeHud, volume_control_xy
 
 WINDOW = (640, 480)
@@ -54,7 +54,7 @@ def _on_the_row(funestra, engine, part: str = "track", *, along: int | None = No
         return left + x + (along if along is not None else (x0 + x1) // 2), top + y + height - 4
     if part == "dial":
         return left + x + row.dial + DIAL_SIZE - 3, top + y + PARTS_Y + DIAL_SIZE // 2  # quarter past
-    cx, cy = volume_control_xy(win_w=width, win_h=height, timeline_h=TIMELINE_HEIGHT)
+    cx, cy = volume_control_xy(win_w=width, win_h=height, scrubber_h=SCRUBBER_HEIGHT)
     across = 4 if part == "speaker" else VOLUME_CONTROL_W - PAD
     return left + x + cx + across, top + y + cy + VOLUME_CONTROL_H // 2
 
@@ -69,7 +69,7 @@ def _videos(tmp_path: Path, *names: str) -> list[Path]:
 
 
 def _channels(tmp_path: Path, lines: list[str], *, commands: str = "QUIT\n",
-              hud: bool = False, in_a_session: bool = False, notice: bool = False) -> Channels:
+              hud: bool = False, in_a_session: bool = False, message: bool = False) -> Channels:
     (tmp_path / "playlist.tsv").write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
     (tmp_path / "cmd.txt").write_text(commands, encoding="utf-8")
     return Channels(
@@ -77,7 +77,7 @@ def _channels(tmp_path: Path, lines: list[str], *, commands: str = "QUIT\n",
         command=tmp_path / "cmd.txt",
         paused=tmp_path / "paused.txt",
         status=tmp_path / "status.txt",
-        notice=tmp_path / "notice.txt" if notice else None,
+        message=tmp_path / "notice.txt" if message else None,
         hud=tmp_path / "portrait_hud.json" if hud else None,
         dashboard_cmd=tmp_path / "dashboard_cmd.txt" if hud or in_a_session else None,
     )
@@ -144,16 +144,16 @@ def test_a_funestra_jumps_to_its_clips_scripting_and_says_so_on_its_notice_chann
     script.write_text('{"actions": [{"at": 10000, "pos": 0}, {"at": 10300, "pos": 100}, '
                       '{"at": 40000, "pos": 0}, {"at": 40300, "pos": 100}]}', encoding="utf-8")
     funestra, engine = _funestra(tmp_path, [f"{video}\t{script}"],
-                                 commands="JUMP_TO_FUNSCRIPT\nNEXT_FUNSCRIPTED\n", notice=True)
+                                 commands="JUMP_TO_FUNSCRIPT\nNEXT_FUNSCRIPTED\n", message=True)
     engine.duration_ms = 60_000.0
     engine.position_ms = 20_000.0
 
     funestra.tick(window=WINDOW)
 
     assert engine.position_ms == 40_000.0
-    notice = (tmp_path / "notice.txt").read_text(encoding="utf-8")
-    assert "level=warning" in notice
-    assert "message=no other funscripted video" in notice
+    message = (tmp_path / "notice.txt").read_text(encoding="utf-8")
+    assert "level=warning" in message
+    assert "message=no other funscripted video" in message
 
 
 def test_a_funestra_given_no_notice_channel_still_jumps(tmp_path):
@@ -724,17 +724,17 @@ def _publish_hud(tmp_path: Path, **hud) -> None:
                                                 encoding="utf-8")
 
 
-def test_a_satellite_handed_a_place_for_the_osr2_readout_hands_on_its_motion(tmp_path):
+def test_a_satellite_handed_a_place_for_the_osr2_visualizer_hands_on_its_motion(tmp_path):
     channels = replace(_channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  commands="", hud=True),
-                       drive=tmp_path / "drive.txt", osr2_readout=tmp_path / "readout.txt")
+                       drive=tmp_path / "drive.txt", osr2_visualizer=tmp_path / "visualizer.txt")
     _publish_hud(tmp_path, osr2=Osr2State.ROBOT_HAND)
     publish_drive(tmp_path / "drive.txt", DriveHud(speed=40))
     funestra = Funestra(FakeEngine(), channels=channels, playlist=read_playlist(channels.playlist))
 
     funestra.tick(window=WINDOW)
 
-    assert read_drive(tmp_path / "readout.txt").speed == 40
+    assert read_drive(tmp_path / "visualizer.txt").speed == 40
 
 
 def _no_memory_to_put_it_up(*_args) -> None:
@@ -878,9 +878,9 @@ class Genau(Kino):
 
 def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
           host_controls=None, clock=time.monotonic,
-          osr2_readout: Path | None = None) -> tuple[Funestra, FakeEngine, Kino]:
+          osr2_visualizer: Path | None = None) -> tuple[Funestra, FakeEngine, Kino]:
     channels = replace(_console_channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1")],
-                                         commands=commands), osr2_readout=osr2_readout)
+                                         commands=commands), osr2_visualizer=osr2_visualizer)
     _publish_console(tmp_path)
     engine = FakeEngine()
     made: list[Kino] = []
@@ -906,14 +906,14 @@ class TestTheMainFunestra:
         assert funestra.playback.is_locked is True
         assert engine.loop_file is True
 
-    def test_handed_a_place_for_the_osr2_readout_it_hands_on_the_one_it_composed(self, tmp_path):
-        funestra, _engine, _kino = _main(tmp_path, osr2_readout=tmp_path / "readout.txt")
+    def test_handed_a_place_for_the_osr2_visualizer_it_hands_on_the_one_it_composed(self, tmp_path):
+        funestra, _engine, _kino = _main(tmp_path, osr2_visualizer=tmp_path / "visualizer.txt")
         _publish_console(tmp_path, has_osr2=True)
         publish_drive(tmp_path / "drive.txt", DriveHud(speed=40))
 
         funestra.tick(window=WINDOW)
 
-        assert read_drive(tmp_path / "readout.txt").speed == 40
+        assert read_drive(tmp_path / "visualizer.txt").speed == 40
 
     def test_it_draws_the_console_the_room_published(self, tmp_path):
         funestra, engine, _kino = _main(tmp_path)
