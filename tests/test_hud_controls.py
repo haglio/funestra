@@ -138,11 +138,12 @@ class TestTheSwitchesAndTheThingsDone:
         assert held.tooltip == "Locked — this clip repeats; press to play on through the playlist"
         assert free.tooltip == "Unlocked — plays on through the playlist; press to hold this clip"
 
-    def test_the_trash_takes_something_away_in_the_sources_words(self):
-        trash = trash_button("portrait", "Delete this one and move on")
+    def test_the_trash_unfavorites_a_favorite_and_sends_anything_else_to_trash(self):
+        trash = trash_button("portrait")
 
         assert (trash.command, trash.glyph, trash.tooltip) == (
-            "portrait_trash", TRASH_ICON, "Delete this one and move on")
+            "portrait_trash", TRASH_ICON,
+            "Unfavorite it — or send it to Trash when it is not a favorite")
         assert trash.danger
 
     def test_f_mode_is_the_favorites_green_switch(self):
