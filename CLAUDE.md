@@ -134,7 +134,7 @@ backstop for names already known; it cannot see the next one.
 
 So fabricate fully. Use `Jane Doe`, `Example Studio`, `scene one`, the
 `alpha`/`beta`/`gamma` act placeholders the committed `content.example.json`
-already uses. The near miss that still counts: taking a real filename and
+already uses. The near miss that image counts: taking a real filename and
 changing a character or two — it is still that video, still that performer. Make
 it up from scratch, don't lightly edit a real one.
 

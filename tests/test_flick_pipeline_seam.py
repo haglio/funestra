@@ -101,7 +101,7 @@ class _SilentLog:
 
 
 def test_a_flick_is_decoded_once_however_long_the_sweep_runs():
-    """The flick on screen must not take a slot in the decode-ahead cache.
+    """The flick on screen must not take a place in the decode-ahead cache.
 
     Genau holds two flicks' frames and has two neighbors to decode ahead.  With
     the flick on screen sitting in that cache as well -- and protected from
@@ -144,7 +144,7 @@ def test_a_flick_that_goes_up_gives_its_decode_ahead_slot_back():
 
     Condemning is where taking one up and leaving it there shows: the successor
     comes off the decode-ahead pile, and if it stays on that pile as well it
-    leaves one slot for its own two neighbors -- so the sweep decodes them
+    leaves one place for its own two neighbors -- so the sweep decodes them
     alternately, for as long as the session runs.
     """
     pipeline = Pipeline("weird.mp4", "after.mp4", "third.mp4", "before.mp4")

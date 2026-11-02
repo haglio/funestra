@@ -139,7 +139,7 @@ class Seam:
             "steps": tuple(self.selection.step_calls),
             "condemned": self.selection.discard_calls,
             "flipped": self.controller.flip.on,
-            "held": self.controller.room_hold.held,
+            "held": self.controller.app_hold.held,
             "reorders": tuple(self.reorders),
             "kept_shapes": tuple(self.kept_shapes),
             "played": tuple(path.name for path in self.played),

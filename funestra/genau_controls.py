@@ -89,7 +89,7 @@ class GenauControls:
     keep_shapes: Callable[[bool, bool], None] | None = None
     play_file: Callable[[Path], None] | None = None
     flick_flip: FlickFlip = field(default_factory=FlickFlip)
-    room_hold: RoomHold = field(default_factory=RoomHold)
+    app_hold: RoomHold = field(default_factory=RoomHold)
 
 
 # The acts below all take these controls and the rest of the line, and say
@@ -246,7 +246,7 @@ def _playing(playing: bool) -> Act:
 
     The flag is what an orchestrator's paused file feeds and what the tick reads;
     the hand's own flag is what the motion follows.  A build with no hand still
-    answers -- the room is paused either way.
+    answers -- the app is paused either way.
     """
     def act(controls: GenauControls, _value: str) -> bool:
         controls.paused.on = not playing
@@ -258,7 +258,7 @@ def _playing(playing: bool) -> Act:
 
 def _held(control: str) -> Act:
     def act(controls: GenauControls, _value: str) -> bool:
-        controls.room_hold.held = control
+        controls.app_hold.held = control
         return True
     return act
 
@@ -396,7 +396,7 @@ CONTROLS: tuple[Control, ...] = (
         name="flip_ends",
         verbs=(Verb("FLIP_ENDS", _flip_ends),),
     ),
-    # The two browse orders every Funestra in the room has, said to Genau, the one
+    # The two browse orders every Funestra in the app has, said to Genau, the one
     # with no playlist file to hand it: Genau owns its own sequence, so the order
     # is a verb rather than a rewritten list, and answering it rescans the flicks
     # folder — which is most of what Latest is for.

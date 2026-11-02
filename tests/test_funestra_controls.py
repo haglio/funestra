@@ -42,7 +42,7 @@ from funestra.funestra_verbs import (
 )
 from funestra.playlist import PlaylistItem
 from funestra.volume import VolumeHud
-from funestra.volume_control import RoomVolume, VolumeControl
+from funestra.volume_control import AppVolume, VolumeControl
 
 
 def _never_reloads() -> None:
@@ -306,7 +306,7 @@ class TestTheLock:
 class TestTheRoomsLevel:
     def _controls(self, tmp_path):
         playback, engine = make_playback(tmp_path)
-        volume = RoomVolume(engine, dashboard_cmd_file=None, live=True)
+        volume = AppVolume(engine, dashboard_cmd_file=None, live=True)
         return FunestraControls(playback, reload_playlist=_never_reloads, volume=volume), engine, volume
 
     def test_set_volume_plays_and_shows_the_level(self, tmp_path):

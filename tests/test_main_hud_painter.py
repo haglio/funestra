@@ -92,7 +92,7 @@ def _over(painter: MainHudPainter, command: str) -> tuple[int, int]:
 class TestLine:
     def test_says_whether_the_main_funestra_is_holding_the_video_on_screen(self):
         """Each satellite leads its line with this word, and the Main Funestra has the
-        same lock — one padlock, for whichever Funestra holds the slot."""
+        same lock — one padlock, for whichever Funestra holds the place."""
         assert _line(locked=True) == "Locked · Shuffle"
         assert _line(locked=False) == "Unlocked · Shuffle"
 
@@ -102,7 +102,7 @@ class TestLine:
 
         "Mixed" is every length there is, so it narrows nothing and prints nothing,
         exactly as a satellite prints nothing where its filter would go when it has
-        none.  It also no longer says enough to be worth the room: the library has
+        none.  It also no longer says enough to be worth the app: the library has
         grown a third kind of thing, and one word for "some of each" cannot say
         which.
         """
@@ -125,15 +125,15 @@ class TestLine:
 
     def test_claims_no_length_mode_without_a_library_backing_the_playlist(self):
         """A playlist Fun Time drives has no length filter of its own to report, so
-        that slot stays empty.  The lock is still said: it belongs to the Main Funestra
-        slot whatever is feeding it."""
+        that place stays empty.  The lock is still said: it belongs to the Main Funestra
+        place whatever is feeding it."""
         assert _line(length_mode=None) == "Locked · Shuffle"
 
     def test_a_genau_primary_says_its_order_and_the_pace_it_moves_at(self):
         """Genau has no library, no compilation and no filters.  What it has is the
         same lock every Funestra has, the same two browse orders, and — while that
         lock is off — the seconds it leaves each video up.  Order then pace, in the
-        slot the satellites put theirs in: the order says which video is next, the
+        place the satellites put theirs in: the order says which video is next, the
         pace says when.  Held, there is no pace to report: the video stays until
         something moves it."""
         def line(**over) -> str:
@@ -145,7 +145,7 @@ class TestLine:
 
     def test_a_genau_primary_says_which_order_it_was_put_in(self):
         """Genau browses in the same two orders every other Funestra does, and asking
-        it for one used to leave the answer nowhere on screen: this slot printed the
+        it for one used to leave the answer nowhere on screen: this place printed the
         pace instead, so "latest" changed the videos and said nothing."""
         def line(**over) -> str:
             return MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU, **over),
@@ -163,7 +163,7 @@ class TestLine:
 
     def test_a_host_with_no_browse_order_names_none(self):
         """Origenerator's motion panel draws this Main Funestra's HUD over a show's own set —
-        a fixed run, not a browse — so there is no order to name and that slot
+        a fixed run, not a browse — so there is no order to name and that place
         stays empty.  The pace it does have still prints."""
         assert MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU, locked=True)).title == (
             "Locked")
@@ -186,7 +186,7 @@ class TestLine:
 
     def test_says_which_browse_order_the_main_funestra_is_in(self):
         """The satellites have said Latest/Shuffle all along and the Main Funestra
-        does now too, in the same slot — between the lock and the filters, since it
+        does now too, in the same place — between the lock and the filters, since it
         is how the set advances rather than what is in it."""
         assert _line(order_latest=True) == "Locked · Latest"
         assert _line(order_latest=False) == "Locked · Shuffle"
@@ -408,7 +408,7 @@ class TestPainter:
         small a difference to find the selected mode at a glance.  Blue — the
         one the broker wears — and the satellite HUD's Funestra/Origenerator pair
         lights the same, because it is the same question about the other half
-        of the room.
+        of the app.
 
         Not green: green means the favorites and the funscripts everywhere in
         this family, and the mode you are in is neither."""
@@ -422,7 +422,7 @@ class TestPainter:
         assert not green.any()
 
     def test_an_ordinary_toggle_that_is_on_fills_the_familys_blue(self):
-        """One color for "this is in force", across every HUD in the room.  The
+        """One color for "this is in force", across every HUD in the app.  The
         active gray it used to take was a step up from the resting ground and
         little more — at a glance a lit control and a dark one were the same
         button."""
@@ -471,7 +471,7 @@ class TestPainter:
 
     def test_the_broker_wears_the_face_it_had_on_the_dashboard(self):
         """Its own magenta mark on blue while the service is up and red while it is
-        down — the broker acts on the room's own service rather than on a Funestra,
+        down — the broker acts on the app's own service rather than on a Funestra,
         so it does not take the on/off colors the controls beside it use."""
         for broker, fill in ((True, (48, 128, 224)), (False, (255, 60, 60))):
             pixels = self._broker_pixels(broker)
@@ -1332,7 +1332,7 @@ class TestTheDeviceRunningItselfKeepsMoving:
 
     @pytest.mark.parametrize("control", [OSR2_PARKED, OSR2_RETRACTED])
     def test_it_wins_over_whatever_the_room_is_doing_to_the_device(self, control):
-        """Auto wins over everything the room might be doing, a hold included:
+        """Auto wins over everything the app might be doing, a hold included:
         none of those reaches a device running its own firmware, so the
         word and the moving line are the device's own."""
         painter = MainHudPainter()
@@ -1574,7 +1574,7 @@ def _button_rect(painter, command: str) -> Rect:
 
 
 class TestWhereTheMainHudSits:
-    """The corner the room moved this HUD to, and what that moves with it."""
+    """The corner the app moved this HUD to, and what that moves with it."""
 
     @staticmethod
     def _hud(corner, **main_hud_model) -> MainHud:
@@ -1690,7 +1690,7 @@ class TestWhereTheMainHudSits:
         assert MainHudPainter().hud_place is None
 
     def test_a_minimized_main_hud_keeps_the_plus_in_its_own_corner(self):
-        """The room's corner still pins it, so the plus is where the HUD was:
+        """the app's corner still pins it, so the plus is where the HUD was:
         the bitmap holds room for the tooltip beside it, and the plus sits at
         the corner of that room the HUD is justified to."""
         painter = self._painted(HudCorner.LOWER_LEFT, hud_minimized=True)

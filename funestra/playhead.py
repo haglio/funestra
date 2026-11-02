@@ -81,7 +81,7 @@ def _font():
 
 
 def time_text_width(hud: PlayheadHud) -> int:
-    """The room the time takes on the row: its widest words' worth."""
+    """The app the time takes on the row: its widest words' worth."""
     return text_width(_font(), hud.widest)
 
 

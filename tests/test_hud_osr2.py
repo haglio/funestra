@@ -158,7 +158,7 @@ def _park() -> Button:
 
 class TestWhoTheLineNames:
     """One precedence, wherever the line is drawn: the device running itself or
-    switched off beats anything the room is doing to it, a hold beats whoever
+    switched off beats anything the app is doing to it, a hold beats whoever
     would otherwise be driving, and only then does the driver get
     named."""
 

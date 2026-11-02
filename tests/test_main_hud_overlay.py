@@ -1,4 +1,4 @@
-"""The Main Funestra's HUD a Funestra keeps on its item: what the room published, read whole, drawn where the room put it, pressed."""
+"""The Main Funestra's HUD a Funestra keeps on its item: what the app published, read whole, drawn where the app put it, pressed."""
 from __future__ import annotations
 
 import json

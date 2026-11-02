@@ -31,7 +31,7 @@ class AutoMotion:
 
     ``phase`` is where the broker's beat has reached and ``bpm`` how fast it is
     going round -- the same beat the flick's own frames are scrubbed by while the
-    device has the room, so the line and the drawing move together.
+    device has the app, so the line and the drawing move together.
     """
 
     phase: float

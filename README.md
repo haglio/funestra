@@ -34,7 +34,7 @@ another application's internals to get it. By what it is:
   `robot_hand` (the waveform), `robot_hand_beat` (the phase it runs at),
   `robot_hand_driver` (the motion on the wire, and the device changing hands),
   `learned_motion` (phrases of real scripting in place of the waveform),
-  `broker_feed` (the beat the OSR2 broker publishes when it has the room).
+  `broker_feed` (the beat the OSR2 broker publishes when it has the app).
 - **Genau** — wherever it runs. A flick is one of the
   short looping videos Genau scrubs to wherever the OSR2 is; the apps show and
   hear it under the word the settings all of Haglio share give it
@@ -60,12 +60,12 @@ another application's internals to get it. By what it is:
   (`Channels`), plays what it is handed (`playback`, with `funestra_controls`
   answering the verbs, `funestra_status` publishing the status, `play_points`,
   `seeking` and `scripted_device` under it), and draws the published HUD —
-  a satellite's (`hud_overlay`) or the main slot's console (`console_overlay`),
+  a satellite's (`hud_overlay`) or the main place's console (`console_overlay`),
   whichever file it was given — the scrubber (`scrubber`: a scripted item's
   colors, the zoom while a stretch is marked, the frames of a running A/B
-  range), the volume control (`volume_control`: its own level, or the room's,
+  range), the volume control (`volume_control`: its own level, or the app's,
   asked for on the dashboard's channel, `dashboard`), the playhead visualizer and
-  the black it shows when the room gives its rectangle away (`display`),
+  the black it shows when the app gives its rectangle away (`display`),
   placing a press against them (`pointer`).  A User runs on a Funestra in the
   same process (`funestra.User`: its verbs, a pass of its own each frame, its
   lines in the status file, the Main Funestra's HUD's top block) or drives it through its
@@ -100,11 +100,11 @@ and a reader in one module — so the two sides cannot spell a thing differently
 | verbs on its command file, spelled in `funestra_verbs` | `file_channel` (`append_command` / `consume_command_file`); the Funestra answers the ones it declares in a `control_registry` | |
 | the pace an image holds the screen for: `SET_PACE <seconds>`, 0 holding it | `funestra_verbs.pace_seconds` reads the value, `set_pace` hands it to mpv | |
 | the paused flag | `app_support.file_channel.write_flag` / `file_channel.read_paused_state` | |
-| its HUD: a `HudModel` for a satellite, a `MainHudModel` for the main slot, each carrying the buttons the source declares — rows of `hud_button.Button`: the verb a press posts, the face, the tooltip, lit or dim, where a group starts | `satellite_hud` (`hud_text` / `parse_hud`), `console` (`console_text` / `parse_main_hud`) | |
+| its HUD: a `HudModel` for a satellite, a `MainHudModel` for the main place, each carrying the buttons the source declares — rows of `hud_button.Button`: the verb a press posts, the face, the tooltip, lit or dim, where a group starts | `satellite_hud` (`hud_text` / `parse_hud`), `console` (`console_text` / `parse_main_hud`) | |
 | | `status` (`status_fields` / `parse_status`, published by `StatusWriter`) | a `FunestraStatus`: the item on screen, the playhead, paused, locked, the rate it plays at, whether the item is an image — and after those seven lines, whatever that Funestra adds of its own |
 
 A Funestra answers the verbs it can (`TRASH` is a satellite's, `TOGGLE_LOCK` the
-main slot's) and refuses the rest on its log. It draws the buttons its source
+main place's) and refuses the rest on its log. It draws the buttons its source
 declared and nothing else, and posts each one's verb verbatim; a read-out
 whose number only the drawing host knows (the video's rate, a flick's pace)
 names it in `host_value` and the painter fills it in. A HUD declaring no
@@ -115,7 +115,7 @@ ends the file the way a finished video ends, so an image moves on, holds under
 a lock and waits out a pause exactly as a video does, and a Funestra opens at 4
 seconds until a source sets a pace. Whether an item is an image is mpv's to
 say once the file is open (`showing_image`), so a playlist line carries no
-kind; the still a HUD map draws for one is its cell's `thumb`, as for a video.
+kind; the image a HUD map draws for one is its cell's `thumb`, as for a video.
 While it holds, an image makes one slow move, carried on a frame at a time by
 `push_still`: a zoom in toward a spot, a zoom out from one, or a pan across it
 held a little closer -- never the same kind twice in a row, and never showing

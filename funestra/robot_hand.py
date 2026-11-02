@@ -2,9 +2,9 @@
 by speed, amplitude and center.
 
 It is what drives the OSR2 whenever no funscript has it — the family's own auto
-mode, made so the motion could be steered from the room instead of left to the
+mode, made so the motion could be steered from the app instead of left to the
 device's built-in one.  Genau drives it from a flick's beats and visualizes it;
-Origenerator free-runs it over slideshows of stills.  Both take it from this one
+Origenerator free-runs it over slideshows of images.  Both take it from this one
 arithmetic, so :func:`phase_advanced` is offered here rather than owned here:
 what advances the phase is the caller's own clock.
 
@@ -31,7 +31,7 @@ MIN_SPEED = 5
 MAX_SPEED = 100
 FULL_INTENSITY = 100
 
-# The two ends a still motion is held at, on the same 0-100 axis the center runs
+# The two ends a image motion is held at, on the same 0-100 axis the center runs
 # on: home, and as far from the user as the travel goes.  Named here because
 # every app that holds this motion has to agree which end is which.
 PARK_CENTER = 0

@@ -128,7 +128,7 @@ class TestActingOnOneLine:
 
     def test_any_other_payload_takes_the_room_back_too(self):
         """The broker says 1 or 0; anything else is not an assertion that it
-        owns the room, and taking it back is the safe reading."""
+        owns the app, and taking it back is the safe reading."""
         state = BrokerFeed(auto_active=True)
 
         assert self._applied("AUTO yes", state).auto_active is False

@@ -194,7 +194,7 @@ def _build_controller(
         hud=hud,
         # A Genau with no chip to draw still answers SET_VOLUME: the level is the
         # orchestrator's, and refusing it would put an unhandled verb on the log
-        # every time the room's volume moved.
+        # every time the app's volume moved.
         set_volume=lambda _level, _muted: None,
         flick_flip=flick_flip if flick_flip is not None else FlickFlip(),
     )
@@ -250,7 +250,7 @@ def test_refresh_displays_active_frame():
 def test_under_the_broker_the_line_is_the_device_s_own_swing():
     """The device runs itself here, so the trace is the broker's beat -- and it
     moves, which is the whole of what a visualizer under the broker is for.  The
-    HUD used to come down instead, taking the room's controls with it."""
+    HUD used to come down instead, taking the app's controls with it."""
     state = BrokerFeed(auto_active=True, raw_bpm=120.0)
     entry = {"frames": [object() for _ in range(8)]}
     clock = [5.0]
@@ -574,7 +574,7 @@ def test_a_locked_genau_stays_on_its_flick():
 def test_the_flick_is_held_while_the_room_is_paused():
     """OmniPause reaches Genau as PAUSE, which clears robot_hand.playing.
 
-    The advance has to read that: a paused room that keeps swapping flicks
+    The advance has to read that: a paused app that keeps swapping flicks
     leaves the user looking at something they never chose to move to.
     """
     assert _run_flick_advance(playing=False, seconds=60.0) == []
@@ -673,7 +673,7 @@ def test_multiline_commands_all_applied():
 @pytest.mark.parametrize(("hud_on", "heard"), [(True, False), (False, True)])
 def test_the_flick_is_heard_only_while_it_has_the_main_screen(hud_on, heard):
     """As the transparent layer over a video, Genau's flick is not on screen, so
-    its sound is not the room's: said visible there, the companion played the
+    its sound is not the app's: said visible there, the companion played the
     hidden flick's music over the video every time the OSR2 went into auto."""
     built = _build_controller(
         entry={"frames": [object() for _ in range(8)]}, hud=Flag(on=hud_on))

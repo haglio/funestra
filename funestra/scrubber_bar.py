@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 from shared_ui import palette
 
-from funestra.volume import SLOT_W as _VOLUME_SLOT_W
+from funestra.volume import PLACE_W as _VOLUME_PLACE_W
 
 RED = (*palette.RED, 245)
 YELLOW = (*palette.YELLOW, 245)
@@ -42,13 +42,13 @@ def bar_track_x(width: int, *, left: int = 0) -> tuple[int, int]:
     The start is *left*, where whatever the row lays out before the track
     ends -- the row's own edge when nothing does; the end stops short of the
     volume control that shares the row, the way VLC's seek bar stopped clear of
-    its slider — :data:`funestra.volume.SLOT_W` is the room it leaves.
+    its slider — :data:`funestra.volume.SLOT_W` is the app it leaves.
     Clamped so the track never inverts on a very narrow window.  The heatmap
     strip, the plain bar and click-to-seek all use this, so they agree on where
     the track ends.
     """
-    inset = min(left, max(0, width - _VOLUME_SLOT_W - 1))
-    return inset, max(inset + 1, width - _VOLUME_SLOT_W)
+    inset = min(left, max(0, width - _VOLUME_PLACE_W - 1))
+    return inset, max(inset + 1, width - _VOLUME_PLACE_W)
 
 
 def paint_rect(bgra, x0, x1, y0, y1, color):

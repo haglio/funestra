@@ -39,7 +39,7 @@ from funestra.volume import (
     MAX_VOLUME,
     MIN_VOLUME,
     PAD,
-    SLOT_W,
+    PLACE_W,
     SPEAKER_W,
     VOLUME_CONTROL_H,
     VOLUME_CONTROL_W,
@@ -70,7 +70,7 @@ class TestHowTheRowIsLaidOut:
         x, width = layout.time_text
         assert (x, width) == (0, time_text_width(TIME))
         assert layout.dial is None
-        assert layout.track == (width + GAP, WIDTH - SLOT_W)
+        assert layout.track == (width + GAP, WIDTH - PLACE_W)
 
     def test_a_flicks_row_is_its_dial_then_the_time_text_a_videos_row_carries(self):
         """Its frame and then its time, the frames beside the dial and the time
@@ -85,7 +85,7 @@ class TestHowTheRowIsLaidOut:
         layout = _layout(RowHud(duration_ms=10_000))
 
         assert (layout.time_text, layout.dial) == (None, None)
-        assert layout.track == (0, WIDTH - SLOT_W)
+        assert layout.track == (0, WIDTH - PLACE_W)
 
     def test_a_longer_video_moves_the_track_along_rather_than_the_time_text_over_it(self):
         short = _layout(RowHud(duration_ms=195_000, playhead=video_playhead(0, 195_000, 30)))

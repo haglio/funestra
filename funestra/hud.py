@@ -154,7 +154,7 @@ def draw_active_dot(image: Image.Image, x: int, y: int, active: bool) -> None:
     White while a bare command would land on this Funestra, the palette's gray
     otherwise — and always drawn, never hidden.  An absent dot and an idle dot look
     the same, and then only the Funestra that *has* the floor says anything, which is
-    half an answer to a question asked of the room.
+    half an answer to a question asked of the app.
     """
     paste_icon(image, "disc", (x, y, _DISC_FRAME, _DISC_FRAME), WHITE if active else TEXT_MUTED)
 

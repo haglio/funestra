@@ -1,7 +1,7 @@
-"""The Main Funestra's HUD kept on the item: the HUD the room publishes for the main slot,
+"""The Main Funestra's HUD kept on the item: the HUD the app publishes for the main place,
 read every frame, composited, pressed.
 
-The room's two files -- the Main Funestra's HUD, and the motion whoever drives the OSR2
+the app's two files -- the Main Funestra's HUD, and the motion whoever drives the OSR2
 publishes -- are replaced while this polls them, so a torn read keeps what was
 there: blanking either for a frame is a visible flicker on a HUD redrawn at
 60fps.  The motion is read through the gate before the HUD believes it, or

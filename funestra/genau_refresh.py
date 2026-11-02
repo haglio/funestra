@@ -60,7 +60,7 @@ class GenauRefreshController:
         self.hud = controls.hud
         self.tcode_enabled = controls.tcode_enabled
         self.flip = controls.flick_flip
-        self.room_hold = controls.room_hold
+        self.app_hold = controls.app_hold
         self.broker = broker
         self.loader = loader
         self.notifier = notifier
@@ -235,8 +235,8 @@ class GenauRefreshController:
 
     def _follow_the_room_hold(self, now: float) -> None:
         if self.robot_hand.playing and self.tcode_enabled.on:
-            self.room_hold.held = None
-        held = self.room_hold.held
+            self.app_hold.held = None
+        held = self.app_hold.held
         if held is not None and held != self._held:
             self._walk = the_broker_holding(self._scrub.height, now, HOLD_VERB[held])
         following = held is None and self.robot_hand.playing

@@ -205,7 +205,7 @@ class Playback:
 
     @property
     def showing_image(self) -> bool:
-        return self._still_put_up or self._engine.showing_image
+        return self._image_put_up or self._engine.showing_image
 
     def step(self, delta: int) -> None:
         self.load(self._index + delta)
@@ -275,15 +275,15 @@ class Playback:
 
     def show_frame(self, frame: Path) -> None:
         self._frame_on_screen = frame
-        self._still_put_up = True
-        self._engine.swap_still(frame)
+        self._image_put_up = True
+        self._engine.swap_image(frame)
         self._stage_next()
         self._tell_the_places()
 
     def clear_frame(self) -> None:
         if self._frame_on_screen is not None:
             self._frame_on_screen = None
-            self._engine.swap_still(self.showing)
+            self._engine.swap_image(self.showing)
             self._stage_next()
             self._tell_the_places()
 
@@ -330,7 +330,7 @@ class Playback:
         self._play_points.ended()
         if not self._rolls_onto_itself:
             self._frame_on_screen = None
-            self._still_put_up = False
+            self._image_put_up = False
         self._mark = None
         self._ab_loop = None
         self._index = (self._index + 1) % len(self._playlist)
@@ -344,7 +344,7 @@ class Playback:
 
     def _playback_has_resumed(self, position_ms: float) -> bool:
         """Un-pausing is a request, not what is on screen: the device waits for the
-        first frame after it, a still counting as there at once."""
+        first frame after it, a image counting as there at once."""
         if self._held_at is None:
             return True
         if position_ms == self._held_at and not self._engine.showing_image:
@@ -435,7 +435,7 @@ class Playback:
         self._play_points.leave()
         self._switching_versions = False
         self._frame_on_screen = None
-        self._still_put_up = False
+        self._image_put_up = False
         self._index = index % len(self._playlist)
         self._loads += 1
         video = self.showing

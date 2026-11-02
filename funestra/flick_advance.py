@@ -81,7 +81,7 @@ def tick_flick_advance(
     dt = now - state._last_tick
     state._last_tick = now
 
-    # A paused room is a still one: OmniPause, and the plain space-bar pause,
+    # A paused app is a image one: OmniPause, and the plain space-bar pause,
     # both land here as playing=False, and neither should leave the flick the
     # user walked away from.  The elapsed count simply stops rather than
     # resetting, so resuming finishes the interval it was part-way through.

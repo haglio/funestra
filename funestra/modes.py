@@ -19,7 +19,7 @@ from app_support.osr2_device import Osr2Mode, Osr2Trouble
 
 
 class MainMode(StrEnum):
-    """What holds the main slot: Kino's video, or Genau's flicks."""
+    """What holds the main place: Kino's video, or Genau's flicks."""
 
     KINO = "kino"
     GENAU = "genau"

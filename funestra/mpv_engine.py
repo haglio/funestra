@@ -172,7 +172,7 @@ def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool
         **_MPV_SCRIPTS_OFF,
         input_default_bindings=False,
         image_display_duration="inf",
-        # Leaning a still (video-align) moves it only along a side it
+        # Leaning a image (video-align) moves it only along a side it
         # overhangs the window on: along one it fits inside, it stays centered.
         video_recenter="yes",
     )
@@ -190,7 +190,7 @@ def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool
 
 TILES_SHADER = Path(__file__).with_name("tiles.glsl")
 
-# How a still's view reaches mpv: its zoom, and how far it leans each way
+# How a image's view reaches mpv: its zoom, and how far it leans each way
 # between the image's two edges (video/out/aspect.c places an image that
 # overhangs the window from flush with one edge at -1 to flush with the other
 # at +1, so every lean keeps it covering the window).
@@ -284,7 +284,7 @@ class _MpvControl:
         self._image_track: bool | None = None
         self._overlays: dict[int, np.ndarray] = {}
         # A still runs on a clock of its own, which moves it and ends it: mpv
-        # leaves a still's playhead at nought (verified against libmpv,
+        # leaves a image's playhead at nought (verified against libmpv,
         # 2026-09-19), so nothing of mpv's can say how far into its pace it is.
         self._ken_burns = KenBurns(moves, looping=looping, fit=self._fit)
         self._window = (0, 0)
@@ -360,7 +360,7 @@ class _MpvControl:
         """The item's shape as mpv puts it out, tiles included -- (0, 0)
         until it knows, and between files.
 
-        What a host measures its own chrome against: where to float the stills
+        What a host measures its own chrome against: where to float the images
         either side of the item, where to seat a HUD under it.  Callers
         keep their last size through the gap between files, which is what keeps
         the previous video's final frame on screen during a transition instead
@@ -369,7 +369,7 @@ class _MpvControl:
         return self._video_dims
 
     def _now(self) -> float:
-        """The clock a still's move is paced by, in one call a test can wind on
+        """The clock a image's move is paced by, in one call a test can wind on
         by hand -- mpv leaves an image's own playhead at nought."""
         return time.monotonic()
 
@@ -397,7 +397,7 @@ class _MpvControl:
         self._mpv.playlist_clear()
 
     @mpv_call()
-    def swap_still(self, path: Path) -> None:
+    def swap_image(self, path: Path) -> None:
         self._on_the_clock = str(path)
         self._mpv.play(str(path))
         self._mpv.playlist_clear()
@@ -515,7 +515,7 @@ class _MpvControl:
         return self._window
 
     @mpv_call()
-    def push_still(self) -> None:
+    def push_image(self) -> None:
         """Carry the image on screen one frame further along its move; a video
         is drawn as it comes.  Called once a frame by whichever loop is driving
         this engine."""
@@ -532,7 +532,7 @@ class _MpvControl:
         self._image_time = (min(self._ken_burns.progress(now) * self._ken_burns.pace_s * 1000.0,
                                 holds_for_ms), holds_for_ms)
         if self._image_track and self._path == self._on_the_clock and self._ken_burns.ran_out(now):
-            self._move_on_from_the_still()
+            self._move_on_from_the_image()
 
     @property
     def image_time(self) -> tuple[float, float] | None:
@@ -548,7 +548,7 @@ class _MpvControl:
         if pace_s:
             self._ken_burns.seek(ms / 1000.0 / pace_s, self._now())
 
-    def _move_on_from_the_still(self) -> None:
+    def _move_on_from_the_image(self) -> None:
         if self._staged is not None:
             self._on_the_clock = None
             self._mpv.command("playlist-next")

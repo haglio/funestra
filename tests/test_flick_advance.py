@@ -65,7 +65,7 @@ class TestTickFlickAdvance:
     def test_a_pause_banks_no_time_toward_the_next_switch(self):
         state = FlickAdvanceState(locked=False, interval=10)
         assert _run(state, seconds=4.0) == []
-        # However long the room sits paused, resuming owes the remaining 6s.
+        # However long the app sits paused, resuming owes the remaining 6s.
         assert _run(state, playing=False, seconds=600.0, start=4.0) == []
         assert _run(state, seconds=5.0, start=604.0) == []
         assert _run(state, seconds=2.0, start=609.0) == [1]

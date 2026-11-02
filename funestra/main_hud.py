@@ -161,7 +161,7 @@ def osr2_controls(*, broker_running: bool) -> tuple[Button, ...]:
 
 @dataclass(frozen=True)
 class MainHudModel:
-    """What Fun Time tells the Main Funestra about its slot, so the Main Funestra's HUD can
+    """What Fun Time tells the Main Funestra about its place, so the Main Funestra's HUD can
     draw it — none of which the Funestra can see for itself.
 
     Everything here arrives published (``main_player_console.json``) except
@@ -242,7 +242,7 @@ def read_main_hud(path: Path) -> MainHudModel | None:
 def main_hud_text(model: MainHudModel) -> str:
     """*model* as the text Fun Time publishes, and :func:`parse_main_hud` reads back.
 
-    Only what the room knows and the Funestra cannot see goes out; the rate and
+    Only what the app knows and the Funestra cannot see goes out; the rate and
     the pace, which the drawing host folds in for itself, come back at rest.
     """
     return json.dumps({

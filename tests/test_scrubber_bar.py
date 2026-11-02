@@ -9,7 +9,7 @@ from funestra.scrubber_bar import (
     bar_track_x,
     progress_bar_bgra,
 )
-from funestra.volume import SLOT_W
+from funestra.volume import PLACE_W
 
 
 def _rgba(bar, y, x):
@@ -20,18 +20,18 @@ def _rgba(bar, y, x):
 class TestBarTrackX:
     def test_the_track_stops_clear_of_the_volume_slot_at_the_right(self):
         # The way VLC's seek bar stopped short of its slider.
-        assert bar_track_x(1000)[1] == 1000 - SLOT_W
+        assert bar_track_x(1000)[1] == 1000 - PLACE_W
 
     def test_the_track_starts_where_the_row_laying_it_out_says(self):
         """After whatever the row puts before it: its visualizer, a flick's dial."""
-        assert bar_track_x(1920, left=183) == (183, 1920 - SLOT_W)
+        assert bar_track_x(1920, left=183) == (183, 1920 - PLACE_W)
 
     def test_the_track_starts_after_a_visualizer_wider_than_half_the_row(self):
         """A flick's row is mostly visualizer, and its track must not run under it."""
-        assert bar_track_x(302, left=172) == (172, 302 - SLOT_W)
+        assert bar_track_x(302, left=172) == (172, 302 - PLACE_W)
 
     def test_a_row_with_nothing_before_the_track_starts_it_at_the_edge(self):
-        assert bar_track_x(326) == (0, 326 - SLOT_W)
+        assert bar_track_x(326) == (0, 326 - PLACE_W)
 
     def test_clamps_so_the_track_never_inverts_on_a_narrow_window(self):
         for left in (0, 100):

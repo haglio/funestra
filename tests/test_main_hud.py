@@ -1,4 +1,4 @@
-"""The Main Funestra's HUD: the HUD whichever Funestra holds the slot draws, and where
+"""The Main Funestra's HUD: the HUD whichever Funestra holds the place draws, and where
 a press on it lands."""
 from __future__ import annotations
 

@@ -144,7 +144,7 @@ class FlickCacheStore:
         """Move *path*'s decode-ahead frames into the flicks-on-screen cache.
 
         Moved rather than copied: decode-ahead room is for flicks that are not up
-        yet, and a flick left on both piles holds one of the two slots against
+        yet, and a flick left on both piles holds one of the two places against
         its own neighbors for as long as it is showing.
         """
         frames = self.decoded_frame_cache.pop(path, None)

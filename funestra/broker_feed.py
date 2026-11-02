@@ -1,4 +1,4 @@
-"""What the broker feeds Genau: whether it has the room, the beat, the pulse.
+"""What the broker feeds Genau: whether it has the app, the beat, the pulse.
 
 The OSR2 broker publishes over UDP.  Three of its verbs are acted on here --
 ``AUTO`` hands the room to the broker or takes it back, ``BPM`` names the beat
