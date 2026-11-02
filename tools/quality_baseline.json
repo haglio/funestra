@@ -132,8 +132,8 @@
     "funestra/robot_hand.py": 65,
     "funestra/robot_hand_beat.py": 22,
     "funestra/robot_hand_driver.py": 96,
-    "funestra/satellite_hud.py": 258,
-    "funestra/satellite_hud_paint.py": 164,
+    "funestra/satellite_hud.py": 257,
+    "funestra/satellite_hud_paint.py": 161,
     "funestra/scripted_device.py": 1,
     "funestra/scrubber.py": 15,
     "funestra/sdl_hints.py": 27,
@@ -302,7 +302,7 @@
     "funestra/funestra.py": 368,
     "funestra/mpv_engine.py": 369,
     "funestra/playback.py": 332,
-    "funestra/satellite_hud.py": 458,
+    "funestra/satellite_hud.py": 457,
     "funestra/satellite_hud_paint.py": 379
   },
   "uncovered_lines": {

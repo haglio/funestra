@@ -634,9 +634,8 @@ def hit_test_targets(targets: list[tuple[Rect, str]], px: int, py: int) -> str:
     return ""
 
 
-def button_at(buttons: list[tuple[Rect, Button]], px: int, py: int) -> Button | None:
-    """The declared button under ``(px, py)``, or None off all of them."""
-    for rect, button in buttons:
+def button_under(targets: HudTargets, px: int, py: int) -> Button | None:
+    for rect, button in targets.buttons:
         if contains(rect, px, py):
             return button
     return None
@@ -730,7 +729,7 @@ def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
     — so each one names itself on hover: a declared button by the tooltip its
     source gave it, the map's own chrome by the words here.
     """
-    button = button_at(targets.buttons, px, py)
+    button = button_under(targets, px, py)
     if button is not None:
         return button.tooltip_on_hover
     loop = hit_test_targets(targets.loop, px, py)
@@ -803,7 +802,7 @@ class HudClicks:
         never leaves a band still latched.
         """
         self.release()
-        button = button_at(targets.buttons, px, py)
+        button = button_under(targets, px, py)
         if button is not None and button.command:
             # Verbatim: the source said what a press posts.  A dimmed one is at
             # the end of its range or has nothing to act on, and posts nothing.

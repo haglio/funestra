@@ -15,6 +15,7 @@ from typing import NamedTuple
 
 from .dashboard import ask
 from .drive_readout import DriveHud, DrivePublisher, read_drive
+from .hud_button import Button
 from .hud_corners import HudPlace
 from .hud_placement import HudCorner, HudEdge, PointerReading
 from .hud_row import RowHud, RowLayout, RowPress, track_on_screen
@@ -27,6 +28,7 @@ from .satellite_hud import (
     HudTargets,
     PaintedFoot,
     button_tooltip,
+    button_under,
     hit_test_targets,
     parse_hud,
 )
@@ -49,13 +51,14 @@ _EMPTY_TARGETS = HudTargets(click=[], loop=[], filter=[], expand=None)
 class _Hover(NamedTuple):
     loop: str
     tip: str
-    at: tuple[int, int]
+    button: Button | None
+    at: tuple[int, int] | None
 
     def is_on_the_same_control_as(self, other: _Hover) -> bool:
-        return (self.loop, self.tip) == (other.loop, other.tip)
+        return (self.loop, self.tip, self.button) == (other.loop, other.tip, other.button)
 
 
-_ON_NO_CONTROL = _Hover("", "", (0, 0))
+_ON_NO_CONTROL = _Hover("", "", None, None)
 
 
 class _PublishedHud:
@@ -283,8 +286,10 @@ class HudOverlay:
     def motion(self, x: int, y: int) -> None:
         px, py = self._local(x, y)
         self._pointer_at = (px, py)
-        hover = _Hover(hit_test_targets(self.targets.loop, px, py),
-                       button_tooltip(self.targets, px, py), (px, py))
+        loop = hit_test_targets(self.targets.loop, px, py)
+        tip = button_tooltip(self.targets, px, py)
+        button = button_under(self.targets, px, py)
+        hover = _Hover(loop, tip, button, (px, py) if tip or button else None)
         if hover.is_on_the_same_control_as(self._hover.reading):
             return
         self._hover.take(hover)

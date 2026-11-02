@@ -347,7 +347,7 @@ class ConsolePainter:
     def hover_at(self, mx: int, my: int) -> tuple[int, int] | None:
         """Where to name the button under *window* point ``(mx, my)``, else None."""
         local = self._local(mx, my)
-        return local if tooltip_at(self.buttons, *local) else None
+        return local if tooltip_at(self.buttons, *local) or hit_test(self.buttons, *local) else None
 
     def motion(self, mx: int, my: int) -> None:
         """Follow the pointer to *window* point ``(mx, my)``: the next painting

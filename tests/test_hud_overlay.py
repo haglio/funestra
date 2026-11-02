@@ -471,6 +471,29 @@ def test_no_hud_on_screen_takes_no_press(tmp_path: Path):
     assert overlay.press(MARGIN + 2, MARGIN + 2) is False
 
 
+def test_a_button_with_no_tooltip_lights_under_the_pointer_and_draws_no_tooltip(
+        tmp_path: Path, hud: Path):
+    published = json.loads(hud.read_text(encoding="utf-8"))
+    published["rows"] = [[{"command": "go_kino", "glyph": "Kino", "tooltip": ""},
+                          {"command": "go_genau", "glyph": "Genau", "tooltip": ""}]]
+    hud.write_text(json.dumps(published), encoding="utf-8")
+    engine = FakeEngine()
+    overlay = _overlay(tmp_path, hud, engine)
+    overlay.tick()
+    plain = engine.overlays[overlay.overlay_id][2]
+    rects = {button.command: rect for rect, button in overlay.targets.buttons}
+    kino_rect, genau_rect = rects["go_kino"], rects["go_genau"]
+
+    overlay.motion(kino_rect[0] + MARGIN + 2, kino_rect[1] + MARGIN + 2)
+    on_kino = engine.overlays[overlay.overlay_id][2]
+    overlay.motion(genau_rect[0] + MARGIN + 2, genau_rect[1] + MARGIN + 2)
+    on_genau = engine.overlays[overlay.overlay_id][2]
+
+    assert plain.shape == on_kino.shape
+    assert bytes(on_kino) != bytes(plain)
+    assert bytes(on_genau) != bytes(on_kino)
+
+
 def test_hovering_a_button_redraws_with_its_tooltip(tmp_path: Path, hud: Path):
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
