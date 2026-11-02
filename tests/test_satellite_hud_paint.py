@@ -55,7 +55,7 @@ from funestra.satellite_hud import (
     ellipsis_rects,
     looped_group_rect,
     nav_nav_map_row_width,
-    slot_width,
+    place_width,
 )
 from funestra.satellite_hud_paint import HudRenderer
 from funestra.volume import VolumeHud
@@ -305,7 +305,7 @@ def test_the_dot_lights_up_only_on_the_active_side(thumb):
 
 def test_the_title_starts_clear_of_the_dot(thumb):
     """Drawn over each other they would be illegible, and the width the line asks
-    the HUD for is measured from the room the dot leaves, not from the far edge."""
+    the HUD for is measured from the app the dot leaves, not from the far edge."""
     rendered = HudRenderer("portrait").render(
         _model(active=True, title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb)))
     rgb = _rgb(rendered.bgra)
@@ -610,7 +610,7 @@ def _loop_model(thumb: str, playing, *, count: int = 12, loop: str = "seed") -> 
 
 
 def _tail_ink(rendered) -> int:
-    """Ink in the slot kept past the right-hand end of the drawn row, inset from its
+    """Ink in the place kept past the right-hand end of the drawn row, inset from its
     edges so the loop rectangle's own border is never counted as a mark."""
     corner_rect = rendered.targets.click[0][0]
     seed_rects = [rect for rect, _p in rendered.targets.click[1:]]
@@ -788,7 +788,7 @@ def test_the_action_column_stands_under_the_lit_cell_mid_loop(thumb):
     rects = {path: rect for rect, path in rendered.targets.click}
     corner_rect = rendered.targets.click[0][0]
     assert rects["a0.mp4"][0] == rects["s5.mp4"][0]  # under the lit cell…
-    assert rects["a0.mp4"][0] != corner_rect[0]      # …not under the corner slot
+    assert rects["a0.mp4"][0] != corner_rect[0]      # …not under the corner place
 
 
 def test_the_nav_map_prints_how_big_each_axis_is(thumb):
@@ -1023,7 +1023,7 @@ def test_a_missing_thumbnail_still_draws_the_nav_map():
 
     assert rendered.targets.click == [(rendered.targets.click[0][0], "c.mp4")]
     x, y, w, h = rendered.targets.click[0][0]
-    assert (w, h) == (slot_width("portrait"), NAV_MAP_THUMB_H)
+    assert (w, h) == (place_width("portrait"), NAV_MAP_THUMB_H)
 
 
 def test_hovering_a_button_draws_its_tooltip(thumb):

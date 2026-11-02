@@ -246,13 +246,13 @@ NAV_MAP_H = (COL_LABEL_H + COL_LABEL_GAP + ELLIPSIS_ROOM + NAV_MAP_COLUMN_H
          + ELLIPSIS_ROOM + NAV_MAP_LOWER_RESERVE)
 
 
-def slot_width(funestra: str) -> int:
+def place_width(funestra: str) -> int:
     across, down = WIDEST_FULL_HEIGHT_SHAPE.get(funestra, WIDEST_FULL_HEIGHT_SHAPE["portrait"])
     return round(NAV_MAP_THUMB_H * across / down)
 
 
 def nav_nav_map_row_width(funestra: str) -> int:
-    return NAV_MAP_CELLS * slot_width(funestra) + (NAV_MAP_CELLS - 1) * NAV_MAP_GAP
+    return NAV_MAP_CELLS * place_width(funestra) + (NAV_MAP_CELLS - 1) * NAV_MAP_GAP
 
 
 def nav_nav_map_block_width(funestra: str) -> int:
@@ -342,26 +342,26 @@ def column_anchor_rect(playing: Cell, corner_rect: Rect, seed_rects: list[Rect])
     return corner_rect
 
 
-def slot_rects(
+def place_rects(
     *,
     nav_nav_map_x: int,
     nav_nav_map_y: int,
-    slot_w: int,
+    place_w: int,
     seeds: int,
     actions: int,
     playing: Cell = ("corner", 0),
 ) -> tuple[Rect, list[Rect], list[Rect]]:
-    corner = (nav_nav_map_x, nav_nav_map_y, slot_w, NAV_MAP_THUMB_H)
-    seed_rects = [(nav_nav_map_x + step * (slot_w + NAV_MAP_GAP), nav_nav_map_y, slot_w, NAV_MAP_THUMB_H)
+    corner = (nav_nav_map_x, nav_nav_map_y, place_w, NAV_MAP_THUMB_H)
+    seed_rects = [(nav_nav_map_x + step * (place_w + NAV_MAP_GAP), nav_nav_map_y, place_w, NAV_MAP_THUMB_H)
                   for step in range(1, min(seeds + 1, NAV_MAP_CELLS))]
     column_x = column_anchor_rect(playing, corner, seed_rects)[0]
-    action_rects = [(column_x, nav_nav_map_y + step * (NAV_MAP_THUMB_H + ROW_GAP), slot_w, NAV_MAP_THUMB_H)
+    action_rects = [(column_x, nav_nav_map_y + step * (NAV_MAP_THUMB_H + ROW_GAP), place_w, NAV_MAP_THUMB_H)
                     for step in range(1, min(actions + 1, NAV_MAP_CELLS))]
     return corner, seed_rects, action_rects
 
 
-def thumbnail_rect(slot: Rect, size: tuple[int, int]) -> Rect:
-    x, y, w, h = slot
+def thumbnail_rect(place: Rect, size: tuple[int, int]) -> Rect:
+    x, y, w, h = place
     width, height = size
     return (x + (w - width) // 2, y + (h - height) // 2, width, height)
 
@@ -432,10 +432,10 @@ def ellipsis_rects(
     corner_rect: Rect, seed_rects: list[Rect], action_rects: list[Rect], axis: str,
     *, column_rect: Rect | None = None,
 ) -> tuple[Rect, Rect]:
-    """The two slots an axis keeps for the "…" marks that say it runs on past what is
+    """The two places an axis keeps for the "…" marks that say it runs on past what is
     drawn: flanking the seed row left and right, or the action column above and
     below.  Each sits a gap in from the loop rectangle, so a mark never reads as part
-    of that border.  The column's slots stand on *column_rect*, the row cell the
+    of that border.  The column's places stand on *column_rect*, the row cell the
     column hangs under (:func:`column_anchor_rect`); it defaults to the corner."""
     cx, cy, cw, ch = corner_rect
     if axis == "seed":
@@ -454,7 +454,7 @@ def ellipsis_rects(
 CTRL_BTN = BUTTON_SIZE_HUD
 MINUS_INSET = (PAD, PAD + (TITLE_ROW_H - CTRL_BTN) // 2)
 CONTROL_ROW_H = CTRL_BTN + BLOCK_GAP
-# Inside a word button, the room either side of its word.
+# Inside a word button, the app either side of its word.
 MODE_LABEL_PAD = BUTTON_PAD_H_TIGHT
 
 

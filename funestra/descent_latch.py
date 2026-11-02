@@ -10,7 +10,7 @@ Three readers meet around what is held.  The trace writes it as it paints,
 it to publish for the arbiter, and the gate voids the lot when the wave stops
 describing this approach.  They shared a bare dict of anonymous 3-tuples for
 that, indexed by position at every one of those sites, one of them into a
-tuple inside a tuple; the name of each slot lived only in a comment.  The type
+tuple inside a tuple; the name of each place lived only in a comment.  The type
 is here instead, so the three say what they mean and there is one place a
 fourth would come to.
 

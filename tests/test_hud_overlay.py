@@ -793,7 +793,7 @@ def test_a_hud_on_its_own_screen_holds_the_tooltips_room_from_the_start(
     """In the headset the HUD IS a screen, sized from its own bitmap and
     centered on the side it hangs against, so a HUD that grew under the
     pointer would carry the plus out from under it and the tooltip would
-    flicker as the pointer lost and found it.  The room is there all along."""
+    flicker as the pointer lost and found it.  The app is there all along."""
     engine = FakeEngine()
     _publish(hud, hud_minimized=True)
     overlay = HudOverlay(hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
@@ -979,7 +979,7 @@ class TestAWindowsOwnHud:
         assert posted == ["portrait_next"]
 
     def test_it_keeps_the_visualizer_the_program_drew_into_it(self):
-        """A session publishes no visualizer and the room's motion file fills one
+        """A session publishes no visualizer and the app's motion file fills one
         in; the window's own program composes the visualizer itself, and nothing
         here may wipe it."""
         engine = FakeEngine()

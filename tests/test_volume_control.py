@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from funestra.testing import FakeEngine
 from funestra.volume import VolumeHud
-from funestra.volume_control import RoomVolume, VolumeControl
+from funestra.volume_control import AppVolume, VolumeControl
 
 
 def _volume(*, live: bool = True):
@@ -75,13 +75,13 @@ class TestWhatTheTwoVerbsSet:
 
 
 class TestTheRoomsVolume:
-    """The Main Funestra's sound is the room's to decide: the volume control shows the level
-    the room publishes, a press asks the room for a new one and shows it at once,
-    and the room's answer overwrites it either way."""
+    """The Main Funestra's sound is the app's to decide: the volume control shows the level
+    the app publishes, a press asks the room for a new one and shows it at once,
+    and the app's answer overwrites it either way."""
 
     def _control(self, tmp_path, *, live: bool = True):
         engine = FakeEngine()
-        return RoomVolume(engine, dashboard_cmd_file=tmp_path / "dashboard_cmd.txt", live=live), engine
+        return AppVolume(engine, dashboard_cmd_file=tmp_path / "dashboard_cmd.txt", live=live), engine
 
     def _asks(self, tmp_path) -> list[str]:
         path = tmp_path / "dashboard_cmd.txt"
@@ -187,7 +187,7 @@ class TestTheRoomsVolume:
 
     def test_with_no_room_to_ask_the_level_is_still_shown(self, tmp_path):
         engine = FakeEngine()
-        control = RoomVolume(engine, dashboard_cmd_file=None, live=True)
+        control = AppVolume(engine, dashboard_cmd_file=None, live=True)
 
         control.set_level(50)
 

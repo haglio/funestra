@@ -29,7 +29,7 @@ from shared_ui.spacing import GAP_MEDIUM, GAP_SMALL
 from funestra.hud import KeptBitmap, draw_track, pill
 
 # The volume control: a speaker at the left end, a slider filling the rest.  As narrow as
-# the two need -- the row's track is what the room is for -- while the slider
+# the two need -- the row's track is what the app is for -- while the slider
 # still sets the level by a few per pixel.
 VOLUME_CONTROL_W = 64
 VOLUME_CONTROL_H = 22
@@ -40,11 +40,11 @@ PAD = GAP_SMALL
 MIN_VOLUME = 0
 MAX_VOLUME = 100
 
-# The room the control reserves at the right end of the scrubber row, so the
+# The app the control reserves at the right end of the scrubber row, so the
 # scrubber's track stops clear of it: the volume control, flush with the row's end, and
 # the gap back to the track.  ``funestra.timeline.bar_track_x`` subtracts
 # it, so the two agree on where the track ends and the volume control begins.
-SLOT_W = TRACK_GAP + VOLUME_CONTROL_W
+PLACE_W = TRACK_GAP + VOLUME_CONTROL_W
 
 # The row the volume control is centered in when the Funestra under it draws no scrubber: the
 # height the scrubber would have had, ``funestra.timeline.TIMELINE_HEIGHT``.

@@ -121,7 +121,7 @@ class FakeEngine(RefusesSeeks):
         self.idle = True
         self.position_ms = 0.0
 
-    def swap_still(self, path: Path) -> None:
+    def swap_image(self, path: Path) -> None:
         self.swapped.append(path)
         self.playlist[self.playlist_pos] = path
 
@@ -157,7 +157,7 @@ class FakeEngine(RefusesSeeks):
     def set_pace(self, seconds: float) -> None:
         self.pace_s = seconds
 
-    def push_still(self) -> None:
+    def push_image(self) -> None:
         self.pushes += 1
 
     def seek_image(self, ms: float) -> None:

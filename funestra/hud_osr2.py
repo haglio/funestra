@@ -59,7 +59,7 @@ HEIGHT = BUTTON
 LABEL = "OSR2"
 _LABEL_GAP = GAP_SMALL   # "OSR2" sits right up against the pill it names …
 _GROUP_GAP = BUTTON_GROUP_GAP  # … and well clear of the controls beside them
-_PILL_PAD = BUTTON_PAD_H_TIGHT   # the room the state word keeps either side of itself
+_PILL_PAD = BUTTON_PAD_H_TIGHT   # the app the state word keeps either side of itself
 
 MAX_INTENSITY_LABEL = "Max intensity"
 MAX_INTENSITY_TIP = ("Max intensity: all the way up puts no limit on the OSR2; lower, "
@@ -151,7 +151,7 @@ class VisualizerResolver:
         unheard = osr2 in UNHEARD
         if osr2 == Osr2State.AUTO:
             # The device is running its own firmware, and that wins over
-            # everything the room does to it: a hold, a handoff
+            # everything the app does to it: a hold, a handoff
             # between two drivers.  None of those reaches it, so none is the
             # drawing — one line, the device's own, in its own color.
             drive = replace(drive, driven=DRIVEN_BY_AUTO, segments=())

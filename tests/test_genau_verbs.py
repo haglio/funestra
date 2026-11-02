@@ -683,7 +683,7 @@ class TestPlayFileCommand:
 
 
 class TestBrowseOrderCommands:
-    """The two orders every Funestra in the room browses in.  Genau owns its own
+    """The two orders every Funestra in the app browses in.  Genau owns its own
     sequence rather than being handed a playlist file, so the order arrives as a
     verb and the answer is a rescan of the flicks folder."""
 

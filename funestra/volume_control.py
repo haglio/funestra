@@ -1,12 +1,12 @@
-"""A Funestra's volume control: its own level and mute, or the room's.
+"""A Funestra's volume control: its own level and mute, or the app's.
 
 A Funestra whose sound is its own sets mpv's level and mute from the volume control it
-draws, and from a level and mute the room hands it back at startup, and
+draws, and from a level and mute the app hands it back at startup, and
 publishes both in its status for the room to keep.  One whose sound is the
 room's -- the Main Funestra, whose mpv is one of
-two sinks the room drives -- shows the level the room publishes and asks the
+two sinks the app drives -- shows the level the app publishes and asks the
 room for a new one; the ask shows at once so the slider does not trail the
-pointer, and the room's answer overwrites it either way.
+pointer, and the app's answer overwrites it either way.
 
 The volume control is a part of the row the HUD draws, so the HUD is what places a
 press on it (:class:`funestra.hud_row.RowPress`): both controls answer the
@@ -52,7 +52,7 @@ class VolumeControl:
         self._engine.set_muted(hud.muted)
 
 
-class RoomVolume:
+class AppVolume:
     def __init__(self, engine, *, dashboard_cmd_file: Path | None, live: bool) -> None:
         self._engine = engine
         self._dashboard_cmd_file = dashboard_cmd_file

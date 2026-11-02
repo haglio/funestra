@@ -39,14 +39,14 @@ def test_a_set_playing_through_drops_unlocked_but_keeps_locked():
 
 
 def test_an_empty_slot_takes_no_room_and_leaves_no_separator():
-    """Every slot but the lock is optional, and a Funestra without one prints nothing
+    """Every place but the lock is optional, and a Funestra without one prints nothing
     there rather than an empty phrase or a doubled separator."""
     assert hud_title(locked=False, order=SHUFFLE_LABEL) == f"{UNLOCKED_LABEL} · Shuffle"
     assert hud_title(locked=False, filters=("beta",)) == f"{UNLOCKED_LABEL} · beta"
 
 
 def test_the_two_browse_orders_are_named_once_for_every_funestra():
-    """Each Funestra browses newest-first or shuffled, and says so in this slot — so
+    """Each Funestra browses newest-first or shuffled, and says so in this place — so
     the words belong here rather than in each app, where they drifted before."""
     assert (LATEST_LABEL, SHUFFLE_LABEL) == ("Latest", "Shuffle")
 
@@ -54,7 +54,7 @@ def test_the_two_browse_orders_are_named_once_for_every_funestra():
 def test_the_enhanced_narrowing_has_a_slot_of_its_own_after_f_mode():
     """Origenerator's shows keep only the images they have enhanced the way a
     Funestra keeps only its favorites — the same kind of cut, said in the same
-    sentence — so the slot is a flag here, and the HUD carrying the switch never
+    sentence — so the place is a flag here, and the HUD carrying the switch never
     has to own the word for it.  Coarse before fine: F-mode, then this, then
     whatever act filter is left."""
 

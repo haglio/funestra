@@ -9,7 +9,7 @@ item is a second HUD, on a screen that already carries one.
 
 So the row is a block a HUD hosts, the way the device line and the drive
 visualizer are: one line, laid out from what is on it against the block's own
-width rather than the window's.  The track is what the room is for -- the
+width rather than the window's.  The track is what the app is for -- the
 heatmap and a seek need it wide -- so everything else takes only what it
 must: the time of the frame and the time at the left end, after a
 flick's dial; the volume control flush with the right end.  A flick's track has no
@@ -34,7 +34,7 @@ from .playhead import (
 )
 from .scrubber_bar import SCRUBBER_HEIGHT, bar_track_x, progress_bar_bgra
 from .volume import (
-    SLOT_W,
+    PLACE_W,
     VOLUME_CONTROL_H,
     VolumeHud,
     VolumeHudPainter,
@@ -171,8 +171,8 @@ class RowSection:
         one that leaves its track the room to be pressed."""
         before = _before_the_track(row, held=True)[2]
         if row.loop is not None:
-            return before + LEAST_TRACK + SLOT_W
-        return 2 * (before + SLOT_W)
+            return before + LEAST_TRACK + PLACE_W
+        return 2 * (before + PLACE_W)
 
     @staticmethod
     def least_width_for_any_row() -> int:

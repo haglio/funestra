@@ -114,10 +114,10 @@ from .satellite_hud import (
     nav_nav_map_block_width,
     nav_nav_map_row_width,
     nav_nav_map_window,
+    place_rects,
+    place_width,
     playing_rect,
     seed_column_label,
-    slot_rects,
-    slot_width,
     speed_row,
     speed_row_width,
     thumbnail_rect,
@@ -202,7 +202,7 @@ class HudRenderer:
         self._drawn: _DrawnButTheRow | None = None
 
     def _thumbnail(self, cell: HudCell) -> Image.Image:
-        slot_w = slot_width(self._funestra)
+        place_w = place_width(self._funestra)
         if cell.thumb:
             cached = self._thumbs.get(cell.thumb)
             if cached is None:
@@ -211,13 +211,13 @@ class HudRenderer:
                 except OSError:
                     image = None
                 if image is not None:
-                    scale = min(slot_w / max(1, image.width), NAV_MAP_THUMB_H / max(1, image.height))
+                    scale = min(place_w / max(1, image.width), NAV_MAP_THUMB_H / max(1, image.height))
                     cached = image.resize((max(1, round(image.width * scale)),
                                            max(1, round(image.height * scale))))
                     self._thumbs[cell.thumb] = cached
             if cached is not None:
                 return cached
-        return Image.new("RGBA", (slot_w, NAV_MAP_THUMB_H), (*_PLACEHOLDER, 255))
+        return Image.new("RGBA", (place_w, NAV_MAP_THUMB_H), (*_PLACEHOLDER, 255))
 
     def _nav_nav_map_thumbnails(
         self, model: HudModel
@@ -445,8 +445,8 @@ class HudRenderer:
         self._draw_counts(draw, gutter_x, top, counts)
         nav_nav_map_x = gutter_x + ROW_LABEL_GUTTER + ELLIPSIS_ROOM
         nav_nav_map_y = top + COL_LABEL_H + COL_LABEL_GAP + ELLIPSIS_ROOM
-        corner_rect, seed_rects, action_rects = slot_rects(
-            nav_nav_map_x=nav_nav_map_x, nav_nav_map_y=nav_nav_map_y, slot_w=slot_width(model.funestra),
+        corner_rect, seed_rects, action_rects = place_rects(
+            nav_nav_map_x=nav_nav_map_x, nav_nav_map_y=nav_nav_map_y, place_w=place_width(model.funestra),
             seeds=len(seed_thumbs), actions=len(action_thumbs), playing=model.playing)
         column_rect = column_anchor_rect(model.playing, corner_rect, seed_rects)
 
@@ -580,7 +580,7 @@ class HudRenderer:
         action_at = index + 1 if bucket == "action" else 0
         seed_win = nav_nav_map_window(len(seed_strip), seed_at)
         action_win = nav_nav_map_window(len(action_strip), action_at)
-        # The corner slot belongs to whichever axis the video on screen sits on: that
+        # The corner place belongs to whichever axis the video on screen sits on: that
         # is the only axis whose window can have moved off the corner.  Both strips
         # hold the corner, so both windows hold at least it.
         window = action_win if bucket == "action" else seed_win
@@ -625,7 +625,7 @@ class HudRenderer:
 
     def _draw_ellipses(self, image, corner_rect, column_rect, seed_rects, action_rects,
                        axis, window) -> None:
-        """The family's three dots in the slots kept at each end of *axis*, on
+        """The family's three dots in the places kept at each end of *axis*, on
         whichever side it runs on past what is drawn — along the row, down the
         column.  They fall inside a running loop's rectangle, so they read as "more
         of these are in the loop" rather than as something outside it, and a gap in
@@ -643,18 +643,18 @@ class HudRenderer:
                          corner_thumb, seed_thumbs, action_thumbs) -> dict[Rect, Rect]:
         bucket, index = model.playing
         drawn = [(corner_rect, corner_thumb, bucket == "corner")]
-        drawn += [(slot, thumb, bucket == "seed" and index == i)
-                  for i, (slot, thumb) in enumerate(zip(seed_rects, seed_thumbs, strict=False))]
-        drawn += [(slot, thumb, bucket == "action" and index == i)
-                  for i, (slot, thumb) in enumerate(zip(action_rects, action_thumbs, strict=False))]
+        drawn += [(place, thumb, bucket == "seed" and index == i)
+                  for i, (place, thumb) in enumerate(zip(seed_rects, seed_thumbs, strict=False))]
+        drawn += [(place, thumb, bucket == "action" and index == i)
+                  for i, (place, thumb) in enumerate(zip(action_rects, action_thumbs, strict=False))]
         thumbnails: dict[Rect, Rect] = {}
-        for slot, thumb, bright in drawn:
-            thumbnails[slot] = thumbnail_rect(slot, thumb.size)
+        for place, thumb, bright in drawn:
+            thumbnails[place] = thumbnail_rect(place, thumb.size)
             shown = thumb
             if not bright:
                 shown = thumb.copy()
                 shown.putalpha(shown.getchannel("A").point(lambda a: int(a * _DIM)))
-            image.alpha_composite(shown, thumbnails[slot][:2])
+            image.alpha_composite(shown, thumbnails[place][:2])
         return thumbnails
 
     def _draw_labels(self, image, draw, model, x, y, corner_rect, seed_rects,
@@ -809,7 +809,7 @@ class HudRenderer:
                             hover_loop) -> None:
         """The two loop buttons, and — while one is hovered or its loop is on — a
         border around the videos it loops (dashed for a hover preview, solid once
-        on).  The border wraps the room kept for that axis's "…" marks, so the videos
+        on).  The border wraps the app kept for that axis's "…" marks, so the videos
         they stand for read as part of the looped set."""
         rects = {
             kind: (

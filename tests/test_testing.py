@@ -141,7 +141,7 @@ def test_a_swap_replaces_the_item_on_screen():
     engine = FakeEngine()
     engine.load(ONE)
 
-    engine.swap_still(TWO)
+    engine.swap_image(TWO)
 
     assert (engine.swapped, engine.playlist) == ([TWO], [TWO])
 
@@ -200,7 +200,7 @@ def test_a_hold_of_nothing_is_no_hold():
 def test_a_still_counts_what_it_is_asked():
     engine = FakeEngine()
 
-    engine.push_still()
+    engine.push_image()
     engine.seek_image(500.0)
 
     assert (engine.pushes, engine.image_seeks) == (1, [500.0])

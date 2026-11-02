@@ -1,4 +1,4 @@
-"""The move across a still while it holds the screen: a zoom in, a zoom out, a pan."""
+"""The move across a image while it holds the screen: a zoom in, a zoom out, a pan."""
 from __future__ import annotations
 
 import itertools

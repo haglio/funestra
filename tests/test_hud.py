@@ -104,7 +104,7 @@ def test_the_active_dot_is_the_familys_disc():
 def test_a_tooltip_wider_than_the_hud_wraps_rather_than_running_off_it():
     """A tooltip is drawn into the HUD's own bitmap, so whatever crosses the edge
     is simply never drawn — the sentence loses its tail with nothing to say it had
-    one.  It wraps to the room there is instead, and the tooltip stays on the slab."""
+    one.  It wraps to the app there is instead, and the tooltip stays on the slab."""
     hud = Hud(150, 120)
     font = load_font(8)
 

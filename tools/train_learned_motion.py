@@ -179,9 +179,9 @@ def _keep(model: LearnedModel, rng: random.Random, cls, phrase: Phrase, limit: i
     if len(kept) < limit:
         kept.append(phrase)
         return
-    slot = rng.randrange(seen + 1)
-    if slot < limit:
-        kept[slot] = phrase
+    place = rng.randrange(seen + 1)
+    if place < limit:
+        kept[place] = phrase
 
 
 # A script with fewer actions than this is a fragment or a placeholder.

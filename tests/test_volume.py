@@ -10,8 +10,8 @@ from funestra import volume
 from funestra.scrubber_bar import SCRUBBER_HEIGHT
 from funestra.volume import (
     PAD,
+    PLACE_W,
     ROW_H,
-    SLOT_W,
     SPEAKER_W,
     TRACK_GAP,
     VOLUME_CONTROL_H,
@@ -38,13 +38,13 @@ class TestPlacement:
         assert y + VOLUME_CONTROL_H <= 900
 
     def test_the_slot_it_reserves_covers_the_volume_control_and_its_margins(self):
-        """The scrubber subtracts SLOT_W to clear the volume control, so the slot has to be
+        """The scrubber subtracts SLOT_W to clear the volume control, so the place has to be
         at least the volume control plus the gap it sits in — otherwise the track runs under
         it."""
-        assert SLOT_W == VOLUME_CONTROL_W + TRACK_GAP
+        assert PLACE_W == VOLUME_CONTROL_W + TRACK_GAP
 
     def test_it_is_as_narrow_as_a_mute_and_a_slider_need(self):
-        """The row's track is what needs the room, so the volume control takes little of
+        """The row's track is what needs the app, so the volume control takes little of
         it: a speaker to press, and a slider still wide enough to set the
         level by a few per pixel."""
         assert VOLUME_CONTROL_W <= 64

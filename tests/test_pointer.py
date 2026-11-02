@@ -54,7 +54,7 @@ def _pointer(*, hud: bool = True, hud_takes: bool = True):
 
 class TestTheItem:
     """A press the HUD does not take is a press on the item, which asks
-    whoever built the window -- the room, or the program running on it -- to
+    whoever built the window -- the app, or the program running on it -- to
     pause."""
 
     def test_a_press_the_hud_refused_asks_for_the_pause(self):

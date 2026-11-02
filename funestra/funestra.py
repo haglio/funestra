@@ -48,7 +48,7 @@ from .status import StatusWriter
 from .tcode import UdpTCodeSink
 from .tcode_driver import FunscriptTCodeDriver
 from .volume import VolumeHud
-from .volume_control import RoomVolume, VolumeControl
+from .volume_control import AppVolume, VolumeControl
 
 logger = logging.getLogger(__name__)
 
@@ -169,7 +169,7 @@ class Funestra:
         audible: bool = True,
         tiles: bool = False,
         locked: bool = False,
-        sound_is_the_rooms: bool = False,
+        sound_is_the_apps: bool = False,
         users: Users | None = None,
         hud: Callable[[], HudModel | None] | None = None,
         muted: bool = True,
@@ -207,8 +207,8 @@ class Funestra:
         self._drive_gate = DriveGate(self.playback)
         self._strip = HeatmapStrip()
         self._volume = (
-            RoomVolume(engine, dashboard_cmd_file=channels.dashboard_cmd, live=audible)
-            if sound_is_the_rooms else VolumeControl(engine, live=audible, muted=muted)
+            AppVolume(engine, dashboard_cmd_file=channels.dashboard_cmd, live=audible)
+            if sound_is_the_apps else VolumeControl(engine, live=audible, muted=muted)
         )
         self._radio = radio if radio is not None else self._radio_beside(channels, audible)
         self._hud = self._hud_for(channels, hud_surface or engine, hud)
@@ -254,7 +254,7 @@ class Funestra:
     def _hud_for(self, channels: Channels, drawn_on,
                  hud: Callable[[], HudModel | None] | None) -> HudOverlay | MainHudOverlay | None:
         """The one HUD this window wears, which carries the item's row: the
-        Main Funestra's HUD on the main slot, the published HUD, or the window's
+        Main Funestra's HUD on the main place, the published HUD, or the window's
         own program's HUD where no room publishes one.  Each places a press
         on the row itself, so each is handed what it asks of the window when
         one lands.
@@ -329,13 +329,13 @@ class Funestra:
     @classmethod
     def on_window(cls, wid: int, *, channels: Channels, playlist: list[PlaylistItem],
                   audible: bool = True, tiles: bool = False, locked: bool = False,
-                  sound_is_the_rooms: bool = False, users: Users | None = None,
+                  sound_is_the_apps: bool = False, users: Users | None = None,
                   hud: Callable[[], HudModel | None] | None = None,
                   muted: bool = True) -> Funestra:
         return cls(
             MpvEngine(wid, muted=muted, loop_file=False, prefetch=True, audio=audible),
             channels=channels, playlist=playlist, tcode=osr2_line(channels),
-            audible=audible, tiles=tiles, locked=locked, sound_is_the_rooms=sound_is_the_rooms,
+            audible=audible, tiles=tiles, locked=locked, sound_is_the_apps=sound_is_the_apps,
             users=users, hud=hud, muted=muted,
         )
 
@@ -345,7 +345,7 @@ class Funestra:
         return self.apply
 
     def _press_on_the_item(self, channels: Channels) -> Callable[[], None]:
-        """What a press off the HUD does: in a session it asks the room to
+        """What a press off the HUD does: in a session it asks the app to
         pause everything; on a window with no room to ask, what runs on the
         window is asked instead."""
         if channels.dashboard_cmd is not None:
@@ -420,7 +420,7 @@ class Funestra:
             self._status.write(self.playback)
         if self._tiles:
             self._engine.tile_to_fill(*window)
-        self._engine.push_still()
+        self._engine.push_image()
         self._tune_the_radio()
         self._paint_if_there_is_memory(window)
 

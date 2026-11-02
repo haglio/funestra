@@ -116,7 +116,7 @@ def compilation_label(title: str) -> str:
 
 _PAD = MARGIN_STANDARD
 _MINUS_INSET = (_PAD, _PAD)
-DOT_GAP = GAP_MEDIUM  # the room between the active-Funestra dot and the words beside it
+DOT_GAP = GAP_MEDIUM  # the app between the active-Funestra dot and the words beside it
 MARGIN = MARGIN_STANDARD    # inset from the window's top-left corner
 _BLOCK_GAP = GAP_SMALL
 _SUBTITLE_GAP = GAP_SMALL  # between the title and the file name under it
@@ -130,7 +130,7 @@ def hud_xy() -> tuple[int, int]:
 
 @dataclass(frozen=True)
 class MainHud:
-    """Everything on the Main Funestra's HUD: the top line, the room's controls, and
+    """Everything on the Main Funestra's HUD: the top line, the app's controls, and
     the Robot Hand's OSR2 visualizer.
 
     *modes* is drawn only where it applies (kino mode); *console* is what Fun
@@ -162,30 +162,30 @@ class MainHud:
 
     @property
     def title(self) -> str:
-        """Everything selecting what is on the main slot, in the order each
+        """Everything selecting what is on the main place, in the order each
         satellite's HUD title says the same things.
 
-        The Main Funestra's words in the slots
+        The Main Funestra's words in the places
         :func:`funestra.hud_title.hud_title` lays out, which is where the
         grammar and the shared states' wording live — the satellites say the same
         sentence, and a reader glancing between two screens is reading one sentence
         in two places.
 
         The compilation is Kino's playing set — a fixed run it plays through
-        rather than the browse it came from.  The order slot carries the browse
+        rather than the browse it came from.  The order place carries the browse
         order under either of the two, and Genau's advance pace beside it.  The
-        filters are the room's narrowings of the browse; a room publishing none
+        filters are the app's narrowings of the browse; a room publishing none
         leaves Kino's own length word there instead.
         """
         compilation = (
             f"{compilation_label(self.modes.compilation)}"
             f"{SEPARATOR}{self.modes.position}/{self.modes.total}"
         ) if self.modes.compilation else ""
-        # The browse order, said the same way whether Kino or Genau is on this slot:
+        # The browse order, said the same way whether Kino or Genau is on this place:
         # both of them browse in these two orders, so a reader who has just asked
         # for Latest reads the same word back wherever they asked it.  Nothing at
         # all for a host with no browse order (see :attr:`MainHudModel.latest`) —
-        # an empty slot takes no room, the way every other optional slot here does.
+        # an empty place takes no room, the way every other optional place here does.
         order = "" if self.main_hud_model.latest is None else (
             LATEST_LABEL if self.main_hud_model.latest else SHUFFLE_LABEL)
         # The pace an unheld Genau flick moves on at, after the order rather than in
@@ -288,7 +288,7 @@ class MainHudPainter:
         moving has to compare equal: the trace held still while nothing is being
         sent arrives as a fresh scroll of Genau's phase every publish, and folded
         after the comparison it would repaint the whole HUD forty times a
-        second to draw the same still image.
+        second to draw the same image.
         """
         main_hud_model = hud.main_hud_model
         return replace(hud, drive=self._visualizer.resolve(
@@ -476,7 +476,7 @@ class MainHudPainter:
             room = width - 2 * _PAD - text_x - reserves[0]
             title = fit_text(self._body, title, room)
             filename = fit_text(self._tiny, filename, room)
-        # The item's own row, under everything the Main Funestra's HUD says about the room:
+        # The item's own row, under everything the Main Funestra's HUD says about the app:
         # where the video is and how loud it is, drawn here rather than along
         # the lower edge of the item (:mod:`funestra.hud_row`).
         row_h = ROW_H if item_row is not None else 0

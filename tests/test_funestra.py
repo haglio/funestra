@@ -44,7 +44,7 @@ WINDOW = (640, 480)
 
 def _on_the_row(funestra, engine, part: str = "track", *, along: int | None = None):
     """A window point on one of the row's controls, which the HUD draws at
-    its foot.  The HUD is wherever the room put it, so this is read back off
+    its foot.  The HUD is wherever the app put it, so this is read back off
     the overlay it was composited at."""
     left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
     row = funestra._hud.row
@@ -136,7 +136,7 @@ def test_a_level_and_mute_it_is_handed_are_its_own_from_then_on(tmp_path):
 
 def test_a_funestra_jumps_to_its_clips_scripting_and_says_so_on_its_notice_channel(tmp_path):
     """Every Funestra plays scripted videos, so every one answers the two
-    funscript moves itself, and tells the room what came of each on the
+    funscript moves itself, and tells the app what came of each on the
     channel it was given -- a dead end as a warning, a jump in the funscripts'
     own color."""
     video = _videos(tmp_path, "v0")[0]
@@ -891,14 +891,14 @@ def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
 
     users = {"kino": make, **({"genau": Genau} if genau else {})}
     funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                        locked=True, sound_is_the_rooms=True, users=users,
+                        locked=True, sound_is_the_apps=True, users=users,
                         host_controls=host_controls, clock=clock)
     return funestra, engine, made[0]
 
 
 class TestTheMainFunestra:
     """A Funestra handed a Main Funestra's HUD file draws the Main Funestra's HUD in place of a
-    satellite HUD, opens holding its item, and leaves its sound to the room."""
+    satellite HUD, opens holding its item, and leaves its sound to the app."""
 
     def test_it_opens_holding_its_item(self, tmp_path):
         funestra, engine, _kino = _main(tmp_path)
@@ -1056,7 +1056,7 @@ def _scripted_main(tmp_path: Path) -> tuple[Funestra, FakeEngine]:
     engine = FakeEngine(duration_ms=600_000.0)
     engine.screenshot = np.zeros((10, 20, 4), dtype=np.uint8)
     return Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                    locked=True, sound_is_the_rooms=True, users={"kino": Kino}), engine
+                    locked=True, sound_is_the_apps=True, users={"kino": Kino}), engine
 
 
 class TestAStretchOfTheItem:
@@ -1122,7 +1122,7 @@ class TestAStretchOfTheItem:
 
 
 class TestWhoHasTheWindow:
-    """Two things run on the Main Funestra -- Kino and Genau -- and the room says
+    """Two things run on the Main Funestra -- Kino and Genau -- and the app says
     which one has the window.  The other keeps running out of sight."""
 
     def test_the_first_user_has_the_window_until_the_room_says_otherwise(self, tmp_path):
@@ -1487,7 +1487,7 @@ class TestAHudBesideTheItem:
         assert engine.overlays == {}
 
     def test_it_fills_its_surface_from_the_corner_whatever_corner_the_room_published(self, tmp_path):
-        """The room's corner places a HUD over the item; a screen of its
+        """the app's corner places a HUD over the item; a screen of its
         own has no item to be placed on, so the HUD starts at its edge the
         way test_hud_overlay says a HUD beside the item does."""
         (tmp_path / "portrait_hud.json").write_text(
@@ -1510,7 +1510,7 @@ class TestAHudBesideTheItem:
         engine = FakeEngine()
         users = {"kino": Kino, **({"genau": Genau} if genau else {})}
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                            locked=True, sound_is_the_rooms=True, users=users,
+                            locked=True, sound_is_the_apps=True, users=users,
                             hud_surface=surface, users_frames=users_frames)
         funestra.tick(window=WINDOW)
         return funestra, engine
@@ -1526,7 +1526,7 @@ class TestAHudBesideTheItem:
         assert surface.overlays[HUD_OVERLAY_ID][2].shape[1] == 600
 
     def test_the_window_is_told_which_edge_of_the_item_the_hud_hangs_along(self, tmp_path):
-        """The room moves the HUD between the item's edges; a window that
+        """The app moves the HUD between the item's edges; a window that
         hangs the HUD beside the item has to hear which one."""
         funestra, _engine = self._main_beside(tmp_path, _ASurface())
         assert funestra.hud_edge is HudEdge.LOWER
@@ -1692,7 +1692,7 @@ class TestTheWindowsOwnVerbs:
         _publish_main_hud(tmp_path)
         engine = FakeEngine()
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                            locked=True, sound_is_the_rooms=True, users={"kino": Kino},
+                            locked=True, sound_is_the_apps=True, users={"kino": Kino},
                             window_verbs=window_verbs)
         return funestra, engine, heard
 
@@ -1716,12 +1716,12 @@ class TestTheWindowsOwnVerbs:
 
 
 def test_a_funestra_named_for_the_osr2_slot_reaches_the_osr2_through_it():
-    slot = Osr2Slot(port=0, logger=logging.getLogger("test.funestra.osr2_slot"),
+    place = Osr2Slot(port=0, logger=logging.getLogger("test.funestra.osr2_slot"),
                     start_thread=start_daemon_thread)
     heard: queue.Queue[tuple[str, str]] = queue.Queue()
-    slot.write_through(lambda sender, line: heard.put((sender, line)))
-    slot.start()
-    line = osr2_line(Channels(osr2_sender="portrait", osr2_port=slot.address[1]))
+    place.write_through(lambda sender, line: heard.put((sender, line)))
+    place.start()
+    line = osr2_line(Channels(osr2_sender="portrait", osr2_port=place.address[1]))
     try:
         line.want(True)
         deadline = time.monotonic() + 5.0
@@ -1730,7 +1730,7 @@ def test_a_funestra_named_for_the_osr2_slot_reaches_the_osr2_through_it():
             time.sleep(0.005)
     finally:
         line.close()
-        slot.close()
+        place.close()
 
     sender, said = heard.get_nowait()
     assert sender == "portrait"
