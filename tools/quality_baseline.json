@@ -307,7 +307,7 @@
     "funestra/satellite_hud_paint.py": 379
   },
   "uncovered_lines": {
-    "funestra/audio_outputs.py": 6,
+    "funestra/audio_outputs.py": 11,
     "funestra/broker.py": 4,
     "funestra/broker_feed.py": 3,
     "funestra/console.py": 1,
