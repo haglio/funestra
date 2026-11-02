@@ -8,9 +8,7 @@
     "funestra/funestra.py": 35,
     "funestra/genau_refresh.py": 16
   },
-  "library_patches": {
-    "tests/test_satellite_hud.py": 1
-  },
+  "library_patches": {},
   "methods": {
     "funestra/funestra.py::Funestra": 43,
     "funestra/mpv_engine.py::_MpvControl": 50,
