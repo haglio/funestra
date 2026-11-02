@@ -36,7 +36,8 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from funestra.drive_readout import (
+from funestra.funscript import HANDOFF_RAMP_MS, PARK_TOUCH_WAIT_CAP_MS
+from funestra.osr2_visualizer import (
     DRIVEN_BY_FUNSCRIPT,
     DRIVEN_BY_NEUTRAL,
     DRIVEN_BY_NOTHING,
@@ -45,7 +46,6 @@ from funestra.drive_readout import (
     TRACE_SAMPLES,
     DriveHud,
 )
-from funestra.funscript import HANDOFF_RAMP_MS, PARK_TOUCH_WAIT_CAP_MS
 
 from .descent_latch import DescentChoice, DescentLatch, DriveKey
 from .robot_hand import FULL_INTENSITY
@@ -83,7 +83,7 @@ _SEAM_FEATHER_MS = 300
 _TOUCH_FREEZE_AHEAD_MS = 3000
 
 
-def drive_readout(
+def osr2_visualizer(
     published: DriveHud | None,
     *,
     script,
@@ -92,9 +92,9 @@ def drive_readout(
     latch: DescentLatch | None = None,
     max_intensity: int = FULL_INTENSITY,
 ) -> DriveHud:
-    """The readout to draw, folding the funscript's own shape into it.
+    """The visualizer to draw, folding the funscript's own shape into it.
 
-    *published* is Genau's readout as it last said it, or None while it has not
+    *published* is Genau's visualizer as it last said it, or None while it has not
     published one yet.  Who holds the device right now is read off the
     publish itself — ``let_go`` is set exactly while Genau has handed it over —
     rather than off the console's round-tripped state, which trails the arbiter
@@ -373,7 +373,7 @@ def drive_readout(
         # an empty ``segments`` is the OSR2 state, and that state trails the
         # arbiter by a beat at every handoff, so an empty one would flash the
         # script's green over the whole motion as the device changes hands.
-        # The marks are stable while the trace is, so the readout still
+        # The marks are stable while the trace is, so the visualizer still
         # compares equal to itself between repaints.
         segments=tuple(marks),
         position=marker,

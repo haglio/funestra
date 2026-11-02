@@ -40,7 +40,7 @@ PAD = GAP_SMALL
 MIN_VOLUME = 0
 MAX_VOLUME = 100
 
-# The room the control reserves at the right end of the timeline row, so the
+# The room the control reserves at the right end of the scrubber row, so the
 # scrubber's track stops clear of it: the volume control, flush with the row's end, and
 # the gap back to the track.  ``funestra.timeline.bar_track_x`` subtracts
 # it, so the two agree on where the track ends and the volume control begins.
@@ -53,8 +53,8 @@ SLOT_W = TRACK_GAP + VOLUME_CONTROL_W
 ROW_H = 24
 
 
-def volume_control_xy(*, win_w: int, win_h: int, timeline_h: int) -> tuple[int, int]:
-    """The volume control's top-left: flush with the right end of the timeline row,
+def volume_control_xy(*, win_w: int, win_h: int, scrubber_h: int) -> tuple[int, int]:
+    """The volume control's top-left: flush with the right end of the scrubber row,
     centered in its height.
 
     Beside the scrubber, the way VLC laid the seek bar and the volume out
@@ -66,7 +66,7 @@ def volume_control_xy(*, win_w: int, win_h: int, timeline_h: int) -> tuple[int, 
     :data:`ROW_H` regardless, so its volume control lands exactly where a Funestra with the
     row puts one.
     """
-    row_h = timeline_h if timeline_h > 0 else ROW_H
+    row_h = scrubber_h if scrubber_h > 0 else ROW_H
     return (
         max(0, win_w - VOLUME_CONTROL_W),
         max(0, win_h - row_h + max(0, (row_h - VOLUME_CONTROL_H) // 2)),
@@ -80,15 +80,15 @@ _TRACK_X1 = VOLUME_CONTROL_W - PAD
 
 
 def volume_control_local(mx: int, my: int, *, win_w: int, win_h: int,
-               timeline_h: int) -> tuple[int, int]:
+               scrubber_h: int) -> tuple[int, int]:
     """A window point in the volume control's own coordinates — what the hit tests below take.
 
     The volume control is placed from the window's lower-right corner, so its origin moves
-    with the window and with the timeline under it.  Undoing ``chip_xy`` lives here
+    with the window and with the scrubber under it.  Undoing ``chip_xy`` lives here
     beside ``chip_xy`` rather than at each call site, where it would be one more
     copy of the volume control's position, free to drift from the real one.
     """
-    vx, vy = volume_control_xy(win_w=win_w, win_h=win_h, timeline_h=timeline_h)
+    vx, vy = volume_control_xy(win_w=win_w, win_h=win_h, scrubber_h=scrubber_h)
     return mx - vx, my - vy
 
 

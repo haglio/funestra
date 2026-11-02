@@ -84,7 +84,7 @@ def scaled_bgra(frame: np.ndarray, size: tuple[int, int]) -> np.ndarray:
     return np.ascontiguousarray(np.asarray(image)[:, :, [2, 1, 0, 3]], dtype=np.uint8)
 
 
-def loading_notice_bgra(text: str) -> np.ndarray:
+def loading_message_bgra(text: str) -> np.ndarray:
     font = load_font(SIZE_HEADING)
     ascent, descent = font.getmetrics()
     image = Image.new("RGBA", (text_width(font, text) + 2 * _LOADING_PAD,
@@ -148,9 +148,9 @@ class FlickOverlay:
         if not loading:
             self._engine.remove_overlay(LOADING_OVERLAY_ID)
         else:
-            notice = loading_notice_bgra(loading)
-            self._engine.overlay(LOADING_OVERLAY_ID, window[0] - notice.shape[1] - _LOADING_INSET,
-                                 _LOADING_INSET, notice)
+            message = loading_message_bgra(loading)
+            self._engine.overlay(LOADING_OVERLAY_ID, window[0] - message.shape[1] - _LOADING_INSET,
+                                 _LOADING_INSET, message)
         self._loading = loading
 
     def hide(self) -> None:

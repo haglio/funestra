@@ -19,7 +19,6 @@ from .console_overlay import ConsoleOverlay
 from .control_registry import look_up
 from .dashboard import ask
 from .drive_gate import DriveGate
-from .drive_readout import DrivePublisher
 from .file_channel import consume_command_file, read_paused_state
 from .flick_overlay import FlickFrame, FlickOverlay
 from .funestra_controls import VERBS, FunestraControls
@@ -31,8 +30,9 @@ from .hud_minimize import NameFlash
 from .hud_overlay import HudOverlay
 from .hud_placement import HudEdge
 from .hud_row import RowHud
+from .messages import MessageWriter
 from .mpv_engine import MpvEngine
-from .notices import NoticeWriter
+from .osr2_visualizer import DrivePublisher
 from .outside_buttons import OutsideButtons
 from .play_points import PlayPoints
 from .playback import Playback, funscripts_of, points_of_interest_of
@@ -61,7 +61,7 @@ class Channels:
     command: Path | None = None
     paused: Path | None = None
     status: Path | None = None
-    notice: Path | None = None
+    message: Path | None = None
     play_points: Path | None = None
     hud: Path | None = None
     console: Path | None = None
@@ -71,7 +71,7 @@ class Channels:
     tcode_port: int | None = None
     osr2_sender: str | None = None
     osr2_port: int | None = None
-    osr2_readout: Path | None = None
+    osr2_visualizer: Path | None = None
 
 
 @runtime_checkable
@@ -223,7 +223,7 @@ class Funestra:
             self.playback, stop_event=self._stop,
             reload_playlist=None if self._follower is None else self._follower.read_now,
             volume=self._volume, show=self._show,
-            funscript_jumps=FunscriptJumps(self.playback, NoticeWriter(channels.notice)))
+            funscript_jumps=FunscriptJumps(self.playback, MessageWriter(channels.message)))
         self._status = (
             StatusWriter(channels.status, lambda _playback: self.status_fields())
             if channels.status else None
@@ -278,13 +278,13 @@ class Funestra:
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
                 **self._volume_presses(),
                 host_controls=self._host_controls,
-                readout=self._readout_for(channels), clock=self._clock,
+                visualizer=self._visualizer_for(channels), clock=self._clock,
             )
         if channels.hud is not None:
             return HudOverlay(
                 hud_file=channels.hud, command_file=channels.dashboard_cmd, engine=drawn_on,
                 drive_file=channels.drive, drive_gate=self._drive_gate,
-                readout=self._readout_for(channels), clock=self._clock,
+                visualizer=self._visualizer_for(channels), clock=self._clock,
                 over_the_video=self._hud_surface is None,
                 minus_on_the_hud=self._hud_surface is None,
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
@@ -293,8 +293,8 @@ class Funestra:
         return None
 
     @staticmethod
-    def _readout_for(channels: Channels) -> DrivePublisher | None:
-        return None if channels.osr2_readout is None else DrivePublisher(channels.osr2_readout)
+    def _visualizer_for(channels: Channels) -> DrivePublisher | None:
+        return None if channels.osr2_visualizer is None else DrivePublisher(channels.osr2_visualizer)
 
     def _volume_presses(self) -> dict[str, Callable[..., None]]:
         return {"set_volume": self._told_to_the_host(self._volume.set_level),

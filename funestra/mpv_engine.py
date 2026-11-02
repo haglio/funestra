@@ -1,7 +1,7 @@
 """libmpv-backed playback engine, shared by every Funestra in this family.
 
 mpv hardware-decodes on the GPU end to end (d3d11va), owns audio and so gets A/V
-sync for free, seeks precisely enough to click on a timeline, and loops A-B
+sync for free, seeks precisely enough to click on a scrubber, and loops A-B
 natively.  ``MpvEngine`` renders into a window the caller owns (via ``wid``) --
 a pygame window, or a Qt widget's native one; its offscreen twin
 (:mod:`funestra.render_engine`) renders into a framebuffer the caller

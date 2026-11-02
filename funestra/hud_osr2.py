@@ -32,7 +32,11 @@ from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 from .console import GAP, HELD_HEIGHT, HOLD_VERB, OSR2_PARKED, OSR2_RETRACTED
 from .device_walk import Walk, the_broker_holding, the_hand_taking_back
 from .drive_layout import BAR_H, MAX_INTENSITY, DriveTrack, fraction
-from .drive_readout import (
+from .geometry import Rect, contains
+from .hud import SYMBOL_FONT, draw_button, load_font, text_width
+from .hud_button import BUTTON, Button
+from .modes import UNHEARD, Osr2State
+from .osr2_visualizer import (
     DISABLED_INK,
     DRIVEN_BY_AUTO,
     DRIVEN_BY_FUNSCRIPT,
@@ -43,10 +47,6 @@ from .drive_readout import (
     draw_level_bar,
     trace_ink,
 )
-from .geometry import Rect, contains
-from .hud import SYMBOL_FONT, draw_button, load_font, text_width
-from .hud_button import BUTTON, Button
-from .modes import UNHEARD, Osr2State
 from .robot_hand import FULL_INTENSITY, POSITION_MAX
 
 # Package-internal: the two HUDs that draw this line are both in here, and a
@@ -126,8 +126,8 @@ _DRIVEN_BY_OSR2 = {
 }
 
 
-class ReadoutResolver:
-    """The readout under the line, drawn by the same precedence as the pill."""
+class VisualizerResolver:
+    """The visualizer under the line, drawn by the same precedence as the pill."""
 
     def __init__(self, *, clock: Callable[[], float] = time.monotonic) -> None:
         self._clock = clock
@@ -140,7 +140,7 @@ class ReadoutResolver:
             self._still = None
             self._device = _DeviceDot()
             return None
-        # Genau cannot see the handoff, so whoever draws the readout tells it
+        # Genau cannot see the handoff, so whoever draws the visualizer tells it
         # who has the device.  Anything but Genau dims every control on it:
         # adjusting a motion Genau is not sending is what woke it against the
         # funscript.
@@ -179,7 +179,7 @@ class ReadoutResolver:
 
 
 class _DeviceDot:
-    """Where the readout's dot puts the OSR2: on the line while the motion has
+    """Where the visualizer's dot puts the OSR2: on the line while the motion has
     it, walking to the held end as a hold parks it, and back into the motion as
     the motion takes it again.  The motion's own position stops being the
     device's the moment it is held, so the walk is the device's."""

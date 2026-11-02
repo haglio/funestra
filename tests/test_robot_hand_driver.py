@@ -185,7 +185,7 @@ class TestRestingAtTheFloor:
         assert sink.sent[1].startswith("L00000")
 
     def test_losing_the_device_rests_the_published_motion_too(self):
-        """The readout the Main Funestra draws through a funscript's turn samples forward from
+        """The visualizer the Main Funestra draws through a funscript's turn samples forward from
         ``motion_phase`` — rested at the floor the moment Genau loses the
         device, so the waiting motion on screen is the one that will resume."""
         sink = FakeTCodeSink()
@@ -257,7 +257,7 @@ class TestTheRiseOutOfThePark:
         assert int(sink.sent[2][2:6]) > 3600     # off the floor, swinging
 
     def test_the_published_position_follows_the_climb(self):
-        """The readout's dot rides ``current_position`` — sitting on the floor
+        """The visualizer's dot rides ``current_position`` — sitting on the floor
         while the device was still down at the park would detach it from the
         line for the whole climb."""
         sink, sender = self._sender()

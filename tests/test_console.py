@@ -69,7 +69,7 @@ def _rect(command: str):
 
 class TestShapeLabel:
     """The control that cycles the waveform names it on hover, so the name lives
-    with the console rather than with the readout that no longer prints it."""
+    with the console rather than with the visualizer that no longer prints it."""
 
     def test_names_the_waveform_instead_of_leaving_it_to_the_curve(self):
         assert shape_label("sine") == "Sine"

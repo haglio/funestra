@@ -23,8 +23,8 @@ import pytest
 
 from funestra.descent_latch import DescentChoice, DescentLatch, DriveKey
 from funestra.drive_gate import DriveGate, next_handoff_touch
-from funestra.drive_readout import DRIVEN_BY_FUNSCRIPT, TRACE_SAMPLES, DriveHud
 from funestra.funscript import Funscript
+from funestra.osr2_visualizer import DRIVEN_BY_FUNSCRIPT, TRACE_SAMPLES, DriveHud
 
 SPAN_S = 7.9
 STEP_MS = 100
@@ -70,27 +70,27 @@ def _gate_holding_a_forecast() -> tuple[DriveGate, FakeSession]:
     """A gate that has read once and chosen a touch for the boundary ahead."""
     session = FakeSession()
     gate = DriveGate(session)
-    gate.readout(_motion())
+    gate.visualizer(_motion())
     assert gate.handoff_touch() == CHOSEN_TOUCH_MS
     return gate, session
 
 
 def _a_newer_publish_arrives(gate: DriveGate) -> None:
-    gate.readout(_motion(NEWER_MS))
+    gate.visualizer(_motion(NEWER_MS))
 
 
 class TestChoosingAForecast:
     def test_the_trace_chooses_a_touch_down_for_the_boundary_ahead(self):
         gate = DriveGate(FakeSession())
 
-        gate.readout(_motion())
+        gate.visualizer(_motion())
 
         assert gate.handoff_touch() == CHOSEN_TOUCH_MS
 
     def test_with_no_motion_published_there_is_nothing_to_choose_from(self):
         gate = DriveGate(FakeSession())
 
-        gate.readout(None)
+        gate.visualizer(None)
 
         assert gate.handoff_touch() is None
 
@@ -108,22 +108,22 @@ class TestTheDeviceRunningItself:
         gate = DriveGate(session)
         published = _motion()
 
-        hud = gate.readout(published, device_drives_itself=True)
+        hud = gate.visualizer(published, device_drives_itself=True)
 
         assert hud.waveform == published.waveform
         assert hud.segments == ()
 
-    def test_with_nothing_published_there_is_still_a_readout_to_draw(self):
+    def test_with_nothing_published_there_is_still_a_visualizer_to_draw(self):
         gate = DriveGate(FakeSession())
 
-        assert gate.readout(None, device_drives_itself=True) is not None
+        assert gate.visualizer(None, device_drives_itself=True) is not None
 
     def test_no_forecast_survives_the_device_taking_itself(self):
         """A touch chosen for a boundary the device will sail through is a moment
         the arbiter must not act on."""
         gate, _session = _gate_holding_a_forecast()
 
-        gate.readout(_motion(NEWER_MS), device_drives_itself=True)
+        gate.visualizer(_motion(NEWER_MS), device_drives_itself=True)
 
         assert gate.handoff_touch() is None
 
@@ -133,7 +133,7 @@ class TestTheVideoUnderGenau:
         gate = DriveGate(FakeSession())
         published = _motion()
 
-        hud = gate.readout(published, video_shows=False)
+        hud = gate.visualizer(published, video_shows=False)
 
         assert hud.waveform == published.waveform
         assert hud.segments == ()
@@ -141,15 +141,15 @@ class TestTheVideoUnderGenau:
     def test_no_forecast_survives_genau_taking_the_screen(self):
         gate, _session = _gate_holding_a_forecast()
 
-        gate.readout(_motion(NEWER_MS), video_shows=False)
+        gate.visualizer(_motion(NEWER_MS), video_shows=False)
 
         assert gate.handoff_touch() is None
 
     def test_genau_driving_on_its_own_screen_is_genau_seen_live_for_the_video_under_it(self):
         gate = DriveGate(FakeSession())
-        gate.readout(_motion(), video_shows=False)
+        gate.visualizer(_motion(), video_shows=False)
 
-        hud = gate.readout(_motion(let_go=0.44))
+        hud = gate.visualizer(_motion(let_go=0.44))
 
         assert hud.let_go == 0.44
 
@@ -191,7 +191,7 @@ class TestAChoiceThatIsHeld:
         """The trace's 40ms quantum makes some real frames read as zero."""
         gate, session = _gate_holding_a_forecast()
         for _ in range(5):
-            gate.readout(_motion())
+            gate.visualizer(_motion())
 
         session.position_ms = 40
         _a_newer_publish_arrives(gate)
@@ -218,7 +218,7 @@ class TestWhatVoidsAChoice:
         forecast is void by the time it could be read again."""
         gate, _session = _gate_holding_a_forecast()
 
-        gate.readout(None)
+        gate.visualizer(None)
         _a_newer_publish_arrives(gate)
 
         assert gate.handoff_touch() != CHOSEN_TOUCH_MS
@@ -262,7 +262,7 @@ class TestWhatVoidsAChoice:
         wave it was cut from by the time the playhead moves again."""
         gate, session = _gate_holding_a_forecast()
         for _ in range(26):
-            gate.readout(_motion())  # the playhead stands still
+            gate.visualizer(_motion())  # the playhead stands still
 
         session.position_ms = 40
         _a_newer_publish_arrives(gate)
@@ -318,7 +318,7 @@ class TestExactlyWhereTheseRulesBegin:
         """The setup's own read is the first of them, so twenty-four more."""
         gate, session = _gate_holding_a_forecast()
         for _ in range(24):
-            gate.readout(_motion())
+            gate.visualizer(_motion())
 
         session.position_ms = 40
         _a_newer_publish_arrives(gate)
@@ -328,7 +328,7 @@ class TestExactlyWhereTheseRulesBegin:
     def test_twenty_six_of_them_are(self):
         gate, session = _gate_holding_a_forecast()
         for _ in range(25):
-            gate.readout(_motion())
+            gate.visualizer(_motion())
 
         session.position_ms = 40
         _a_newer_publish_arrives(gate)
@@ -341,13 +341,13 @@ class TestExactlyWhereTheseRulesBegin:
         the choice made from the wave the seek actually landed on."""
         gate, session = _gate_holding_a_forecast()
         for _ in range(30):
-            gate.readout(_motion())      # a real pause
+            gate.visualizer(_motion())      # a real pause
         session.position_ms = 900                           # ended by a jump
         _a_newer_publish_arrives(gate)
         chosen_where_it_landed = gate.handoff_touch()
 
         session.position_ms = 940                           # an ordinary frame
-        gate.readout(_motion(NEWER_MS * 2))
+        gate.visualizer(_motion(NEWER_MS * 2))
 
         assert gate.handoff_touch() == chosen_where_it_landed
 
@@ -361,7 +361,7 @@ class TestHowFastTheVideoIsRunning:
         session.speed = 2.0
         gate = DriveGate(session)
 
-        gate.readout(_motion())
+        gate.visualizer(_motion())
 
         assert gate.handoff_touch() not in (None, CHOSEN_TOUCH_MS)
 
@@ -375,25 +375,25 @@ class TestWhetherGenauHasBeenSeenLiveHere:
         here, so the publish is taken as though Genau still had the device."""
         gate = DriveGate(FakeSession())
 
-        hud = gate.readout(_motion(let_go=0.44))
+        hud = gate.visualizer(_motion(let_go=0.44))
 
         assert hud.let_go is None
 
     def test_once_genau_has_been_seen_live_a_handoff_is_honored(self):
         gate = DriveGate(FakeSession())
-        gate.readout(_motion())  # let_go unset: Genau has it
+        gate.visualizer(_motion())  # let_go unset: Genau has it
 
-        hud = gate.readout(_motion(let_go=0.44))
+        hud = gate.visualizer(_motion(let_go=0.44))
 
         assert hud.let_go == 0.44
 
     def test_a_new_video_makes_genau_prove_itself_live_again(self):
         session = FakeSession()
         gate = DriveGate(session)
-        gate.readout(_motion())
+        gate.visualizer(_motion())
 
         session.current_video = SECOND_VIDEO
-        hud = gate.readout(_motion(let_go=0.44))
+        hud = gate.visualizer(_motion(let_go=0.44))
 
         assert hud.let_go is None
 
@@ -401,10 +401,10 @@ class TestWhetherGenauHasBeenSeenLiveHere:
         """A publish that failed to arrive is not a new video: the device is
         where Genau left it, and the handoff it published still describes it."""
         gate = DriveGate(FakeSession())
-        gate.readout(_motion())
+        gate.visualizer(_motion())
 
-        gate.readout(None)
-        hud = gate.readout(_motion(let_go=0.44))
+        gate.visualizer(None)
+        hud = gate.visualizer(_motion(let_go=0.44))
 
         assert hud.let_go == 0.44
 
@@ -419,14 +419,14 @@ class TestWhetherGenauHasBeenSeenLiveHere:
         """
         session = FakeSession()
         gate = DriveGate(session)
-        gate.readout(_motion())   # let_go unset: seen live
+        gate.visualizer(_motion())   # let_go unset: seen live
         if what_moved == "a pause":
             for _ in range(30):
-                gate.readout(_motion())
+                gate.visualizer(_motion())
         session.position_ms = {"a rewind": -300, "a jump forward": 900,
                                "a pause": 40}[what_moved]
 
-        hud = gate.readout(_motion(NEWER_MS, let_go=0.44))
+        hud = gate.visualizer(_motion(NEWER_MS, let_go=0.44))
 
         assert hud.let_go == 0.44
 
@@ -439,7 +439,7 @@ class TestALoopingFunestra:
         session.funscript_as_played = swings.looped(0, 5_000)
         session.position_ms = 4_000.0
 
-        hud = DriveGate(session).readout(_motion(4_000))
+        hud = DriveGate(session).visualizer(_motion(4_000))
 
         assert hud.segments == ((0, DRIVEN_BY_FUNSCRIPT),)
 
@@ -452,7 +452,7 @@ class TestAFunestraHeldDownByTheMaxIntensity:
         session.funscript_as_played = swings
         session.max_intensity = 30
 
-        hud = DriveGate(session).readout(_motion())
+        hud = DriveGate(session).visualizer(_motion())
 
         assert hud.waveform == swings.planned_trace_window(
             0, round(SPAN_S * 1000), TRACE_SAMPLES, max_intensity=30)[0][:TRACE_SAMPLES]
@@ -465,7 +465,7 @@ class TestAFunestraThatDoesNotSayHowItPlaysItsScript:
         del session.funscript_as_played
         gate = DriveGate(session)
 
-        gate.readout(_motion())
+        gate.visualizer(_motion())
 
         assert gate.handoff_touch() == CHOSEN_TOUCH_MS
 

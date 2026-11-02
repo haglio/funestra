@@ -14,8 +14,8 @@ from .flick_flip import HALF_A_LOOP
 from .flick_renderer import display_index_for_phase
 from .flick_scrub import FlickScrub, scrub_flick
 from .genau_controls import GenauControls, apply_runtime_command
-from .genau_readout import AutoMotion, GenauReadout
 from .genau_status import GENAU_STATUS_FILENAME, build_status_text, write_status_file
+from .genau_visualizer import AutoMotion, GenauVisualizer
 from .learned_motion import tick_learned_motion
 from .robot_hand import POSITION_MAX, phase_for_position_fraction
 from .robot_hand_beat import Beat, advance_beat
@@ -85,7 +85,7 @@ class GenauRefreshController:
             playing=self.robot_hand.playing,
             tcode_sender=tcode_sender,
         )
-        self.readout = GenauReadout(
+        self.visualizer = GenauVisualizer(
             controls=controls,
             beats_per_loop=beats_per_loop,
             tcode_sender=tcode_sender,
@@ -146,12 +146,12 @@ class GenauRefreshController:
                     self.engine.phase, now, output=self.tcode_enabled.on)
 
         if beat.robot_hand_active:
-            self.readout.update(now)
+            self.visualizer.update(now)
         else:
             # The device is running itself.  The HUD stays up and the line
             # goes on moving -- on the broker's beat, the same one the frames
             # below are scrubbed by.
-            self.readout.update(now, AutoMotion(
+            self.visualizer.update(now, AutoMotion(
                 phase=self.engine.phase, bpm=self.engine.estimated_bpm or 0.0))
 
         self._follow_the_room_hold(now)

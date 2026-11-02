@@ -6,7 +6,6 @@ import pytest
 from shared_ui.palette import BLUE, GREEN, TEXT_MUTED
 
 from funestra.console import OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED
-from funestra.drive_readout import DRIVEN_BY_NOTHING, DriveHud, track_command
 from funestra.hud import Hud
 from funestra.hud_button import Button
 from funestra.hud_osr2 import (
@@ -17,11 +16,12 @@ from funestra.hud_osr2 import (
     MAX_INTENSITY_TIP,
     Osr2Line,
     Osr2Section,
-    ReadoutResolver,
+    VisualizerResolver,
     driving_at_the_playhead,
     state_for,
 )
 from funestra.modes import Osr2State
+from funestra.osr2_visualizer import DRIVEN_BY_NOTHING, DriveHud, track_command
 
 
 def _drawn(line: Osr2Line) -> tuple[Hud, list]:
@@ -203,10 +203,10 @@ class TestWhoTheLineNames:
         assert state_for(unheard, "", driving=Osr2State.FUNSCRIPT) == unheard
 
 
-class TestTheReadoutUnderIt:
+class TestTheVisualizerUnderIt:
     @pytest.mark.parametrize("unheard", [Osr2State.OFF, Osr2State.UNPLUGGED, Osr2State.NO_ANSWER])
     def test_an_osr2_the_computer_cannot_hear_is_drawn_with_nothing_driving_it(self, unheard):
-        drive = ReadoutResolver(clock=lambda: 0.0).resolve(
+        drive = VisualizerResolver(clock=lambda: 0.0).resolve(
             DriveHud(waveform=(0.5, 0.6)), osr2=unheard, control="", composed=False)
 
         assert drive.driven == DRIVEN_BY_NOTHING

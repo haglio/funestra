@@ -1,4 +1,4 @@
-"""The drive readout itself — the motion being sent, drawn.
+"""The OSR2 visualizer itself — the motion being sent, drawn.
 
 Each axis is one object: its controls, its bar and its number together.  Center
 sits down the left — its number, then a −/+ pair beside the dotted line it moves.
@@ -71,7 +71,7 @@ DRIVEN_BY_NOTHING = "nothing"
 # "Auto" in.  The neutral buffers around a handoff are a light
 # gray: the stretch belonging to neither driver wears neither driver's color.
 # Nothing driving is the same muted gray a dead control is drawn in, so the
-# readout reads as one switched-off thing rather than as a live trace
+# visualizer reads as one switched-off thing rather than as a live trace
 # surrounded by dead furniture.
 _TRACE_INK = {
     DRIVEN_BY_ROBOT_HAND: BLUE,
@@ -132,7 +132,7 @@ class DriveHud:
     while a funscript has the device (the Main Funestra samples that; Genau cannot see it), and
     the last shape drawn, held still, while nothing is being sent at all.  The
     ``*_at_max`` / ``*_at_min`` flags say which controls have run out of range,
-    so the readout can dim the mark that would do nothing.  Frozen and compared
+    so the visualizer can dim the mark that would do nothing.  Frozen and compared
     whole, so the painter can skip a redraw while nothing has moved.
     """
 
@@ -199,7 +199,7 @@ class DriveHud:
     def live(self) -> bool:
         """Whether the device is moving at all.
 
-        It is not with the OSR2 off, and then the whole readout is a drawing of
+        It is not with the OSR2 off, and then the whole visualizer is a drawing of
         a motion nobody is making: it holds still and every part of it goes the
         muted gray of a dead control, the trace and the bars and the numbers
         alike.  In auto mode the device IS moving, to its own firmware rather
@@ -222,7 +222,7 @@ class DriveHud:
 
 
 def controls(x: int, y: int, hud: DriveHud) -> list[DriveControl]:
-    """The readout's marks at ``(x, y)``, read off *hud* — the readout's own view of
+    """The visualizer's marks at ``(x, y)``, read off *hud* — the visualizer's own view of
     :func:`funestra.drive_layout.controls`, which is where the rects and the
     dimming live.  The console adds these to its hit targets, so a press posts
     exactly what is drawn."""
@@ -237,7 +237,7 @@ def controls(x: int, y: int, hud: DriveHud) -> list[DriveControl]:
 
 
 def tracks(x: int, y: int, hud: DriveHud) -> list[DriveTrack]:
-    """The readout's bars at ``(x, y)``, read off *hud* — the three you press to
+    """The visualizer's bars at ``(x, y)``, read off *hud* — the three you press to
     set a level outright instead of walking to it with the marks."""
     return drive_layout.tracks(
         x, y, hud.center, dim=not hud.driving,
@@ -252,7 +252,7 @@ def track_command(track: DriveTrack, px: int, py: float) -> str:
     return f"{owner}{track.axis}_{track_value(track, px, py)}"
 
 
-# The readout draws its own marks, but a HUD hosting it still has to know what
+# The visualizer draws its own marks, but a HUD hosting it still has to know what
 # each posts and name it on hover.
 CONTROL_TIPS = {
     "robot_hand_speed_down": "Motion slower", "robot_hand_speed_up": "Motion faster",
@@ -261,9 +261,9 @@ CONTROL_TIPS = {
 }
 
 
-def readout_targets(x: int, y: int, hud: DriveHud,
+def visualizer_targets(x: int, y: int, hud: DriveHud,
                     ) -> tuple[list[tuple[Rect, Button]], list[DriveTrack]]:
-    """What a readout at ``(x, y)`` leaves for a press to land on: its marks as
+    """What a visualizer at ``(x, y)`` leaves for a press to land on: its marks as
     declared buttons, then its bars.
 
     The marks come first because they sit on top of the bars, and whoever
@@ -285,7 +285,7 @@ def readout_targets(x: int, y: int, hud: DriveHud,
 
 
 class TrackGrip:
-    """A press that took hold of one of the readout's bars, and the drag that
+    """A press that took hold of one of the visualizer's bars, and the drag that
     goes on setting it.
 
     Held by whichever HUD routes presses — the main console and the lock HUD
@@ -303,7 +303,7 @@ class TrackGrip:
     @property
     def holding(self) -> bool:
         """Whether a press took hold of a bar and has not let go — so the host
-        knows a drag belongs to the readout rather than to whatever else it
+        knows a drag belongs to the visualizer rather than to whatever else it
         would have offered the pointer."""
         return self._held is not None
 
@@ -347,13 +347,13 @@ def draw_level_bar(draw, rect: Rect, *, fill: float, color) -> None:
 
 
 class DriveSection:
-    """The readout itself, drawn into whatever HUD is hosting it."""
+    """The visualizer itself, drawn into whatever HUD is hosting it."""
 
     def __init__(self) -> None:
         self._tiny = load_font(SIZE_TINY)
 
     def draw(self, image: Image.Image, x: int, y: int, hud: DriveHud) -> None:
-        """Paint the readout with its top-left corner at ``(x, y)`` of *image*.
+        """Paint the visualizer with its top-left corner at ``(x, y)`` of *image*.
 
         Takes the hosting HUD's image rather than a pen: the trace is
         rendered supersampled and composited back (:meth:`_wave`), which no
@@ -490,7 +490,7 @@ class DriveSection:
         image.alpha_composite(block.resize((w, h), Image.LANCZOS), (x, y))
         # The device's own position, in the color of whoever is putting it there —
         # and held with the trace while nobody is, because a dot still bobbing in
-        # a readout that has stopped is the last thing on it claiming to be live.
+        # a visualizer that has stopped is the last thing on it claiming to be live.
         # Its own little supersample, since it straddles the block's edge.
         dot_y = y + round((1 - hud.position / POSITION_MAX) * (h - 1))
         dot_ink = TEXT_PRIMARY if hud.live else TEXT_MUTED
@@ -511,10 +511,10 @@ class DriveSection:
 
 
 # --- publishing --------------------------------------------------------------
-# In kino mode the readout is drawn by the Main Funestra, inside its console, under the
+# In kino mode the visualizer is drawn by the Main Funestra, inside its console, under the
 # controls that move it — so Genau stops drawing and starts saying.  A file, like every
 # other channel between these Funestras: the reader polls per frame, and a torn or
-# missing read simply means "keep the readout you have".
+# missing read simply means "keep the visualizer you have".
 
 _SCALARS = ("speed", "amplitude", "center", "position", "advance_interval")
 _FLAGS = ("spd_at_max", "spd_at_min", "amp_at_max", "amp_at_min",
@@ -543,11 +543,11 @@ def drive_text(hud: DriveHud) -> str:
 
 
 def publish_drive(path: Path, hud: DriveHud) -> bool:
-    """Write the readout whole, so a Funestra polling it never reads it half-drawn."""
+    """Write the visualizer whole, so a Funestra polling it never reads it half-drawn."""
     return publish_whole(path, drive_text(hud))
 
 
-# How often a readout goes out for whoever draws it.  Its trace scrolls, so it
+# How often a visualizer goes out for whoever draws it.  Its trace scrolls, so it
 # cannot wait on a change the way a status file does -- 25/s is well under a
 # refresh rate and well over what reads as smooth.
 PUBLISH_INTERVAL_S = 0.04
@@ -566,10 +566,10 @@ class DrivePublisher:
 
 
 def read_drive(path: Path) -> DriveHud | None:
-    """The published readout, or None when there is not a whole one to read.
+    """The published visualizer, or None when there is not a whole one to read.
 
     None means "keep what you have": the file is replaced while this polls it, and
-    a lost race must not blank the readout for a frame.
+    a lost race must not blank the visualizer for a frame.
     """
     try:
         text = path.read_text(encoding="utf-8")

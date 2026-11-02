@@ -160,7 +160,7 @@ class TestHandingTheDeviceAbout:
         assert ahead == pytest.approx(learned_motion.position(state, hand))
 
 
-class TestWhatTheReadoutDraws:
+class TestWhatTheVisualizerDraws:
     def test_the_trace_is_the_coming_motion_on_knots_from_now(self):
         hand, state = _playing(_model(_phrase(500, 20, 80)))
 

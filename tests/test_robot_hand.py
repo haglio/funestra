@@ -620,7 +620,7 @@ def test_the_two_held_ends_are_the_ends_of_the_travel():
 
 
 class TestTheWaveTracedOnKnots:
-    """The single wave's drawing for the readout: read on knots a fixed stretch
+    """The single wave's drawing for the visualizer: read on knots a fixed stretch
     of phase apart, anchored to a phase that never wraps, so it holds still
     between knots and slides rather than being redrawn at fixed columns."""
 

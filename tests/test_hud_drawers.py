@@ -33,8 +33,8 @@ HUD_PAINTERS: dict[str, set[str] | None] = {
     "console_hud": {"ConsolePainter"},
     "playhead": {"PlayheadHudPainter"},
     "volume": {"VolumeHudPainter"},
-    "timeline": {"progress_bar_bgra"},
-    "drive_readout": {"DriveSection"},
+    "scrubber_bar": {"progress_bar_bgra"},
+    "osr2_visualizer": {"DriveSection"},
     "host_controls": {"HostControlsSection"},
 }
 

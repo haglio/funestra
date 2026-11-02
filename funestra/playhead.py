@@ -1,4 +1,4 @@
-"""The readout at the left end of every Funestra's timeline row: where the video is, and how long it runs."""
+"""The time at the left end of every Funestra's timeline row: where the video is, and how long it runs."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -80,8 +80,8 @@ def _font():
     return load_font(SIZE_TINY)
 
 
-def readout_width(hud: PlayheadHud) -> int:
-    """The room the readout takes on the row: its widest words' worth."""
+def time_text_width(hud: PlayheadHud) -> int:
+    """The room the time takes on the row: its widest words' worth."""
     return text_width(_font(), hud.widest)
 
 
@@ -93,7 +93,7 @@ class PlayheadHudPainter(KeptBitmap):
         self._top = (VOLUME_CONTROL_H - 1) / 2 - ink_center_offset(_font(), "0")[1]
 
     def _paint(self, hud: PlayheadHud) -> Image.Image:
-        image = Image.new("RGBA", (readout_width(hud), VOLUME_CONTROL_H), (0, 0, 0, 0))
+        image = Image.new("RGBA", (time_text_width(hud), VOLUME_CONTROL_H), (0, 0, 0, 0))
         ImageDraw.Draw(image).text((0, self._top), hud.text, font=_font(),
                                    fill=(*TEXT_PRIMARY, 255))
         return image

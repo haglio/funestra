@@ -246,7 +246,7 @@ def trace_window(
     samples: int,
     span_s: float,
 ) -> tuple[list[float], float]:
-    """The wave as the readout draws it: *samples* + 1 heights (0-1) on knots
+    """The wave as the visualizer draws it: *samples* + 1 heights (0-1) on knots
     a fixed stretch of phase apart, the first at or before *phase* and the
     last just past the far edge, and how far past the first knot *phase* sits
     as a fraction of one.
@@ -280,7 +280,7 @@ def position_fraction(
     """Where the motion sits at *phase*, 0 (the floor of the axis) to 1 (the ceiling).
 
     The scale-free form of :func:`phase_to_position`. Callers speaking T-Code
-    want that one's 0-9999; a readout drawing a trace, or an app whose device
+    want that one's 0-9999; a visualizer drawing a trace, or an app whose device
     layer takes percent, wants this.
     """
     raw = _waveform_raw(phase, shape)
@@ -353,7 +353,7 @@ class ControlLimits:
     """Which of the hand's arrows would do nothing.
 
     Six booleans, published twice: the status file an orchestrator reads has
-    them so its dashboard can dim a button, and the drive readout the console
+    them so its dashboard can dim a button, and the OSR2 visualizer the console
     draws has them so it can dim an arrow.  They are two publications of one
     fact, worked out once here -- the center clamp included, so a change to it
     cannot leave the console dimming an arrow the status file calls live.

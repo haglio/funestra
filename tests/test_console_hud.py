@@ -1,4 +1,4 @@
-"""The main console painter: the top line, the controls, and the readout."""
+"""The main console painter: the top line, the controls, and the visualizer."""
 from __future__ import annotations
 
 from dataclasses import replace
@@ -33,14 +33,6 @@ from funestra.console_hud import (
 )
 from funestra.console_hud import _PAD as PAD
 from funestra.drive_layout import AMPLITUDE, CENTER, MAX_INTENSITY, SPEED
-from funestra.drive_readout import (
-    CONTROL_TIPS,
-    DRIVEN_BY_NEUTRAL,
-    DriveHud,
-    section_size,
-    trace_ink,
-    tracks,
-)
 from funestra.geometry import Rect
 from funestra.host_controls import HostControlsSection
 from funestra.hud import (
@@ -58,6 +50,14 @@ from funestra.hud_osr2 import LABELS as _OSR2_LABELS
 from funestra.hud_placement import HudCorner
 from funestra.hud_row import SCRUBBER, RowHud, row_part
 from funestra.modes import LengthMode, MainMode, Osr2State
+from funestra.osr2_visualizer import (
+    CONTROL_TIPS,
+    DRIVEN_BY_NEUTRAL,
+    DriveHud,
+    section_size,
+    trace_ink,
+    tracks,
+)
 from funestra.playhead import video_playhead
 from funestra.robot_hand import POSITION_MAX
 from funestra.volume import VolumeHud
@@ -66,7 +66,7 @@ MIXED, FULL, CLIPS = LengthMode.MIXED, LengthMode.FULL, LengthMode.CLIPS
 
 
 def _drive(offset: float = 0.0, **over) -> DriveHud:
-    """A readout whose trace has scrolled *offset* along, the way Genau's does."""
+    """A visualizer whose trace has scrolled *offset* along, the way Genau's does."""
     return DriveHud(speed=50, amplitude=80, center=50, shape="sine",
                     waveform=tuple(0.5 + 0.4 * np.sin(i / 6 + offset) for i in range(80)),
                     **over)
@@ -155,7 +155,7 @@ class TestLine:
         assert line(locked=True, latest=True) == "Locked · Latest"
 
     def test_the_pace_belongs_to_genau_and_is_not_claimed_while_main_funestra_is_showing(self):
-        """Kino mode draws the readout, so the pace is there to read — but the Main Funestra is on
+        """Kino mode draws the visualizer, so the pace is there to read — but the Main Funestra is on
         screen and an unlocked Main Funestra plays through its playlist rather than moving on
         a timer, so saying seconds would describe the wrong Funestra."""
         assert ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO, locked=False, latest=False),
@@ -262,7 +262,7 @@ class TestPainter:
         assert width == 600
 
     def test_a_width_its_own_parts_cannot_fit_in_is_widened_not_clipped(self):
-        """The rows, the readout and the OSR2 line are not text that can give way."""
+        """The rows, the visualizer and the OSR2 line are not text that can give way."""
         hud = ConsoleHud(modes=ModeHud(video="scene one"),
                          console=ConsoleModel(main_mode=MainMode.GENAU, locked=False), drive=_drive())
 
@@ -337,7 +337,7 @@ class TestPainter:
 
         assert wide.shape[1] > narrow.shape[1]
 
-    def test_the_readout_grows_the_hud(self):
+    def test_the_visualizer_grows_the_hud(self):
         painter = ConsolePainter()
         plain = painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO))).shape[0]
         driving = ConsolePainter().bgra(
@@ -373,8 +373,8 @@ class TestPainter:
 
         assert painter.bgra(hud) is painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO)))
 
-    def test_the_readouts_arrows_are_hit_targets_even_though_it_draws_them(self):
-        """The readout paints its own amplitude/center/speed arrows; the console
+    def test_the_visualizers_arrows_are_hit_targets_even_though_it_draws_them(self):
+        """The visualizer paints its own amplitude/center/speed arrows; the console
         adds them to its hit targets so a press on the trace's controls posts what
         is drawn there."""
         painter = ConsolePainter()
@@ -640,14 +640,14 @@ class TestPresses:
 
         assert painter.press_at(bx, by) == ""
 
-    def test_a_readouts_arrow_press_reaches_genau(self):
+    def test_a_visualizers_arrow_press_reaches_genau(self):
         painter = ConsolePainter()
         painter.bgra(ConsoleHud(
             console=ConsoleModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND), drive=_drive()))
 
         assert painter.press_at(*_over(painter, "robot_hand_amplitude_up")) == "robot_hand_amplitude_up"
 
-    def test_the_readouts_controls_are_dead_while_a_funscript_has_the_device(self):
+    def test_the_visualizers_controls_are_dead_while_a_funscript_has_the_device(self):
         """Genau is paused through a funscript's stretch, so a motion it is not
         sending cannot be adjusted — pressing one woke Genau onto a device the
         funscript was already driving, and the two fought over it."""
@@ -731,7 +731,7 @@ class TestThePointer:
 
 
 class TestDrags:
-    """The readout's bars are set by pressing in them and dragging along them, so
+    """The visualizer's bars are set by pressing in them and dragging along them, so
     a level is reached in one gesture rather than by walking a mark to it."""
 
     @staticmethod
@@ -819,7 +819,7 @@ class TestDrags:
         assert painter.holding is False
 
     def test_the_bars_are_dead_while_a_funscript_has_the_device(self):
-        """The whole readout is dimmed through a funscript's stretch — a motion
+        """The whole visualizer is dimmed through a funscript's stretch — a motion
         Genau is not sending cannot be dragged any more than it can be stepped."""
         painter = self._painted(osr2=Osr2State.FUNSCRIPT)
 
@@ -839,7 +839,7 @@ class TestDrags:
         assert painter.drag_to(*self._at(max_intensity, 0.0)) == "max_intensity_0"
 
     def test_there_are_no_bars_at_all_where_nothing_is_driving(self):
-        """With nothing driving, the readout is not drawn, so its bars must not linger as
+        """With nothing driving, the visualizer is not drawn, so its bars must not linger as
         targets over whatever the console puts in that space instead."""
         painter = ConsolePainter()
         painter.bgra(ConsoleHud(console=ConsoleModel(main_mode=MainMode.KINO)))
@@ -918,13 +918,13 @@ class TestAConsoleAnotherFunestraTookTheOsr2From:
             drive=_drive()))
         return painter, bgra
 
-    def test_draws_the_rows_it_was_handed_and_neither_the_osr2_line_nor_the_readout(self):
+    def test_draws_the_rows_it_was_handed_and_neither_the_osr2_line_nor_the_visualizer(self):
         painter, _bgra = self._painted(has_osr2=False)
 
         assert [button.command for _rect, button in _declared(painter)] == ["main_take_osr2"]
         assert painter.tracks == []
 
-    def test_is_shorter_by_the_line_and_the_readout(self):
+    def test_is_shorter_by_the_line_and_the_visualizer(self):
         _with, holding = self._painted(has_osr2=True)
         _without, taken = self._painted(has_osr2=False)
 
@@ -942,15 +942,15 @@ class TestPlaybackSpeed:
     def test_the_painter_writes_the_hosts_numbers_into_the_read_outs_that_name_them(self):
         """The row names the number ("playback_speed", "advance_interval") and
         the painter fills it from whoever is drawing: the Main Funestra's rate
-        under a video, Genau's pace off its readout in genau mode."""
-        def readouts(hud: ConsoleHud) -> list[str]:
+        under a video, Genau's pace off its visualizer in genau mode."""
+        def visualizers(hud: ConsoleHud) -> list[str]:
             painter = ConsolePainter()
             painter.bgra(hud)
             return [button.icon for _rect, button in painter.buttons if button.host_value]
 
-        assert readouts(ConsoleHud(console=with_playback_speed(
+        assert visualizers(ConsoleHud(console=with_playback_speed(
             ConsoleModel(main_mode=MainMode.KINO, rows=console_rows("kino")), 1.75))) == ["1.75×"]
-        assert readouts(ConsoleHud(
+        assert visualizers(ConsoleHud(
             console=ConsoleModel(main_mode=MainMode.GENAU, rows=console_rows("genau")),
             drive=_drive(advance_interval=7))) == ["7s"]
 
@@ -984,7 +984,7 @@ class TestTraceSources:
             drive=drive or _drive()))).astype(int)
         return painter, {tuple(pixel) for row in rgb for pixel in row}
 
-    def test_genau_driving_leaves_the_readout_pressable(self):
+    def test_genau_driving_leaves_the_visualizer_pressable(self):
         painter = self._painted(MainMode.KINO, Osr2State.ROBOT_HAND)
 
         assert painter.tracks
@@ -1070,7 +1070,7 @@ class TestEveryConsolePaints:
 
 class TestHolds:
     """Parked and retracted are the device held still at one end of its travel,
-    by this app.  The pill names the hold, and the readout is what driving would
+    by this app.  The pill names the hold, and the visualizer is what driving would
     draw, in gray."""
 
     @staticmethod
@@ -1111,7 +1111,7 @@ class TestHolds:
                 assert {who for _start, _end, who in drive.runs} == {DRIVEN_BY_NEUTRAL}, (
                     control, mode)
 
-    def test_a_held_readout_holds_still_with_the_device_on(self):
+    def test_a_held_visualizer_holds_still_with_the_device_on(self):
         for control in (OSR2_PARKED, OSR2_RETRACTED):
             painter = ConsolePainter()
             console = ConsoleModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
@@ -1121,7 +1121,7 @@ class TestHolds:
             assert np.array_equal(painter.bgra(ConsoleHud(console=console, drive=_drive(3.0))),
                                   first), control
 
-    def test_a_held_readout_cannot_be_pressed(self):
+    def test_a_held_visualizer_cannot_be_pressed(self):
         """Nudging a level under a hold is what would move the device while the
         pill still said it was held."""
         for control in (OSR2_PARKED, OSR2_RETRACTED):
@@ -1154,7 +1154,7 @@ class TestAPausedRoom:
         assert not np.array_equal(paused, hud(OSR2_DRIVING, paused=False))
 
     @pytest.mark.parametrize("mode", list(MainMode))
-    def test_the_readouts_speed_amp_and_center_buttons_take_presses(self, mode):
+    def test_the_visualizers_speed_amp_and_center_buttons_take_presses(self, mode):
         painter = ConsolePainter()
         painter.rgba(ConsoleHud(console=self._console(OSR2_DRIVING, paused=True, mode=mode),
                                 drive=_drive()))
@@ -1241,7 +1241,7 @@ class TestTheDotIsWhereTheDeviceIs:
 
 class TestNothingDriving:
     """With the OSR2 switched off nothing reaches it, so there is no motion to
-    trace — and a trace scrolling on in the middle of a readout whose every
+    trace — and a trace scrolling on in the middle of a visualizer whose every
     control is dead is the one part still claiming to be live."""
 
     _HANDOFF = ((0, "funscript"), (40, "robot_hand"))
@@ -1315,9 +1315,9 @@ class TestNothingDriving:
 
 
 class TestTheDeviceRunningItselfKeepsMoving:
-    """The readout holds still only when the device is not moving.  In auto mode
+    """The visualizer holds still only when the device is not moving.  In auto mode
     it is -- to its own firmware, on the beat the broker reports -- so the line
-    must scroll, which is the whole of what he asked the readout to show there.
+    must scroll, which is the whole of what he asked the visualizer to show there.
     """
 
     def test_the_trace_scrolls_on_its_own_beat(self):
@@ -1346,7 +1346,7 @@ class TestTheDeviceRunningItselfKeepsMoving:
 
 
 class TestTheHandoffKeepsMoving:
-    """In kino mode the readout draws the device changing hands, with a gap
+    """In kino mode the visualizer draws the device changing hands, with a gap
     between the two drivers where nothing is being sent at all.  Held still
     there, the whole trace froze into one flat gray at every handoff and came
     back only once something was driving again, which is what he kept watching
@@ -1723,9 +1723,9 @@ class TestEverySectionIsSetOffFromTheNextByALine:
             drive=drive), item_row=RowHud(duration_ms=60_000))
         controls = _span(rect for rect, button in _declared(painter)
                          if button.command.startswith(("main_", "genau_")))
-        readout_top = painter.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
+        visualizer_top = painter.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
         device = (_button_rect(painter, "robot_hand_toggle_learned")[1],
-                  readout_top + section_size()[1])
+                  visualizer_top + section_size()[1])
         _x, row_y, _w, _row_h = painter.row.rect
 
         lines = _dividers(bgra)

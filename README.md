@@ -15,7 +15,7 @@ Origenerator hands it to one of Fun Time's Satellite Funestras.
 | Fun Time's satellites | `../fun_time` | a Funestra, on each satellite's window |
 | Fun Time's headset | `../fun_time` | the same three Funestras over the offscreen engine, drawn into the headset |
 | Fun Time itself | `../fun_time` | the file channel, the playlist, the HUD's title |
-| Origenerator | `../origenerator` | a Funestra for a Standalone Slideshow, and the console and drive readout over its shows |
+| Origenerator | `../origenerator` | a Funestra for a Standalone Slideshow, and the console and OSR2 visualizer over its shows |
 
 Everything they had to agree on lives here, so none of them has to import
 another application's internals to get it. By what it is:
@@ -51,7 +51,7 @@ another application's internals to get it. By what it is:
   `geometry`, `timeline`, `volume`, `hud_title`, and then a model and a
   painter per HUD: `console` / `console_hud`, `drive_layout` / `drive_readout`,
   `satellite_hud` / `satellite_hud_paint`.  Two of those are sections rather
-  than HUDs — the drive readout and `hud_osr2`'s device line — because a host
+  than HUDs — the OSR2 visualizer and `hud_osr2`'s device line — because a host
   that both browses a set and drives the OSR2 (Origenerator's shows) says all of
   it on ONE HUD rather than stacking a console under a lock HUD.
 - **the Funestra** — the window: `funestra` builds one on a way of
@@ -64,7 +64,7 @@ another application's internals to get it. By what it is:
   whichever file it was given — the scrubber (`scrubber`: a scripted item's
   colors, the zoom while a stretch is marked, the frames of a running A/B
   range), the volume control (`volume_control`: its own level, or the room's,
-  asked for on the dashboard's channel, `dashboard`), the playhead readout and
+  asked for on the dashboard's channel, `dashboard`), the playhead visualizer and
   the black it shows when the room gives its rectangle away (`display`),
   placing a press against them (`pointer`).  A User runs on a Funestra in the
   same process (`funestra.User`: its verbs, a pass of its own each frame, its

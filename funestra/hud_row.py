@@ -1,4 +1,4 @@
-"""The scrubber, the volume control, the playhead readout and a flick's loop dial, drawn on a HUD.
+"""The scrubber, the volume control, the time and a flick's loop dial, drawn on a HUD.
 
 Every Funestra here laid this row along the lower edge of its own video, which is
 where a video player has always put it — and where, in this family, it keeps
@@ -8,10 +8,10 @@ instead.  Everything else has the same defect in slower form: a row over the
 item is a second HUD, on a screen that already carries one.
 
 So the row is a block a HUD hosts, the way the device line and the drive
-readout are: one line, laid out from what is on it against the block's own
+visualizer are: one line, laid out from what is on it against the block's own
 width rather than the window's.  The track is what the room is for -- the
 heatmap and a seek need it wide -- so everything else takes only what it
-must: the readout of the frame and the time at the left end, after a
+must: the time of the frame and the time at the left end, after a
 flick's dial; the volume control flush with the right end.  A flick's track has no
 heatmap and nothing to find along it, so it stays short and no HUD widens
 for it.
@@ -29,10 +29,10 @@ from .playhead import (
     PlayheadHud,
     PlayheadHudPainter,
     framed_playhead,
-    readout_width,
+    time_text_width,
     video_playhead,
 )
-from .timeline import TIMELINE_HEIGHT, bar_track_x, progress_bar_bgra
+from .scrubber_bar import SCRUBBER_HEIGHT, bar_track_x, progress_bar_bgra
 from .volume import (
     SLOT_W,
     VOLUME_CONTROL_H,
@@ -48,17 +48,17 @@ from .volume import (
 # they do different things to the same control: the speaker mutes, the slider
 # sets the level.
 SCRUBBER = "scrubber"
-READOUT = "readout"
+TIME_TEXT = "readout"
 MUTE = "mute"
 VOLUME = "volume"
 DIAL = "dial"
 
 _CHIP_PARTS = {"mute": MUTE, "track": VOLUME}
 
-ROW_H = TIMELINE_HEIGHT
-# The readout, the dial and the volume control are as tall as each other, centered in the row.
+ROW_H = SCRUBBER_HEIGHT
+# The time, the dial and the volume control are as tall as each other, centered in the row.
 PARTS_Y = (ROW_H - VOLUME_CONTROL_H) // 2
-# Between a readout and the control it reads out.
+# Between a visualizer and the control it reads out.
 GAP = GAP_SMALL
 
 # The least track worth pressing, and how long a flick's track is.
@@ -68,12 +68,12 @@ FLICK_TRACK_W = 96
 # Between the HUD's lower edge and the loop's two frames hanging under it.
 UNDER_THE_HUD_GAP = GAP_SMALL
 
-# The readouts a HUD is held wide enough for, so it keeps one width from one
+# The visualizers a HUD is held wide enough for, so it keeps one width from one
 # flick or video to the next instead of moving with the digits of each: a flick
 # of up to 999 frames shown for under ten minutes, and a video of under an hour
 # at up to 60 frames a second.
-_HELD_FLICK_READOUT = framed_playhead(999, 999, 599_000, 599_000)
-_HELD_VIDEO_READOUT = video_playhead(3_599_000, 3_599_000, 60.0)
+_HELD_FLICK_TIME_TEXT = framed_playhead(999, 999, 599_000, 599_000)
+_HELD_VIDEO_TIME_TEXT = video_playhead(3_599_000, 3_599_000, 60.0)
 
 
 @dataclass(frozen=True)
@@ -93,20 +93,20 @@ class RowHud:
     loop: tuple[int, int] | None = None
 
 
-# The widest rows a HUD carries, each with the longest readouts it is held for.
+# The widest rows a HUD carries, each with the longest visualizers it is held for.
 _WIDEST_ROWS = (
-    RowHud(playhead=_HELD_FLICK_READOUT, loop=(0, 999)),
-    RowHud(playhead=_HELD_VIDEO_READOUT),
+    RowHud(playhead=_HELD_FLICK_TIME_TEXT, loop=(0, 999)),
+    RowHud(playhead=_HELD_VIDEO_TIME_TEXT),
 )
 
 
 @dataclass(frozen=True)
 class RowLayout:
     """Where the row lies in its HUD, and where each part lands across it,
-    left to right: a flick's dial, the readout, the track, and the volume control."""
+    left to right: a flick's dial, the time, the track, and the volume control."""
 
     rect: tuple[int, int, int, int]
-    readout: tuple[int, int] | None  # its x and width, in the row's own pixels
+    time_text: tuple[int, int] | None  # its x and width, in the row's own pixels
     dial: int | None                  # the dial's x
     track: tuple[int, int]            # the track's two ends
 
@@ -124,35 +124,35 @@ class RowLayout:
 
 def _before_the_track(row: RowHud, *, held: bool = False) -> tuple[
         tuple[int, int] | None, int | None, int]:
-    """The readout's place and the dial's, and where the track starts after
-    them, from the row's own left edge; *held*, with the readout as wide as the
+    """The time's place and the dial's, and where the track starts after
+    them, from the row's own left edge; *held*, with the time as wide as the
     widest a HUD is held for."""
     x = 0
-    readout = dial = None
+    time_text = dial = None
     if row.loop is not None:
         dial = x
         x += DIAL_SIZE + GAP
     held_for = None
     if held:
-        held_for = _HELD_VIDEO_READOUT if row.loop is None else _HELD_FLICK_READOUT
+        held_for = _HELD_VIDEO_TIME_TEXT if row.loop is None else _HELD_FLICK_TIME_TEXT
     if row.playhead is not None or held_for is not None:
         width = _width(row.playhead or held_for, held_for)
-        readout = (x, width)
+        time_text = (x, width)
         x += width + GAP
-    return readout, dial, x
+    return time_text, dial, x
 
 
-def _width(readout: PlayheadHud, held_for: PlayheadHud | None) -> int:
-    width = readout_width(readout)
-    return width if held_for is None else max(width, readout_width(held_for))
+def _width(time_text: PlayheadHud, held_for: PlayheadHud | None) -> int:
+    width = time_text_width(time_text)
+    return width if held_for is None else max(width, time_text_width(held_for))
 
 
 def row_layout(row: RowHud, *, rect: tuple[int, int, int, int]) -> RowLayout:
-    readout, dial, left = _before_the_track(row)
+    time_text, dial, left = _before_the_track(row)
     x0, x1 = bar_track_x(rect[2], left=left)
     if row.loop is not None:
         x1 = min(x1, x0 + FLICK_TRACK_W)
-    return RowLayout(rect, readout, dial, (x0, x1))
+    return RowLayout(rect, time_text, dial, (x0, x1))
 
 
 class RowSection:
@@ -160,7 +160,7 @@ class RowSection:
 
     def __init__(self) -> None:
         self._volume = VolumeHudPainter()
-        self._readout = PlayheadHudPainter()
+        self._time_text = PlayheadHudPainter()
         self._dial = LoopDialPainter()
 
     @staticmethod
@@ -195,14 +195,14 @@ class RowSection:
         if row.volume is not None:
             volume_control = _rgba(self._volume.bgra(row.volume))
             image.alpha_composite(volume_control, _offset((x, y), volume_control_xy(
-                win_w=width, win_h=ROW_H, timeline_h=ROW_H)))
+                win_w=width, win_h=ROW_H, scrubber_h=ROW_H)))
         if layout.dial is not None:
             played, count = row.loop
             dial = _rgba(self._dial.bgra(LoopDialPainter.hand(played / count)))
             image.alpha_composite(dial, (x + layout.dial, y + PARTS_Y))
-        if layout.readout is not None:
-            readout = _rgba(self._readout.bgra(row.playhead))
-            image.alpha_composite(readout, (x + layout.readout[0], y + PARTS_Y))
+        if layout.time_text is not None:
+            time_text = _rgba(self._time_text.bgra(row.playhead))
+            image.alpha_composite(time_text, (x + layout.time_text[0], y + PARTS_Y))
 
 
 def fitting(heatmap, track: tuple[int, int]):
@@ -249,17 +249,17 @@ def row_part(px: int, py: int, layout: RowLayout) -> str:
 
     The row is a video's last rows drawn somewhere else, so it is hit-tested as
     one: the same chip placement, against the row's width and its own height
-    rather than a window's, and the dial and the readout where the layout put
+    rather than a window's, and the dial and the time where the layout put
     them.
     """
     if not 0 <= py < ROW_H:
         return ""
-    part = hit_part(*volume_control_local(px, py, win_w=layout.width, win_h=ROW_H, timeline_h=ROW_H))
+    part = hit_part(*volume_control_local(px, py, win_w=layout.width, win_h=ROW_H, scrubber_h=ROW_H))
     if part:
         return _CHIP_PARTS[part]
     if layout.dial is not None and on_dial(px, py, at=(layout.dial, PARTS_Y)):
         return DIAL
-    return READOUT if px < layout.track[0] else SCRUBBER
+    return TIME_TEXT if px < layout.track[0] else SCRUBBER
 
 
 class RowPress:
@@ -327,7 +327,7 @@ def scrub_to(px: int, layout: RowLayout, *, duration_ms: float) -> float:
 
 def volume_to(px: int, py: int, layout: RowLayout) -> int:
     """The level a press along the slider asks for."""
-    return volume_at(volume_control_local(px, py, win_w=layout.width, win_h=ROW_H, timeline_h=ROW_H)[0])
+    return volume_at(volume_control_local(px, py, win_w=layout.width, win_h=ROW_H, scrubber_h=ROW_H)[0])
 
 
 def turn_to(px: int, py: int, layout: RowLayout) -> float:

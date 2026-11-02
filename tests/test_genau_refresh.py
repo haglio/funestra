@@ -249,7 +249,7 @@ def test_refresh_displays_active_frame():
 
 def test_under_the_broker_the_line_is_the_device_s_own_swing():
     """The device runs itself here, so the trace is the broker's beat -- and it
-    moves, which is the whole of what a readout under the broker is for.  The
+    moves, which is the whole of what a visualizer under the broker is for.  The
     HUD used to come down instead, taking the room's controls with it."""
     state = BrokerFeed(auto_active=True, raw_bpm=120.0)
     entry = {"frames": [object() for _ in range(8)]}
@@ -258,10 +258,10 @@ def test_under_the_broker_the_line_is_the_device_s_own_swing():
                               now_source=lambda: clock[0])
 
     built["controller"].refresh()
-    first = built["controller"].readout.drive
+    first = built["controller"].visualizer.drive
     clock[0] += 0.5
     built["controller"].refresh()
-    second = built["controller"].readout.drive
+    second = built["controller"].visualizer.drive
 
     assert len(first.waveform) == 80
     # Every trace slides on knots: between two the heights hold and the
@@ -359,11 +359,11 @@ def test_a_hand_whose_output_is_switched_off_plays_on_unheard():
                               tcode_sender=RobotHandTCodeDriver(sink, robot_hand=dc),
                               command="SET_TCODE_ENABLED 0", now_source=lambda: clock[0])
     built["controller"].refresh()
-    first = built["controller"].readout.drive
+    first = built["controller"].visualizer.drive
 
     clock[0] = 5.5
     built["controller"].refresh()
-    then = built["controller"].readout.drive
+    then = built["controller"].visualizer.drive
 
     assert (sink.send.call_count, first.position != then.position) == (0, True)
 
@@ -458,7 +458,7 @@ def test_direct_mode_paused_does_not_send_tcode():
     assert tcode.sends == []
 
 
-def test_direct_mode_publishes_the_drive_readout():
+def test_direct_mode_publishes_the_drive_visualizer():
     dc = RobotHandState(playing=True, bpm=120.0, amplitude=70, intended_center=60)
     tcode = FakeTCodeSender()
     entry = {"frames": [object() for _ in range(8)]}
@@ -466,7 +466,7 @@ def test_direct_mode_publishes_the_drive_readout():
 
     built["controller"].refresh()
 
-    hud = built["controller"].readout.drive
+    hud = built["controller"].visualizer.drive
     assert (hud.amplitude, hud.center, hud.speed) == (70, 60, 50)
     assert hud.shape == "sine"  # named on the HUD, not only drawn
     assert len(hud.waveform) == 80
@@ -484,7 +484,7 @@ def test_pause_command_stops_direct_mode_playback():
 
 
 def test_losing_the_device_walks_it_down_and_rests_the_motion():
-    """The readout published through a funscript's turn (or any pause) samples
+    """The visualizer published through a funscript's turn (or any pause) samples
     forward from the sender's motion phase — rested at the swing's foot the
     moment playback stops, so what the Main Funestra draws waiting after the seam is the
     motion that will actually resume, rising out of the park."""
@@ -650,7 +650,7 @@ def test_broker_auto_cleared_resumes_direct_control():
     built["controller"].refresh()
 
     assert len(tcode.sends) == 1
-    assert built["controller"].readout.drive is not None
+    assert built["controller"].visualizer.drive is not None
 
 
 def test_multiline_commands_all_applied():
@@ -1088,7 +1088,7 @@ def test_toggle_learned_command_via_refresh():
 
 def test_the_learned_motion_ticks_during_refresh(tmp_path):
     """Once armed, a refresh lays its phrases out ahead of the clock, so the
-    sender and the readout have motion to read from the very same tick."""
+    sender and the visualizer have motion to read from the very same tick."""
     dc = RobotHandState(playing=True, bpm=120.0)
     learned = LearnedMotionState(model=_learned_model(), rng=random.Random(1), active=True)
     built = _build_controller(

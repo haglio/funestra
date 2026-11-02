@@ -15,14 +15,6 @@ from shared_ui.spacing import BUTTON_GAP
 from funestra import satellite_hud_paint
 from funestra.console import OSR2_DRIVING, OSR2_PARKED
 from funestra.drive_layout import MAX_INTENSITY, SECTION_W
-from funestra.drive_readout import (
-    CONTROL_TIPS,
-    DRIVEN_BY_ROBOT_HAND,
-    DriveHud,
-    section_size,
-    track_command,
-    tracks,
-)
 from funestra.geometry import Rect
 from funestra.hud import ACTIVE_DOT
 from funestra.hud_button import Button
@@ -32,6 +24,14 @@ from funestra.hud_placement import HudCorner
 from funestra.hud_row import SCRUBBER, RowHud, row_part
 from funestra.hud_sections import DIVIDER_H, SECTION_GAP
 from funestra.modes import Osr2State
+from funestra.osr2_visualizer import (
+    CONTROL_TIPS,
+    DRIVEN_BY_ROBOT_HAND,
+    DriveHud,
+    section_size,
+    track_command,
+    tracks,
+)
 from funestra.satellite_hud import (
     COL_LABEL_GAP,
     COL_LABEL_H,
@@ -1298,7 +1298,7 @@ class TestTheDeviceOnAHostThatDrivesItself:
     underneath it for the device, which put two titles that disagreed
     and two copies of prev/next/lock/trash on one screen.  So a source that
     has a device to report says so on its own HUD: the same line and the
-    same readout the main console draws, from the same code.
+    same visualizer the main console draws, from the same code.
     """
 
     @staticmethod
@@ -1350,7 +1350,7 @@ class TestTheDeviceOnAHostThatDrivesItself:
         assert np.array_equal(paused, hud(OSR2_PARKED, paused=False))
         assert not np.array_equal(paused, hud(OSR2_DRIVING, paused=False))
 
-    def test_the_readouts_speed_amp_and_center_buttons_take_presses_in_a_paused_room(self):
+    def test_the_visualizers_speed_amp_and_center_buttons_take_presses_in_a_paused_room(self):
         rendered = self._rendered(osr2=Osr2State.ROBOT_HAND, osr2_control=OSR2_DRIVING,
                                   paused=True, drive=_wave())
         placed = {button.command: rect for rect, button in rendered.targets.buttons}
@@ -1362,13 +1362,13 @@ class TestTheDeviceOnAHostThatDrivesItself:
 
         assert {command for command in CONTROL_TIPS if posts(command) == command} == set(CONTROL_TIPS)
 
-    def test_the_readout_is_drawn_under_the_line(self):
-        with_readout = self._rendered(osr2=Osr2State.ROBOT_HAND, drive=DriveHud())
+    def test_the_visualizer_is_drawn_under_the_line(self):
+        with_visualizer = self._rendered(osr2=Osr2State.ROBOT_HAND, drive=DriveHud())
         line_only = self._rendered(osr2=Osr2State.ROBOT_HAND)
-        assert with_readout.bgra.shape[0] > line_only.bgra.shape[0]
-        assert with_readout.bgra.shape[1] >= SECTION_W + 2 * PAD
+        assert with_visualizer.bgra.shape[0] > line_only.bgra.shape[0]
+        assert with_visualizer.bgra.shape[1] >= SECTION_W + 2 * PAD
 
-    def test_the_readouts_own_marks_post_what_they_are_pressed_for(self):
+    def test_the_visualizers_own_marks_post_what_they_are_pressed_for(self):
         rendered = self._rendered(osr2=Osr2State.ROBOT_HAND,
                                   drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND))
         posted = [button.command for _rect, button in rendered.targets.buttons]
@@ -1385,7 +1385,7 @@ class TestTheDeviceOnAHostThatDrivesItself:
         assert rendered.targets.tracks
         assert all(bar.rect[1] + bar.rect[3] <= nav_nav_map_top for bar in rendered.targets.tracks)
 
-    def test_the_rows_that_aim_the_device_stay_between_the_sets_bands_and_the_readout(
+    def test_the_rows_that_aim_the_device_stay_between_the_sets_bands_and_the_visualizer(
             self, thumb):
         aim = (Button("robot_hand_toggle_learned", "hi", "Human inspired"),
                Button("robot_hand_park", "P", "Parked"))
@@ -1406,10 +1406,10 @@ class TestTheDeviceOnAHostThatDrivesItself:
             title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
             seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2,
             osr2=Osr2State.ROBOT_HAND, drive=drive))
-        readout_top = rendered.targets.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
-        readout_end = readout_top + section_size()[1]
+        visualizer_top = rendered.targets.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
+        visualizer_end = visualizer_top + section_size()[1]
 
-        assert _lines_between(rendered, readout_end, _nav_nav_map_top(rendered)) == 1
+        assert _lines_between(rendered, visualizer_end, _nav_nav_map_top(rendered)) == 1
 
     def test_a_press_in_a_band_takes_hold_of_it_and_sets_it(self):
         rendered = self._rendered(osr2=Osr2State.ROBOT_HAND,
@@ -1431,7 +1431,7 @@ def _wave(offset: float = 0.0) -> DriveHud:
                     waveform=tuple(0.5 + 0.4 * np.sin(i / 6 + offset) for i in range(80)))
 
 
-class TestTheReadoutIsDrawnAsTheMainConsoleDrawsIt:
+class TestTheVisualizerIsDrawnAsTheMainConsoleDrawsIt:
     def test_the_trace_holds_still_while_nothing_is_driving(self):
         renderer = HudRenderer("portrait")
         first = renderer.render(_model(osr2=Osr2State.OFF, drive=_wave(0.0))).bgra.copy()
@@ -1891,8 +1891,8 @@ class TestEverySectionIsSetOffFromTheNextByALine:
     def _device(rendered, drive: DriveHud) -> tuple[int, int]:
         top, _end = _span(rect for rect, button in rendered.targets.buttons
                              if button.command.startswith("robot_hand_toggle"))
-        readout_top = rendered.targets.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
-        return top, readout_top + section_size()[1]
+        visualizer_top = rendered.targets.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
+        return top, visualizer_top + section_size()[1]
 
     @staticmethod
     def _nav_map(rendered) -> tuple[int, int]:
@@ -1943,8 +1943,8 @@ def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_it
     assert (moved.targets, drawn_while_moving) == (whole.targets, 0)
 
 
-def test_a_hud_whose_osr2_readout_is_still_draws_only_its_row_again_too(thumb, monkeypatch):
-    # The Standalone slideshow's HUD carries the OSR2's readout, so leaving every
+def test_a_hud_whose_osr2_visualizer_is_still_draws_only_its_row_again_too(thumb, monkeypatch):
+    # The Standalone slideshow's HUD carries the OSR2's visualizer, so leaving every
     # HUD with one to the whole drawing left that slideshow drawing it whole.
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb), osr2=Osr2State.ROBOT_HAND,
                    drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND))

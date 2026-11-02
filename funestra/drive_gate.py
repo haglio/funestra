@@ -31,8 +31,8 @@ from __future__ import annotations
 from dataclasses import replace
 
 from .descent_latch import DescentLatch
-from .drive_readout import DriveHud
-from .drive_trace import drive_readout
+from .drive_trace import osr2_visualizer
+from .osr2_visualizer import DriveHud
 from .robot_hand import FULL_INTENSITY
 from .trace_grid import on_the_grid
 
@@ -104,11 +104,11 @@ class DriveGate:
         self._position = 0
         self._stalled = 0
 
-    def readout(self, published: DriveHud | None, *,
+    def visualizer(self, published: DriveHud | None, *,
                 device_drives_itself: bool = False, video_shows: bool = True) -> DriveHud:
-        """The readout to draw, with this video's funscript folded into it.
+        """The visualizer to draw, with this video's funscript folded into it.
 
-        *published* is Genau's readout as it last said it, or None while it has
+        *published* is Genau's visualizer as it last said it, or None while it has
         not published one yet.
 
         *device_drives_itself* is the OSR2 in auto mode, where the script's
@@ -154,7 +154,7 @@ class DriveGate:
         if not video_shows:
             self._latch.void_all()
             return drive or DriveHud()
-        return drive_readout(
+        return osr2_visualizer(
             drive,
             script=self._script_as_played(),
             position_ms=position,

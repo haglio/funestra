@@ -41,7 +41,6 @@ from shared_ui.spacing import (
 from shared_ui.type_scale import SIZES
 
 from .console import VALUE_W, max_intensity_from_raw
-from .drive_readout import DriveHud, DriveTrack, TrackGrip
 from .geometry import Rect, contains
 from .hud import ACTIVE_DOT
 from .hud_button import Button, buttons_from_raw, buttons_raw, rows_from_raw, rows_raw
@@ -51,6 +50,7 @@ from .hud_placement import HudCorner, HudEdge
 from .hud_sections import blocks_height, stack
 from .hud_title import SEPARATOR
 from .modes import read_mode
+from .osr2_visualizer import DriveHud, DriveTrack, TrackGrip
 from .video_families import filter_keeps, normalized_text
 
 if TYPE_CHECKING:
@@ -228,7 +228,7 @@ class HudModel:
     osr2_controls: tuple[Button, ...] = ()
     max_intensity: int | None = None
     paused: bool = False
-    # The motion being sent, drawn under that line — the main console's readout
+    # The motion being sent, drawn under that line — the main console's visualizer
     # (:mod:`funestra.drive_readout`), hosted here rather than on a HUD of
     # its own.  None wherever there is nothing to report.
     drive: DriveHud | None = None
@@ -512,7 +512,7 @@ TITLE_INDENT = TITLE_X - PAD
 def favorite_icon_rect(x: int, y: int, line_h: int) -> Rect:
     """The favorite mark: at the head of the file-name line, under the dot.
 
-    A readout, not a button, so it belongs where the HUD keeps readouts and
+    A visualizer, not a button, so it belongs where the HUD keeps visualizers and
     not in the control bar: the one column already used for "what is true of
     this Funestra" — the active dot is directly above it — and immediately left of
     the name of the very video it is answering about.
@@ -592,11 +592,11 @@ class HudTargets:
     expand: Rect | None
     # The declared buttons, each with what it posts and what it is called.
     buttons: list[tuple[Rect, Button]] = field(default_factory=list)
-    # The favorite mark is a readout, so it is here only to carry its tooltip.
+    # The favorite mark is a visualizer, so it is here only to carry its tooltip.
     favorite: Rect | None = None
     # The strike under the current video's act, or None where no act is named.
     wrong_action: Rect | None = None
-    # The drive readout's three bars, on a host that draws one: pressed to set
+    # The OSR2 visualizer's three bars, on a host that draws one: pressed to set
     # a level outright, and held while the pointer drags along them.
     tracks: list[DriveTrack] = field(default_factory=list)
     # Where the item's own row landed and how it is laid out, for a press to
@@ -763,7 +763,7 @@ class HudClicks:
     :meth:`due` posts it once no second click has arrived.  Every other press
     (loop buttons, expand, filter buttons) is unambiguous and posts immediately.
 
-    A press inside one of the drive readout's bars, on a host that draws one,
+    A press inside one of the OSR2 visualizer's bars, on a host that draws one,
     takes hold of it as well as posting: :meth:`drag_to` then goes on setting
     that level as the pointer moves, so a bar can be dragged and not only
     clicked.
@@ -783,7 +783,7 @@ class HudClicks:
 
     @property
     def holding(self) -> bool:
-        """Whether a press took hold of a readout bar and has not let go."""
+        """Whether a press took hold of a visualizer bar and has not let go."""
         return self._grip.holding
 
     def drag_to(self, px: int, py: int) -> str:
@@ -807,7 +807,7 @@ class HudClicks:
             # Verbatim: the source said what a press posts.  A dimmed one is at
             # the end of its range or has nothing to act on, and posts nothing.
             return "" if button.dim else button.command
-        # A target with nothing to post is a readout bar, there only to name
+        # A target with nothing to post is a visualizer bar, there only to name
         # itself on hover; the press belongs to the bar under it.
         grabbed = self._grip.grab(targets.tracks, px, py)
         if grabbed:

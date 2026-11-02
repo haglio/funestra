@@ -1,4 +1,4 @@
-"""drive_layout — the readout's rects, and what a press on one asks for.
+"""drive_layout — the visualizer's rects, and what a press on one asks for.
 
 The layout can be wrong and still look right: a hit target that has drifted from
 the mark drawn over it shows up only when a press lands on the wrong control. So
