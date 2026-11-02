@@ -345,7 +345,7 @@ class HudRenderer:
             SIZE_BODY, room,
             lambda size: text_width(self._title_font(size), model.title)))
         model = replace(model, title=fit_text(title_font, model.title, room))
-        favorite = self._draw_title_band(
+        favorite = self._draw_title_row(
             image, draw, PAD, model, width, title_font,
             name_line(drawn_with.video, model.item_note, room, self._tiny),
             reserve=0 if model.hud_corner.lower else minus_room)
@@ -530,7 +530,7 @@ class HudRenderer:
             self._titles[size] = load_font(size)
         return self._titles[size]
 
-    def _draw_title_band(self, image, draw, y: int, model: HudModel, width: int,
+    def _draw_title_row(self, image, draw, y: int, model: HudModel, width: int,
                          title_font: ImageFont.FreeTypeFont, subtitle: str, *,
                          reserve: int) -> Rect | None:
         title_x = self._block_x(model, width,

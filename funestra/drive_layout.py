@@ -2,7 +2,7 @@
 
 The visualizer — the trace of the motion with Center down its left, Amplitude down
 its right and Speed under it — is placed here and painted in
-:mod:`funestra.drive_readout`. This module draws nothing: it says how big the
+:mod:`funestra.osr2_visualizer`. This module draws nothing: it says how big the
 block is, where each mark and bar lands, which marks are dead at the end of
 their range, and what value a press at a point is asking for.
 

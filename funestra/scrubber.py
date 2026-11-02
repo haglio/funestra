@@ -37,7 +37,7 @@ class ZoomWindow:
         return start + (end - start) * _ZOOM_GROW_FRAC
 
 
-class HeatmapStrip:
+class Heatmap:
     def __init__(self) -> None:
         self._key: tuple | None = None
         self._colors: list[tuple[int, int, int]] = []
@@ -140,7 +140,7 @@ def time_to_x(ms: float, start_ms: float, end_ms: float, width: int) -> int:
 
 
 def loop_thumbnail_xys(
-    heatmap: HeatmapStrip,
+    heatmap: Heatmap,
     thumbs: LoopThumbCapture,
     bounds: tuple[int, int],
     *,

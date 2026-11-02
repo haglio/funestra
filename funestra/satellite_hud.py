@@ -229,7 +229,7 @@ class HudModel:
     max_intensity: int | None = None
     paused: bool = False
     # The motion being sent, drawn under that line — the main HUD's visualizer
-    # (:mod:`funestra.drive_readout`), hosted here rather than on a HUD of
+    # (:mod:`funestra.osr2_visualizer`), hosted here rather than on a HUD of
     # its own.  None wherever there is nothing to report.
     drive: DriveHud | None = None
     drive_composed: bool = False
