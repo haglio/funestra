@@ -7,7 +7,7 @@ from shared_ui.palette import YELLOW
 from funestra.funscript import Funscript
 from funestra.heatmap import build_heatmap
 from funestra.scrubber import (
-    HeatmapStrip,
+    Heatmap,
     LoopThumbCapture,
     ZoomWindow,
     label_xs,
@@ -25,12 +25,12 @@ WIN_W = 1000
 TRACK_W = bar_track_x(WIN_W)[1] - bar_track_x(WIN_W)[0]
 
 
-class TestHeatmapStrip:
+class TestHeatmap:
     def test_a_track_nobody_has_measured_yet_gets_no_colors(self):
         """A HUD is as wide as what is on it, so its host has no width to
         offer until one has been drawn.  Nothing to measure across is not an
         error; it is the first frame, and it goes up as a plain bar."""
-        strip = HeatmapStrip()
+        strip = Heatmap()
 
         strip.update("v0.mp4", _funscript(), 4000.0, track_w=0)
 
@@ -38,21 +38,21 @@ class TestHeatmapStrip:
 
     def test_builds_one_color_per_pixel_of_the_track_it_fills(self):
         fs = _funscript()
-        strip = HeatmapStrip()
+        strip = Heatmap()
 
         strip.update("v0.mp4", fs, 4000.0, track_w=TRACK_W)
 
         assert strip.colors == build_heatmap(fs, TRACK_W, start_ms=0, end_ms=4000.0)
 
     def test_an_unscripted_item_has_no_strip(self):
-        strip = HeatmapStrip()
+        strip = Heatmap()
 
         strip.update("plain.mp4", None, 4000.0, track_w=TRACK_W)
 
         assert strip.colors == []
 
     def test_caches_until_the_item_changes(self):
-        strip = HeatmapStrip()
+        strip = Heatmap()
         strip.update("v0.mp4", _funscript(), 4000.0, track_w=TRACK_W)
         built = strip.colors
 
@@ -63,7 +63,7 @@ class TestHeatmapStrip:
         assert strip.colors != built
 
     def test_a_width_change_rebuilds(self):
-        strip = HeatmapStrip()
+        strip = Heatmap()
         strip.update("v0.mp4", _funscript(), 4000.0, track_w=TRACK_W)
 
         strip.update("v0.mp4", _funscript(), 4000.0, track_w=500)
@@ -71,7 +71,7 @@ class TestHeatmapStrip:
         assert len(strip.colors) == 500
 
     def test_the_full_view_spans_the_item(self):
-        strip = HeatmapStrip()
+        strip = Heatmap()
 
         strip.update("v0.mp4", _funscript(), 4000.0, track_w=TRACK_W)
 
@@ -80,7 +80,7 @@ class TestHeatmapStrip:
 
     def test_a_mark_zooms_the_strip_into_the_stretch_around_itself(self):
         fs = _funscript()
-        strip = HeatmapStrip()
+        strip = Heatmap()
 
         strip.update("v0.mp4", fs, 600_000.0, track_w=TRACK_W, mark_in_ms=50_000, position_ms=50_000.0)
 
@@ -89,14 +89,14 @@ class TestHeatmapStrip:
         assert strip.colors == build_heatmap(fs, TRACK_W, start_ms=48_000, end_ms=70_000)
 
     def test_an_unscripted_item_marked_keeps_the_plain_view(self):
-        strip = HeatmapStrip()
+        strip = Heatmap()
 
         strip.update("plain.mp4", None, 600_000.0, track_w=TRACK_W, mark_in_ms=50_000, position_ms=50_000.0)
 
         assert strip.window == (0.0, 600_000.0)
 
     def test_the_marked_view_rescales_in_steps_not_continuously(self):
-        strip = HeatmapStrip()
+        strip = Heatmap()
 
         def update(position_ms):
             strip.update("v0.mp4", _funscript(), 600_000.0, track_w=TRACK_W,
@@ -114,7 +114,7 @@ class TestHeatmapStrip:
 
     def test_closing_the_mark_restores_the_full_view(self):
         fs = _funscript()
-        strip = HeatmapStrip()
+        strip = Heatmap()
         strip.update("v0.mp4", fs, 600_000.0, track_w=TRACK_W, mark_in_ms=50_000, position_ms=66_800.0)
 
         strip.update("v0.mp4", fs, 600_000.0, track_w=TRACK_W)
@@ -176,7 +176,7 @@ def _rgba(bar, y, x):
 class TestAScriptedItemsStrip:
     def _framed_strip(self, win_w=1000):
         x0, x1 = bar_track_x(win_w)
-        strip = HeatmapStrip()
+        strip = Heatmap()
         strip.update("v.mp4", _funscript(), 4000.0, track_w=x1 - x0)
         return progress_bar_bgra(2000, 4000.0, (1000, 3000), win_w, heatmap=strip.colors), x0, x1
 
@@ -256,8 +256,8 @@ class TestWhereTheLoopsTwoFramesGo:
         return loop_thumbnail_xys(heatmap, thumbs, bounds, track=self.TRACK,
                                   win_w=self.WIN_W, top=self.TOP)
 
-    def _scripted(self) -> HeatmapStrip:
-        strip = HeatmapStrip()
+    def _scripted(self) -> Heatmap:
+        strip = Heatmap()
         strip.update("v0.mp4", _funscript(), 4000.0, track_w=40)
         return strip
 

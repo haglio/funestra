@@ -324,7 +324,7 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
     one, the family's blue for the rest; red for a live recording, blue for the
     loop it leaves running, the active gray for a choice held but not applied
     -- with its face drawn on top: an app mark, one of the family's icons, a
-    typed icon out of *glyph_font*, or a word in *word_font*.
+    typed icon out of *icon_font*, or a word in *word_font*.
 
     An item with nothing to post is a READ-OUT, not a control: bare text with no
     button under it, in the visualizer's own key/value colors -- a muted word names
@@ -365,17 +365,3 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
         draw_character(draw, x + w / 2, y + h / 2, icon, icon_font, ink)
     else:
         draw.text((x + w / 2, y + h / 2), icon, font=word_font, anchor="mm", fill=ink)
-
-
-
-
-_draw_button = draw_button
-
-
-def draw_button(*args, glyph_font=None, **kwargs):
-    if glyph_font is not None:
-        kwargs["icon_font"] = glyph_font
-    return _draw_button(*args, **kwargs)
-
-
-draw_mark = draw_icon

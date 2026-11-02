@@ -380,6 +380,3 @@ def control_limits(hand: RobotHandState) -> ControlLimits:
         spd_at_max=hand.speed >= speed_ceiling(hand.max_intensity, hand.amplitude),
         spd_at_min=hand.speed <= MIN_SPEED,
     )
-
-
-set_dials = set_bars

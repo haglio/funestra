@@ -42,12 +42,12 @@ MAX_VOLUME = 100
 
 # The app the control reserves at the right end of the scrubber row, so the
 # scrubber's track stops clear of it: the volume control, flush with the row's end, and
-# the gap back to the track.  ``funestra.timeline.bar_track_x`` subtracts
+# the gap back to the track.  ``funestra.scrubber_bar.bar_track_x`` subtracts
 # it, so the two agree on where the track ends and the volume control begins.
 PLACE_W = TRACK_GAP + VOLUME_CONTROL_W
 
 # The row the volume control is centered in when the Funestra under it draws no scrubber: the
-# height the scrubber would have had, ``funestra.timeline.TIMELINE_HEIGHT``.
+# height the scrubber would have had, ``funestra.scrubber_bar.SCRUBBER_HEIGHT``.
 # Restated rather than imported, because ``timeline`` reads ``SLOT_W`` from here
 # and the import cannot go both ways; ``test_volume`` pins the two together.
 ROW_H = 24
@@ -145,7 +145,3 @@ class VolumeHudPainter(KeptBitmap):
         draw_track(draw, _TRACK_X0, _TRACK_X1, VOLUME_CONTROL_H // 2,
                    filled_to=filled if filled > _TRACK_X0 else None)
         return image
-
-
-CHIP_H = VOLUME_CONTROL_H
-chip_xy = volume_control_xy

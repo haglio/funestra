@@ -26,7 +26,7 @@ class MainMode(StrEnum):
 
 
 class SatellitesMode(StrEnum):
-    """What the satellite side shows: the two Funestras, or a hosted Origenerator's
+    """What the Satellite shows: the two Funestras, or a hosted Origenerator's
     shows over them."""
 
     KINO = "kino"
@@ -88,7 +88,6 @@ class MessageLevel(StrEnum):
 
     WARNING = "warning"
     NORMAL = "notice"
-    NOTICE = "notice"
     HIGHLIGHT = "favorite"
 
 
@@ -101,6 +100,3 @@ def read_mode[M: Enum, D](enum: type[M], raw: object, default: D) -> M | D:
         return enum(raw)
     except ValueError:
         return default
-
-
-NoticeLevel = MessageLevel

@@ -14,7 +14,6 @@ from shared_ui.icon_geometry import tooltip_for
 from shared_ui.spacing import BUTTON_SIZE_HUD
 
 from .hud_icons import SHARED_ICON, shared_icon_name
-from .old_keywords import still_answer_to
 
 BUTTON = BUTTON_SIZE_HUD  # a square control; the wider ones say their own width
 
@@ -106,6 +105,3 @@ def rows_from_raw(raw: object) -> tuple[tuple[Button, ...], ...]:
     if not isinstance(raw, list):
         return ()
     return tuple(buttons_from_raw(row) for row in raw if isinstance(row, list))
-
-
-still_answer_to(Button, glyph="icon")

@@ -42,7 +42,7 @@ from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
 from .radio import Radio, RadioFile, Tuner, radio_file_for
 from .satellite_hud import HudModel
-from .scrubber import HeatmapStrip, LoopThumbCapture, loop_thumbnail_xys
+from .scrubber import Heatmap, LoopThumbCapture, loop_thumbnail_xys
 from .session_quit import quit_gesture
 from .status import StatusWriter
 from .tcode import UdpTCodeSink
@@ -205,7 +205,7 @@ class Funestra:
             else {name: make(self.playback) for name, make in users.items()})
         self._showing = next(iter(self._users))
         self._drive_gate = DriveGate(self.playback)
-        self._strip = HeatmapStrip()
+        self._strip = Heatmap()
         self._volume = (
             AppVolume(engine, dashboard_cmd_file=channels.dashboard_cmd, live=audible)
             if sound_is_the_rooms else VolumeControl(engine, live=audible, muted=muted)

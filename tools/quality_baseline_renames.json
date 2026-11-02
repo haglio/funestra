@@ -1,0 +1,9 @@
+{
+  "funestra/console.py": "funestra/main_hud.py",
+  "funestra/console_hud.py": "funestra/main_hud_painter.py",
+  "funestra/drive_readout.py": "funestra/osr2_visualizer.py",
+  "funestra/hud_marks.py": "funestra/hud_icons.py",
+  "funestra/notices.py": "funestra/messages.py",
+  "funestra/timeline.py": "funestra/scrubber_bar.py",
+  "funestra/device_panel.py": "funestra/osr2_controls_host.py"
+}
