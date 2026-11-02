@@ -13,46 +13,46 @@ and a painter can use it without either dragging the other's dependencies along.
 
 from __future__ import annotations
 
-SHARED_MARK = "\x00glyph:"
+SHARED_ICON = "\x00glyph:"
 
 
-def shared_mark(name: str) -> str:
+def shared_icon(name: str) -> str:
     """The marker standing for one of :mod:`shared_ui.icon_geometry`'s marks."""
-    return SHARED_MARK + name
+    return SHARED_ICON + name
 
 
-def shared_mark_name(glyph: str) -> str:
-    """Which mark *glyph* stands for; only call it on a :data:`SHARED_MARK` one."""
-    return glyph[len(SHARED_MARK):]
+def shared_icon_name(icon: str) -> str:
+    """Which mark *icon* stands for; only call it on a :data:`SHARED_MARK` one."""
+    return icon[len(SHARED_ICON):]
 
 
 # An app's own mark: the magenta five-by-five letter its .ico carries, drawn
 # from :data:`shared_ui.app_icon.LETTERS` by the letter the marker names.
-APP_MARK = "\0app:"
+APP_ICON = "\0app:"
 
 
-def app_mark(letter: str) -> str:
-    return APP_MARK + letter
+def app_icon(letter: str) -> str:
+    return APP_ICON + letter
 
 
-def app_mark_letter(glyph: str) -> str:
-    """Which letter *glyph* stands for; only call it on an :data:`APP_MARK` one."""
-    return glyph[len(APP_MARK):]
+def app_mark_letter(icon: str) -> str:
+    """Which letter *icon* stands for; only call it on an :data:`APP_MARK` one."""
+    return icon[len(APP_ICON):]
 
 
 # The two controls that stand for an app rather than for an action: the OSR2
 # broker's "B" and F-mode's "F".
-BROKER_ICON = app_mark("B")
-FMODE_ICON = app_mark("F")
+BROKER_ICON = app_icon("B")
+FMODE_ICON = app_icon("F")
 
-MINIMIZE_ICON = shared_mark("minus")
+MINIMIZE_ICON = shared_icon("minus")
 
 # The transport and the lock every source declares on a Funestra.
-PREVIOUS_ICON = shared_mark("chevron_left")
-BACK_ICON = shared_mark("chevrons_left")
-FORWARD_ICON = shared_mark("chevrons_right")
-NEXT_ICON = shared_mark("chevron_right")
-LOCK_ICON = shared_mark("lock")
+PREVIOUS_ICON = shared_icon("chevron_left")
+BACK_ICON = shared_icon("chevrons_left")
+FORWARD_ICON = shared_icon("chevrons_right")
+NEXT_ICON = shared_icon("chevron_right")
+LOCK_ICON = shared_icon("lock")
 
 # The family's on/off switch, on while its button is lit.
 TOGGLE_SWITCH = "\0switch"

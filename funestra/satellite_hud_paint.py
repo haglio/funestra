@@ -37,15 +37,15 @@ from funestra.hud import (
     button_ground,
     draw_active_dot,
     draw_button,
-    draw_glyph,
-    draw_mark,
+    draw_character,
+    draw_icon,
     draw_tooltip,
     load_font,
     text_width,
     to_bgra,
 )
 from funestra.hud_button import Button
-from funestra.hud_marks import SHARED_MARK, shared_mark, shared_mark_name
+from funestra.hud_icons import SHARED_ICON, shared_icon, shared_icon_name
 
 from .drive_readout import DriveSection, DriveTrack, readout_targets, section_size
 from .geometry import Rect, contains
@@ -71,9 +71,9 @@ from .satellite_hud import (
     CTRL_BAND_H,
     CTRL_BTN,
     ELLIPSIS_ROOM,
-    EXPAND_MARK,
-    FAVORITE_MARK,
-    LOOP_MARK,
+    EXPAND_ICON,
+    FAVORITE_ICON,
+    LOOP_ICON,
     MAP_COLUMN_H,
     MAP_GAP,
     MAP_THUMB_H,
@@ -85,7 +85,7 @@ from .satellite_hud import (
     TITLE_BASELINE,
     TITLE_INDENT,
     TITLE_X,
-    WRONG_ACTION_MARK,
+    WRONG_ACTION_ICON,
     WRONG_BTN,
     WRONG_GAP,
     HudCell,
@@ -101,7 +101,7 @@ from .satellite_hud import (
     device_height,
     ellipsis_rects,
     expand_button_rect,
-    favorite_mark_rect,
+    favorite_icon_rect,
     filter_button_rects,
     hud_layout,
     hud_width,
@@ -130,8 +130,8 @@ _DIM = 0.5      # non-playing thumbnails; the one on screen stays full
 _BORDER_W = 2   # the lock ring around the held video
 _COUNT_LINE_H = 11  # line pitch of the axis counts in the map's top-left corner
 
-_LOOP_GLYPH = shared_mark(LOOP_MARK)
-_EXPAND_GLYPH = shared_mark(EXPAND_MARK)
+_LOOP_ICON = shared_icon(LOOP_ICON)
+_EXPAND_ICON = shared_icon(EXPAND_ICON)
 
 
 @dataclass(frozen=True)
@@ -191,7 +191,7 @@ class HudRenderer:
         self._titles: dict[int, ImageFont.FreeTypeFont] = {SIZE_BODY: self._body}
         self._tiny = load_font(SIZE_TINY)
         self._pointer: tuple[int, int] | None = None
-        self._glyph = load_font(SIZE_BODY, SYMBOL_FONT)
+        self._icon = load_font(SIZE_BODY, SYMBOL_FONT)
         self._thumbs: dict[str, Image.Image] = {}
         # The main console's own two blocks, hosted here for a HUD whose
         # Funestra has the OSR2 -- see HudModel.osr2.
@@ -356,7 +356,7 @@ class HudRenderer:
                                         inset=MINUS_INSET),
                      minimize_button(model.funestra))
             draw_button(image, draw, *minus, hovered=self._pointer_is_on(minus[0]),
-                        glyph_font=self._glyph, word_font=self._tiny)
+                        icon_font=self._icon, word_font=self._tiny)
             buttons.append(minus)
 
         # Laid out against the HUD rather than against the map: they act on the
@@ -367,7 +367,7 @@ class HudRenderer:
                 y, row, row_widths)
             for index, (rect, button) in enumerate(placed):
                 draw_button(image, draw, rect, button, hovered=self._pointer_is_on(rect),
-                            glyph_font=self._glyph, word_font=self._tiny,
+                            icon_font=self._icon, word_font=self._tiny,
                             row_label=index == 0)
             buttons.extend(placed)
             y += CTRL_BAND_H
@@ -385,7 +385,7 @@ class HudRenderer:
                       font=self._tiny, anchor="lm", fill=(*TEXT_MUTED, 255))
             for rect, button in speed_buttons:
                 draw_button(image, draw, rect, button, hovered=self._pointer_is_on(rect),
-                            glyph_font=self._glyph, word_font=self._tiny)
+                            icon_font=self._icon, word_font=self._tiny)
             rx, ry, rw, rh = rate_rect
             draw.text((rx + rw / 2, ry + rh / 2), format_rate(model.playback_speed),
                       font=self._tiny, anchor="mm", fill=(*TEXT_PRIMARY, 255))
@@ -477,7 +477,7 @@ class HudRenderer:
                 self._draw_ellipses(image, corner_rect, column_rect, seed_rects,
                                     action_rects, axis, window)
         if expand_rect is not None:
-            self._glyph_button(image, draw, expand_rect, _EXPAND_GLYPH)
+            self._icon_button(image, draw, expand_rect, _EXPAND_ICON)
         return HudTargets(
             click=build_click_targets(corner_rect, seed_rects, action_rects,
                                       model.corner, model.seeds, model.actions),
@@ -500,7 +500,7 @@ class HudRenderer:
                 y, row, row_widths)
             for index, (rect, button) in enumerate(placed):
                 draw_button(image, draw, rect, button, hovered=self._pointer_is_on(rect),
-                            glyph_font=self._glyph, word_font=self._tiny,
+                            icon_font=self._icon, word_font=self._tiny,
                             row_label=index == 0)
             buttons.extend(placed)
             y += CTRL_BAND_H
@@ -523,7 +523,7 @@ class HudRenderer:
     def _button_width(self, button: Button) -> int:
         """A declared button's width: its own, or -- asking to fit its word --
         the word as this face draws it, padded either side."""
-        return button.width or text_width(self._tiny, button.glyph) + 2 * MODE_LABEL_PAD
+        return button.width or text_width(self._tiny, button.icon) + 2 * MODE_LABEL_PAD
 
     def _title_font(self, size: int) -> ImageFont.FreeTypeFont:
         if size not in self._titles:
@@ -547,8 +547,8 @@ class HudRenderer:
                               reserve=reserve)
         draw.text((name_x + TITLE_INDENT, line_y), subtitle,
                   font=self._tiny, anchor="la", fill=(*TEXT_MUTED, 255))
-        favorite = favorite_mark_rect(name_x, line_y, sum(self._tiny.getmetrics()))
-        draw_mark(image, FAVORITE_MARK, favorite,
+        favorite = favorite_icon_rect(name_x, line_y, sum(self._tiny.getmetrics()))
+        draw_icon(image, FAVORITE_ICON, favorite,
                   (*(GREEN if model.is_favorite else TEXT_MUTED), 255))
         return favorite
 
@@ -758,26 +758,26 @@ class HudRenderer:
         return button_ground(draw, rect, on_color if on else BG_BUTTON,
                              hovered=self._pointer_is_on(rect), rest_ink=ink)
 
-    def _glyph_button(self, image, draw, rect: Rect, glyph: str, *, on: bool = False,
+    def _icon_button(self, image, draw, rect: Rect, icon: str, *, on: bool = False,
                       on_color=WHITE, ink=None) -> None:
-        """One of the HUD's square buttons, with a mark or a glyph on it.
+        """One of the HUD's square buttons, with a mark or a icon on it.
 
         A mark the family draws is rendered from its geometry, so the bin here is
         the bin on Origenerator's toolbar rather than whatever a symbol face had.
-        A typed glyph is centered on its own ink instead: the padlock and the
+        A typed icon is centered on its own ink instead: the padlock and the
         transport arrows sit high in bounds that run to the descender, so the
         font's own centering dropped every one of them toward its button's floor.
         """
         ink = self._button_square(draw, rect, on=on, on_color=on_color, ink=ink)
-        if glyph.startswith(SHARED_MARK):
-            draw_mark(image, shared_mark_name(glyph), rect, ink)
+        if icon.startswith(SHARED_ICON):
+            draw_icon(image, shared_icon_name(icon), rect, ink)
             return
         bx, by, bw, bh = rect
-        draw_glyph(draw, bx + bw / 2, by + bh / 2, glyph, self._glyph, ink)
+        draw_character(draw, bx + bw / 2, by + bh / 2, icon, self._icon, ink)
 
     def _filter_button(self, image, draw, rect: Rect, *, on: bool = False) -> None:
         """The same square button wearing the family's filter, for the act filter."""
-        draw_mark(image, "filter", rect, self._button_square(draw, rect, on=on))
+        draw_icon(image, "filter", rect, self._button_square(draw, rect, on=on))
 
     def _strike_button(self, image, draw, rect: Rect) -> None:
         """The strike under the current video's act: the family's cross, drawn red.
@@ -788,7 +788,7 @@ class HudRenderer:
         side sits in, and the act is relabeled out from under it.
         """
         self._button_square(draw, rect, on=False, ink=RED)
-        draw_mark(image, WRONG_ACTION_MARK, rect, (*RED, 255))
+        draw_icon(image, WRONG_ACTION_ICON, rect, (*RED, 255))
 
     def _draw_filter_buttons(self, image, draw, rects: list[tuple[Rect, str]],
                              model: HudModel) -> None:
@@ -823,7 +823,7 @@ class HudRenderer:
             if button is None:
                 continue
             on = active_loop == kind
-            self._glyph_button(image, draw, button, _LOOP_GLYPH, on=on)
+            self._icon_button(image, draw, button, _LOOP_ICON, on=on)
             if on:
                 gx, gy, gw, gh = group_rect
                 draw.rectangle([gx, gy, gx + gw - 1, gy + gh - 1],

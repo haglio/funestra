@@ -41,12 +41,12 @@ from shared_ui.toggle_geometry import TRACK_HUD
 from shared_ui.toggle_switch_pil import paste_toggle_switch
 from shared_ui.type_scale import in_pixels
 
-from .hud_marks import (
-    APP_MARK,
-    SHARED_MARK,
+from .hud_icons import (
+    APP_ICON,
+    SHARED_ICON,
     TOGGLE_SWITCH,
     app_mark_letter,
-    shared_mark_name,
+    shared_icon_name,
 )
 
 # Segoe UI Symbol, for the marks these HUDs type rather than draw.  Segoe UI Bold
@@ -78,26 +78,26 @@ def text_width(font: ImageFont.FreeTypeFont, text: str) -> int:
     return int(font.getlength(text))
 
 
-# Where each glyph's ink sits relative to the origin ``draw.text`` draws from,
-# measured once per face+size+glyph.  A HUD uses a dozen glyphs and repaints them
+# Where each icon's ink sits relative to the origin ``draw.text`` draws from,
+# measured once per face+size+icon.  A HUD uses a dozen icon and repaints them
 # for the life of the session, so the probe below runs a handful of times.
 _INK_OFFSETS: dict[tuple[str, int, str], tuple[float, float] | None] = {}
 
 
-def ink_center_offset(font: ImageFont.FreeTypeFont, glyph: str) -> tuple[float, float] | None:
-    """The center of *glyph*'s ink, offset from where ``draw.text`` starts it.
+def ink_center_offset(font: ImageFont.FreeTypeFont, icon: str) -> tuple[float, float] | None:
+    """The center of *icon*'s ink, offset from where ``draw.text`` starts it.
 
     Measured by drawing it, because nothing reported is the ink bounds:
     ``textbbox`` gives the layout bounds, whose lower edge is the face's descender line
-    however short the glyph — a minus sign reports nine pixels of empty space
-    under it.  None when the glyph leaves no ink at all.
+    however short the icon — a minus sign reports nine pixels of empty space
+    under it.  None when the icon leaves no ink at all.
     """
-    key = (str(getattr(font, "path", "")), int(getattr(font, "size", 0)), glyph)
+    key = (str(getattr(font, "path", "")), int(getattr(font, "size", 0)), icon)
     if key not in _INK_OFFSETS:
         pad = 8
-        bounds = font.getbbox(glyph)
+        bounds = font.getbbox(icon)
         probe = Image.new("L", (int(bounds[2]) + 2 * pad, int(bounds[3]) + 2 * pad), 0)
-        ImageDraw.Draw(probe).text((pad, pad), glyph, font=font, fill=255)
+        ImageDraw.Draw(probe).text((pad, pad), icon, font=font, fill=255)
         ink = probe.getbbox()
         _INK_OFFSETS[key] = None if ink is None else (
             (ink[0] + ink[2] - 1) / 2 - pad, (ink[1] + ink[3] - 1) / 2 - pad,
@@ -105,25 +105,25 @@ def ink_center_offset(font: ImageFont.FreeTypeFont, glyph: str) -> tuple[float, 
     return _INK_OFFSETS[key]
 
 
-def draw_glyph(draw: ImageDraw.ImageDraw, cx: float, cy: float, glyph: str,
+def draw_character(draw: ImageDraw.ImageDraw, cx: float, cy: float, icon: str,
                font: ImageFont.FreeTypeFont, fill) -> None:
-    """Draw *glyph* centered on its own ink at ``(cx, cy)``.
+    """Draw *icon* centered on its own ink at ``(cx, cy)``.
 
     Pillow's ``anchor="mm"`` centers the font's ascent/descent bounds, not the mark
     inside it — and on the symbol faces these HUDs use, the mark sits high in
     bounds that run down to the descender.  Every icon button was therefore drawing
-    its glyph two to six pixels low.  Centering the ink puts it where the eye
-    expects it, whatever the glyph.
+    its icon two to six pixels low.  Centering the ink puts it where the eye
+    expects it, whatever the icon.
     """
-    offset = ink_center_offset(font, glyph)
+    offset = ink_center_offset(font, icon)
     if offset is None:
         return
-    draw.text((cx - offset[0], cy - offset[1]), glyph, font=font, fill=fill)
+    draw.text((cx - offset[0], cy - offset[1]), icon, font=font, fill=fill)
 
 
-def draw_mark(image: Image.Image, name: str, rect: tuple[int, int, int, int],
+def draw_icon(image: Image.Image, name: str, rect: tuple[int, int, int, int],
               fill) -> None:
-    """One of the family's marks, centered in *rect*.
+    """One of the family's icons, centered in *rect*.
 
     The same drawing the apps' Qt chrome paints -- shared_ui holds the geometry
     and each side renders it -- so a trash can on a HUD is the trash can on
@@ -172,7 +172,7 @@ def draw_tooltip(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: 
     return the rect it drew.
 
     These HUDs are painted into the video, so there is no native tooltip to fall
-    back on and every glyph on them is cryptic on purpose — this tooltip *is* how a
+    back on and every icon on them is cryptic on purpose — this tooltip *is* how a
     control says what it is.  Being part of the HUD's own bitmap is also why it
     wraps rather than running on: whatever crosses the slab's edge is never drawn,
     so an over-wide tooltip loses its tail with nothing to say it had one.  It
@@ -315,7 +315,7 @@ def button_ground(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int], fi
 
 def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
                 rect: tuple[int, int, int, int], button, *, hovered: bool,
-                glyph_font: ImageFont.FreeTypeFont,
+                icon_font: ImageFont.FreeTypeFont,
                 word_font: ImageFont.FreeTypeFont,
                 row_label: bool = False) -> None:
     """One declared control (:class:`funestra.hud_button.Button`), in the
@@ -323,8 +323,8 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
     filled while lit -- green for a favorites control, yellow for an enhanced
     one, the family's blue for the rest; red for a live recording, blue for the
     loop it leaves running, the active gray for a choice held but not applied
-    -- with its face drawn on top: an app mark, one of the family's marks, a
-    typed glyph out of *glyph_font*, or a word in *word_font*.
+    -- with its face drawn on top: an app mark, one of the family's icons, a
+    typed icon out of *glyph_font*, or a word in *word_font*.
 
     An item with nothing to post is a READ-OUT, not a control: bare text with no
     button under it, in the readout's own key/value colors -- a muted word names
@@ -340,13 +340,13 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
         named = button.is_a_name and not button.lit
         ink = TEXT_MUTED if named else TEXT_PRIMARY
         if row_label:
-            draw.text((x, y + h / 2), button.glyph, font=word_font, anchor="lm",
+            draw.text((x, y + h / 2), button.icon, font=word_font, anchor="lm",
                       fill=(*ink, 255))
         else:
-            draw.text((x + w / 2, y + h / 2), button.glyph, font=word_font,
+            draw.text((x + w / 2, y + h / 2), button.icon, font=word_font,
                       anchor="mm", fill=(*ink, 255))
         return
-    if button.glyph == TOGGLE_SWITCH:
+    if button.icon == TOGGLE_SWITCH:
         paste_toggle_switch(image, (x + (w - TRACK_HUD[0]) // 2, y + (h - TRACK_HUD[1]) // 2),
                             on=button.lit, hovered=hovered)
         return
@@ -356,12 +356,12 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
             else BG_BUTTON_ACTIVE if button.remembered else BG_BUTTON)
     ink = button_ground(draw, rect, fill, hovered=hovered, dim=button.dim,
                         rest_ink=RED if button.danger else YELLOW if button.enhanced else None)
-    glyph = button.glyph
-    if glyph.startswith(APP_MARK):
-        draw_letter(draw, rect, app_mark_letter(glyph))
-    elif glyph.startswith(SHARED_MARK):
-        draw_mark(image, shared_mark_name(glyph), rect, ink)
-    elif len(glyph) == 1 and not glyph.isalnum():
-        draw_glyph(draw, x + w / 2, y + h / 2, glyph, glyph_font, ink)
+    icon = button.icon
+    if icon.startswith(APP_ICON):
+        draw_letter(draw, rect, app_mark_letter(icon))
+    elif icon.startswith(SHARED_ICON):
+        draw_icon(image, shared_icon_name(icon), rect, ink)
+    elif len(icon) == 1 and not icon.isalnum():
+        draw_character(draw, x + w / 2, y + h / 2, icon, icon_font, ink)
     else:
-        draw.text((x + w / 2, y + h / 2), glyph, font=word_font, anchor="mm", fill=ink)
+        draw.text((x + w / 2, y + h / 2), icon, font=word_font, anchor="mm", fill=ink)

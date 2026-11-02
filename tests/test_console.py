@@ -34,12 +34,12 @@ from funestra.console import (
     tooltip_at,
 )
 from funestra.hud_button import FIT_THE_WORD, Button
-from funestra.hud_marks import (
+from funestra.hud_icons import (
     BROKER_ICON,
     MINIMIZE_ICON,
     TOGGLE_SWITCH,
-    shared_mark,
-    shared_mark_name,
+    shared_icon,
+    shared_icon_name,
 )
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.modes import MainMode, Osr2State
@@ -89,7 +89,7 @@ def _button(row, command: str) -> Button:
 
 
 def _waveform_face(shape: str) -> str:
-    return _button(_aim_row(shape=shape), "robot_hand_cycle_shape").glyph
+    return _button(_aim_row(shape=shape), "robot_hand_cycle_shape").icon
 
 
 class TestTheRowThatAimsTheDevice:
@@ -97,28 +97,28 @@ class TestTheRowThatAimsTheDevice:
         row = _aim_row()
 
         _label, _off, switch, _on = row[:4]
-        assert switch.glyph == TOGGLE_SWITCH
+        assert switch.icon == TOGGLE_SWITCH
         assert [button.command for button in row[4:]] == [
             "robot_hand_toggle_learned", "robot_hand_cycle_shape"]
         assert row[4].group_break
 
     def test_human_inspired_wears_the_familys_human_figure(self):
-        face = _button(_aim_row(), "robot_hand_toggle_learned").glyph
+        face = _button(_aim_row(), "robot_hand_toggle_learned").icon
 
-        assert face == shared_mark("human")
-        assert shared_mark_name(face) in icon_names()
+        assert face == shared_icon("human")
+        assert shared_icon_name(face) in icon_names()
 
     def test_the_switch_is_labeled_osr2_control_apart_from_the_osr2_itself(self):
         label, *_switch = _aim_row()[:4]
 
-        assert label.glyph == "OSR2 control"
+        assert label.icon == "OSR2 control"
         assert not label.command
         assert label.width == FIT_THE_WORD
 
     def test_the_switch_says_off_on_one_side_and_on_on_the_other(self):
         _label, off, _switch, on = _aim_row()[:4]
 
-        assert (off.glyph, on.glyph) == ("Off", "On")
+        assert (off.icon, on.icon) == ("Off", "On")
         assert not off.command
         assert not on.command
 
@@ -164,13 +164,13 @@ class TestTheRowThatAimsTheDevice:
         faces = [_waveform_face(shape.value) for shape in WaveformShape]
 
         assert len(set(faces)) == len(faces)
-        assert {shared_mark_name(face) for face in faces} <= set(icon_names())
+        assert {shared_icon_name(face) for face in faces} <= set(icon_names())
 
     def test_the_sine_wears_the_face_every_version_of_the_family_draws(self):
-        assert _waveform_face("sine") == shared_mark("wave")
+        assert _waveform_face("sine") == shared_icon("wave")
 
     def test_a_waveform_this_version_does_not_know_wears_the_plain_wave(self):
-        assert _waveform_face("half_moon") == shared_mark("wave")
+        assert _waveform_face("half_moon") == shared_icon("wave")
 
 
 class TestTheBrokerButton:
@@ -192,7 +192,7 @@ class TestTheBrokerButton:
     def test_it_asks_for_its_own_icon_rather_than_the_word(self):
         (button,) = osr2_controls(broker_running=True)
 
-        assert button.glyph == BROKER_ICON
+        assert button.icon == BROKER_ICON
 
 
 class TestTheDeviceRunningItself:
@@ -306,7 +306,7 @@ class TestLayout:
         assert tooltip_at(_placed(), x + 1, y + 1) == "Nothing left to step to"
 
     def test_a_button_wearing_a_mark_this_version_lacks_says_why_on_hover(self):
-        button = Button("auto", shared_mark("a_mark_from_another_version"),
+        button = Button("auto", shared_icon("a_mark_from_another_version"),
                         "Generate on its own")
 
         assert tooltip_at(place_rows([[button]], x=0, y=0), 1, 1) == button.tooltip_on_hover

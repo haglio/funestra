@@ -47,7 +47,7 @@ from .drive_layout import fraction as _fraction
 from .file_channel import publish_whole
 from .geometry import Rect, contains
 from .hud import (
-    draw_mark,
+    draw_icon,
     load_font,
     text_width,
 )
@@ -391,7 +391,7 @@ class DriveSection:
         ink = DISABLED_INK if control.dim else (*TEXT_PRIMARY, 255)
         draw.rounded_rectangle([x, y, x + w - 1, y + h - 1], radius=BUTTON_RADIUS_HUD,
                                outline=ink, width=1)
-        draw_mark(image, control.mark, control.rect, ink)
+        draw_icon(image, control.mark, control.rect, ink)
 
     def _stacked(self, draw, rect: Rect, key: str, value: str, *, anchor: str, ink) -> None:
         x, y, w, h = rect

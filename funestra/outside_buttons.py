@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 from .hud import draw_button, draw_tooltip, to_bgra
 from .hud_button import Button
 from .hud_corners import plus_bgra, plus_button, tooltip_size
-from .hud_minimize import BUTTON, mark_font, minimize_button, name_slab, restore_button
+from .hud_minimize import BUTTON, icon_font, minimize_button, name_slab, restore_button
 from .hud_placement import HudCorner, HudEdge
 
 _PLUS_NEAREST_THE_ITEM = {
@@ -55,7 +55,7 @@ class OutsideButtons:
 def _button_bgra(button: Button, pointed: bool) -> np.ndarray:
     image = Image.new("RGBA", (BUTTON, BUTTON), (0, 0, 0, 0))
     draw_button(image, ImageDraw.Draw(image), (0, 0, BUTTON, BUTTON), button,
-                hovered=pointed, glyph_font=mark_font(), word_font=mark_font())
+                hovered=pointed, icon_font=icon_font(), word_font=icon_font())
     return to_bgra(image)
 
 
@@ -63,7 +63,7 @@ def _button_bgra(button: Button, pointed: bool) -> np.ndarray:
 def _tip_bgra(name: str) -> np.ndarray:
     size = tooltip_size(name)
     image = Image.new("RGBA", size, (0, 0, 0, 0))
-    draw_tooltip(ImageDraw.Draw(image), mark_font(), name, (0, 0), size)
+    draw_tooltip(ImageDraw.Draw(image), icon_font(), name, (0, 0), size)
     return to_bgra(image)
 
 

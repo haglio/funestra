@@ -47,7 +47,7 @@ another application's internals to get it. By what it is:
   `genau_status`, `genau_notifier` and `genau_arrival` are its verbs, its tick,
   and what it publishes. A shell — Fun Time's Main Funestra, its headset —
   supplies the surface and the loop.
-- **the chrome and what is drawn on it** — `hud`, `hud_marks`,
+- **the chrome and what is drawn on it** — `hud`, `hud_icons`,
   `geometry`, `timeline`, `volume`, `hud_title`, and then a model and a
   painter per HUD: `console` / `console_hud`, `drive_layout` / `drive_readout`,
   `satellite_hud` / `satellite_hud_paint`.  Two of those are sections rather

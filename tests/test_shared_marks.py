@@ -1,4 +1,4 @@
-"""The HUD wears the family's marks, not lookalikes of them.
+"""The HUD wears the family's icons, not lookalikes of them.
 
 A HUD is painted into the video frame with Pillow and there is no Qt in a Funestra
 process, so for a long time every mark here was whatever a symbol font happened
@@ -19,22 +19,22 @@ from shared_ui.toggle_switch_pil import paste_toggle_switch
 from funestra.hud import (
     SYMBOL_FONT,
     draw_button,
-    draw_mark,
+    draw_icon,
     load_font,
 )
 from funestra.hud_button import Button
-from funestra.hud_marks import TOGGLE_SWITCH, shared_mark, shared_mark_name
+from funestra.hud_icons import TOGGLE_SWITCH, shared_icon, shared_icon_name
 
 
 def _drawn(hud, draw, button) -> None:
     """One declared control, drawn the way every HUD here draws one."""
     draw_button(hud, draw, (0, 0, 18, 18), button, hovered=False,
-                glyph_font=load_font(11, SYMBOL_FONT), word_font=load_font(8))
+                icon_font=load_font(11, SYMBOL_FONT), word_font=load_font(8))
 
 
 class TestNamingTheMarks:
     def test_a_marker_round_trips_through_the_name_it_carries(self):
-        assert shared_mark_name(shared_mark("trash")) == "trash"
+        assert shared_icon_name(shared_icon("trash")) == "trash"
 
 
 class TestDrawingThem:
@@ -42,7 +42,7 @@ class TestDrawingThem:
         # HUD buttons draw their own rounded border, so a mark filling the whole
         # rect runs into it. The inset is what keeps the two apart.
         hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
-        draw_mark(hud, "trash", (0, 0, 18, 18), (255, 255, 255, 255))
+        draw_icon(hud, "trash", (0, 0, 18, 18), (255, 255, 255, 255))
         ink = np.asarray(hud)[:, :, 0] > 128
 
         assert ink.any(), "the mark did not draw"
@@ -53,7 +53,7 @@ class TestDrawingThem:
         # It composites onto the button's fill rather than stamping a
         # transparent square over it, which would cut a gap in the HUD.
         hud = Image.new("RGBA", (18, 18), (0, 90, 0, 255))
-        draw_mark(hud, "reset", (0, 0, 18, 18), (255, 255, 255, 255))
+        draw_icon(hud, "reset", (0, 0, 18, 18), (255, 255, 255, 255))
         pixels = np.asarray(hud)
 
         assert (pixels[:, :, 3] == 255).all(), "the mark punched through the HUD"
@@ -65,7 +65,7 @@ class TestDrawingThem:
         # wrong one, and only a difference here would ever reveal that.
         def drawn(name: str) -> bytes:
             hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
-            draw_mark(hud, name, (0, 0, 18, 18), (255, 255, 255, 255))
+            draw_icon(hud, name, (0, 0, 18, 18), (255, 255, 255, 255))
             return hud.tobytes()
 
         assert drawn("trash") != drawn("reset")
@@ -76,7 +76,7 @@ class TestDangerIsRed:
     def test_a_dangerous_control_draws_its_mark_in_red(self):
         hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
         draw = ImageDraw.Draw(hud)
-        _drawn(hud, draw, Button("x", shared_mark("trash"), "", danger=True))
+        _drawn(hud, draw, Button("x", shared_icon("trash"), "", danger=True))
         pixels = np.asarray(hud)
 
         reddest = pixels[:, :, 0].astype(int) - pixels[:, :, 1].astype(int)
@@ -116,7 +116,7 @@ class TestTheFamilysSwitch:
             hud = Image.new("RGBA", (width, 18), (0, 0, 0, 255))
             draw_button(hud, ImageDraw.Draw(hud), (0, 0, width, 18),
                         Button("x", TOGGLE_SWITCH, "", width=width, lit=lit), hovered=False,
-                        glyph_font=load_font(11, SYMBOL_FONT), word_font=load_font(8))
+                        icon_font=load_font(11, SYMBOL_FONT), word_font=load_font(8))
             return hud.tobytes()
 
         def familys(on: bool) -> bytes:
@@ -136,10 +136,10 @@ class TestTheFamilysSwitch:
         assert brightest(lit=True) > brightest(lit=False)
 
     def test_a_read_out_that_starts_with_a_letter_names_something_and_is_drawn_muted(self):
-        def brightest(glyph: str) -> int:
+        def brightest(icon: str) -> int:
             hud = Image.new("RGBA", (60, 18), (0, 0, 0, 255))
-            draw_button(hud, ImageDraw.Draw(hud), (0, 0, 60, 18), Button("", glyph, ""),
-                        hovered=False, glyph_font=load_font(11, SYMBOL_FONT),
+            draw_button(hud, ImageDraw.Draw(hud), (0, 0, 60, 18), Button("", icon, ""),
+                        hovered=False, icon_font=load_font(11, SYMBOL_FONT),
                         word_font=load_font(8))
             return int(np.asarray(hud)[:, :, :3].max())
 

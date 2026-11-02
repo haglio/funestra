@@ -3,7 +3,7 @@ and press them: the shape a source's band takes, every state set here."""
 from __future__ import annotations
 
 from funestra.hud_button import FIT_THE_WORD, Button
-from funestra.hud_marks import FMODE_ICON, MINIMIZE_ICON, shared_mark
+from funestra.hud_icons import FMODE_ICON, MINIMIZE_ICON, shared_icon
 
 
 def band(funestra: str = "portrait", *, locked: bool = False, favorites: bool = False,
@@ -18,15 +18,15 @@ def band(funestra: str = "portrait", *, locked: bool = False, favorites: bool = 
         own("prev", "⏮"),
         own("next", "⏭"),
         own("lock", "🔒", lit=locked, favorite=True, group_break=True),
-        own("trash", shared_mark("trash"), danger=True),
+        own("trash", shared_icon("trash"), danger=True),
         own("fmode", FMODE_ICON, lit=favorites, favorite=True),
         *(() if enhanced is None else (
-            own("enhanced", shared_mark("enhance_filter"), lit=enhanced,
+            own("enhanced", shared_icon("enhance_filter"), lit=enhanced,
                 enhanced=True, group_break=True),)),
-        own("reset", shared_mark("reset"), group_break=enhanced is None),
+        own("reset", shared_icon("reset"), group_break=enhanced is None),
         *(() if newest is None else (
-            own("shuffle", shared_mark("shuffle"), lit=not newest, group_break=True),
-            own("latest", shared_mark("latest"), lit=newest))),
+            own("shuffle", shared_icon("shuffle"), lit=not newest, group_break=True),
+            own("latest", shared_icon("latest"), lit=newest))),
         *((own("minimize", MINIMIZE_ICON, group_break=True),) if minimize else ()),
     )
 

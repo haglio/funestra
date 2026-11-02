@@ -45,7 +45,7 @@ from .drive_readout import DriveHud, DriveTrack, TrackGrip
 from .geometry import Rect, contains
 from .hud import ACTIVE_DOT
 from .hud_button import Button, buttons_from_raw, buttons_raw, rows_from_raw, rows_raw
-from .hud_marks import shared_mark
+from .hud_icons import shared_icon
 from .hud_osr2 import HEIGHT as OSR2_H
 from .hud_placement import HudCorner, HudEdge
 from .hud_sections import blocks_height, stack
@@ -483,8 +483,8 @@ def button_row_rects(x: int, y: int, buttons: Sequence[Button],
 # The speed row's two buttons, drawn by the Funestra rather than declared by the
 # source, since only the drawing Funestra knows the rate that sits between them.
 _SPEED_BUTTONS = (
-    ("speed_down", shared_mark("minus"), "Play the video slower"),
-    ("speed_up", shared_mark("plus"), "Play the video faster"),
+    ("speed_down", shared_icon("minus"), "Play the video slower"),
+    ("speed_up", shared_icon("plus"), "Play the video faster"),
 )
 
 
@@ -509,7 +509,7 @@ def speed_row(funestra: str, x: int, y: int, *,
 TITLE_INDENT = TITLE_X - PAD
 
 
-def favorite_mark_rect(x: int, y: int, line_h: int) -> Rect:
+def favorite_icon_rect(x: int, y: int, line_h: int) -> Rect:
     """The favorite mark: at the head of the file-name line, under the dot.
 
     A readout, not a button, so it belongs where the HUD keeps readouts and
@@ -712,10 +712,10 @@ FILTER_TOOLTIP = "Filter to this action"
 EXPAND_TOOLTIP = "More seeds — widen the net"
 FAVORITE_TOOLTIP = "In the favorites"
 WRONG_ACTION_TOOLTIP = "Wrong action — strike it, and it gets asked about again"
-LOOP_MARK = "loop"
-EXPAND_MARK = "expand_horizontal"
-FAVORITE_MARK = "star"
-WRONG_ACTION_MARK = "cross"
+LOOP_ICON = "loop"
+EXPAND_ICON = "expand_horizontal"
+FAVORITE_ICON = "star"
+WRONG_ACTION_ICON = "cross"
 
 
 def _in(rect: Rect | None, px: int, py: int) -> bool:
@@ -725,7 +725,7 @@ def _in(rect: Rect | None, px: int, py: int) -> bool:
 def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
     """What the HUD control under ``(px, py)`` is, or "" over none of them.
 
-    Every glyph on this HUD is cryptic on purpose — it is read over moving video
+    Every icon on this HUD is cryptic on purpose — it is read over moving video
     — so each one names itself on hover: a declared button by the tooltip its
     source gave it, the map's own chrome by the words here.
     """
@@ -734,15 +734,15 @@ def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
         return button.tooltip_on_hover
     loop = hit_test_targets(targets.loop, px, py)
     if loop:
-        return tooltip_for(LOOP_MARK, LOOP_TOOLTIPS.get(loop, ""))
+        return tooltip_for(LOOP_ICON, LOOP_TOOLTIPS.get(loop, ""))
     if _in(targets.wrong_action, px, py):
-        return tooltip_for(WRONG_ACTION_MARK, WRONG_ACTION_TOOLTIP)
+        return tooltip_for(WRONG_ACTION_ICON, WRONG_ACTION_TOOLTIP)
     if hit_test_targets(targets.filter, px, py):
         return FILTER_TOOLTIP
     if _in(targets.expand, px, py):
-        return tooltip_for(EXPAND_MARK, EXPAND_TOOLTIP)
+        return tooltip_for(EXPAND_ICON, EXPAND_TOOLTIP)
     if _in(targets.favorite, px, py):
-        return tooltip_for(FAVORITE_MARK, FAVORITE_TOOLTIP)
+        return tooltip_for(FAVORITE_ICON, FAVORITE_TOOLTIP)
     return ""
 
 

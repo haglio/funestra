@@ -3,24 +3,24 @@ from __future__ import annotations
 from .funestra_controls import SEEK_STEP_MS
 from .funestra_verbs import SEEK_BACK, SEEK_FWD
 from .hud_button import Button
-from .hud_marks import (
+from .hud_icons import (
     BACK_ICON,
     FMODE_ICON,
     FORWARD_ICON,
     LOCK_ICON,
     NEXT_ICON,
     PREVIOUS_ICON,
-    shared_mark,
+    shared_icon,
 )
 from .hud_title import F_MODE_LABEL, LATEST_LABEL, SHUFFLE_LABEL
 from .status import FunestraStatus
 
-TRASH_ICON = shared_mark("trash")
-RESET_ICON = shared_mark("reset")
-SHUFFLE_ICON = shared_mark("shuffle")
-LATEST_ICON = shared_mark("latest")
-VERSIONS_ICON = shared_mark("versions")
-FUNSCRIPT_JUMP_ICON = shared_mark("funscript_jump")
+TRASH_ICON = shared_icon("trash")
+RESET_ICON = shared_icon("reset")
+SHUFFLE_ICON = shared_icon("shuffle")
+LATEST_ICON = shared_icon("latest")
+VERSIONS_ICON = shared_icon("versions")
+FUNSCRIPT_JUMP_ICON = shared_icon("funscript_jump")
 
 NONE_FOR_THIS_ONE = " (none for this one)"
 AN_IMAGE = "this is an image"

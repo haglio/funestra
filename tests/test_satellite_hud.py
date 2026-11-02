@@ -13,7 +13,7 @@ from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL, SIZE_TINY
 from funestra.console import OSR2_PARKED, VALUE_W
 from funestra.hud import load_font
 from funestra.hud_button import Button
-from funestra.hud_marks import MINIMIZE_ICON, shared_mark
+from funestra.hud_icons import MINIMIZE_ICON, shared_icon
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.modes import Osr2State
 from funestra.satellite_hud import (
@@ -430,7 +430,7 @@ def test_act_is_filtered_picks_out_which_of_a_rows_acts_the_filter_named():
 
 
 def test_button_tooltip_names_each_button():
-    """Every glyph on the HUD is cryptic on purpose, so each one names itself on
+    """Every icon on the HUD is cryptic on purpose, so each one names itself on
     hover — a declared button by the tooltip its source gave it, the map's own
     chrome and the favorite mark by the words the HUD has for them."""
     targets = HudTargets(
@@ -455,7 +455,7 @@ def test_button_tooltip_names_each_button():
 
 
 def test_a_declared_button_wearing_a_mark_this_version_lacks_says_why_on_hover():
-    auto = Button("auto", shared_mark("a_mark_from_another_version"), "Generate on its own")
+    auto = Button("auto", shared_icon("a_mark_from_another_version"), "Generate on its own")
 
     targets = _targets(buttons=_squares(0, 0, (auto,)))
 
@@ -517,7 +517,7 @@ def test_the_speed_buttons_wear_the_familys_minus_and_plus():
     """The marks the main console's own pair wears, drawn rather than typed."""
     buttons, _rate = speed_row("landscape", 0, 0, label_width=70)
 
-    assert [button.glyph for _rect, button in buttons] == [shared_mark("minus"), shared_mark("plus")]
+    assert [button.icon for _rect, button in buttons] == [shared_icon("minus"), shared_icon("plus")]
 
 
 _NOTE = "Enhancing…"

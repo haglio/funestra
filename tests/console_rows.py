@@ -6,7 +6,7 @@ from shared_ui.spacing import BUTTON_WORD_W
 
 from funestra.console import ROW_LABEL_W, VALUE_W
 from funestra.hud_button import Button
-from funestra.hud_marks import FMODE_ICON, MINIMIZE_ICON, shared_mark
+from funestra.hud_icons import FMODE_ICON, MINIMIZE_ICON, shared_icon
 
 # Wider than any console is drawn, so a hover over its button has to wrap.
 LONG_TIP = ("Reset the browse: no filter, no lock, no loop, no F-Mode, and the "
@@ -32,12 +32,12 @@ def console_rows(mode: str = "kino", *, locked: bool = False, favorites: bool = 
          Button("main_lock", "🔒", "Lock", lit=locked, favorite=True, group_break=True),
          Button("main_fmode", FMODE_ICON, "F-Mode", lit=favorites, favorite=True),
          *(() if enhanced is None else (
-             Button("genau_filter_enhanced", shared_mark("enhance_filter"), "Enhanced only",
+             Button("genau_filter_enhanced", shared_icon("enhance_filter"), "Enhanced only",
                     lit=enhanced, enhanced=True),)),
-         Button("main_reset", shared_mark("reset"), LONG_TIP, group_break=True),
-         Button("main_shuffle", shared_mark("shuffle"), "Shuffle",
+         Button("main_reset", shared_icon("reset"), LONG_TIP, group_break=True),
+         Button("main_shuffle", shared_icon("shuffle"), "Shuffle",
                 lit=not remembered, remembered=remembered, group_break=True),
-         *((Button("main_player_cycle_version", shared_mark("versions"),
+         *((Button("main_player_cycle_version", shared_icon("versions"),
                    "Another version (none for this one)", dim=True, group_break=True),)
            if kino else ())),
         (Button("", "Playback speed" if kino else "Clip seconds", "", width=ROW_LABEL_W),

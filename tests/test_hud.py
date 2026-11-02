@@ -16,13 +16,13 @@ from funestra.hud import (
     Hud,
     draw_active_dot,
     draw_button,
-    draw_glyph,
+    draw_character,
     draw_tooltip,
     load_font,
     text_width,
 )
 from funestra.hud_button import Button
-from funestra.hud_marks import app_mark
+from funestra.hud_icons import app_icon
 
 
 def test_the_palette_is_shared_uis_own_read_without_qt():
@@ -163,21 +163,21 @@ def _ink_center(size: int, paint) -> tuple[float, float]:
     return (xs.min() + xs.max()) / 2, (ys.min() + ys.max()) / 2
 
 
-def test_a_glyph_is_centered_on_its_ink_not_on_the_fonts_bounds():
+def test_a_icon_is_centered_on_its_ink_not_on_the_fonts_bounds():
     """``anchor="mm"`` centers the font's bounds, whose lower edge is the descender line
-    however short the glyph — which is why every icon button drew its mark low.
+    however short the icon — which is why every icon button drew its mark low.
     Centering the ink puts it in the middle of the button, for the transport
     arrows, the padlock and the bare minus sign alike."""
     font = load_font(20, "seguisym.ttf")
 
-    for glyph in ("⏮", "\U0001F512", "−", "∿"):
-        centered = _ink_center(60, lambda d, g=glyph: draw_glyph(
+    for icon in ("⏮", "\U0001F512", "−", "∿"):
+        centered = _ink_center(60, lambda d, g=icon: draw_character(
             d, 30, 30, g, font, (255, 255, 255, 255)))
-        by_metrics = _ink_center(60, lambda d, g=glyph: d.text(
+        by_metrics = _ink_center(60, lambda d, g=icon: d.text(
             (30, 30), g, font=font, anchor="mm", fill=(255, 255, 255, 255)))
 
-        assert abs(centered[1] - 30) <= 0.5, glyph
-        assert by_metrics[1] > centered[1], glyph  # the old way sat lower
+        assert abs(centered[1] - 30) <= 0.5, icon
+        assert by_metrics[1] > centered[1], icon  # the old way sat lower
 
 
 def test_an_app_mark_fits_inside_the_button_it_is_centered_in():
@@ -185,8 +185,8 @@ def test_an_app_mark_fits_inside_the_button_it_is_centered_in():
     uses, with room left around it rather than running to the button's border."""
 
     image = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
-    draw_button(image, ImageDraw.Draw(image), (0, 0, 18, 18), Button("fmode", app_mark("F"), ""),
-                hovered=False, glyph_font=load_font(11), word_font=load_font(11))
+    draw_button(image, ImageDraw.Draw(image), (0, 0, 18, 18), Button("fmode", app_icon("F"), ""),
+                hovered=False, icon_font=load_font(11), word_font=load_font(11))
     ys, xs = np.nonzero((np.asarray(image)[:, :, :3] == MAGENTA).all(axis=2))
 
     assert xs.min() >= 2
@@ -195,12 +195,12 @@ def test_an_app_mark_fits_inside_the_button_it_is_centered_in():
     assert ys.max() <= 15
 
 
-def test_a_glyph_with_no_ink_draws_nothing_rather_than_raising():
+def test_a_icon_with_no_ink_draws_nothing_rather_than_raising():
     """A space has no ink to center on; the HUD repaints every frame, so this must
     be a no-op and not an exception out of the run loop."""
 
     image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
-    draw_glyph(ImageDraw.Draw(image), 5, 5, " ", load_font(11), (255, 255, 255, 255))
+    draw_character(ImageDraw.Draw(image), 5, 5, " ", load_font(11), (255, 255, 255, 255))
 
     assert np.asarray(image)[:, :, 3].max() == 0
 

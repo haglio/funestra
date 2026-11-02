@@ -50,7 +50,7 @@ from funestra.hud import (
 )
 from funestra.hud_button import Button
 from funestra.hud_corners import HudPlace
-from funestra.hud_marks import BROKER_ICON, shared_mark
+from funestra.hud_icons import BROKER_ICON, shared_icon
 from funestra.hud_minimize import ROOM as MINUS_ROOM
 from funestra.hud_minimize import minimize_command
 from funestra.hud_osr2 import COLORS as _OSR2_COLORS
@@ -581,7 +581,7 @@ class TestPainter:
         assert tuple(first) != tuple(second)
 
     def test_a_lit_marks_ink_stays_white_over_a_colored_fill(self):
-        """The Dash's mic keeps its white glyph while the HUD under it goes
+        """The Dash's mic keeps its white icon while the HUD under it goes
         blue.  A record button whose circle went dark while it recorded read as a
         different button rather than as the same one recording."""
         painter = ConsolePainter()
@@ -865,7 +865,7 @@ class TestDeclaredRows:
         painter.bgra(ConsoleHud(console=ConsoleModel(
             rows=((Button("go_on", "⏭", "On to the next"),),
                   (Button("", "Pace", "", width=40),
-                   Button("slower", shared_mark("minus"), "Slower", group_break=True))),
+                   Button("slower", shared_icon("minus"), "Slower", group_break=True))),
             osr2_controls=(Button("wake_broker", BROKER_ICON, "Wake it", warn=True),),
         )))
 
@@ -946,7 +946,7 @@ class TestPlaybackSpeed:
         def readouts(hud: ConsoleHud) -> list[str]:
             painter = ConsolePainter()
             painter.bgra(hud)
-            return [button.glyph for _rect, button in painter.buttons if button.host_value]
+            return [button.icon for _rect, button in painter.buttons if button.host_value]
 
         assert readouts(ConsoleHud(console=with_playback_speed(
             ConsoleModel(main_mode=MainMode.KINO, rows=console_rows("kino")), 1.75))) == ["1.75×"]
@@ -1265,7 +1265,7 @@ class TestNothingDriving:
         painter.rgba(ConsoleHud(console=ConsoleModel(
             main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
             osr2_rows=(aim_row(learned=False, shape="sine", control=OSR2_DRIVING),))))
-        label = next(rect for rect, button in painter.buttons if button.glyph == "OSR2 control")
+        label = next(rect for rect, button in painter.buttons if button.icon == "OSR2 control")
 
         assert label[2] > text_width(load_font(8), "OSR2 control")
 
@@ -1437,7 +1437,7 @@ class TestARowsNameLinesUpWithItsControls:
                 x, width, button = items[0]
                 if button.command or len(items) < 2:
                     continue
-                assert text_width(painter._tiny, button.glyph) <= width
+                assert text_width(painter._tiny, button.icon) <= width
                 assert x + width <= items[1][0]
 
     def test_a_name_wider_than_the_cell_its_source_gave_it_widens_the_cell(self):

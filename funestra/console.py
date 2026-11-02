@@ -35,7 +35,7 @@ from .hud_button import (
     rows_from_raw,
     rows_raw,
 )
-from .hud_marks import BROKER_ICON, TOGGLE_SWITCH, shared_mark
+from .hud_icons import BROKER_ICON, TOGGLE_SWITCH, shared_icon
 from .hud_placement import HudCorner, HudEdge
 from .modes import LengthMode, MainMode, Osr2State, read_mode
 from .robot_hand import WaveformShape
@@ -127,10 +127,10 @@ _WAVEFORM_FACES = {
 def aim_row(*, learned: bool, shape: str, control: str) -> tuple[Button, ...]:
     return (
         *_osr2_switch(control),
-        Button("robot_hand_toggle_learned", shared_mark("human"),
+        Button("robot_hand_toggle_learned", shared_icon("human"),
                "Human inspired: motion drawn from real hand-made scripts, not a waveform",
                lit=learned, group_break=True),
-        Button("robot_hand_cycle_shape", shared_mark(_WAVEFORM_FACES.get(shape, "wave")),
+        Button("robot_hand_cycle_shape", shared_icon(_WAVEFORM_FACES.get(shape, "wave")),
                f"Waveform: {shape_label(shape)}"),
     )
 
@@ -364,7 +364,7 @@ def hit_test(placed: list[tuple[Rect, Button]], px: int, py: int) -> str:
 
 
 def tooltip_at(placed: list[tuple[Rect, Button]], px: int, py: int) -> str:
-    """What the button under ``(px, py)`` is — every glyph here is cryptic on
+    """What the button under ``(px, py)`` is — every icon here is cryptic on
     purpose, so each one names itself on hover.  A dimmed control still answers:
     knowing why it cannot be pressed is the point."""
     for (bx, by, bw, bh), button in placed:

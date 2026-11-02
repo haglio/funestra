@@ -10,7 +10,7 @@ from shared_ui.spacing import BUTTON_GAP
 
 from .hud import TOOLTIP_PAD, draw_button, draw_tooltip, text_width, to_bgra
 from .hud_button import Button
-from .hud_minimize import BUTTON, RESTORE_GLYPH, mark_font, restore_at_command
+from .hud_minimize import BUTTON, RESTORE_ICON, icon_font, restore_at_command
 from .hud_placement import HudCorner, corner_at, hud_origin
 
 CORNER_PLUS_OVERLAY_ID = 11
@@ -49,26 +49,26 @@ def _corner_beside(place: HudPlace, x: int, y: int, *,
 
 
 def plus_button(funestra: str, place: str, *, minimized: bool) -> Button:
-    return Button(restore_at_command(funestra, place), RESTORE_GLYPH,
+    return Button(restore_at_command(funestra, place), RESTORE_ICON,
                   SHOW_TOOLTIP if minimized else MOVE_TOOLTIP)
 
 
 def tooltip_size(text: str) -> tuple[int, int]:
-    font = mark_font()
+    font = icon_font()
     return (text_width(font, text) + 2 * (TOOLTIP_PAD + _TOOLTIP_EDGE),
             sum(font.getmetrics()) + 2 * (TOOLTIP_PAD + _TOOLTIP_EDGE))
 
 
 @lru_cache(maxsize=16)
 def plus_bgra(button: Button, corner: HudCorner) -> np.ndarray:
-    font = mark_font()
+    font = icon_font()
     tooltip_w, tooltip_h = tooltip_size(button.tooltip)
     width, height = BUTTON + BUTTON_GAP + tooltip_w, max(BUTTON, tooltip_h)
     image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(image)
     rect = (width - BUTTON if corner.right else 0, height - BUTTON if corner.lower else 0,
             BUTTON, BUTTON)
-    draw_button(image, draw, rect, button, hovered=True, glyph_font=font, word_font=font)
+    draw_button(image, draw, rect, button, hovered=True, icon_font=font, word_font=font)
     inward = (-_FAR if corner.right else _FAR, _FAR if corner.lower else -_FAR)
     draw_tooltip(draw, font, button.tooltip, inward, (width, height))
     return to_bgra(image)
