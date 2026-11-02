@@ -46,6 +46,7 @@ from .funestra_verbs import (
     SPEED_DOWN,
     SPEED_UP,
     TOGGLE_LOCK,
+    TRASH,
 )
 from .learned_motion import (
     LearnedMotionState,
@@ -385,7 +386,7 @@ CONTROLS: tuple[Control, ...] = (
     Control(
         name="condemn",
         needs=("condemn_flick",),
-        verbs=(Verb("WEIRD", _condemn),),
+        verbs=(Verb(TRASH, _condemn), Verb("WEIRD", _condemn)),
     ),
     Control(
         name="play_file",

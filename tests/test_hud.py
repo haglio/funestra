@@ -108,7 +108,7 @@ def test_a_tooltip_wider_than_the_hud_wraps_rather_than_running_off_it():
     hud = Hud(150, 120)
     font = load_font(8)
 
-    rect = draw_tooltip(hud.draw, font, "Unfavorite it or mark weird when it is "
+    rect = draw_tooltip(hud.draw, font, "Unfavorite it or send to Trash when it is "
                         "not a favorite", (20, 20), hud.image.size)
 
     x, y, w, h = rect

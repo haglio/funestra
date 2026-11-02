@@ -25,7 +25,7 @@ class FlickSequenceController:
     def __init__(self, flicks: list[Path], *, start_at: Path | None = None):
         """*start_at* is the flick to open on — where a reopened session picks up,
         in whatever order *flicks* were scanned in.  A flick that is no longer in
-        it (deleted, or condemned as weird since) simply is not found, and the
+        it (deleted, or condemned as trash since) simply is not found, and the
         scan order stands from its top.
         """
         if not flicks:

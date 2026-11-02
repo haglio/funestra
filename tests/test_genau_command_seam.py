@@ -171,6 +171,7 @@ SEAM = [
     ("QUIT", {}, {"stopping": True}),
     ("PREV", {}, {"steps": (-1,)}),
     ("NEXT", {}, {"steps": (1,)}),
+    ("TRASH", {}, {"condemned": 1}),
     ("WEIRD", {}, {"condemned": 1}),
     ("FLIP_ENDS", {}, {"flipped": True}),
     ("LATEST", {}, {"reorders": (True,)}),

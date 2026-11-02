@@ -1068,7 +1068,7 @@ def test_a_tooltip_longer_than_the_hud_is_wide_stays_on_the_hud(thumb):
         return rows.min(), rows.max(), cols.max()
 
     upper, lower, right = tooltip_bounds(
-        "Unfavorite it — or mark weird when it is not a favorite, and it is asked"
+        "Unfavorite it — or send to Trash when it is not a favorite, and it is asked"
         " about again the next time it comes round")
     short_upper, short_lower, _ = tooltip_bounds("Bin")
 
