@@ -1,7 +1,7 @@
 """A Funestra's radio: stations of sound playing out of sight, one of them tuned in while an image is up.
 
 A Funestra's stations are written beside its playlist by whoever deals them, as
-one line per clip: the station's number, a TAB, the clip.
+one line per video: the station's number, a TAB, the video.
 """
 from __future__ import annotations
 
@@ -38,8 +38,8 @@ def radio_file_for(playlist: Path) -> Path:
 
 
 def write_radio(path: Path, stations: Sequence[Sequence[Path]]) -> None:
-    write_whole(path, "".join(f"{number}\t{clip}\n" for number, clips in enumerate(stations)
-                              for clip in clips),
+    write_whole(path, "".join(f"{number}\t{video}\n" for number, videos in enumerate(stations)
+                              for video in videos),
                 attempts=round(READER_HOLD_BUDGET_S / _RETRY_SPACING_S), delay_s=_RETRY_SPACING_S)
 
 
@@ -50,9 +50,9 @@ def read_radio(path: Path) -> list[list[Path]]:
         return []
     stations: dict[int, list[Path]] = {}
     for line in text.splitlines():
-        number, _, clip = line.partition("\t")
-        if number.strip().isdigit() and clip.strip():
-            stations.setdefault(int(number), []).append(Path(clip.strip()))
+        number, _, video = line.partition("\t")
+        if number.strip().isdigit() and video.strip():
+            stations.setdefault(int(number), []).append(Path(video.strip()))
     return [stations[number] for number in sorted(stations)]
 
 
@@ -124,7 +124,7 @@ class Radio:
             return
         opened: list[Station | None] = []
         try:
-            opened.extend(self._open_station(clips) for clips in self._dealt)
+            opened.extend(self._open_station(videos) for videos in self._dealt)
         except Exception:
             logger.exception("A radio station would not open, so this radio stays off")
             self._dealt = []

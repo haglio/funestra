@@ -49,8 +49,8 @@ class RefusesSeeks:
 
 
 class FakeStation:
-    def __init__(self, clips: Sequence[Path]) -> None:
-        self.clips = list(clips)
+    def __init__(self, videos: Sequence[Path]) -> None:
+        self.videos = list(videos)
         self.heard_at: int | None = None
         self.paused = False
         self.closed = False
@@ -166,8 +166,8 @@ class FakeEngine(RefusesSeeks):
     def hold_image_for(self, seconds: float | None) -> None:
         self.held_for = seconds or None
 
-    def radio_station(self, clips: Sequence[Path]) -> FakeStation:
-        self.stations.append(FakeStation(clips))
+    def radio_station(self, videos: Sequence[Path]) -> FakeStation:
+        self.stations.append(FakeStation(videos))
         return self.stations[-1]
 
     def seek_ms(self, ms: float) -> None:

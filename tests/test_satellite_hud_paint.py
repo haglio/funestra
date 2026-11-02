@@ -84,14 +84,14 @@ def thumb(tmp_path: Path) -> str:
     return str(path)
 
 
-CLIP_SHAPES = {
+VIDEO_SHAPES = {
     "portrait": [(90, 160), (132, 160), (160, 90)],
     "landscape": [(160, 90), (160, 125), (160, 69)],
 }
 
 
 @pytest.fixture
-def clip_thumb(tmp_path: Path):
+def video_thumb(tmp_path: Path):
     """``(side, shape) -> thumbnail path`` for the shapes above."""
     def make(funestra: str, shape: tuple[int, int]) -> str:
         path = tmp_path / f"{funestra}-{shape[0]}x{shape[1]}.jpg"
@@ -102,7 +102,7 @@ def clip_thumb(tmp_path: Path):
 
 
 def _sides_and_shapes() -> list[tuple[str, tuple[int, int]]]:
-    return [(funestra, shape) for funestra, shapes in CLIP_SHAPES.items() for shape in shapes]
+    return [(funestra, shape) for funestra, shapes in VIDEO_SHAPES.items() for shape in shapes]
 
 
 def _model(**overrides) -> HudModel:
@@ -155,8 +155,8 @@ def _crowded(funestra: str, thumb: str) -> HudModel:
 
 
 @pytest.mark.parametrize("funestra,shape", _sides_and_shapes())
-def test_the_map_is_three_cells_a_side_whatever_shape_its_clips_are(funestra, shape, clip_thumb):
-    rendered = HudRenderer(funestra).render(_crowded(funestra, clip_thumb(funestra, shape)))
+def test_the_map_is_three_cells_a_side_whatever_shape_its_clips_are(funestra, shape, video_thumb):
+    rendered = HudRenderer(funestra).render(_crowded(funestra, video_thumb(funestra, shape)))
 
     rects = [rect for rect, _path in rendered.targets.click]
     columns = {x for x, _y, _w, _h in rects}
@@ -165,13 +165,13 @@ def test_the_map_is_three_cells_a_side_whatever_shape_its_clips_are(funestra, sh
 
 
 @pytest.mark.parametrize("funestra,shape", _sides_and_shapes())
-def test_the_hud_stops_where_its_last_controls_do(funestra, shape, clip_thumb):
+def test_the_hud_stops_where_its_last_controls_do(funestra, shape, video_thumb):
     """No slab past the map wherever the map is what set the width: the expand
     button ends one margin in from the right edge and the action-loop button one
     margin up from the lower edge, so every pixel of the HUD is carrying something —
     for a wide cell as much as a narrow one.  (A status longer than the map is the
     other case, and there it is the line that reaches the far edge.)"""
-    rendered = HudRenderer(funestra).render(_crowded(funestra, clip_thumb(funestra, shape)))
+    rendered = HudRenderer(funestra).render(_crowded(funestra, video_thumb(funestra, shape)))
     height, width = rendered.bgra.shape[:2]
 
     ex, _ey, ew, _eh = rendered.targets.expand
@@ -181,14 +181,14 @@ def test_the_hud_stops_where_its_last_controls_do(funestra, shape, clip_thumb):
     assert ly + lh == height - PAD
 
 
-@pytest.mark.parametrize("funestra", CLIP_SHAPES)
+@pytest.mark.parametrize("funestra", VIDEO_SHAPES)
 def test_the_map_holds_its_cells_and_buttons_in_place_whatever_shape_its_clips_are(
-        funestra, clip_thumb):
+        funestra, video_thumb):
     renderer = HudRenderer(funestra)
     lone = renderer.render(_model(funestra=funestra, corner=HudCell(
-        path="c.mp4", thumb=clip_thumb(funestra, CLIP_SHAPES[funestra][0]))))
-    crowded = [renderer.render(_crowded(funestra, clip_thumb(funestra, shape)))
-               for shape in CLIP_SHAPES[funestra]]
+        path="c.mp4", thumb=video_thumb(funestra, VIDEO_SHAPES[funestra][0]))))
+    crowded = [renderer.render(_crowded(funestra, video_thumb(funestra, shape)))
+               for shape in VIDEO_SHAPES[funestra]]
 
     assert len({rendered.bgra.shape for rendered in [lone, *crowded]}) == 1
     assert len({tuple(rect for rect, _path in rendered.targets.click)
@@ -249,9 +249,9 @@ def test_render_rings_the_locked_clip_in_white(thumb):
 
 
 def test_the_lock_ring_follows_the_clip_being_held(thumb):
-    """A lock taken inside a loop holds whichever clip the loop had reached, and
+    """A lock taken inside a loop holds whichever video the loop had reached, and
     the map stays anchored where the loop started — so the ring has to land on the
-    cell that clip is drawn in.  Left on the corner it rings a clip that is neither
+    cell that video is drawn in.  Left on the corner it rings a video that is neither
     playing nor locked."""
     def ring_ink(playing) -> tuple[int, int]:
         rendered = HudRenderer("portrait").render(
@@ -275,7 +275,7 @@ def test_the_lock_ring_follows_the_clip_being_held(thumb):
 
 
 def test_render_without_a_corner_still_draws_the_shell():
-    """A satellite with no clip yet gets the lock band and nothing else — and no
+    """A satellite with no video yet gets the lock band and nothing else — and no
     click targets, so a stray press over the empty HUD posts nothing."""
     rendered = HudRenderer("landscape").render(
         HudModel(funestra="landscape", locked=False, title="Unlocked"))
@@ -358,7 +358,7 @@ def test_the_line_the_file_name_takes_is_kept_while_there_is_no_name(thumb):
 
 
 def test_a_file_name_too_wide_for_the_map_widens_the_hud(thumb):
-    """Names run long, and a name cut off mid-word says nothing about which clip this
+    """Names run long, and a name cut off mid-word says nothing about which video this
     is — which is the whole reason it is drawn.  So it takes the width it needs, the
     way the title above it does."""
     renderer = HudRenderer("portrait")
@@ -444,7 +444,7 @@ def test_a_hud_that_declares_no_buttons_holds_no_band_open_for_them():
 
 def test_render_draws_the_sides_own_controls_even_with_no_clip():
     """The buttons are the side's, not the map's, so they are there before the
-    first clip arrives — a satellite that came up empty can still be stepped off
+    first video arrives — a satellite that came up empty can still be stepped off
     it, and still narrowed to its favorites."""
     rendered = HudRenderer("landscape").render(
         _model(funestra="landscape", locked=False, title="Unlocked"))
@@ -483,7 +483,7 @@ def _lit_ink(rect, rendered) -> int:
 def test_the_state_controls_and_favorite_mark_light_up_when_they_apply():
     """Green is what the dashboard's HUD used, so everything that is a *state*
     keeps it: the lock button while the Funestra is locked, the F button while
-    the Funestra is in F-mode, the star while the clip is a favorite."""
+    the Funestra is in F-mode, the star while the video is a favorite."""
     def rendered_with(*, locked=False, favorites=False, is_favorite=False):
         return HudRenderer("landscape").render(
             _model(funestra="landscape", locked=locked, title="Unlocked",
@@ -574,7 +574,7 @@ def test_a_running_loops_button_fills_white_and_not_the_locks_green(thumb):
 
 
 def test_the_playing_cell_is_brighter_than_the_others(tmp_path: Path):
-    """The clip actually on screen is drawn at full opacity and the rest dim, so
+    """The video actually on screen is drawn at full opacity and the rest dim, so
     the bright one reads as "this is what's on" even mid-loop."""
     bright_thumb = tmp_path / "bright.jpg"
     Image.new("RGB", (40, 60), (240, 240, 240)).save(bright_thumb)
@@ -632,7 +632,7 @@ def test_a_map_with_more_clips_than_fit_says_so_even_off_a_loop(thumb):
 
 def test_switching_a_loop_off_leaves_the_map_exactly_where_it_was(thumb):
     """The whole of what a loop toggle may change is the loop's own chrome.  Given the
-    same cells, the drawn map — which clips, in which rects — is identical looping and
+    same cells, the drawn map — which videos, in which rects — is identical looping and
     not, so turning the loop off takes away the lit button and the rectangle and
     nothing else."""
     renderer = HudRenderer("portrait")
@@ -705,7 +705,7 @@ def test_the_more_mark_does_not_touch_the_loop_rectangle(thumb):
 
 def test_a_long_loop_draws_a_window_that_holds_the_clip_on_screen(thumb):
     """The reported bug: a loop longer than the map could draw kept showing its
-    first cells, so once it advanced past them nothing was lit and the clip playing
+    first cells, so once it advanced past them nothing was lit and the video playing
     was not among the thumbnails at all.  The map now follows the loop."""
     rendered = HudRenderer("portrait").render(_loop_model(thumb, ("seed", 8)))
 
@@ -714,7 +714,7 @@ def test_a_long_loop_draws_a_window_that_holds_the_clip_on_screen(thumb):
 
 
 def test_a_loop_just_started_draws_the_clip_on_screen_in_the_corner(thumb):
-    """At the moment the loop starts, the clip on screen is its head — so it is the
+    """At the moment the loop starts, the video on screen is its head — so it is the
     top-left cell, never somewhere in the middle of the row."""
     rendered = HudRenderer("portrait").render(_loop_model(thumb, ("corner", 0)))
 
@@ -724,7 +724,7 @@ def test_a_loop_just_started_draws_the_clip_on_screen_in_the_corner(thumb):
 
 def test_a_long_loop_lights_the_clip_on_screen_wherever_it_has_got_to(tmp_path: Path):
     """The window is only worth having if the highlight lands on the right cell in
-    it: the clip playing is drawn bright and its neighbors dim."""
+    it: the video playing is drawn bright and its neighbors dim."""
     bright = tmp_path / "bright.jpg"
     Image.new("RGB", (40, 60), (240, 240, 240)).save(bright)
     rendered = HudRenderer("portrait").render(_loop_model(str(bright), ("seed", 8)))
@@ -743,7 +743,7 @@ def test_a_long_loop_lights_the_clip_on_screen_wherever_it_has_got_to(tmp_path: 
 
 def test_a_long_loop_marks_that_it_runs_on_past_the_map(thumb):
     """"…" at the end of the row says the loop holds more than is drawn — without it
-    a three-cell map of a thirty-clip loop looks like the whole set."""
+    a three-cell map of a thirty-video loop looks like the whole set."""
     renderer = HudRenderer("portrait")
     long_loop = renderer.render(_loop_model(thumb, ("corner", 0)))
     short_loop = renderer.render(_loop_model(thumb, ("corner", 0), count=1))
@@ -866,9 +866,9 @@ def test_the_filter_button_lights_on_the_act_the_side_is_filtered_to(thumb):
 
 
 def test_a_row_the_filter_only_partly_matches_still_lights(thumb):
-    """fun_time keeps a "Side Gamma" clip under a "gamma" filter, so its row stays
+    """fun_time keeps a "Side Gamma" video under a "gamma" filter, so its row stays
     lit while it is on screen.  Lighting only an exact "gamma" put the mark out the
-    moment such a clip came up and back on at the next exact one — the HUD saying
+    moment such a video came up and back on at the next exact one — the HUD saying
     the filter had dropped while the playlist under it had not changed at all."""
     renderer = HudRenderer("portrait")
 
@@ -880,7 +880,7 @@ def test_a_row_the_filter_only_partly_matches_still_lights(thumb):
 
     assert lit_ink("gamma") > 0
     assert lit_ink("side gamma") > 0      # the query is one word of the act
-    assert lit_ink("gamma, theta") > 0    # one of the clip's two acts
+    assert lit_ink("gamma, theta") > 0    # one of the video's two acts
     assert lit_ink("alpha") == 0
 
 
@@ -911,7 +911,7 @@ def _white_halves(rendered) -> tuple[int, int]:
 
 
 def test_only_the_act_the_filter_matched_is_lit_on_a_two_act_row(thumb):
-    """A clip can carry two acts ("Gamma, Theta") and a one-act filter keeps it for
+    """A video can carry two acts ("Gamma, Theta") and a one-act filter keeps it for
     one of them, so only that one goes white — lighting the whole label named an act
     the filter has nothing to do with.  The acts stack in order, so the lit one moves
     between the halves of the row as the query changes."""
@@ -935,7 +935,7 @@ def test_only_the_act_the_filter_matched_is_lit_on_a_two_act_row(thumb):
 
 def test_a_filter_set_from_a_two_act_clip_lights_both_of_its_acts(thumb):
     """Pressing a two-act row's button filters to both acts, and fun_time keeps the
-    clip for both — so both go white.  Neither did: the two-act query matched neither
+    video for both — so both go white.  Neither did: the two-act query matched neither
     act on its own, so the row you had just filtered to read as unfiltered."""
     rendered = HudRenderer("portrait").render(_model(
         corner=HudCell(path="c.mp4", thumb=thumb),
@@ -951,11 +951,11 @@ def test_a_filter_set_from_a_two_act_clip_lights_both_of_its_acts(thumb):
 @pytest.mark.parametrize("camera", ["xyz", "side"])
 def test_a_leading_camera_word_stays_gray_when_its_act_is_filtered(camera, thumb):
     """A camera word in front of an act is drawn as an act of its own: under a
-    "gamma" filter only "Gamma" is why the clip is here, so the camera word stays
+    "gamma" filter only "Gamma" is why the video is here, so the camera word stays
     gray rather than reading as part of what was asked for.
 
     Every word the source names, because Evolver's backfill scopes every act it
-    records by one of them — so reading only the first would leave every clip
+    records by one of them — so reading only the first would leave every video
     scoped by another lighting both of its words.
     """
     renderer = HudRenderer("portrait")
@@ -1017,7 +1017,7 @@ def test_the_map_stands_in_the_same_place_whatever_its_acts_are_called(thumb):
 
 
 def test_a_missing_thumbnail_still_draws_the_map():
-    """A clip whose thumbnail fun_time hasn't produced yet gets a placeholder, so
+    """A video whose thumbnail fun_time hasn't produced yet gets a placeholder, so
     the map appears instantly instead of waiting on a frame grab."""
     rendered = HudRenderer("portrait").render(_model(corner=HudCell(path="c.mp4")))
 
@@ -1125,7 +1125,7 @@ def test_the_mode_pair_renders_and_is_pressable(thumb):
 
 def test_the_mode_row_leads_and_minimize_rides_it(thumb):
     """Like the main console: the mode pair gets a row of its own above the
-    controls, and minimize — being about the side's window, not the clip —
+    controls, and minimize — being about the side's window, not the video —
     rides that row rather than sitting among the transport."""
     rendered = HudRenderer("portrait").render(
         _model(corner=HudCell(path="c.mp4", thumb=thumb),

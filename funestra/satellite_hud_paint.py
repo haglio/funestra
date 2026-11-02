@@ -127,7 +127,7 @@ from .satellite_hud import (
 _PLACEHOLDER = BG_TERTIARY  # a thumbnail fun_time has not produced yet
 
 _DIM = 0.5      # non-playing thumbnails; the one on screen stays full
-_BORDER_W = 2   # the lock ring around the held clip
+_BORDER_W = 2   # the lock ring around the held video
 _COUNT_LINE_H = 11  # line pitch of the axis counts in the map's top-left corner
 
 _LOOP_GLYPH = shared_mark(LOOP_MARK)
@@ -180,8 +180,8 @@ class HudRenderer:
     """Paints one satellite's HUD, reusing its fonts and decoded thumbnails.
 
     A render happens whenever the published HUD changes (every few seconds, as
-    clips advance) or the cursor moves onto or off a button, so the thumbnails are
-    cached by path: fun_time's cache filenames fold in the clip's mtime, so a path
+    videos advance) or the cursor moves onto or off a button, so the thumbnails are
+    cached by path: fun_time's cache filenames fold in the video's mtime, so a path
     that is still valid is still the right image.
     """
 
@@ -249,15 +249,15 @@ class HudRenderer:
     ) -> RenderedHud:
         """The HUD as a BGRA bitmap plus the rects its controls occupy.
 
-        The current clip anchors the map — its seed family runs right along the row
+        The current video anchors the map — its seed family runs right along the row
         and distinct other actions run down the column, so stepping an action
         moves down and the row reloads with that action's seeds.  The column hangs
         under whichever row cell is playing (fun_time builds it from that seed's
         own acts), the corner when the corner is.  A lock rings the cell being
-        held in white: the corner normally, or the clip a loop had reached when
+        held in white: the corner normally, or the video a loop had reached when
         the lock was taken.
 
-        *item_row* is where the clip on screen has got to and how loud it is, with
+        *item_row* is where the video on screen has got to and how loud it is, with
         *heatmap* its funscript's colors for a host that has one: the row every
         Funestra used to lay along the lower edge of its own item, drawn here
         instead (:mod:`funestra.hud_row`).  Like *video* it comes from the
@@ -298,7 +298,7 @@ class HudRenderer:
         rows = [list(row) for row in model.rows]
         widths = [[self._button_width(button) for button in row] for row in rows]
         # The rows that aim the device are measured with the rest -- they are
-        # drawn in the device's own block, but a HUD too narrow for them clips
+        # drawn in the device's own block, but a HUD too narrow for them videos
         # them away just as silently.
         device_rows = [list(row) for row in model.osr2_rows]
         device_row_widths = [[self._button_width(b) for b in row] for row in device_rows]
@@ -360,7 +360,7 @@ class HudRenderer:
             buttons.append(minus)
 
         # Laid out against the HUD rather than against the map: they act on the
-        # side and the clip on screen, and are there whether or not there is a map.
+        # side and the video on screen, and are there whether or not there is a map.
         for row, row_widths in zip(rows, widths, strict=True):
             placed = button_row_rects(
                 self._block_x(model, width, button_row_width(row, row_widths)),
@@ -564,10 +564,10 @@ class HudRenderer:
     ) -> tuple[HudModel, MapWindow | None, MapWindow | None]:
         """*model* narrowed to the cells actually drawn, plus each axis's window.
 
-        An axis can hold far more clips than the map draws — a loop's group
+        An axis can hold far more videos than the map draws — a loop's group
         especially — so each axis is drawn through a window of MAP_CELLS that keeps
         the playing cell near the middle, rather than drawing the first few and
-        leaving the clip on screen off the map once playback moves past them.
+        leaving the video on screen off the map once playback moves past them.
         Narrowing the model here means everything downstream — rects, labels, hit
         targets and the bright cell — works off the drawn cells alone.
         """
@@ -580,7 +580,7 @@ class HudRenderer:
         action_at = index + 1 if bucket == "action" else 0
         seed_win = map_window(len(seed_strip), seed_at)
         action_win = map_window(len(action_strip), action_at)
-        # The corner slot belongs to whichever axis the clip on screen sits on: that
+        # The corner slot belongs to whichever axis the video on screen sits on: that
         # is the only axis whose window can have moved off the corner.  Both strips
         # hold the corner, so both windows hold at least it.
         window = action_win if bucket == "action" else seed_win
@@ -602,7 +602,7 @@ class HudRenderer:
 
     @staticmethod
     def _count_lines(model: HudModel) -> tuple[str, ...]:
-        """"Seeds: n" / "Actions: n" — how many clips each axis stands for.
+        """"Seeds: n" / "Actions: n" — how many videos each axis stands for.
 
         Empty until fun_time's index has answered, so a satellite still starting up
         prints nothing rather than a confident "Seeds: 0".
@@ -662,7 +662,7 @@ class HudRenderer:
         """Column labels ("Seed N") in the header strip and action names down the
         left gutter, drawn over the (possibly dimmed) thumbnails at full opacity.
 
-        Returns the strike's rect — the button under the current clip's act that
+        Returns the strike's rect — the button under the current video's act that
         says the act is wrong — or None where no act is named.
         """
         def column(cx: int, cw: int, text: str) -> None:
@@ -679,9 +679,9 @@ class HudRenderer:
             # acts, so a two-word act ("Motion" / "Bounce") wraps close but two acts
             # ("Alpha" then "Theta Motion") are clearly separated.  Each act is lit
             # on its own account, and only inside a row the filter actually keeps:
-            # the row says whether the clip is here at all, the act says which of
+            # the row says whether the video is here at all, the act says which of
             # its acts is why.  Lighting a matching act inside a row the filter
-            # drops would mark a clip that is not in the playlist.
+            # drops would mark a video that is not in the playlist.
             row_lit = label_is_filtered(text, model.filter_query, model.camera_words)
             ascent, descent = self._tiny.getmetrics()
             line_h = ascent + descent - 4
@@ -707,8 +707,8 @@ class HudRenderer:
         # Offset by where a windowed loop opens, so the headers carry each seed's
         # real place in the family instead of restarting at one every window.
         column(cx, cw, seed_column_label(seed_offset))
-        # Only the corner row keeps room for the strike: it is the clip on screen
-        # whose act would be wrong, and the rows under it are other clips'.
+        # Only the corner row keeps room for the strike: it is the video on screen
+        # whose act would be wrong, and the rows under it are other videos'.
         strike = WRONG_BTN + WRONG_GAP if model.current_action else 0
         words_end = row(cy, ch, model.current_action, extra=strike)
         wrong = (wrong_action_rect(x + ROW_LABEL_GUTTER - MAP_GAP, words_end)
@@ -749,7 +749,7 @@ class HudRenderer:
         fill white, the loudest thing on the HUD for a control whose whole news
         is that it is on.  The lock is the exception: green across this family
         means favorites and the funscripts, and the lock is the gesture that
-        favorites a clip, so it is the one control that earns the color.
+        favorites a video, so it is the one control that earns the color.
 
         *ink* overrides the off-state mark -- the bin takes red, the color
         Origenerator's Delete wears, since it is the one control here that takes
@@ -780,7 +780,7 @@ class HudRenderer:
         draw_mark(image, "filter", rect, self._button_square(draw, rect, on=on))
 
     def _strike_button(self, image, draw, rect: Rect) -> None:
-        """The strike under the current clip's act: the family's cross, drawn red.
+        """The strike under the current video's act: the family's cross, drawn red.
 
         Red because it takes something away — the same red the bin on the control
         band wears, and the one color on this HUD worth stopping at before
@@ -809,7 +809,7 @@ class HudRenderer:
                             hover_loop) -> None:
         """The two loop buttons, and — while one is hovered or its loop is on — a
         border around the videos it loops (dashed for a hover preview, solid once
-        on).  The border wraps the room kept for that axis's "…" marks, so the clips
+        on).  The border wraps the room kept for that axis's "…" marks, so the videos
         they stand for read as part of the looped set."""
         rects = {
             kind: (

@@ -262,7 +262,7 @@ def test_staging_the_next_clip_never_removes_by_index():
 
     Removing by an index read a moment earlier is the bug this pins: with prefetch
     on, mpv rolls onto the staged entry by itself at end-of-file, so ``pos + 1``
-    can already name the clip now on screen — and removing it leaves mpv on an
+    can already name the video now on screen — and removing it leaves mpv on an
     empty playlist, which is a black window for the rest of the session.
     """
     mpv = FakeMpv(pos=0, count=2)
@@ -296,7 +296,7 @@ def test_staging_the_clip_already_staged_asks_mpv_nothing():
 
 
 def test_clearing_the_staged_entry_keeps_the_clip_on_screen():
-    """A lock drops the prefetched next; the clip being held must not go with it."""
+    """A lock drops the prefetched next; the video being held must not go with it."""
     mpv = FakeMpv(pos=0, count=2)
     Control(mpv).clear_next()
     assert mpv.calls == [("clear",)]
@@ -311,7 +311,7 @@ def test_settling_on_the_next_clip_keeps_it_on_screen():
 def test_no_entry_playing_does_not_read_as_having_advanced():
     """An engine holding no file has not moved past the head — it has fallen off
     the playlist, and treating that as an advance walks the session's index on
-    past a clip that never played."""
+    past a video that never played."""
     assert Control(FakeMpv(pos=-1)).advanced_to_next is False
     assert Control(FakeMpv(pos=0)).advanced_to_next is False
     assert Control(FakeMpv(pos=1)).advanced_to_next is True

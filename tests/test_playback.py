@@ -247,8 +247,8 @@ class TestDiscard:
 
 
 class TestVersions:
-    """Another rendition of the clip on screen, put up in the clip's own place:
-    the list, and everything Fun Time knows the clip by, stay as they are."""
+    """Another rendition of the video on screen, put up in the video's own place:
+    the list, and everything Fun Time knows the video by, stay as they are."""
 
     @staticmethod
     def _other_version(tmp_path, playback):
@@ -258,44 +258,44 @@ class TestVersions:
 
     def test_a_step_plays_the_other_version_in_the_clips_own_place(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
-        clip = playback.current_video
+        video = playback.current_video
         other = self._other_version(tmp_path, playback)
 
-        playback.step_version([clip, other], 1)
+        playback.step_version([video, other], 1)
 
         assert engine.opened[-1] == other
-        assert (playback.current_video, playback.showing) == (clip, other)
-        assert playback.playlist == [clip, tmp_path / "v1.mp4"]
+        assert (playback.current_video, playback.showing) == (video, other)
+        assert playback.playlist == [video, tmp_path / "v1.mp4"]
 
     def test_a_step_back_from_the_clips_own_file_wraps_to_the_last_version(self, tmp_path):
         playback, engine = _make_playback(tmp_path)
-        clip = playback.current_video
+        video = playback.current_video
         other = self._other_version(tmp_path, playback)
 
-        playback.step_version([clip, other], -1)
+        playback.step_version([video, other], -1)
 
         assert playback.showing == other
 
     def test_the_hud_names_the_clip_and_the_file_from_the_first_step(self, tmp_path):
         playback, _engine = _make_playback(tmp_path)
-        clip = playback.current_video
+        video = playback.current_video
         other = self._other_version(tmp_path, playback)
         named = [playback.name_on_screen]
 
         for _ in range(2):
-            playback.step_version([clip, other], 1)
+            playback.step_version([video, other], 1)
             named.append(playback.name_on_screen)
 
-        assert named == ["v0", f"v0 ({other.name})", f"v0 ({clip.name})"]
+        assert named == ["v0", f"v0 ({other.name})", f"v0 ({video.name})"]
 
     def test_a_clip_come_back_to_names_its_file_only_off_its_own(self, tmp_path):
         playback, _engine = _make_playback(tmp_path, entries=2)
-        clip = playback.current_video
+        video = playback.current_video
         other = self._other_version(tmp_path, playback)
         named = []
 
         for _ in range(2):
-            playback.step_version([clip, other], 1)
+            playback.step_version([video, other], 1)
             playback.step(1)
             playback.step(-1)
             named.append(playback.name_on_screen)
@@ -322,14 +322,14 @@ class TestVersions:
 
     def test_a_discarded_clip_takes_its_version_with_it(self, tmp_path):
         playback, _engine = _make_playback(tmp_path, entries=2)
-        clip = playback.current_video
+        video = playback.current_video
         other = self._other_version(tmp_path, playback)
-        playback.step_version([clip, other], 1)
+        playback.step_version([video, other], 1)
 
         playback.discard()
-        playback.play_file(clip)
+        playback.play_file(video)
 
-        assert playback.showing == clip
+        assert playback.showing == video
 
     def test_a_family_the_file_on_screen_is_not_in_is_left_alone(self, tmp_path):
         """The step carries the versions of the item the source last saw playing,
@@ -372,10 +372,10 @@ class TestTheScriptOfTheClipOnScreen:
     def test_a_rebuilt_playlist_brings_the_scripts_it_was_written_with(self, tmp_path):
         playback, _engine = _make_playback(
             tmp_path, entries=2, funscripts={0: _script(tmp_path / "v0.funscript", (0, 0), (100, 99))})
-        clip = tmp_path / "v0.mp4"
+        video = tmp_path / "v0.mp4"
         rescripted = _script(tmp_path / "v0 again.funscript", (0, 50), (200, 60))
 
-        playback.replace_playlist([clip, tmp_path / "v1.mp4"], {clip: rescripted})
+        playback.replace_playlist([video, tmp_path / "v1.mp4"], {video: rescripted})
 
         assert playback.current_funscript.actions == [(0, 50), (200, 60)]
 
@@ -823,7 +823,7 @@ class TestWhereAClipWasLeft:
         assert engine.seeks[-1] == 2_000
 
     def test_a_spot_mpv_will_not_take_yet_is_asked_for_again(self, tmp_path):
-        """mpv refuses a seek until the clip it is opening plays, which a known
+        """mpv refuses a seek until the video it is opening plays, which a known
         duration does not prove -- and the refusal used to end the engine."""
         file = tmp_path / "points.json"
         playback, engine = _make_playback(tmp_path, entries=2, play_points=PlayPoints(file))
@@ -1045,12 +1045,12 @@ class TestWhereInTheListItIs:
 
     def test_a_version_step_is_said_until_the_next_item_opens(self, tmp_path):
         playback, _engine = _make_playback(tmp_path, entries=2)
-        clip = playback.current_video
+        video = playback.current_video
         other = tmp_path / "v0_sorted.mp4"
         other.write_text("fake")
 
         assert playback.switching_versions is False
-        playback.step_version([clip, other], 1)
+        playback.step_version([video, other], 1)
         assert playback.switching_versions is True
         playback.step(1)
         assert playback.switching_versions is False

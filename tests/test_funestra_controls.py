@@ -159,23 +159,23 @@ class TestApplyCommand:
 
     def test_a_version_step_plays_the_rendition_the_family_names_next(self, tmp_path):
         controls = _controls(tmp_path)
-        clip = controls.playback.current_video
+        video = controls.playback.current_video
         other = tmp_path / "v0_sorted.mp4"
         other.write_text("fake")
 
-        assert apply_command(step_version(1, [clip, other]), controls) is True
+        assert apply_command(step_version(1, [video, other]), controls) is True
         assert controls.playback.showing == other
 
-        assert apply_command(step_version(-1, [clip, other]), controls) is True
-        assert controls.playback.showing == clip
+        assert apply_command(step_version(-1, [video, other]), controls) is True
+        assert controls.playback.showing == video
 
     def test_two_quick_steps_carrying_one_family_both_land(self, tmp_path):
         """Fun Time reads the file on screen off a status file that lags the
         Funestra, so it sends the family rather than a target: two presses read
         the same status, and a target would have put the same file up twice."""
         controls = _controls(tmp_path)
-        clip = controls.playback.current_video
-        family = [clip, tmp_path / "v0_sorted.mp4", tmp_path / "v0_small.mp4"]
+        video = controls.playback.current_video
+        family = [video, tmp_path / "v0_sorted.mp4", tmp_path / "v0_small.mp4"]
         for path in family[1:]:
             path.write_text("fake")
 

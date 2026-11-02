@@ -59,13 +59,13 @@ def _on_the_row(funestra, engine, part: str = "track", *, along: int | None = No
     return left + x + cx + across, top + y + cy + CHIP_H // 2
 
 
-def _clips(tmp_path: Path, *names: str) -> list[Path]:
-    clips = []
+def _videos(tmp_path: Path, *names: str) -> list[Path]:
+    videos = []
     for name in names:
-        clip = tmp_path / f"{name}.mp4"
-        clip.write_bytes(b"")
-        clips.append(clip)
-    return clips
+        video = tmp_path / f"{name}.mp4"
+        video.write_bytes(b"")
+        videos.append(video)
+    return videos
 
 
 def _channels(tmp_path: Path, lines: list[str], *, commands: str = "QUIT\n",
@@ -101,21 +101,21 @@ def _asked(tmp_path: Path) -> list[str]:
 
 
 def test_one_pass_plays_publishes_and_paints_then_quit_stops_it(tmp_path):
-    clips = _clips(tmp_path, "v0", "v1")
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in clips])
+    videos = _videos(tmp_path, "v0", "v1")
+    funestra, engine = _funestra(tmp_path, [str(video) for video in videos])
 
     funestra.tick(window=WINDOW)
 
-    assert engine.opened[0] == clips[0]
-    assert f"video={clips[0]}" in _status(tmp_path)
+    assert engine.opened[0] == videos[0]
+    assert f"video={videos[0]}" in _status(tmp_path)
     assert funestra.stopped is True
     funestra.close()
     assert engine.closed is True
 
 
 def test_a_funestra_with_a_sound_of_its_own_publishes_its_level_and_mute(tmp_path):
-    clips = _clips(tmp_path, "v0")
-    funestra, _engine = _funestra(tmp_path, [str(clips[0])])
+    videos = _videos(tmp_path, "v0")
+    funestra, _engine = _funestra(tmp_path, [str(videos[0])])
 
     funestra.tick(window=WINDOW)
 
@@ -124,8 +124,8 @@ def test_a_funestra_with_a_sound_of_its_own_publishes_its_level_and_mute(tmp_pat
 
 
 def test_a_level_and_mute_it_is_handed_are_its_own_from_then_on(tmp_path):
-    clips = _clips(tmp_path, "v0")
-    funestra, engine = _funestra(tmp_path, [str(clips[0])], commands="SET_VOLUME 60 0\nQUIT\n")
+    videos = _videos(tmp_path, "v0")
+    funestra, engine = _funestra(tmp_path, [str(videos[0])], commands="SET_VOLUME 60 0\nQUIT\n")
 
     funestra.tick(window=WINDOW)
 
@@ -135,15 +135,15 @@ def test_a_level_and_mute_it_is_handed_are_its_own_from_then_on(tmp_path):
 
 
 def test_a_funestra_jumps_to_its_clips_scripting_and_says_so_on_its_notice_channel(tmp_path):
-    """Every Funestra plays scripted clips, so every one answers the two
+    """Every Funestra plays scripted videos, so every one answers the two
     funscript moves itself, and tells the room what came of each on the
     channel it was given -- a dead end as a warning, a jump in the funscripts'
     own color."""
-    clip = _clips(tmp_path, "v0")[0]
+    video = _videos(tmp_path, "v0")[0]
     script = tmp_path / "v0.funscript"
     script.write_text('{"actions": [{"at": 10000, "pos": 0}, {"at": 10300, "pos": 100}, '
                       '{"at": 40000, "pos": 0}, {"at": 40300, "pos": 100}]}', encoding="utf-8")
-    funestra, engine = _funestra(tmp_path, [f"{clip}\t{script}"],
+    funestra, engine = _funestra(tmp_path, [f"{video}\t{script}"],
                                  commands="JUMP_TO_FUNSCRIPT\nNEXT_FUNSCRIPTED\n", notice=True)
     engine.duration_ms = 60_000.0
     engine.position_ms = 20_000.0
@@ -157,11 +157,11 @@ def test_a_funestra_jumps_to_its_clips_scripting_and_says_so_on_its_notice_chann
 
 
 def test_a_funestra_given_no_notice_channel_still_jumps(tmp_path):
-    clip = _clips(tmp_path, "v0")[0]
+    video = _videos(tmp_path, "v0")[0]
     script = tmp_path / "v0.funscript"
     script.write_text('{"actions": [{"at": 10000, "pos": 0}, {"at": 10300, "pos": 100}]}',
                       encoding="utf-8")
-    funestra, engine = _funestra(tmp_path, [f"{clip}\t{script}"], commands="JUMP_TO_FUNSCRIPT\n")
+    funestra, engine = _funestra(tmp_path, [f"{video}\t{script}"], commands="JUMP_TO_FUNSCRIPT\n")
     engine.duration_ms = 60_000.0
 
     funestra.tick(window=WINDOW)
@@ -174,7 +174,7 @@ def test_a_window_wearing_no_hud_draws_nothing_over_its_item(tmp_path):
     """The track, the time and the volume are a block of the HUD, so a window
     with no HUD to wear has nowhere to put them -- and the item comes
     through untouched instead of carrying a row along its lower edge."""
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
 
     funestra.tick(window=WINDOW)
 
@@ -182,7 +182,7 @@ def test_a_window_wearing_no_hud_draws_nothing_over_its_item(tmp_path):
 
 
 def test_the_row_says_where_the_clip_is_and_how_long_it_runs(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
 
     funestra.tick(window=WINDOW)
 
@@ -195,11 +195,11 @@ def test_the_row_says_where_the_clip_is_and_how_long_it_runs(tmp_path):
 def test_a_scripted_clips_track_is_filled_across_the_width_the_hud_drew_it_at(tmp_path):
     """The colors fill the track, and a HUD is as wide as what is on it, so
     they are measured across the row the HUD drew rather than the window."""
-    clip = _clips(tmp_path, "v0")[0]
+    video = _videos(tmp_path, "v0")[0]
     script = tmp_path / "v0.funscript"
     script.write_text('{"actions": [{"at": 0, "pos": 0}, {"at": 900, "pos": 100}, '
                       '{"at": 2400, "pos": 10}]}', encoding="utf-8")
-    funestra, _engine = _funestra(tmp_path, [f"{clip}\t{script}"], hud=True)
+    funestra, _engine = _funestra(tmp_path, [f"{video}\t{script}"], hud=True)
     _publish_hud(tmp_path)
 
     funestra.tick(window=WINDOW)
@@ -210,7 +210,7 @@ def test_a_scripted_clips_track_is_filled_across_the_width_the_hud_drew_it_at(tm
 
 
 def test_an_image_on_screen_keeps_the_row_saying_how_far_into_its_time_it_is(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  hud=True)
     _publish_hud(tmp_path)
     engine.showing_image = True
@@ -230,7 +230,7 @@ def _an_image_up(engine: FakeEngine, elapsed_ms: float = 1_000.0, pace_ms: float
 
 
 def test_the_hud_keeps_its_size_when_an_image_comes_up_after_a_video(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  hud=True)
     _publish_hud(tmp_path)
     funestra.tick(window=WINDOW)
@@ -243,7 +243,7 @@ def test_the_hud_keeps_its_size_when_an_image_comes_up_after_a_video(tmp_path):
 
 
 def test_the_hud_keeps_its_size_on_an_image_held_until_something_moves_it(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  hud=True)
     _publish_hud(tmp_path)
     funestra.tick(window=WINDOW)
@@ -257,7 +257,7 @@ def test_the_hud_keeps_its_size_on_an_image_held_until_something_moves_it(tmp_pa
 
 
 def test_an_images_row_reads_out_the_time_it_has_had_of_its_time(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  hud=True)
     _publish_hud(tmp_path)
     _an_image_up(engine, 1_000.0, 4_000.0)
@@ -268,7 +268,7 @@ def test_an_images_row_reads_out_the_time_it_has_had_of_its_time(tmp_path):
 
 
 def test_a_press_along_an_images_track_puts_it_that_far_into_its_time(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  hud=True)
     _publish_hud(tmp_path)
     _an_image_up(engine, 3_000.0, 4_000.0)
@@ -292,7 +292,7 @@ def _heard(engine: FakeEngine) -> list[int | None]:
 
 def test_a_funestras_radio_is_tuned_in_while_an_image_is_up_at_its_own_level(tmp_path):
     _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"], ["c.mp4"])
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  commands="SET_VOLUME 60 0\n")
     funestra.tick(window=WINDOW)
     assert _heard(engine) == [None, None, None]
@@ -305,7 +305,7 @@ def test_a_funestras_radio_is_tuned_in_while_an_image_is_up_at_its_own_level(tmp
 
 def test_a_funestra_left_muted_hears_none_of_its_radio(tmp_path):
     _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  commands="")
     _an_image_up(engine)
 
@@ -316,7 +316,7 @@ def test_a_funestra_left_muted_hears_none_of_its_radio(tmp_path):
 
 def test_a_funestra_that_can_never_be_heard_opens_no_radio(tmp_path):
     _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  audible=False)
     _an_image_up(engine)
 
@@ -327,7 +327,7 @@ def test_a_funestra_that_can_never_be_heard_opens_no_radio(tmp_path):
 
 def test_a_funestras_radio_goes_off_when_its_file_goes(tmp_path):
     _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
     funestra.tick(window=WINDOW)
 
     radio_file_for(tmp_path / "playlist.tsv").unlink()
@@ -338,7 +338,7 @@ def test_a_funestras_radio_goes_off_when_its_file_goes(tmp_path):
 
 def test_a_funestras_radio_holds_still_with_the_room(tmp_path):
     _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
     (tmp_path / "paused.txt").write_text("1", encoding="utf-8")
 
     funestra.tick(window=WINDOW)
@@ -348,7 +348,7 @@ def test_a_funestras_radio_holds_still_with_the_room(tmp_path):
 
 def test_a_funestra_closed_lets_its_radio_go(tmp_path):
     _radio_beside_the_playlist(tmp_path, ["a.mp4"], ["b.mp4"])
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
     funestra.tick(window=WINDOW)
 
     funestra.close()
@@ -357,39 +357,39 @@ def test_a_funestra_closed_lets_its_radio_go(tmp_path):
 
 
 def test_commands_drain_and_act_before_the_frame_is_published(tmp_path):
-    clips = _clips(tmp_path, "v0", "v1")
-    funestra, _engine = _funestra(tmp_path, [str(clip) for clip in clips], commands="NEXT\nQUIT\n")
+    videos = _videos(tmp_path, "v0", "v1")
+    funestra, _engine = _funestra(tmp_path, [str(video) for video in videos], commands="NEXT\nQUIT\n")
 
     funestra.tick(window=WINDOW)
 
-    assert f"video={clips[1]}" in _status(tmp_path)
+    assert f"video={videos[1]}" in _status(tmp_path)
 
 
 def test_a_list_written_under_the_window_is_taken_with_no_verb_sent(tmp_path):
     """The host writes the list and then queues one reload, and that queue drops the
     line when the file is held for longer than 25ms -- after which the window went
     on playing what it had, with the new list on disk beside it, for good."""
-    clips = _clips(tmp_path, "v0", "v1", "v2")
-    funestra, _engine = _funestra(tmp_path, [str(clips[0])], commands="")
-    (tmp_path / "playlist.tsv").write_text(f"{clips[2]}\n", encoding="utf-8")
+    videos = _videos(tmp_path, "v0", "v1", "v2")
+    funestra, _engine = _funestra(tmp_path, [str(videos[0])], commands="")
+    (tmp_path / "playlist.tsv").write_text(f"{videos[2]}\n", encoding="utf-8")
 
     funestra.tick(window=WINDOW)
 
-    assert f"video={clips[2]}" in _status(tmp_path)
+    assert f"video={videos[2]}" in _status(tmp_path)
 
 
 def test_an_image_the_list_opens_on_brings_its_places_to_the_engine(tmp_path):
-    clips = _clips(tmp_path, "v0", "v1")
+    videos = _videos(tmp_path, "v0", "v1")
 
-    _opened, engine = _funestra(tmp_path, [f"{clips[0]}\t\t0.25,0.25,0.5,0.5", str(clips[1])])
+    _opened, engine = _funestra(tmp_path, [f"{videos[0]}\t\t0.25,0.25,0.5,0.5", str(videos[1])])
 
     assert engine.points_told == [((0.25, 0.25, 0.5, 0.5),)]
 
 
 def test_a_list_taken_while_its_image_is_on_screen_brings_that_images_places(tmp_path):
-    clips = _clips(tmp_path, "v0", "v1")
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in clips], commands="")
-    (tmp_path / "playlist.tsv").write_text(f"{clips[0]}\t\t0.1,0.1,0.2,0.2\n{clips[1]}\n",
+    videos = _videos(tmp_path, "v0", "v1")
+    funestra, engine = _funestra(tmp_path, [str(video) for video in videos], commands="")
+    (tmp_path / "playlist.tsv").write_text(f"{videos[0]}\t\t0.1,0.1,0.2,0.2\n{videos[1]}\n",
                                            encoding="utf-8")
 
     funestra.tick(window=WINDOW)
@@ -398,28 +398,28 @@ def test_a_list_taken_while_its_image_is_on_screen_brings_that_images_places(tmp
 
 
 def test_reload_playlist_reads_the_list_it_was_handed_again(tmp_path):
-    clips = _clips(tmp_path, "v0", "v1", "v2")
-    funestra, _engine = _funestra(tmp_path, [str(clips[0])], commands="")
-    (tmp_path / "playlist.tsv").write_text(f"{clips[0]}\n{clips[2]}\n", encoding="utf-8")
+    videos = _videos(tmp_path, "v0", "v1", "v2")
+    funestra, _engine = _funestra(tmp_path, [str(videos[0])], commands="")
+    (tmp_path / "playlist.tsv").write_text(f"{videos[0]}\n{videos[2]}\n", encoding="utf-8")
     (tmp_path / "cmd.txt").write_text("RELOAD_PLAYLIST\nNEXT\n", encoding="utf-8")
 
     funestra.tick(window=WINDOW)
 
-    assert f"video={clips[2]}" in _status(tmp_path)
+    assert f"video={videos[2]}" in _status(tmp_path)
 
 
 def test_a_verb_handed_over_in_process_does_what_its_line_in_the_command_file_does(tmp_path):
-    clips = _clips(tmp_path, "v0", "v1")
-    funestra, _engine = _funestra(tmp_path, [str(clip) for clip in clips], commands="")
+    videos = _videos(tmp_path, "v0", "v1")
+    funestra, _engine = _funestra(tmp_path, [str(video) for video in videos], commands="")
 
     funestra.apply("NEXT")
 
-    assert funestra.playback.current_video == clips[1]
+    assert funestra.playback.current_video == videos[1]
 
 
 def test_its_status_read_in_process_is_what_its_status_file_says(tmp_path):
-    clips = _clips(tmp_path, "v0", "v1")
-    funestra, _engine = _funestra(tmp_path, [str(clip) for clip in clips], commands="NEXT\n")
+    videos = _videos(tmp_path, "v0", "v1")
+    funestra, _engine = _funestra(tmp_path, [str(video) for video in videos], commands="NEXT\n")
 
     funestra.tick(window=WINDOW)
 
@@ -428,71 +428,71 @@ def test_its_status_read_in_process_is_what_its_status_file_says(tmp_path):
 
 
 def test_a_list_handed_over_in_process_is_played_as_one_read_off_the_playlist_file(tmp_path):
-    clips = _clips(tmp_path, "v0", "v1", "v2")
-    funestra, engine = _funestra(tmp_path, [str(clips[0])], commands="")
+    videos = _videos(tmp_path, "v0", "v1", "v2")
+    funestra, engine = _funestra(tmp_path, [str(videos[0])], commands="")
     places = ((0.1, 0.1, 0.2, 0.2),)
 
-    funestra.take_the_list([PlaylistItem(clips[0]), PlaylistItem(clips[2], None, places)])
+    funestra.take_the_list([PlaylistItem(videos[0]), PlaylistItem(videos[2], None, places)])
     funestra.apply("NEXT")
 
-    assert (funestra.playback.current_video, engine.points_told[-1]) == (clips[2], places)
+    assert (funestra.playback.current_video, engine.points_told[-1]) == (videos[2], places)
 
 
 def _just_moved_on(tmp_path: Path) -> tuple[Funestra, FakeEngine, list[Path]]:
-    clips = _clips(tmp_path, "v0", "v1", "v2", "v3")
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in clips], commands="")
+    videos = _videos(tmp_path, "v0", "v1", "v2", "v3")
+    funestra, engine = _funestra(tmp_path, [str(video) for video in videos], commands="")
     engine.run_out()
-    return funestra, engine, clips
+    return funestra, engine, videos
 
 
 class TestWhatLandsAsTheImageMovesOnByItself:
     def test_a_lock_holds_the_image_on_screen(self, tmp_path):
-        funestra, engine, clips = _just_moved_on(tmp_path)
+        funestra, engine, videos = _just_moved_on(tmp_path)
 
         funestra.apply("LOCK_ON")
 
-        assert engine.on_screen == funestra.playback.current_video == clips[1]
+        assert engine.on_screen == funestra.playback.current_video == videos[1]
 
     def test_a_pace_of_nought_holds_the_image_on_screen(self, tmp_path):
-        funestra, engine, clips = _just_moved_on(tmp_path)
+        funestra, engine, videos = _just_moved_on(tmp_path)
 
         funestra.apply("SET_PACE 0")
 
-        assert engine.on_screen == funestra.playback.current_video == clips[1]
+        assert engine.on_screen == funestra.playback.current_video == videos[1]
 
     def test_going_back_goes_to_the_image_before_the_one_on_screen(self, tmp_path):
-        funestra, engine, clips = _just_moved_on(tmp_path)
+        funestra, engine, videos = _just_moved_on(tmp_path)
 
         funestra.apply("PREV")
 
-        assert engine.on_screen == clips[0]
+        assert engine.on_screen == videos[0]
 
     def test_a_trash_drops_the_image_on_screen(self, tmp_path):
-        funestra, engine, clips = _just_moved_on(tmp_path)
+        funestra, engine, videos = _just_moved_on(tmp_path)
 
         funestra.apply("TRASH")
 
-        assert (funestra.playback.playlist, engine.on_screen) == ([clips[0], *clips[2:]], clips[2])
+        assert (funestra.playback.playlist, engine.on_screen) == ([videos[0], *videos[2:]], videos[2])
 
     def test_an_item_asked_for_next_comes_after_the_image_on_screen(self, tmp_path):
-        funestra, _engine, clips = _just_moved_on(tmp_path)
-        newcomer, = _clips(tmp_path, "newcomer")
+        funestra, _engine, videos = _just_moved_on(tmp_path)
+        newcomer, = _videos(tmp_path, "newcomer")
 
         funestra.apply(f"PLAY_NEXT {newcomer}")
 
-        assert funestra.playback.playlist == [*clips[:2], newcomer, *clips[2:]]
+        assert funestra.playback.playlist == [*videos[:2], newcomer, *videos[2:]]
 
     def test_a_list_handed_over_keeps_the_image_on_screen(self, tmp_path):
-        funestra, engine, clips = _just_moved_on(tmp_path)
+        funestra, engine, videos = _just_moved_on(tmp_path)
 
-        funestra.take_the_list([PlaylistItem(clip) for clip in clips])
+        funestra.take_the_list([PlaylistItem(video) for video in videos])
 
-        assert engine.on_screen == funestra.playback.current_video == clips[1]
-        assert engine.staged_next == clips[2]
+        assert engine.on_screen == funestra.playback.current_video == videos[1]
+        assert engine.staged_next == videos[2]
 
 
 def test_the_paused_flag_reaches_the_engine_each_pass(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
     (tmp_path / "paused.txt").write_text("1", encoding="utf-8")
 
     funestra.tick(window=WINDOW)
@@ -501,8 +501,8 @@ def test_the_paused_flag_reaches_the_engine_each_pass(tmp_path):
 
 
 def test_a_paused_flag_already_up_opens_the_engine_paused(tmp_path):
-    clips = _clips(tmp_path, "v0")
-    channels = _channels(tmp_path, [str(clips[0])])
+    videos = _videos(tmp_path, "v0")
+    channels = _channels(tmp_path, [str(videos[0])])
     channels.paused.write_text("1", encoding="utf-8")
 
     funestra = Funestra(FakeEngine(), channels=channels, playlist=read_playlist(channels.playlist))
@@ -512,7 +512,7 @@ def test_a_paused_flag_already_up_opens_the_engine_paused(tmp_path):
 
 class TestTheWindowsClose:
     def test_in_a_session_it_asks_the_session_and_keeps_playing(self, tmp_path):
-        funestra, _engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+        funestra, _engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                       commands="", in_a_session=True)
 
         funestra.close_requested()
@@ -521,7 +521,7 @@ class TestTheWindowsClose:
         assert _asked(tmp_path) == [SESSION_QUIT]
 
     def test_with_no_session_to_ask_it_ends_this_funestra(self, tmp_path):
-        funestra, _engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+        funestra, _engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                       commands="")
 
         funestra.close_requested()
@@ -531,7 +531,7 @@ class TestTheWindowsClose:
 
 def _wearing_a_hud(tmp_path, *, audible: bool = True):
     funestra, engine = _funestra(
-        tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+        tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
         hud=True, audible=audible)
     _publish_hud(tmp_path)
     funestra.tick(window=WINDOW)
@@ -642,7 +642,7 @@ class _Clock:
 
 
 def _minimized_satellite(tmp_path: Path, clock: _Clock) -> tuple[Funestra, FakeEngine]:
-    channels = _channels(tmp_path, [str(clip) for clip in _clips(tmp_path, "scene one", "scene two")],
+    channels = _channels(tmp_path, [str(video) for video in _videos(tmp_path, "scene one", "scene two")],
                          commands="", hud=True)
     _publish_hud(tmp_path, hud_minimized=True)
     engine = FakeEngine()
@@ -696,7 +696,7 @@ class TestTheNameOfWhatHasJustStarted:
 
 
 def test_each_pass_carries_a_still_s_move_a_little_further(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
 
     funestra.tick(window=WINDOW)
 
@@ -704,7 +704,7 @@ def test_each_pass_carries_a_still_s_move_a_little_further(tmp_path):
 
 
 def test_a_tiling_funestra_lays_its_item_out_across_its_window(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")], tiles=True)
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")], tiles=True)
 
     funestra.tick(window=WINDOW)
 
@@ -712,7 +712,7 @@ def test_a_tiling_funestra_lays_its_item_out_across_its_window(tmp_path):
 
 
 def test_a_funestra_that_does_not_tile_is_never_asked_to(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
 
     funestra.tick(window=WINDOW)
 
@@ -725,7 +725,7 @@ def _publish_hud(tmp_path: Path, **hud) -> None:
 
 
 def test_a_satellite_handed_a_place_for_the_osr2_readout_hands_on_its_motion(tmp_path):
-    channels = replace(_channels(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+    channels = replace(_channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  commands="", hud=True),
                        drive=tmp_path / "drive.txt", osr2_readout=tmp_path / "readout.txt")
     _publish_hud(tmp_path, osr2=Osr2State.ROBOT_HAND)
@@ -743,7 +743,7 @@ def _no_memory_to_put_it_up(*_args) -> None:
 
 def test_a_frame_there_is_no_memory_to_draw_is_dropped_and_said_once_while_it_plays_on(
         tmp_path, caplog):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  hud=True, commands="")
     _publish_hud(tmp_path)
     engine.overlay = _no_memory_to_put_it_up
@@ -758,7 +758,7 @@ def test_a_frame_there_is_no_memory_to_draw_is_dropped_and_said_once_while_it_pl
 
 
 def test_a_hud_there_was_no_memory_for_is_drawn_once_there_is(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")],
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  hud=True, commands="")
     _publish_hud(tmp_path)
     engine.overlay = _no_memory_to_put_it_up
@@ -771,7 +771,7 @@ def test_a_hud_there_was_no_memory_for_is_drawn_once_there_is(tmp_path):
 
 
 def test_the_hud_its_source_publishes_is_the_one_thing_over_the_item(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")], hud=True)
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")], hud=True)
     _publish_hud(tmp_path)
 
     funestra.tick(window=WINDOW)
@@ -780,7 +780,7 @@ def test_the_hud_its_source_publishes_is_the_one_thing_over_the_item(tmp_path):
 
 
 def test_a_hud_over_the_item_carries_its_own_minus_so_none_hangs_outside_it(tmp_path):
-    funestra, _engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")], hud=True)
+    funestra, _engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")], hud=True)
     _publish_hud(tmp_path)
 
     funestra.tick(window=WINDOW)
@@ -789,15 +789,15 @@ def test_a_hud_over_the_item_carries_its_own_minus_so_none_hangs_outside_it(tmp_
 
 
 def test_on_a_window_the_way_of_playing_is_mpv_opened_on_that_window(tmp_path):
-    clips = _clips(tmp_path, "v0")
-    channels = _channels(tmp_path, [str(clips[0])])
+    videos = _videos(tmp_path, "v0")
+    channels = _channels(tmp_path, [str(videos[0])])
     engine = FakeEngine()
 
     with patch("funestra.funestra.MpvEngine", return_value=engine) as mpv:
         funestra = Funestra.on_window(4242, channels=channels, playlist=read_playlist(channels.playlist))
 
     mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True, audio=True)
-    assert funestra.playback.current_video == clips[0]
+    assert funestra.playback.current_video == videos[0]
 
 
 def _console_channels(tmp_path: Path, lines: list[str], *, commands: str = "") -> Channels:
@@ -879,7 +879,7 @@ class Genau(Kino):
 def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
           host_controls=None, clock=time.monotonic,
           osr2_readout: Path | None = None) -> tuple[Funestra, FakeEngine, Kino]:
-    channels = replace(_console_channels(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0", "v1")],
+    channels = replace(_console_channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1")],
                                          commands=commands), osr2_readout=osr2_readout)
     _publish_console(tmp_path)
     engine = FakeEngine()
@@ -1047,11 +1047,11 @@ class TestWhatRunsOnTheFunestra:
 
 
 def _scripted_main(tmp_path: Path) -> tuple[Funestra, FakeEngine]:
-    clip = _clips(tmp_path, "v0")[0]
+    video = _videos(tmp_path, "v0")[0]
     script = tmp_path / "v0.funscript"
     script.write_text('{"actions": [{"at": 0, "pos": 0}, {"at": 900, "pos": 100}, '
                       '{"at": 2400, "pos": 10}]}', encoding="utf-8")
-    channels = _console_channels(tmp_path, [f"{clip}\t{script}"])
+    channels = _console_channels(tmp_path, [f"{video}\t{script}"])
     _publish_console(tmp_path)
     engine = FakeEngine(duration_ms=600_000.0)
     engine.screenshot = np.zeros((10, 20, 4), dtype=np.uint8)
@@ -1211,7 +1211,7 @@ class TestAUsersOwnFrame:
     def test_the_row_runs_its_frames_time_on_screen_and_turns_its_dial(self, tmp_path):
         """A flick has two senses of time: the track runs how long it has been
         up of the seconds it gets, and the dial beside it goes round with the
-        loop of the clip itself."""
+        loop of the video itself."""
         funestra, _engine, genau = self._genau_in_front(tmp_path)
 
         row = funestra._hud._item_row
@@ -1279,8 +1279,8 @@ class TestAWindowsOwnHud:
     would have published one, and hands its presses to what runs on the window."""
 
     def _own_hud(self, tmp_path, *, user=Kino, muted=True, **handed):
-        clips = _clips(tmp_path, "v0", "v1")
-        channels = _channels(tmp_path, [str(clip) for clip in clips], commands="")
+        videos = _videos(tmp_path, "v0", "v1")
+        channels = _channels(tmp_path, [str(video) for video in videos], commands="")
         engine = FakeEngine()
         made: list[Kino] = []
 
@@ -1418,8 +1418,8 @@ class TestAWindowsOwnHud:
 
 
 def test_on_a_window_the_way_of_playing_can_be_heard(tmp_path):
-    clips = _clips(tmp_path, "v0")
-    channels = _channels(tmp_path, [str(clips[0])])
+    videos = _videos(tmp_path, "v0")
+    channels = _channels(tmp_path, [str(videos[0])])
 
     with patch("funestra.funestra.MpvEngine", return_value=FakeEngine()) as mpv:
         Funestra.on_window(4242, channels=channels, playlist=read_playlist(channels.playlist),
@@ -1429,8 +1429,8 @@ def test_on_a_window_the_way_of_playing_can_be_heard(tmp_path):
 
 
 def test_on_a_window_that_can_never_be_heard_the_way_of_playing_takes_no_sound(tmp_path):
-    clips = _clips(tmp_path, "v0")
-    channels = _channels(tmp_path, [str(clips[0])])
+    videos = _videos(tmp_path, "v0")
+    channels = _channels(tmp_path, [str(videos[0])])
 
     with patch("funestra.funestra.MpvEngine", return_value=FakeEngine()) as mpv:
         Funestra.on_window(4242, channels=channels, playlist=read_playlist(channels.playlist),
@@ -1440,7 +1440,7 @@ def test_on_a_window_that_can_never_be_heard_the_way_of_playing_takes_no_sound(t
 
 
 def test_a_window_told_to_fall_silent_mutes_its_engine_and_its_chip(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(clip) for clip in _clips(tmp_path, "v0")])
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
     funestra.tick(window=WINDOW)
 
     funestra.set_muted(True)
@@ -1471,8 +1471,8 @@ class TestAHudBesideTheItem:
 
     def _wearing_a_hud_beside(self, tmp_path, surface=None):
         surface = surface or _ASurface()
-        clips = _clips(tmp_path, "v0")
-        channels = _channels(tmp_path, [str(clips[0])], hud=True, commands="")
+        videos = _videos(tmp_path, "v0")
+        channels = _channels(tmp_path, [str(videos[0])], hud=True, commands="")
         _publish_hud(tmp_path)
         engine = FakeEngine()
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
@@ -1492,8 +1492,8 @@ class TestAHudBesideTheItem:
         way test_hud_overlay says a HUD beside the item does."""
         (tmp_path / "portrait_hud.json").write_text(
             json.dumps({"funestra": "portrait", "hud_corner": "lower_right"}), encoding="utf-8")
-        clips = _clips(tmp_path, "v0")
-        channels = _channels(tmp_path, [str(clips[0])], hud=True, commands="")
+        videos = _videos(tmp_path, "v0")
+        channels = _channels(tmp_path, [str(videos[0])], hud=True, commands="")
         surface = _ASurface()
         funestra = Funestra(FakeEngine(), channels=channels,
                             playlist=read_playlist(channels.playlist), hud_surface=surface)
@@ -1505,7 +1505,7 @@ class TestAHudBesideTheItem:
     def _main_beside(self, tmp_path, surface, *, genau: bool = False, commands: str = "",
                      users_frames=None):
         channels = _console_channels(
-            tmp_path, [str(clip) for clip in _clips(tmp_path, "v0", "v1")], commands=commands)
+            tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1")], commands=commands)
         _publish_console(tmp_path)
         engine = FakeEngine()
         users = {"kino": Kino, **({"genau": Genau} if genau else {})}
@@ -1597,8 +1597,8 @@ class TestAHudBesideTheItem:
         assert funestra.outside_buttons.toggle(pointed=False).command == "main_hud_minimize"
 
     def test_before_its_hud_has_been_read_nothing_hangs_outside_it(self, tmp_path):
-        clips = _clips(tmp_path, "v0")
-        channels = _channels(tmp_path, [str(clips[0])], hud=True, commands="")
+        videos = _videos(tmp_path, "v0")
+        channels = _channels(tmp_path, [str(videos[0])], hud=True, commands="")
         funestra = Funestra(FakeEngine(), channels=channels,
                             playlist=read_playlist(channels.playlist), hud_surface=_ASurface())
 
@@ -1635,7 +1635,7 @@ class TestAHudBesideTheItem:
 
 class _AFramesSurface:
     """Where a headset puts a User's own frame: a texture of its own, wrapped
-    the way the clip is, rather than tiles over the video."""
+    the way the video is, rather than tiles over the video."""
 
     def __init__(self) -> None:
         self.shown: list[tuple[FlickFrame, tuple[int, int]]] = []
@@ -1688,7 +1688,7 @@ class TestTheWindowsOwnVerbs:
             return command.startswith("TILT_")
 
         channels = _console_channels(
-            tmp_path, [str(clip) for clip in _clips(tmp_path, "v0", "v1")], commands=commands)
+            tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1")], commands=commands)
         _publish_console(tmp_path)
         engine = FakeEngine()
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),

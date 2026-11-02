@@ -130,7 +130,7 @@ class StatusWriter:
         text = "".join(f"{key}={value}\n" for key, value in self._fields(session).items())
         # Published whole rather than truncated in place: the orchestrator polls
         # this file, and a poller that caught a truncating write would read no
-        # clip at all — which it cannot tell from a Funestra that has none.
+        # video at all — which it cannot tell from a Funestra that has none.
         if not publish_whole(self._path, text):
             return False
         self._last_write = now

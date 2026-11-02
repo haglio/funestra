@@ -309,7 +309,7 @@ class Funestra:
 
     def _seek_along_the_track(self, ms: float) -> None:
         """A press on the track names a time in the stretch the track spans,
-        which is the whole clip until a loop being recorded zooms it in -- or,
+        which is the whole video until a loop being recorded zooms it in -- or,
         under an image, how far into its time on screen that image is."""
         frame = self._front.own_frame()
         if frame is not None:

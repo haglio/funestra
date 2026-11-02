@@ -594,7 +594,7 @@ class ConsolePainter:
         back as it was.
 
         The two numbers are the drawing host's -- the video's rate, the seconds
-        an unheld clip stays up -- which no source can know, so the source
+        an unheld video stays up -- which no source can know, so the source
         names them and whoever draws fills them in.  A name that outgrows the
         cell the source gave it widens the cell: "Playback speed" ran under the
         button beside it once, its last letter under the minus.

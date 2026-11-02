@@ -154,8 +154,8 @@ class Playback:
         return self._file_at(self._index)
 
     def _file_at(self, index: int) -> Path:
-        clip = self._playlist[index % len(self._playlist)]
-        return self._versions.get(clip, clip)
+        video = self._playlist[index % len(self._playlist)]
+        return self._versions.get(video, video)
 
     @property
     def idle(self) -> bool:
@@ -172,11 +172,11 @@ class Playback:
         if len(versions) <= 1 or showing not in versions:
             return
         target = versions[(versions.index(showing) + delta) % len(versions)]
-        clip = self.current_video
-        if target == clip:
-            self._versions.pop(clip, None)
+        video = self.current_video
+        if target == video:
+            self._versions.pop(video, None)
         else:
-            self._versions[clip] = target
+            self._versions[video] = target
         self.load(self._index)
         self._switching_versions = True
 

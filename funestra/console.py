@@ -69,7 +69,7 @@ def shape_label(shape: str) -> str:
 class ModeHud:
     """What runs on a Funestra says about what it is playing — what only it knows.
 
-    *video* is the name of the clip on screen, drawn as the muted line beneath
+    *video* is the name of the video on screen, drawn as the muted line beneath
     the status.  *length_mode* is the library's filter, empty when there is no
     library backing the playlist; *compilation* is the volume holding the
     playlist, with *position*/*total* placing the current video in it;

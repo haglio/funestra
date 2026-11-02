@@ -239,7 +239,7 @@ def test_a_radio_station_is_made_and_kept():
     station = engine.radio_station([ONE, TWO])
 
     assert isinstance(station, FakeStation)
-    assert (engine.stations, station.clips) == ([station], [ONE, TWO])
+    assert (engine.stations, station.videos) == ([station], [ONE, TWO])
 
 
 def test_the_software_outputs_are_the_ones_the_test_names():

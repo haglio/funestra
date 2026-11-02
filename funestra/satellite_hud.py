@@ -5,7 +5,7 @@ Time's Satellite Funestras composites it into its video, and a hosted
 Origenerator's region shows wear it as a widget — one HUD, one codebase, so
 the two surfaces cannot drift apart.
 
-fun_time owns each Funestra's *model* — which clips sit on the map, whether the
+fun_time owns each Funestra's *model* — which videos sit on the map, whether the
 satellite is locked, which axis is looping — because only fun_time has the
 library metadata.  It serializes that to a small JSON file per Funestra; this module
 parses it and lays it out.  (A hosted Origenerator builds its shows' models
@@ -93,7 +93,7 @@ Cell = tuple[str, int]            # ("corner", 0) | ("seed", i) | ("action", i)
 
 @dataclass(frozen=True)
 class HudCell:
-    """One clip drawn on the map: its path, its cached thumbnail, its row label.
+    """One video drawn on the map: its path, its cached thumbnail, its row label.
 
     ``thumb`` is "" while fun_time's background prewarm has not produced the
     frame yet — the map draws a placeholder there rather than waiting.
@@ -170,8 +170,8 @@ class HudModel:
     # any HUD that says where those words are going.
     active: bool = False
 
-    # Whether the clip on screen is one of the favorites — marked in the control
-    # band, beside the buttons that act on that clip.
+    # Whether the video on screen is one of the favorites — marked in the control
+    # band, beside the buttons that act on that video.
     is_favorite: bool = False
     item_note: str = ""
     corner: HudCell | None = None
@@ -183,18 +183,18 @@ class HudModel:
     # a row's button moves the filter onto that row, or lifts it when the filter is
     # already exactly that row.
     filter_query: str = ""
-    # The words the library writes in front of an act to say how the clip was
+    # The words the library writes in front of an act to say how the video was
     # shot, as it writes them.  The source names them because they are library
     # vocabulary; a row sets a leading one apart as an act of its own.
     camera_words: tuple[str, ...] = ()
     active_loop: str = ""
-    # How many clips each axis stands for, the clip on screen included.  The map
+    # How many videos each axis stands for, the video on screen included.  The map
     # draws only MAP_CELLS of them, so it prints these in its top-left corner —
     # the only place the real size of each axis can be read.
     seed_count: int = 0
     action_count: int = 0
     # The map cell actually on screen — the corner normally, or another cell
-    # while a loop plays a non-anchor clip of the group.  Drawn bright; the
+    # while a loop plays a non-anchor video of the group.  Drawn bright; the
     # rest dim.
     playing: Cell = ("corner", 0)
     # The rate this Funestra plays at, folded into its own HUD so the painter draws
@@ -369,12 +369,12 @@ def thumbnail_rect(slot: Rect, size: tuple[int, int]) -> Rect:
 def playing_rect(
     playing: Cell, corner_rect: Rect, seed_rects: list[Rect], action_rects: list[Rect]
 ) -> Rect | None:
-    """The rect of the cell holding the clip on screen, or None when that cell was
+    """The rect of the cell holding the video on screen, or None when that cell was
     not drawn (its axis's window closed before reaching it).
 
-    Usually the corner — but a lock taken inside a running loop holds a clip the
-    map is not anchored on, and the ring saying "this is the clip being held" has to
-    land on the cell that clip is actually drawn in, not on the loop's anchor.
+    Usually the corner — but a lock taken inside a running loop holds a video the
+    map is not anchored on, and the ring saying "this is the video being held" has to
+    land on the cell that video is actually drawn in, not on the loop's anchor.
     """
     bucket, index = playing
     if bucket == "corner":
@@ -414,9 +414,9 @@ def looped_group_rect(
     corner_rect: Rect, seed_rects: list[Rect], action_rects: list[Rect], axis: str,
     *, reserve: int = 0, column_rect: Rect | None = None,
 ) -> Rect:
-    """The rectangle drawn around the clips an *axis* loop is cycling — the row for
+    """The rectangle drawn around the videos an *axis* loop is cycling — the row for
     "seed", the column for "action" — grown by *reserve* at each end so the loop's
-    "…" marks fall inside it, saying those clips are in the loop too.  The column's
+    "…" marks fall inside it, saying those videos are in the loop too.  The column's
     rect stands on *column_rect*, the row cell the column hangs under
     (:func:`column_anchor_rect`); it defaults to the corner."""
     cx, cy, cw, ch = corner_rect
@@ -515,7 +515,7 @@ def favorite_mark_rect(x: int, y: int, line_h: int) -> Rect:
     A readout, not a button, so it belongs where the HUD keeps readouts and
     not in the control band: the one column already used for "what is true of
     this Funestra" — the active dot is directly above it — and immediately left of
-    the name of the very clip it is answering about.
+    the name of the very video it is answering about.
 
     *y* is the file-name line's top and *line_h* its height, and the mark is as
     tall as that line: a mark beside words wants to be the size of the words,
@@ -538,7 +538,7 @@ def largest_size_that_fits(largest: int, room: int, width_at: Callable[[int], in
     return next((size for size in sizes if width_at(size) <= room), sizes[-1])
 
 
-# The strike under the current clip's act: this act is wrong, ask about it again.
+# The strike under the current video's act: this act is wrong, ask about it again.
 # Smaller than a control button and in the gutter rather than on the band,
 # because it is about the words above it rather than about the Funestra — the one
 # place on the HUD where that act is named is the only place the strike can
@@ -594,7 +594,7 @@ class HudTargets:
     buttons: list[tuple[Rect, Button]] = field(default_factory=list)
     # The favorite mark is a readout, so it is here only to carry its tooltip.
     favorite: Rect | None = None
-    # The strike under the current clip's act, or None where no act is named.
+    # The strike under the current video's act, or None where no act is named.
     wrong_action: Rect | None = None
     # The drive readout's three bands, on a host that draws one: pressed to set
     # a level outright, and held while the pointer drags along them.
@@ -616,7 +616,7 @@ def build_click_targets(
     actions: list[HudCell] | tuple[HudCell, ...],
 ) -> list[tuple[Rect, str]]:
     """(rect, video_path) for every clickable thumbnail: the corner is the current
-    clip, then each drawn seed and action zipped to its path."""
+    video, then each drawn seed and action zipped to its path."""
     targets: list[tuple[Rect, str]] = []
     if corner_rect is not None and corner is not None and corner.path:
         targets.append((corner_rect, corner.path))
@@ -680,8 +680,8 @@ def act_is_filtered(act: str, filter_query: str, camera_words: Sequence[str]) ->
     row's acts is drawn lit.
 
     A filter for one act lights that act alone: on a "Side / Gamma" row a "gamma"
-    filter whitens "Gamma" and leaves "Side" gray, which is what says *why* the clip
-    is here.  A filter set from a clip carrying two acts names both, so both light.
+    filter whitens "Gamma" and leaves "Side" gray, which is what says *why* the video
+    is here.  A filter set from a video carrying two acts names both, so both light.
     """
     return any(filter_keeps(act, query) for query in _acts(filter_query, camera_words))
 
@@ -690,10 +690,10 @@ def label_is_filtered(label: str, filter_query: str, camera_words: Sequence[str]
     """Whether the filter keeps a row labeled *label* — its button's lit state, and
     what the press reads to decide between narrowing and lifting.
 
-    fun_time keeps a clip when the query appears as a *contiguous substring* of its
+    fun_time keeps a video when the query appears as a *contiguous substring* of its
     recorded act (``media_metadata.matches_query``), so every act the query names has
     to be one of the row's: filtered to "gamma", both a "Side Gamma" row and a "Gamma,
-    Theta" row are clips it keeps, while a plain "Alpha" row is *not* kept by an
+    Theta" row are videos it keeps, while a plain "Alpha" row is *not* kept by an
     "alpha, beta" filter and must not read as though it were.
     Within a row an act still matches on a substring ("gamma" catching "theta
     gamma") — the same rule fun_time uses, one act down.
@@ -751,7 +751,7 @@ def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
 # Windows' default double-click time.  A click that turns out to be the first
 # half of a double-click must not also post a switch, so a lone click waits this
 # long before it is posted.  Erring short is safe: a slow double-click simply
-# switches to the clip it then locks.
+# switches to the video it then locks.
 DOUBLE_CLICK_S = 0.5
 
 
@@ -759,7 +759,7 @@ class HudClicks:
     """Turns presses on the HUD into the fun_time commands they stand for.
 
     A press on a thumbnail is ambiguous until the double-click window passes —
-    single switches to the clip, double locks it — so :meth:`press` defers it and
+    single switches to the video, double locks it — so :meth:`press` defers it and
     :meth:`due` posts it once no second click has arrived.  Every other press
     (loop buttons, expand, filter buttons) is unambiguous and posts immediately.
 
@@ -887,9 +887,9 @@ def split_acts(name: str, camera_words: Sequence[str]) -> list[str]:
 
 
 def action_label_blocks(name: str, camera_words: Sequence[str]) -> list[list[str]]:
-    """A clip's action(s) drawn nicely, as one block of word-lines per action.
+    """A video's action(s) drawn nicely, as one block of word-lines per action.
 
-    A clip can carry several acts ("Alpha, Theta Motion", "Side Gamma") — each becomes
+    A video can carry several acts ("Alpha, Theta Motion", "Side Gamma") — each becomes
     its own block, so they can be drawn with a gap between the acts but tight
     wrapping within one, and each can be lit on its own.  A camera word is drawn as
     the source writes it, which plain title case would get wrong for an initialism.

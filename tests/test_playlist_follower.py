@@ -68,7 +68,7 @@ class TestAListWrittenUnderTheWindow:
 
     def test_the_list_the_window_opened_on_is_not_taken_again(self, tmp_path):
         """The window is handed that list as it is built, so reading it back would
-        start the first clip over on the first frame of every session."""
+        start the first video over on the first frame of every session."""
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "its own clip.mp4")
         taken: list[list[PlaylistItem]] = []
@@ -135,8 +135,8 @@ class TestAListTakenAway:
 class TestTheReloadVerb:
     def test_reads_at_once_rather_than_on_the_next_frame(self, tmp_path):
         """Held for a frame, the read lands after the command that came next: the
-        host sends a reload and then one clip to play with its funscript, and a
-        reload taken after that replaces the list the clip went into -- which
+        host sends a reload and then one video to play with its funscript, and a
+        reload taken after that replaces the list the video went into -- which
         drops the funscript, and a window that drops it stops driving the OSR2."""
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "a show.png")

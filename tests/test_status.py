@@ -97,7 +97,7 @@ class TestStatusWriter:
         # Funestra rewrites it several times a second.  A write that truncates the
         # file in place leaves a window in which the poller reads nothing — and
         # a poller cannot tell "I caught it mid-write" from "this Funestra has no
-        # clip", so it acts on the blank.  The write has to land whole or not at
+        # video", so it acts on the blank.  The write has to land whole or not at
         # all.
         status_path = tmp_path / "status.txt"
         writer = StatusWriter(status_path, _fields, min_interval=0.0)

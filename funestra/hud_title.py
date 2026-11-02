@@ -3,7 +3,7 @@
 Three Funestras draw a HUD in this family — the two satellites and the Main
 Funestra, whichever of Kino or Genau runs on it — and each one's title says what is
 selecting what you are looking at.  They say different *things*: a satellite has a
-loop over a map of clips, an act filter and a browse order; the primary has a
+loop over a map of videos, an act filter and a browse order; the primary has a
 compilation, a length mode and a pace.  What they must not differ on is the
 *grammar* — which fact comes first, which word names the lock, when a fact is worth
 saying at all — because a reader glancing between two screens is reading one
@@ -76,7 +76,7 @@ def hud_title(*, locked: bool, playing_set: str = "", order: str = "",
     rule beyond that: a *playing_set* drops "Unlocked", because a set playing
     through holds nothing and naming the absence of a hold that was never on offer
     is noise.  "Locked" still joins it — a hold taken inside a set is a stop at one
-    clip of it, which is worth saying.
+    video of it, which is worth saying.
     """
     parts = [playing_set] if playing_set else []
     if locked:

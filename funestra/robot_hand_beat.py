@@ -5,7 +5,7 @@ the BPM it is told is smoothed into rather than jumped to, and a sync pulse ease
 the phase toward the downbeat by a fraction of the error — but only ever forward.
 A pulse that arrives while the loop is already past the downbeat catches it up;
 one that arrives while the loop leads the beat holds rather than dragging the
-phase back, because the phase is what a clip is scrubbed by and the cursor must
+phase back, because the phase is what a video is scrubbed by and the cursor must
 never run backwards.  The phase is the one clock the hand and the drawing share.
 
 Where the beat comes from is the caller's question, and :class:`Beat` is its

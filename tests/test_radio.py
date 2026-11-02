@@ -35,12 +35,12 @@ def test_a_line_that_names_no_station_and_clip_is_passed_over(tmp_path):
 def a_radio(stations=(["a.mp4"], ["b.mp4"], ["c.mp4"]), *, together=False):
     opened: list[FakeStation] = []
 
-    def open_station(clips):
-        opened.append(FakeStation(clips))
+    def open_station(videos):
+        opened.append(FakeStation(videos))
         return opened[-1]
 
     radio = Radio(open_station, together=together)
-    radio.take([[Path(clip) for clip in clips] for clips in stations])
+    radio.take([[Path(video) for video in videos] for videos in stations])
     radio.tick(image=None, level=None, paused=False)
     return radio, opened
 
@@ -126,7 +126,7 @@ def test_stations_dealt_anew_take_the_old_ones_place():
     ticked(radio, VIDEO)
 
     assert [station.closed for station in opened] == [True, True, True, False, False, False]
-    assert [station.clips for station in opened[3:]] == [[Path("d.mp4")], [Path("e.mp4")],
+    assert [station.videos for station in opened[3:]] == [[Path("d.mp4")], [Path("e.mp4")],
                                                         [Path("f.mp4")]]
 
 
@@ -142,10 +142,10 @@ def test_stations_that_cannot_be_opened_yet_open_once_they_can():
     sound = {"live": False}
     opened: list[FakeStation] = []
 
-    def open_station(clips):
+    def open_station(videos):
         if not sound["live"]:
             return None
-        opened.append(FakeStation(clips))
+        opened.append(FakeStation(videos))
         return opened[-1]
 
     radio = Radio(open_station)
@@ -162,8 +162,8 @@ def test_stations_that_cannot_be_opened_yet_open_once_they_can():
 def test_a_station_that_will_not_open_leaves_the_radio_quiet_and_is_asked_for_once(caplog):
     asked: list[list[Path]] = []
 
-    def open_station(clips):
-        asked.append(clips)
+    def open_station(videos):
+        asked.append(videos)
         raise OSError("The engine (libmpv) could not be loaded.")
 
     radio = Radio(open_station)
@@ -194,10 +194,10 @@ def test_a_radio_file_hands_on_its_stations_when_it_appears_changes_and_goes(tmp
 def test_the_stations_that_did_open_beside_one_that_would_not_are_let_go():
     opened: list[FakeStation] = []
 
-    def open_station(clips):
-        if clips == [Path("b.mp4")]:
+    def open_station(videos):
+        if videos == [Path("b.mp4")]:
             raise OSError("The engine (libmpv) could not be loaded.")
-        opened.append(FakeStation(clips))
+        opened.append(FakeStation(videos))
         return opened[-1]
 
     radio = Radio(open_station)

@@ -9,7 +9,7 @@ from funestra.hud_marks import FMODE_ICON, MINIMIZE_ICON, shared_mark
 def band(funestra: str = "portrait", *, locked: bool = False, favorites: bool = False,
          enhanced: bool | None = None, newest: bool | None = None,
          minimize: bool = True) -> tuple[Button, ...]:
-    """Stepping, the clip on screen, the browse -- the enhanced switch and the
+    """Stepping, the video on screen, the browse -- the enhanced switch and the
     order pair only where asked for -- and the window."""
     def own(name: str, face: str, **state) -> Button:
         return Button(f"{funestra}_{name}", face, f"{name} tip", **state)

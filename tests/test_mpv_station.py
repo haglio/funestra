@@ -1,4 +1,4 @@
-"""A radio station: library clips' sound alone, round and round, heard only while it is tuned in."""
+"""A radio station: library videos' sound alone, round and round, heard only while it is tuned in."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -30,7 +30,7 @@ class FakeStationMpv:
 CLIPS = [Path("alpha one.mp4"), Path("alpha two.mp4"), Path("beta.mp4")]
 
 
-def opened(monkeypatch, clips=CLIPS, **station_args) -> tuple[MpvStation, FakeStationMpv]:
+def opened(monkeypatch, videos=CLIPS, **station_args) -> tuple[MpvStation, FakeStationMpv]:
     handles: list[FakeStationMpv] = []
 
     def open_mpv(**options):
@@ -38,7 +38,7 @@ def opened(monkeypatch, clips=CLIPS, **station_args) -> tuple[MpvStation, FakeSt
         return handles[-1]
 
     monkeypatch.setattr(mpv_engine, "_import_mpv", lambda: SimpleNamespace(MPV=open_mpv))
-    station = MpvStation.opened(clips, **station_args)
+    station = MpvStation.opened(videos, **station_args)
     return station, handles[0]
 
 
