@@ -26,7 +26,7 @@ def _frame(width: int, height: int, rgb=(10, 20, 30)) -> np.ndarray:
 def test_a_frame_is_put_up_over_a_black_backdrop_scaled_to_the_window():
     engine = FakeEngine()
 
-    FlickOverlay(engine).show(FlickFrame(frame=_frame(16, 8)), window=(64, 32))
+    FlickOverlay(engine).show(FlickFrame(frame=_frame(16, 8)), viewport=(64, 32))
 
     assert list(engine.overlays) == [BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID]
     x, y, backdrop = engine.overlays[BACKDROP_OVERLAY_ID]
@@ -40,7 +40,7 @@ def test_a_frame_is_put_up_over_a_black_backdrop_scaled_to_the_window():
 def test_a_portrait_frame_is_tiled_across_the_window_as_a_portrait_video_is():
     engine = FakeEngine()
 
-    FlickOverlay(engine).show(FlickFrame(frame=_frame(8, 16)), window=(64, 32))
+    FlickOverlay(engine).show(FlickFrame(frame=_frame(8, 16)), viewport=(64, 32))
 
     tiles = [engine.overlays[FIRST_TILE_OVERLAY_ID + i] for i in range(4)]
     assert [(x, y, bgra.shape) for x, y, bgra in tiles] == [
@@ -51,7 +51,7 @@ def test_a_portrait_frame_is_tiled_across_the_window_as_a_portrait_video_is():
 def test_a_frame_wider_than_the_window_fits_its_width_and_sits_in_the_middle():
     engine = FakeEngine()
 
-    FlickOverlay(engine).show(FlickFrame(frame=_frame(32, 8)), window=(32, 32))
+    FlickOverlay(engine).show(FlickFrame(frame=_frame(32, 8)), viewport=(32, 32))
 
     x, y, tile = engine.overlays[FIRST_TILE_OVERLAY_ID]
     assert (x, y, tile.shape) == (0, 12, (8, 32, 4))
@@ -60,7 +60,7 @@ def test_a_frame_wider_than_the_window_fits_its_width_and_sits_in_the_middle():
 def test_hidden_it_takes_down_everything_it_put_up():
     engine = FakeEngine()
     overlay = FlickOverlay(engine)
-    overlay.show(FlickFrame(frame=_frame(8, 16)), window=(64, 32))
+    overlay.show(FlickFrame(frame=_frame(8, 16)), viewport=(64, 32))
 
     overlay.hide()
 
@@ -70,9 +70,9 @@ def test_hidden_it_takes_down_everything_it_put_up():
 def test_fewer_tiles_than_before_take_the_stale_ones_down():
     engine = FakeEngine()
     overlay = FlickOverlay(engine)
-    overlay.show(FlickFrame(frame=_frame(8, 16)), window=(64, 32))
+    overlay.show(FlickFrame(frame=_frame(8, 16)), viewport=(64, 32))
 
-    overlay.show(FlickFrame(frame=_frame(8, 16)), window=(32, 32))
+    overlay.show(FlickFrame(frame=_frame(8, 16)), viewport=(32, 32))
 
     assert sorted(engine.overlays) == [BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, FIRST_TILE_OVERLAY_ID + 1]
 
@@ -92,8 +92,8 @@ def test_the_same_frame_in_the_same_window_is_not_put_up_twice():
     overlay = FlickOverlay(engine)
     frame = _frame(16, 8)
 
-    overlay.show(FlickFrame(frame=frame), window=(64, 32))
-    overlay.show(FlickFrame(frame=frame), window=(64, 32))
+    overlay.show(FlickFrame(frame=frame), viewport=(64, 32))
+    overlay.show(FlickFrame(frame=frame), viewport=(64, 32))
 
     assert engine.put_up == [BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID]
 
@@ -107,7 +107,7 @@ def test_a_frame_shown_before_at_this_size_is_scaled_once(monkeypatch):
     first, second = _frame(16, 8), _frame(16, 8, rgb=(1, 2, 3))
 
     for frame in (first, second, first):
-        overlay.show(FlickFrame(frame=frame), window=(64, 32))
+        overlay.show(FlickFrame(frame=frame), viewport=(64, 32))
 
     assert len(scaled) == 2
 
@@ -121,7 +121,7 @@ def test_the_scaled_frames_kept_are_bounded_so_a_long_flick_cannot_eat_the_memor
     first, second = _frame(16, 8), _frame(16, 8, rgb=(1, 2, 3))
 
     for frame in (first, second, first):
-        overlay.show(FlickFrame(frame=frame), window=(64, 32))
+        overlay.show(FlickFrame(frame=frame), viewport=(64, 32))
 
     assert len(scaled) == 3
 
@@ -129,7 +129,7 @@ def test_the_scaled_frames_kept_are_bounded_so_a_long_flick_cannot_eat_the_memor
 def test_nothing_decoded_yet_shows_the_backdrop_and_what_is_loading():
     engine = FakeEngine()
 
-    FlickOverlay(engine).show(FlickFrame(frame=None, loading="Loading alpha.mp4"), window=(640, 480))
+    FlickOverlay(engine).show(FlickFrame(frame=None, loading="Loading alpha.mp4"), viewport=(640, 480))
 
     assert sorted(engine.overlays) == [BACKDROP_OVERLAY_ID, LOADING_OVERLAY_ID]
     x, y, message = engine.overlays[LOADING_OVERLAY_ID]
@@ -141,9 +141,9 @@ def test_nothing_decoded_yet_shows_the_backdrop_and_what_is_loading():
 def test_the_loading_notice_comes_down_with_the_flick_decoded():
     engine = FakeEngine()
     overlay = FlickOverlay(engine)
-    overlay.show(FlickFrame(frame=None, loading="Loading alpha.mp4"), window=(640, 480))
+    overlay.show(FlickFrame(frame=None, loading="Loading alpha.mp4"), viewport=(640, 480))
 
-    overlay.show(FlickFrame(frame=_frame(16, 8)), window=(640, 480))
+    overlay.show(FlickFrame(frame=_frame(16, 8)), viewport=(640, 480))
 
     assert LOADING_OVERLAY_ID not in engine.overlays
 

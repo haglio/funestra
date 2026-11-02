@@ -39,7 +39,7 @@ def _corners(hud: _Hud | None = None,
 
 def _pointed_at(corners: HudCorners, point: tuple[int, int]) -> None:
     corners.motion(*point)
-    corners.paint(window=WINDOW)
+    corners.paint(viewport=WINDOW)
 
 
 class TestThePlus:
@@ -63,10 +63,10 @@ class TestThePlus:
         corners.motion(*LOWER_RIGHT)
         engine.overlay = _no_memory_to_put_it_up
         with pytest.raises(MemoryError):
-            corners.paint(window=WINDOW)
+            corners.paint(viewport=WINDOW)
 
         del engine.overlay
-        corners.paint(window=WINDOW)
+        corners.paint(viewport=WINDOW)
 
         assert CORNER_PLUS_OVERLAY_ID in engine.overlays
 
@@ -79,7 +79,7 @@ class TestAPress:
     def test_in_a_corner_the_hud_is_not_in_asks_for_the_hud_there(self):
         asked: list[str] = []
         corners, _engine = _corners(asked=asked)
-        corners.paint(window=WINDOW)
+        corners.paint(viewport=WINDOW)
 
         taken = corners.press(*LOWER_RIGHT)
 
@@ -88,14 +88,14 @@ class TestAPress:
     def test_in_the_huds_own_corner_is_left_to_the_item(self):
         asked: list[str] = []
         corners, _engine = _corners(_Hud(corner=HudCorner.LOWER_RIGHT), asked)
-        corners.paint(window=WINDOW)
+        corners.paint(viewport=WINDOW)
 
         assert (corners.press(*LOWER_RIGHT), asked) == (False, [])
 
     def test_over_the_hud_is_left_to_the_hud(self):
         asked: list[str] = []
         corners, _engine = _corners(_Hud(covering=(0, 0, *WINDOW)), asked)
-        corners.paint(window=WINDOW)
+        corners.paint(viewport=WINDOW)
 
         assert (corners.press(*LOWER_RIGHT), asked) == (False, [])
 
@@ -129,11 +129,11 @@ class TestWhereAPlaceSits:
     def test_open_its_hud_sits_at_the_margin(self):
         place = HudPlace("portrait", HudCorner.LOWER_RIGHT, 12, inset=(10, 13))
 
-        assert place.origin(hud=(200, 100), window=WINDOW) == (
+        assert place.origin(hud=(200, 100), viewport=WINDOW) == (
             WINDOW[0] - 12 - 200, WINDOW[1] - 12 - 100)
 
     def test_minimized_its_plus_sits_in_from_the_margin_on_the_minus_spot(self):
         place = HudPlace("portrait", HudCorner.LOWER_RIGHT, 12, minimized=True, inset=(10, 13))
 
-        assert place.origin(hud=(24, 24), window=WINDOW) == (
+        assert place.origin(hud=(24, 24), viewport=WINDOW) == (
             WINDOW[0] - 12 - 10 - 24, WINDOW[1] - 12 - 13 - 24)

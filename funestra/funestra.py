@@ -26,7 +26,7 @@ from .host_controls import HostControls
 from .hud_corners import HudCorners
 from .hud_minimize import NameFlash
 from .hud_overlay import HudOverlay
-from .hud_placement import HudEdge
+from .hud_placement import HudEdge, takes_the_old_viewport_word
 from .hud_row import RowHud
 from .main_hud import ModeHud
 from .main_hud_overlay import MainHudOverlay
@@ -108,7 +108,7 @@ class UsersFrames(Protocol):
     """Where a User's own frame goes up: over the engine's item, as
     :class:`FlickOverlay` tiles it, or wherever else the window shows one."""
 
-    def show(self, frame: FlickFrame, window: tuple[int, int]) -> None: ...
+    def show(self, frame: FlickFrame, viewport: tuple[int, int]) -> None: ...
 
     def hide(self) -> None: ...
 
@@ -389,22 +389,26 @@ class Funestra:
         if quit_gesture(self._channels.dashboard_cmd):
             self._stop.set()
 
-    def press(self, x: int, y: int, *, window: tuple[int, int]) -> None:
+    @takes_the_old_viewport_word
+    def press(self, x: int, y: int, *, viewport: tuple[int, int]) -> None:
         self._pointer.press(x, y)
 
     def release(self) -> None:
         self._pointer.release()
 
-    def motion(self, x: int, y: int, *, held: bool, window: tuple[int, int]) -> None:
+    @takes_the_old_viewport_word
+    def motion(self, x: int, y: int, *, held: bool, viewport: tuple[int, int]) -> None:
         self._pointer.motion(x, y, held=held)
 
-    def wheel(self, x: int, y: int, steps: int, *, window: tuple[int, int]) -> None:
+    @takes_the_old_viewport_word
+    def wheel(self, x: int, y: int, steps: int, *, viewport: tuple[int, int]) -> None:
         self._pointer.wheel(x, y, steps)
 
     def leave(self) -> None:
         self._pointer.leave()
 
-    def tick(self, *, window: tuple[int, int]) -> None:
+    @takes_the_old_viewport_word
+    def tick(self, *, viewport: tuple[int, int]) -> None:
         channels = self._channels
         if channels.paused is not None:
             self.playback.set_paused(read_paused_state(channels.paused, logger=logger))
@@ -419,10 +423,10 @@ class Funestra:
         if self._status is not None:
             self._status.write(self.playback)
         if self._tiles:
-            self._engine.tile_to_fill(*window)
+            self._engine.tile_to_fill(*viewport)
         self._engine.push_still()
         self._tune_the_radio()
-        self._paint_if_there_is_memory(window)
+        self._paint_if_there_is_memory(viewport)
 
     def close(self) -> None:
         for user in self._users.values():
@@ -474,9 +478,9 @@ class Funestra:
         self.playback.follow_a_roll()
         self.playback.take_the_list(items)
 
-    def _paint_if_there_is_memory(self, window: tuple[int, int]) -> None:
+    def _paint_if_there_is_memory(self, viewport: tuple[int, int]) -> None:
         try:
-            self._paint(window)
+            self._paint(viewport)
         except MemoryError:
             if not self._short_of_memory:
                 logger.warning("Out of memory drawing over the item; drawing it again on "
@@ -485,19 +489,19 @@ class Funestra:
         else:
             self._short_of_memory = False
 
-    def _paint(self, window: tuple[int, int]) -> None:
+    def _paint(self, viewport: tuple[int, int]) -> None:
         frame = self._front.own_frame()
         if frame is None:
             self._users_frames.hide()
-            self._paint_hud(window, self.item_row(), self._strip.colors, self.playback.speed)
+            self._paint_hud(viewport, self.item_row(), self._strip.colors, self.playback.speed)
             if self._hud_surface is None:
-                self._paint_loop_frames(window)
+                self._paint_loop_frames(viewport)
         else:
-            self._users_frames.show(frame, window)
-            self._paint_hud(window, frame_row(frame, self._volume.hud), None, 1.0)
+            self._users_frames.show(frame, viewport)
+            self._paint_hud(viewport, frame_row(frame, self._volume.hud), None, 1.0)
             self._take_the_loop_frames_down()
         if self._corners is not None:
-            self._corners.paint(window=window)
+            self._corners.paint(viewport=viewport)
 
     def item_row(self) -> RowHud:
         """Where the item on screen has got to, how long it runs, how loud it
@@ -535,21 +539,21 @@ class Funestra:
         row = None if self._hud is None else self._hud.row
         return 0 if row is None else row.track[1] - row.track[0]
 
-    def _paint_hud(self, window: tuple[int, int], row: RowHud | None, colors,
+    def _paint_hud(self, viewport: tuple[int, int], row: RowHud | None, colors,
                    playback_speed: float) -> None:
         if self._hud is None:
             return
         if isinstance(self._hud, MainHudOverlay):
             self._flash = self._name_flash.showing(self._top_block().video)
-            self._hud.tick(playback_speed=playback_speed, window=window,
+            self._hud.tick(playback_speed=playback_speed, viewport=viewport,
                            item_row=row, heatmap=colors, flash=self._flash)
         else:
             video = self._front.top_block().video or self.playback.name_on_screen
             self._flash = self._name_flash.showing(video)
-            self._hud.tick(video=video, playback_speed=playback_speed, window=window,
+            self._hud.tick(video=video, playback_speed=playback_speed, viewport=viewport,
                            item_row=row, heatmap=colors, flash=self._flash)
 
-    def _paint_loop_frames(self, window: tuple[int, int]) -> None:
+    def _paint_loop_frames(self, viewport: tuple[int, int]) -> None:
         """The loop's in and out frames, each hanging under the HUD below its
         own mark on the track."""
         playback, engine, frames = self.playback, self._engine, self._loop_frames
@@ -563,7 +567,7 @@ class Funestra:
         x0, x1, top = track
         in_at, out_at = loop_thumbnail_xys(
             self._strip, frames, playback.ab_loop,
-            track=(x0, x1), win_w=window[0], top=top)
+            track=(x0, x1), viewport_w=viewport[0], top=top)
         if in_at is not None:
             engine.overlay(self.IN_FRAME_OVERLAY_ID, *in_at, frames.in_thumb)
             self._loop_frames_up = True

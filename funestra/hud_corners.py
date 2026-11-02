@@ -30,15 +30,15 @@ class HudPlace:
     minimized: bool = False
     inset: tuple[int, int] = (0, 0)
 
-    def origin(self, *, hud: tuple[int, int], window: tuple[int, int],
+    def origin(self, *, hud: tuple[int, int], viewport: tuple[int, int],
                lower_edge: int = 0) -> tuple[int, int]:
-        return hud_origin(self.corner, hud=hud, window=window, margin=self.margin,
+        return hud_origin(self.corner, hud=hud, viewport=viewport, margin=self.margin,
                           lower_edge=lower_edge, inset=self.inset if self.minimized else (0, 0))
 
 
 def _corner_beside(place: HudPlace, x: int, y: int, *,
-                   window: tuple[int, int]) -> HudCorner | None:
-    width, height = window
+                   viewport: tuple[int, int]) -> HudCorner | None:
+    width, height = viewport
     if not (0 <= x < width and 0 <= y < height):
         return None
     right, lower = x >= width - REACH, y >= height - REACH
@@ -88,7 +88,7 @@ class HudCorners:
         self._engine = engine
         self._post = post
         self._overlay_id = overlay_id
-        self._window: tuple[int, int] | None = None
+        self._viewport: tuple[int, int] | None = None
         self._pointer: tuple[int, int] | None = None
         self._shown: _Plus | None = None
 
@@ -99,16 +99,16 @@ class HudCorners:
         self._pointer = None
 
     def press(self, x: int, y: int) -> bool:
-        target = None if self._window is None or self._hud.covers(x, y) else self._target(
-            x, y, self._window)
+        target = None if self._viewport is None or self._hud.covers(x, y) else self._target(
+            x, y, self._viewport)
         if target is None:
             return False
         self._post(self._button(*target).command)
         return True
 
-    def paint(self, *, window: tuple[int, int]) -> None:
-        self._window = window
-        plus = self._plus(window)
+    def paint(self, *, viewport: tuple[int, int]) -> None:
+        self._viewport = viewport
+        plus = self._plus(viewport)
         if plus == self._shown:
             return
         if plus is None:
@@ -123,17 +123,17 @@ class HudCorners:
         return plus_button(place.funestra, corner, minimized=place.minimized)
 
     def _target(self, x: int, y: int,
-                window: tuple[int, int]) -> tuple[HudPlace, HudCorner] | None:
+                viewport: tuple[int, int]) -> tuple[HudPlace, HudCorner] | None:
         place = self._hud.hud_place
-        corner = None if place is None else _corner_beside(place, x, y, window=window)
+        corner = None if place is None else _corner_beside(place, x, y, viewport=viewport)
         return None if corner is None else (place, corner)
 
-    def _plus(self, window: tuple[int, int]) -> _Plus | None:
-        target = None if self._pointer is None else self._target(*self._pointer, window)
+    def _plus(self, viewport: tuple[int, int]) -> _Plus | None:
+        target = None if self._pointer is None else self._target(*self._pointer, viewport)
         if target is None:
             return None
         place, corner = target
         button = self._button(place, corner)
         height, width = plus_bgra(button, corner).shape[:2]
         return _Plus(button, corner, replace(place, corner=corner, minimized=True).origin(
-            hud=(width, height), window=window))
+            hud=(width, height), viewport=viewport))

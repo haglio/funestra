@@ -53,7 +53,8 @@ PLACE_W = TRACK_GAP + VOLUME_CONTROL_W
 ROW_H = 24
 
 
-def volume_control_xy(*, win_w: int, win_h: int, timeline_h: int) -> tuple[int, int]:
+def volume_control_xy(*, viewport_w: int | None = None, viewport_h: int | None = None, timeline_h: int,
+                      win_w: int | None = None, win_h: int | None = None) -> tuple[int, int]:
     """The volume control's top-left: flush with the right end of the scrubber row,
     centered in its height.
 
@@ -67,9 +68,10 @@ def volume_control_xy(*, win_w: int, win_h: int, timeline_h: int) -> tuple[int, 
     row puts one.
     """
     row_h = timeline_h if timeline_h > 0 else ROW_H
+    viewport_w, viewport_h = viewport_w or win_w, viewport_h or win_h
     return (
-        max(0, win_w - VOLUME_CONTROL_W),
-        max(0, win_h - row_h + max(0, (row_h - VOLUME_CONTROL_H) // 2)),
+        max(0, viewport_w - VOLUME_CONTROL_W),
+        max(0, viewport_h - row_h + max(0, (row_h - VOLUME_CONTROL_H) // 2)),
     )
 
 
@@ -79,16 +81,16 @@ _TRACK_X0 = SPEAKER_W
 _TRACK_X1 = VOLUME_CONTROL_W - PAD
 
 
-def volume_control_local(mx: int, my: int, *, win_w: int, win_h: int,
+def volume_control_local(mx: int, my: int, *, viewport_w: int, viewport_h: int,
                timeline_h: int) -> tuple[int, int]:
-    """A window point in the volume control's own coordinates — what the hit tests below take.
+    """A viewport point in the volume control's own coordinates — what the hit tests below take.
 
-    The volume control is placed from the window's lower-right corner, so its origin moves
+    The volume control is placed from the viewport's lower-right corner, so its origin moves
     with the window and with the scrubber under it.  Undoing ``chip_xy`` lives here
     beside ``chip_xy`` rather than at each call site, where it would be one more
     copy of the volume control's position, free to drift from the real one.
     """
-    vx, vy = volume_control_xy(win_w=win_w, win_h=win_h, timeline_h=timeline_h)
+    vx, vy = volume_control_xy(viewport_w=viewport_w, viewport_h=viewport_h, timeline_h=timeline_h)
     return mx - vx, my - vy
 
 

@@ -84,7 +84,7 @@ class MainHudOverlay:
     def hud_place(self) -> HudPlace | None:
         return self._painter.hud_place
 
-    def tick(self, *, playback_speed: float, window: tuple[int, int],
+    def tick(self, *, playback_speed: float, viewport: tuple[int, int],
              item_row: RowHud | None = None, heatmap=None, flash: str = "") -> None:
         self._main_hud = read_main_hud(self._main_hud_file) or self._main_hud
         if self._drive_file is not None:
@@ -107,7 +107,7 @@ class MainHudOverlay:
             drive=drive,
             flash=flash,
         ), item_row=item_row, heatmap=heatmap, host_controls=self._host_controls.drawing())
-        self._origin = self._painter.place(window=window)
+        self._origin = self._painter.place(viewport=viewport)
         self._hud_height = bgra.shape[0]
         self._engine.overlay(self.overlay_id, *self._origin, bgra)
         self._shown = True
@@ -120,7 +120,7 @@ class MainHudOverlay:
 
     @property
     def row_track(self) -> tuple[int, int, int] | None:
-        """The row's track in the window's coordinates, for a host hanging the
+        """The row's track in the viewport's coordinates, for a host hanging the
         loop's frames under it."""
         return track_on_screen(self._painter.row, origin=self._origin,
                                hud_height=self._hud_height)

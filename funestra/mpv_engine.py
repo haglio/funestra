@@ -197,12 +197,12 @@ TILES_SHADER = Path(__file__).with_name("tiles.glsl")
 _PLACING = ("video_zoom", "video_align_x", "video_align_y")
 
 
-def tiles_across(source: tuple[int, int], window: tuple[int, int]) -> int:
+def tiles_across(source: tuple[int, int], viewport: tuple[int, int]) -> int:
     source_width, source_height = source
-    window_width, window_height = window
-    if source_width >= source_height or window_width <= window_height:
+    viewport_width, viewport_height = viewport
+    if source_width >= source_height or viewport_width <= viewport_height:
         return 1
-    return window_width * source_height // (window_height * source_width)
+    return viewport_width * source_height // (viewport_height * source_width)
 
 
 # How long close() waits for calls already inside mpv before giving up on
@@ -287,7 +287,7 @@ class _MpvControl:
         # leaves a image's playhead at nought (verified against libmpv,
         # 2026-09-19), so nothing of mpv's can say how far into its pace it is.
         self._ken_burns = KenBurns(moves, looping=looping, fit=self._fit)
-        self._window = (0, 0)
+        self._viewport = (0, 0)
         self._placed = (0.0, 0.0, 0.0)
         self._path: str | None = None
         self._on_the_clock: str | None = None
@@ -335,8 +335,8 @@ class _MpvControl:
         return self._source_dims
 
     @mpv_call()
-    def tile_to_fill(self, window_width: int, window_height: int) -> None:
-        tiles = tiles_across(self._source_dims, (window_width, window_height))
+    def tile_to_fill(self, viewport_width: int, viewport_height: int) -> None:
+        tiles = tiles_across(self._source_dims, (viewport_width, viewport_height))
         tiling = (tiles, self._tiled_aspect(tiles))
         if tiling == self._tiling:
             return
@@ -509,10 +509,10 @@ class _MpvControl:
         self._ken_burns.set_points_of_interest(places, self._now())
 
     def _fit(self) -> Fit:
-        return Fit(self._window_size(), self._video_dims, self._tiling[0])
+        return Fit(self._viewport_size(), self._video_dims, self._tiling[0])
 
-    def _window_size(self) -> tuple[int, int]:
-        return self._window
+    def _viewport_size(self) -> tuple[int, int]:
+        return self._viewport
 
     @mpv_call()
     def push_still(self) -> None:
@@ -730,7 +730,7 @@ class MpvEngine(_MpvControl):
         self._lost_gpu.stop()
         super().close()
 
-    def _window_size(self) -> tuple[int, int]:
+    def _viewport_size(self) -> tuple[int, int]:
         return _client_size(self._wid)
 
 

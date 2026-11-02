@@ -325,28 +325,28 @@ def test_a_view_reaches_mpv_as_its_zoom_and_how_far_it_leans_each_way():
 F32 = np.float32
 
 
-def mpv_fitted(window: tuple[int, int], shown: tuple[int, int]) -> tuple[int, int]:
-    (window_w, window_h), (shown_w, shown_h) = window, shown
-    width, height = window_w, int(F32(window_w) / F32(shown_w) * F32(shown_h))
-    if height > window_h or height < shown_h:
-        narrower = int(F32(window_h) / F32(shown_h) * F32(shown_w))
-        if narrower <= window_w:
-            width, height = narrower, window_h
+def mpv_fitted(viewport: tuple[int, int], shown: tuple[int, int]) -> tuple[int, int]:
+    (viewport_w, viewport_h), (shown_w, shown_h) = viewport, shown
+    width, height = viewport_w, int(F32(viewport_w) / F32(shown_w) * F32(shown_h))
+    if height > viewport_h or height < shown_h:
+        narrower = int(F32(viewport_h) / F32(shown_h) * F32(shown_w))
+        if narrower <= viewport_w:
+            width, height = narrower, viewport_h
     return width, height
 
 
-def mpv_span(window: int, fitted: int, video_zoom: float, align: float) -> tuple[int, int]:
+def mpv_span(viewport: int, fitted: int, video_zoom: float, align: float) -> tuple[int, int]:
     scaled = max(int(F32(fitted) * F32(2.0) ** F32(video_zoom)), 1)
-    if window >= scaled:
+    if viewport >= scaled:
         align = 0.0
-    start = int(F32(window - scaled) * ((F32(align) + F32(1.0)) / F32(2.0)))
+    start = int(F32(viewport - scaled) * ((F32(align) + F32(1.0)) / F32(2.0)))
     return start, start + scaled
 
 
-def drawn(window: tuple[int, int], shown: tuple[int, int], view: View) -> list[tuple[int, int, int]]:
+def drawn(viewport: tuple[int, int], shown: tuple[int, int], view: View) -> list[tuple[int, int, int]]:
     video_zoom, *aligns = view.placement()
     return [(side, *mpv_span(side, fitted, video_zoom, align))
-            for side, fitted, align in zip(window, mpv_fitted(window, shown), aligns, strict=True)]
+            for side, fitted, align in zip(viewport, mpv_fitted(viewport, shown), aligns, strict=True)]
 
 
 SHAPES = [(1920, 1080), (832, 1216), (3000, 1000), (1024, 1024)]
@@ -359,19 +359,19 @@ CORNERS = [(-1.0, -1.0), (-1.0, 1.0), (1.0, -1.0), (1.0, 1.0)]
 def test_no_view_draws_an_edge_of_the_image_inside_the_window(shown, corner, zoom):
     centered = drawn(WIDE, shown, View(zoom))
 
-    for (window, start, end), (_, centered_start, _) in zip(
+    for (viewport, start, end), (_, centered_start, _) in zip(
             drawn(WIDE, shown, View(zoom, *corner)), centered, strict=True):
-        if start > 0 or end < window:
+        if start > 0 or end < viewport:
             assert start == centered_start
 
 
 @pytest.mark.parametrize("shown", SHAPES)
 @pytest.mark.parametrize("corner", CORNERS)
 def test_a_view_at_the_end_of_its_reach_brings_the_images_edge_up_to_the_windows(shown, corner):
-    for window, start, end in drawn(WIDE, shown, View(8.0, *corner)):
+    for viewport, start, end in drawn(WIDE, shown, View(8.0, *corner)):
         assert start <= 0
-        assert end >= window
-        assert min(-start, end - window) == 0
+        assert end >= viewport
+        assert min(-start, end - viewport) == 0
 
 
 def test_an_image_held_for_less_than_its_pace_runs_out_then_on_the_move_of_the_whole_pace():
@@ -401,27 +401,27 @@ def test_a_locked_image_held_for_less_than_its_pace_still_never_runs_out():
     assert still.ran_out(now_s=103.0) is False
 
 
-def part_drawn(window, shown, view: View, part):
+def part_drawn(viewport, shown, view: View, part):
     x0, y0, x1, y1 = part
     return [(side, start + low * (end - start), start + high * (end - start))
             for (side, start, end), (low, high) in zip(
-                drawn(window, shown, view), ((x0, x1), (y0, y1)), strict=True)]
+                drawn(viewport, shown, view), ((x0, x1), (y0, y1)), strict=True)]
 
 
 def test_a_close_up_fits_its_place_in_the_window_and_puts_it_in_the_middle():
     part = (0.25, 0.25, 0.75, 0.75)
 
-    for window, start, end in part_drawn(WIDE, WIDE, Fit(WIDE, WIDE).framing(part), part):
+    for viewport, start, end in part_drawn(WIDE, WIDE, Fit(WIDE, WIDE).framing(part), part):
         assert start == pytest.approx(0, abs=2)
-        assert end == pytest.approx(window, abs=2)
+        assert end == pytest.approx(viewport, abs=2)
 
 
 @pytest.mark.parametrize("shown", SHAPES)
 @pytest.mark.parametrize("part", [(0.75, 0.0, 1.0, 0.25), (0.0, 0.8, 0.3, 1.0), (0.4, 0.3, 0.6, 0.5)])
 def test_a_place_anywhere_in_the_image_is_drawn_whole_inside_the_window(shown, part):
-    for window, start, end in part_drawn(WIDE, shown, Fit(WIDE, shown).framing(part), part):
+    for viewport, start, end in part_drawn(WIDE, shown, Fit(WIDE, shown).framing(part), part):
         assert start >= -1
-        assert end <= window + 1
+        assert end <= viewport + 1
 
 
 def test_a_close_up_on_a_sliver_comes_no_closer_than_any_close_up_comes():
@@ -501,14 +501,14 @@ def test_an_image_let_go_of_its_lock_makes_its_ordinary_move_and_no_close_up():
 
 
 def test_a_close_up_is_framed_for_the_window_the_image_is_in_when_it_comes_round():
-    window = Fit(WIDE, (832, 1216))
-    still = KenBurns(Deals(DRIFT), fit=lambda: window)
+    viewport = Fit(WIDE, (832, 1216))
+    still = KenBurns(Deals(DRIFT), fit=lambda: viewport)
     still.set_pace(4.0, now_s=100.0)
     still.new_image(now_s=100.0)
     still.set_points_of_interest((FACE,), now_s=100.0)
     still.set_looping(True, now_s=100.0)
 
-    assert still.view(now_s=104.0) == window.framing(FACE)
+    assert still.view(now_s=104.0) == viewport.framing(FACE)
 
 
 PLACE = (0.2, 0.4, 0.6, 0.6)
@@ -558,11 +558,11 @@ def test_a_close_up_pan_moves_the_image_across_the_window_as_far_as_a_pan_of_the
 
 
 def test_a_close_up_framed_at_the_closest_zoom_still_zooms_as_far_as_the_whole_image_does():
-    window = Fit((1000, 1000), (1000, 1000))
+    viewport = Fit((1000, 1000), (1000, 1000))
     moves = Moves(random.Random(7))
     speck = (0.5, 0.5, 0.52, 0.52)
 
-    zooms = [move for move in (moves.close_up(window.framing, speck) for _ in range(30))
+    zooms = [move for move in (moves.close_up(viewport.framing, speck) for _ in range(30))
              if move.start.zoom != move.end.zoom]
 
     assert zooms

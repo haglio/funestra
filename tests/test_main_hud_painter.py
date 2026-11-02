@@ -1620,13 +1620,13 @@ class TestWhereTheMainHudSits:
         painter = self._painted(HudCorner.LOWER_RIGHT)
         hud_w, hud_h = painter._image.size
 
-        origin = painter.place(window=(1920, 1080), lower_edge=40)
+        origin = painter.place(viewport=(1920, 1080), lower_edge=40)
 
         assert origin == (1920 - MARGIN - hud_w, 1080 - 40 - MARGIN - hud_h)
 
     def test_a_press_lands_against_wherever_the_funestra_last_put_the_hud(self):
         painter = self._painted(HudCorner.LOWER_RIGHT)
-        left, top = painter.place(window=(1920, 1080))
+        left, top = painter.place(viewport=(1920, 1080))
         (x, y, w, h), button = painter.buttons[0]
 
         assert painter.press_at(left + x + w // 2, top + y + h // 2) == button.command
