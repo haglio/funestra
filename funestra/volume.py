@@ -53,7 +53,7 @@ PLACE_W = TRACK_GAP + VOLUME_CONTROL_W
 ROW_H = 24
 
 
-def volume_control_xy(*, win_w: int, win_h: int, scrubber_h: int) -> tuple[int, int]:
+def volume_control_xy(*, win_w: int, win_h: int, timeline_h: int) -> tuple[int, int]:
     """The volume control's top-left: flush with the right end of the scrubber row,
     centered in its height.
 
@@ -66,7 +66,7 @@ def volume_control_xy(*, win_w: int, win_h: int, scrubber_h: int) -> tuple[int, 
     :data:`ROW_H` regardless, so its volume control lands exactly where a Funestra with the
     row puts one.
     """
-    row_h = scrubber_h if scrubber_h > 0 else ROW_H
+    row_h = timeline_h if timeline_h > 0 else ROW_H
     return (
         max(0, win_w - VOLUME_CONTROL_W),
         max(0, win_h - row_h + max(0, (row_h - VOLUME_CONTROL_H) // 2)),
@@ -80,7 +80,7 @@ _TRACK_X1 = VOLUME_CONTROL_W - PAD
 
 
 def volume_control_local(mx: int, my: int, *, win_w: int, win_h: int,
-               scrubber_h: int) -> tuple[int, int]:
+               timeline_h: int) -> tuple[int, int]:
     """A window point in the volume control's own coordinates — what the hit tests below take.
 
     The volume control is placed from the window's lower-right corner, so its origin moves
@@ -88,7 +88,7 @@ def volume_control_local(mx: int, my: int, *, win_w: int, win_h: int,
     beside ``chip_xy`` rather than at each call site, where it would be one more
     copy of the volume control's position, free to drift from the real one.
     """
-    vx, vy = volume_control_xy(win_w=win_w, win_h=win_h, scrubber_h=scrubber_h)
+    vx, vy = volume_control_xy(win_w=win_w, win_h=win_h, timeline_h=timeline_h)
     return mx - vx, my - vy
 
 
@@ -145,3 +145,7 @@ class VolumeHudPainter(KeptBitmap):
         draw_track(draw, _TRACK_X0, _TRACK_X1, VOLUME_CONTROL_H // 2,
                    filled_to=filled if filled > _TRACK_X0 else None)
         return image
+
+
+CHIP_H = VOLUME_CONTROL_H
+chip_xy = volume_control_xy

@@ -195,7 +195,7 @@ class RowSection:
         if row.volume is not None:
             volume_control = _rgba(self._volume.bgra(row.volume))
             image.alpha_composite(volume_control, _offset((x, y), volume_control_xy(
-                win_w=width, win_h=ROW_H, scrubber_h=ROW_H)))
+                win_w=width, win_h=ROW_H, timeline_h=ROW_H)))
         if layout.dial is not None:
             played, count = row.loop
             dial = _rgba(self._dial.bgra(LoopDialPainter.hand(played / count)))
@@ -254,7 +254,7 @@ def row_part(px: int, py: int, layout: RowLayout) -> str:
     """
     if not 0 <= py < ROW_H:
         return ""
-    part = hit_part(*volume_control_local(px, py, win_w=layout.width, win_h=ROW_H, scrubber_h=ROW_H))
+    part = hit_part(*volume_control_local(px, py, win_w=layout.width, win_h=ROW_H, timeline_h=ROW_H))
     if part:
         return _CHIP_PARTS[part]
     if layout.dial is not None and on_dial(px, py, at=(layout.dial, PARTS_Y)):
@@ -327,7 +327,7 @@ def scrub_to(px: int, layout: RowLayout, *, duration_ms: float) -> float:
 
 def volume_to(px: int, py: int, layout: RowLayout) -> int:
     """The level a press along the slider asks for."""
-    return volume_at(volume_control_local(px, py, win_w=layout.width, win_h=ROW_H, scrubber_h=ROW_H)[0])
+    return volume_at(volume_control_local(px, py, win_w=layout.width, win_h=ROW_H, timeline_h=ROW_H)[0])
 
 
 def turn_to(px: int, py: int, layout: RowLayout) -> float:

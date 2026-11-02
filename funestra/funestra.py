@@ -61,17 +61,17 @@ class Channels:
     command: Path | None = None
     paused: Path | None = None
     status: Path | None = None
-    message: Path | None = None
+    notice: Path | None = None
     play_points: Path | None = None
     hud: Path | None = None
-    main_hud_model: Path | None = None
+    console: Path | None = None
     dashboard_cmd: Path | None = None
     drive: Path | None = None
     tcode_host: str | None = None
     tcode_port: int | None = None
     osr2_sender: str | None = None
     osr2_port: int | None = None
-    osr2_visualizer: Path | None = None
+    osr2_readout: Path | None = None
 
 
 @runtime_checkable
@@ -169,7 +169,7 @@ class Funestra:
         audible: bool = True,
         tiles: bool = False,
         locked: bool = False,
-        sound_is_the_apps: bool = False,
+        sound_is_the_rooms: bool = False,
         users: Users | None = None,
         hud: Callable[[], HudModel | None] | None = None,
         muted: bool = True,
@@ -208,7 +208,7 @@ class Funestra:
         self._strip = HeatmapStrip()
         self._volume = (
             AppVolume(engine, dashboard_cmd_file=channels.dashboard_cmd, live=audible)
-            if sound_is_the_apps else VolumeControl(engine, live=audible, muted=muted)
+            if sound_is_the_rooms else VolumeControl(engine, live=audible, muted=muted)
         )
         self._radio = radio if radio is not None else self._radio_beside(channels, audible)
         self._hud = self._hud_for(channels, hud_surface or engine, hud)
@@ -223,7 +223,7 @@ class Funestra:
             self.playback, stop_event=self._stop,
             reload_playlist=None if self._follower is None else self._follower.read_now,
             volume=self._volume, show=self._show,
-            funscript_jumps=FunscriptJumps(self.playback, MessageWriter(channels.message)))
+            funscript_jumps=FunscriptJumps(self.playback, MessageWriter(channels.notice)))
         self._status = (
             StatusWriter(channels.status, lambda _playback: self.status_fields())
             if channels.status else None
@@ -268,9 +268,9 @@ class Funestra:
                 seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
                 **self._volume_presses(),
             )
-        if channels.main_hud_model is not None:
+        if channels.console is not None:
             return MainHudOverlay(
-                main_hud_file=channels.main_hud_model, drive_file=channels.drive,
+                main_hud_file=channels.console, drive_file=channels.drive,
                 command_file=channels.dashboard_cmd, engine=drawn_on,
                 drive_gate=self._drive_gate, top_block=self._top_block,
                 width=None if self._hud_surface is None else self._hud_surface.width,
@@ -294,7 +294,7 @@ class Funestra:
 
     @staticmethod
     def _visualizer_for(channels: Channels) -> DrivePublisher | None:
-        return None if channels.osr2_visualizer is None else DrivePublisher(channels.osr2_visualizer)
+        return None if channels.osr2_readout is None else DrivePublisher(channels.osr2_readout)
 
     def _volume_presses(self) -> dict[str, Callable[..., None]]:
         return {"set_volume": self._told_to_the_host(self._volume.set_level),
@@ -329,13 +329,13 @@ class Funestra:
     @classmethod
     def on_window(cls, wid: int, *, channels: Channels, playlist: list[PlaylistItem],
                   audible: bool = True, tiles: bool = False, locked: bool = False,
-                  sound_is_the_apps: bool = False, users: Users | None = None,
+                  sound_is_the_rooms: bool = False, users: Users | None = None,
                   hud: Callable[[], HudModel | None] | None = None,
                   muted: bool = True) -> Funestra:
         return cls(
             MpvEngine(wid, muted=muted, loop_file=False, prefetch=True, audio=audible),
             channels=channels, playlist=playlist, tcode=osr2_line(channels),
-            audible=audible, tiles=tiles, locked=locked, sound_is_the_apps=sound_is_the_apps,
+            audible=audible, tiles=tiles, locked=locked, sound_is_the_rooms=sound_is_the_rooms,
             users=users, hud=hud, muted=muted,
         )
 
@@ -420,7 +420,7 @@ class Funestra:
             self._status.write(self.playback)
         if self._tiles:
             self._engine.tile_to_fill(*window)
-        self._engine.push_image()
+        self._engine.push_still()
         self._tune_the_radio()
         self._paint_if_there_is_memory(window)
 
@@ -590,5 +590,3 @@ def frame_row(frame: FlickFrame, volume) -> RowHud | None:
                   playhead=framed_playhead(frame.played, frame.count,
                                            frame.elapsed_ms, frame.interval_ms),
                   loop=(frame.played, frame.count))
-
-

@@ -515,7 +515,7 @@ class _MpvControl:
         return self._window
 
     @mpv_call()
-    def push_image(self) -> None:
+    def push_still(self) -> None:
         """Carry the image on screen one frame further along its move; a video
         is drawn as it comes.  Called once a frame by whichever loop is driving
         this engine."""

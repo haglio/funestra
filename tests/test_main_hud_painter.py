@@ -667,8 +667,8 @@ class TestPresses:
         assert painter.hover_at(mx, my) == (mx - left, my - top)
 
     def test_a_button_with_no_tooltip_still_answers_the_pointer(self):
-        painter = ConsolePainter()
-        painter.bgra(ConsoleHud(console=ConsoleModel(rows=((Button("go_kino", "Kino", ""),),))))
+        painter = MainHudPainter()
+        painter.bgra(MainHud(console=MainHudModel(rows=((Button("go_kino", "Kino", ""),),))))
         mx, my = _over(painter, "go_kino")
         left, top = hud_xy()
 

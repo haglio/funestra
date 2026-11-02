@@ -63,7 +63,7 @@ MARGIN = MARGIN_DIALOG
 
 PAD = MARGIN_STANDARD
 BLOCK_GAP = GAP_MEDIUM
-NAV_MAP_THUMB_H = 54
+MAP_THUMB_H = 54
 NAV_MAP_GAP = GAP_SMALL
 ROW_GAP = GAP_DIALOG        # vertical gap between action rows — roomier than the seed gap
 ACT_GAP = GAP_MEDIUM         # gap between two acts stacked in one row label
@@ -241,27 +241,27 @@ class HudModel:
 
 ELLIPSIS = 12
 ELLIPSIS_ROOM = ELLIPSIS + 2 * NAV_MAP_GAP
-NAV_MAP_COLUMN_H = NAV_MAP_CELLS * NAV_MAP_THUMB_H + (NAV_MAP_CELLS - 1) * ROW_GAP
+NAV_MAP_COLUMN_H = NAV_MAP_CELLS * MAP_THUMB_H + (NAV_MAP_CELLS - 1) * ROW_GAP
 NAV_MAP_H = (COL_LABEL_H + COL_LABEL_GAP + ELLIPSIS_ROOM + NAV_MAP_COLUMN_H
          + ELLIPSIS_ROOM + NAV_MAP_LOWER_RESERVE)
 
 
 def place_width(funestra: str) -> int:
     across, down = WIDEST_FULL_HEIGHT_SHAPE.get(funestra, WIDEST_FULL_HEIGHT_SHAPE["portrait"])
-    return round(NAV_MAP_THUMB_H * across / down)
+    return round(MAP_THUMB_H * across / down)
 
 
-def nav_nav_map_row_width(funestra: str) -> int:
+def nav_map_row_width(funestra: str) -> int:
     return NAV_MAP_CELLS * place_width(funestra) + (NAV_MAP_CELLS - 1) * NAV_MAP_GAP
 
 
-def nav_nav_map_block_width(funestra: str) -> int:
-    return (ROW_LABEL_GUTTER + ELLIPSIS_ROOM + nav_nav_map_row_width(funestra) + ELLIPSIS_ROOM
+def map_block_width(funestra: str) -> int:
+    return (ROW_LABEL_GUTTER + ELLIPSIS_ROOM + nav_map_row_width(funestra) + ELLIPSIS_ROOM
             + NAV_MAP_RIGHT_RESERVE)
 
 
 def hud_width(funestra: str, name_width: int = 0, *, content_width: int = 0) -> int:
-    return max(2 * PAD + nav_nav_map_block_width(funestra),
+    return max(2 * PAD + map_block_width(funestra),
                TITLE_X + name_width + PAD, content_width)
 
 
@@ -288,9 +288,9 @@ def hud_layout(*, title_h: int, bars: int = 0, speed: bool = False,
                row_h: int = 0, device_h: int = 0, foot_h: int = 0) -> HudLayout:
     stacked = stack(PAD, [title_h, blocks_height([CTRL_BTN] * (bars + speed), BLOCK_GAP),
                           row_h, device_h, foot_h, NAV_MAP_H])
-    _title, bars_top, row_top, device_top, foot_top, nav_nav_map_top = stacked.tops
+    _title, bars_top, row_top, device_top, foot_top, nav_map_top = stacked.tops
     return HudLayout(bars_top, bars_top + bars * CONTROL_ROW_H, row_top, device_top,
-                     foot_top, nav_nav_map_top, stacked.end + PAD, stacked.dividers)
+                     foot_top, nav_map_top, stacked.end + PAD, stacked.dividers)
 
 
 @dataclass(frozen=True)
@@ -303,7 +303,7 @@ class NavMapWindow:
     more_after: bool
 
 
-def nav_nav_map_window(total: int, playing: int, limit: int = NAV_MAP_CELLS) -> NavMapWindow:
+def nav_map_window(total: int, playing: int, limit: int = NAV_MAP_CELLS) -> NavMapWindow:
     """The run of at most *limit* cells to draw from an axis of *total*, keeping
     *playing* near its middle.
 
@@ -344,18 +344,18 @@ def column_anchor_rect(playing: Cell, corner_rect: Rect, seed_rects: list[Rect])
 
 def place_rects(
     *,
-    nav_nav_map_x: int,
-    nav_nav_map_y: int,
+    nav_map_x: int,
+    nav_map_y: int,
     place_w: int,
     seeds: int,
     actions: int,
     playing: Cell = ("corner", 0),
 ) -> tuple[Rect, list[Rect], list[Rect]]:
-    corner = (nav_nav_map_x, nav_nav_map_y, place_w, NAV_MAP_THUMB_H)
-    seed_rects = [(nav_nav_map_x + step * (place_w + NAV_MAP_GAP), nav_nav_map_y, place_w, NAV_MAP_THUMB_H)
+    corner = (nav_map_x, nav_map_y, place_w, MAP_THUMB_H)
+    seed_rects = [(nav_map_x + step * (place_w + NAV_MAP_GAP), nav_map_y, place_w, MAP_THUMB_H)
                   for step in range(1, min(seeds + 1, NAV_MAP_CELLS))]
     column_x = column_anchor_rect(playing, corner, seed_rects)[0]
-    action_rects = [(column_x, nav_nav_map_y + step * (NAV_MAP_THUMB_H + ROW_GAP), place_w, NAV_MAP_THUMB_H)
+    action_rects = [(column_x, nav_map_y + step * (MAP_THUMB_H + ROW_GAP), place_w, MAP_THUMB_H)
                     for step in range(1, min(actions + 1, NAV_MAP_CELLS))]
     return corner, seed_rects, action_rects
 

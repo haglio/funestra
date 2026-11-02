@@ -111,7 +111,7 @@ class TestHowTheRowIsLaidOut:
         layout = _layout(FLICK, width=800)
 
         assert layout.track[1] - layout.track[0] == FLICK_TRACK_W
-        assert volume_control_xy(win_w=800, win_h=ROW_H, scrubber_h=ROW_H)[0] == 800 - VOLUME_CONTROL_W
+        assert volume_control_xy(win_w=800, win_h=ROW_H, timeline_h=ROW_H)[0] == 800 - VOLUME_CONTROL_W
 
     def test_the_narrowest_hud_is_one_width_from_one_flick_to_the_next(self):
         def flick(frames: int) -> RowHud:
@@ -236,7 +236,7 @@ class TestWhatAPressOnTheRowIsOn:
         assert self._part(sum(self.LAYOUT.track) // 2, ROW_H - 4) == SCRUBBER
 
     def test_the_speaker_mutes_and_the_slider_sets_the_level(self):
-        volume_control_x, volume_control_y = volume_control_xy(win_w=WIDTH, win_h=ROW_H, scrubber_h=ROW_H)
+        volume_control_x, volume_control_y = volume_control_xy(win_w=WIDTH, win_h=ROW_H, timeline_h=ROW_H)
 
         assert self._part(volume_control_x + 4, volume_control_y + VOLUME_CONTROL_H // 2) == MUTE
         assert self._part(volume_control_x + VOLUME_CONTROL_W - 6, volume_control_y + VOLUME_CONTROL_H // 2) == VOLUME
@@ -259,7 +259,7 @@ class TestWhatAPressOnTheRowIsOn:
         assert 29_000 < scrub_to((x0 + x1) // 2, self.LAYOUT, duration_ms=60_000) < 31_000
 
     def test_a_press_along_the_slider_names_the_level_under_it(self):
-        volume_control_x, volume_control_y = volume_control_xy(win_w=WIDTH, win_h=ROW_H, scrubber_h=ROW_H)
+        volume_control_x, volume_control_y = volume_control_xy(win_w=WIDTH, win_h=ROW_H, timeline_h=ROW_H)
 
         assert volume_to(volume_control_x + SPEAKER_W, volume_control_y, self.LAYOUT) == MIN_VOLUME
         assert volume_to(volume_control_x + VOLUME_CONTROL_W, volume_control_y, self.LAYOUT) == MAX_VOLUME
@@ -283,7 +283,7 @@ class TestWhatAPressOnTheRowAsksFor:
         if part == "track":
             x0, x1 = self.LAYOUT.track
             return x + (along or (x0 + x1) // 2), y + height - 4
-        cx, cy = volume_control_xy(win_w=width, win_h=height, scrubber_h=SCRUBBER_HEIGHT)
+        cx, cy = volume_control_xy(win_w=width, win_h=height, timeline_h=SCRUBBER_HEIGHT)
         across = 4 if part == "speaker" else VOLUME_CONTROL_W - PAD
         return x + cx + across, y + cy + VOLUME_CONTROL_H // 2
 

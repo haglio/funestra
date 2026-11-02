@@ -48,8 +48,8 @@ from funestra.satellite_hud import (
     loop_button_rects,
     looped_group_rect,
     name_line,
-    nav_nav_map_row_width,
-    nav_nav_map_window,
+    nav_map_row_width,
+    nav_map_window,
     parse_hud,
     place_rects,
     place_width,
@@ -149,7 +149,7 @@ _LOOP = 12
 
 
 def test_a_loop_short_enough_to_fit_is_drawn_whole():
-    window = nav_nav_map_window(NAV_MAP_CELLS, playing=0)
+    window = nav_map_window(NAV_MAP_CELLS, playing=0)
 
     assert (window.start, window.count) == (0, NAV_MAP_CELLS)
     assert window.more_before is False
@@ -159,7 +159,7 @@ def test_a_loop_short_enough_to_fit_is_drawn_whole():
 def test_a_loop_just_started_opens_on_the_clip_on_screen():
     """The loop's head is the video it started on, so at that moment the window opens
     there — the video you pressed loop on is drawn in the corner, never mid-row."""
-    window = nav_nav_map_window(_LOOP, playing=0)
+    window = nav_map_window(_LOOP, playing=0)
 
     assert (window.start, window.count) == (0, NAV_MAP_CELLS)
     assert window.more_after is True
@@ -170,7 +170,7 @@ def test_a_loop_partway_through_keeps_the_clip_on_screen_in_the_middle():
     """Once the loop has advanced past the first cells the window slides with it, so
     the lit thumbnail stays in the middle instead of walking off the end of the nav map
     and leaving nothing highlighted."""
-    window = nav_nav_map_window(_LOOP, playing=5)
+    window = nav_map_window(_LOOP, playing=5)
 
     assert (window.start, window.count) == (4, 3)  # 4, 5, 6 — the playing one centerd
     assert window.more_before is True
@@ -178,7 +178,7 @@ def test_a_loop_partway_through_keeps_the_clip_on_screen_in_the_middle():
 
 
 def test_a_loop_near_its_end_clamps_rather_than_running_off():
-    window = nav_nav_map_window(_LOOP, playing=11)
+    window = nav_map_window(_LOOP, playing=11)
 
     assert (window.start, window.count) == (9, 3)
     assert window.more_before is True
@@ -186,14 +186,14 @@ def test_a_loop_near_its_end_clamps_rather_than_running_off():
 
 
 def test_an_axis_shorter_than_the_window_gives_only_what_it_has():
-    window = nav_nav_map_window(2, playing=0)
+    window = nav_map_window(2, playing=0)
 
     assert (window.start, window.count) == (0, 2)
     assert window.more_after is False
 
 
 def test_an_empty_axis_has_no_window():
-    window = nav_nav_map_window(0, playing=0)
+    window = nav_map_window(0, playing=0)
 
     assert (window.start, window.count) == (0, 0)
 
@@ -256,7 +256,7 @@ def test_pressing_a_two_act_rows_button_filters_to_both_of_its_acts():
 
 
 def test_slot_rects_lays_the_row_and_the_column_out_in_fixed_slots_three_to_a_side():
-    corner, seeds, actions = place_rects(nav_nav_map_x=100, nav_nav_map_y=50, place_w=30, seeds=5, actions=5)
+    corner, seeds, actions = place_rects(nav_map_x=100, nav_map_y=50, place_w=30, seeds=5, actions=5)
 
     assert corner == (100, 50, 30, 54)
     assert seeds == [(100 + 30 + NAV_MAP_GAP, 50, 30, 54), (100 + 2 * (30 + NAV_MAP_GAP), 50, 30, 54)]
@@ -264,14 +264,14 @@ def test_slot_rects_lays_the_row_and_the_column_out_in_fixed_slots_three_to_a_si
 
 
 def test_slot_rects_draws_only_the_slots_an_axis_has_clips_for():
-    _corner, seeds, actions = place_rects(nav_nav_map_x=0, nav_nav_map_y=0, place_w=30, seeds=1, actions=0)
+    _corner, seeds, actions = place_rects(nav_map_x=0, nav_map_y=0, place_w=30, seeds=1, actions=0)
 
     assert len(seeds) == 1
     assert actions == []
 
 
 def test_the_action_column_hangs_under_the_playing_seed():
-    _corner, seeds, actions = place_rects(nav_nav_map_x=100, nav_nav_map_y=50, place_w=30, seeds=2, actions=2,
+    _corner, seeds, actions = place_rects(nav_map_x=100, nav_map_y=50, place_w=30, seeds=2, actions=2,
                                          playing=("seed", 0))
 
     assert [x for x, _y, _w, _h in actions] == [seeds[0][0]] * 2
@@ -279,24 +279,24 @@ def test_the_action_column_hangs_under_the_playing_seed():
 
 def test_the_column_stays_under_the_corner_off_the_seed_row():
     for playing in (("corner", 0), ("action", 0)):
-        _corner, _seeds, actions = place_rects(nav_nav_map_x=100, nav_nav_map_y=50, place_w=30, seeds=1,
+        _corner, _seeds, actions = place_rects(nav_map_x=100, nav_map_y=50, place_w=30, seeds=1,
                                               actions=1, playing=playing)
         assert actions[0][0] == 100
 
 
 def test_a_playing_seed_that_was_not_drawn_leaves_the_column_on_the_corner():
-    _corner, _seeds, actions = place_rects(nav_nav_map_x=100, nav_nav_map_y=50, place_w=30, seeds=1, actions=1,
+    _corner, _seeds, actions = place_rects(nav_map_x=100, nav_map_y=50, place_w=30, seeds=1, actions=1,
                                           playing=("seed", 5))
 
     assert actions[0][0] == 100
 
 
 def test_a_column_under_the_rows_last_seed_ends_where_the_row_does():
-    _corner, seeds, actions = place_rects(nav_nav_map_x=0, nav_nav_map_y=0, place_w=place_width("portrait"),
+    _corner, seeds, actions = place_rects(nav_map_x=0, nav_map_y=0, place_w=place_width("portrait"),
                                          seeds=2, actions=1, playing=("seed", 1))
     ax, _ay, aw, _ah = actions[0]
 
-    assert ax + aw == seeds[-1][0] + seeds[-1][2] == nav_nav_map_row_width("portrait")
+    assert ax + aw == seeds[-1][0] + seeds[-1][2] == nav_map_row_width("portrait")
 
 
 def test_a_thumbnail_stands_in_the_middle_of_its_slot():

@@ -39,10 +39,10 @@ from funestra.satellite_hud import (
     CTRL_BTN,
     ELLIPSIS_ROOM,
     FILTER_BTN,
+    MAP_THUMB_H,
     NAV_MAP_CELLS,
     NAV_MAP_GAP,
     NAV_MAP_RIGHT_RESERVE,
-    NAV_MAP_THUMB_H,
     PAD,
     ROW_LABEL_GUTTER,
     TITLE_ROW_H,
@@ -54,7 +54,7 @@ from funestra.satellite_hud import (
     button_tooltip,
     ellipsis_rects,
     looped_group_rect,
-    nav_nav_map_row_width,
+    nav_map_row_width,
     place_width,
 )
 from funestra.satellite_hud_paint import HudRenderer
@@ -128,7 +128,7 @@ def _lines_between(rendered, above_ends: int, below_starts: int) -> int:
     return sum(above_ends <= line < below_starts for line in _dividers(rendered))
 
 
-def _nav_nav_map_top(rendered) -> int:
+def _nav_map_top(rendered) -> int:
     corner_y = rendered.targets.click[0][0][1]
     return corner_y - ELLIPSIS_ROOM - COL_LABEL_GAP - COL_LABEL_H
 
@@ -800,7 +800,7 @@ def test_the_nav_map_prints_how_big_each_axis_is(thumb):
     def corner_ink(**counts) -> int:
         rendered = renderer.render(_model(corner=HudCell(path="c.mp4", thumb=thumb), **counts))
         (cx, cy, _cw, _ch), _path = rendered.targets.click[0]
-        block = _rgb(rendered.bgra)[_nav_nav_map_top(rendered):cy, PAD:cx - NAV_MAP_GAP]
+        block = _rgb(rendered.bgra)[_nav_map_top(rendered):cy, PAD:cx - NAV_MAP_GAP]
         return int((block > 80).sum())
 
     assert corner_ink(seed_count=12, action_count=4) > 0
@@ -1023,7 +1023,7 @@ def test_a_missing_thumbnail_still_draws_the_nav_map():
 
     assert rendered.targets.click == [(rendered.targets.click[0][0], "c.mp4")]
     x, y, w, h = rendered.targets.click[0][0]
-    assert (w, h) == (place_width("portrait"), NAV_MAP_THUMB_H)
+    assert (w, h) == (place_width("portrait"), MAP_THUMB_H)
 
 
 def test_hovering_a_button_draws_its_tooltip(thumb):
@@ -1102,7 +1102,7 @@ def test_column_labels_are_clipped_to_their_column(thumb):
 
     (cx, _cy, cw, _ch), _path = rendered.targets.click[0]
     (sx, _sy, _sw, _sh), _seed = rendered.targets.click[1]
-    strip_y = _nav_nav_map_top(rendered)
+    strip_y = _nav_map_top(rendered)
     header = _rgb(rendered.bgra)[strip_y:strip_y + COL_LABEL_H, cx + cw:sx]
     assert (header > 60).sum() == 0
 
@@ -1380,10 +1380,10 @@ class TestTheDeviceOnAHostThatDrivesItself:
             seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2,
             osr2=Osr2State.ROBOT_HAND,
             drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND)))
-        nav_nav_map_top = min(y for (_x, y, _w, _h), _path in rendered.targets.click)
+        nav_map_top = min(y for (_x, y, _w, _h), _path in rendered.targets.click)
 
         assert rendered.targets.tracks
-        assert all(bar.rect[1] + bar.rect[3] <= nav_nav_map_top for bar in rendered.targets.tracks)
+        assert all(bar.rect[1] + bar.rect[3] <= nav_map_top for bar in rendered.targets.tracks)
 
     def test_the_rows_that_aim_the_device_stay_between_the_sets_bands_and_the_visualizer(
             self, thumb):
@@ -1409,7 +1409,7 @@ class TestTheDeviceOnAHostThatDrivesItself:
         visualizer_top = rendered.targets.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
         visualizer_end = visualizer_top + section_size()[1]
 
-        assert _lines_between(rendered, visualizer_end, _nav_nav_map_top(rendered)) == 1
+        assert _lines_between(rendered, visualizer_end, _nav_map_top(rendered)) == 1
 
     def test_a_press_in_a_band_takes_hold_of_it_and_sets_it(self):
         rendered = self._rendered(osr2=Osr2State.ROBOT_HAND,
@@ -1534,7 +1534,7 @@ class TestTheBlockASourcePaintsAtTheFoot:
         assert painted.size
         assert painted[:, 0].min() > max(bar.rect[1] + bar.rect[3]
                                          for bar in rendered.targets.tracks)
-        assert painted[:, 0].max() < _nav_nav_map_top(rendered)
+        assert painted[:, 0].max() < _nav_map_top(rendered)
 
     def test_the_nav_map_is_set_off_from_it_by_a_line(self, thumb):
         block = _Block()
@@ -1543,7 +1543,7 @@ class TestTheBlockASourcePaintsAtTheFoot:
             seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2)
         painted = np.argwhere((_rgb(rendered.bgra) == np.array(_Block.MARK)).all(axis=-1))
 
-        assert _lines_between(rendered, painted[:, 0].max() + 1, _nav_nav_map_top(rendered)) == 1
+        assert _lines_between(rendered, painted[:, 0].max() + 1, _nav_map_top(rendered)) == 1
 
     def test_it_is_set_off_from_the_sets_own_bands_by_a_line(self):
         block = _Block()
@@ -1661,7 +1661,7 @@ class TestTheRowTheHudCarriesForItsClip:
 
         assert placed is not None
         assert all(bar.rect[1] >= placed[1] + placed[3] for bar in rendered.targets.tracks)
-        assert all(bar.rect[1] + bar.rect[3] < _nav_nav_map_top(rendered)
+        assert all(bar.rect[1] + bar.rect[3] < _nav_map_top(rendered)
                    for bar in rendered.targets.tracks)
 
     def test_a_press_on_it_is_placed_in_the_rows_own_coordinates(self):
@@ -1711,7 +1711,7 @@ def test_the_status_block_moves_to_the_corner_the_hud_sits_in(thumb):
     assert right.targets.favorite[0] > left.bgra.shape[1] // 2
 
 
-def _nav_nav_map_corner_x(rendered) -> int:
+def _nav_map_corner_x(rendered) -> int:
     return rendered.targets.click[0][0][0]
 
 
@@ -1725,9 +1725,9 @@ def test_the_nav_map_moves_to_the_corner_the_hud_sits_in(thumb):
     left, right = rendered(HudCorner.UPPER_LEFT), rendered(HudCorner.UPPER_RIGHT)
     width = right.bgra.shape[1]
 
-    assert _nav_nav_map_corner_x(left) == PAD + ROW_LABEL_GUTTER + ELLIPSIS_ROOM
-    assert _nav_nav_map_corner_x(right) == (width - PAD - NAV_MAP_RIGHT_RESERVE - ELLIPSIS_ROOM
-                                   - nav_nav_map_row_width("portrait"))
+    assert _nav_map_corner_x(left) == PAD + ROW_LABEL_GUTTER + ELLIPSIS_ROOM
+    assert _nav_map_corner_x(right) == (width - PAD - NAV_MAP_RIGHT_RESERVE - ELLIPSIS_ROOM
+                                   - nav_map_row_width("portrait"))
 
 
 def test_the_speed_row_moves_to_the_corner_the_hud_sits_in(thumb):
@@ -1896,7 +1896,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
 
     @staticmethod
     def _nav_map(rendered) -> tuple[int, int]:
-        return _nav_nav_map_top(rendered), rendered.bgra.shape[0] - PAD
+        return _nav_map_top(rendered), rendered.bgra.shape[0] - PAD
 
     def test_a_hud_carrying_every_section_has_a_line_between_each_and_the_next(self, thumb):
         block = _Block()

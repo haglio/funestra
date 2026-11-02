@@ -174,7 +174,7 @@ def an_image_with_the_next_staged(pace_s: float = 4.0, **control) -> tuple[FakeM
 def pushed_at(control: Control, *moments: float) -> None:
     for now in moments:
         control.now = now
-        control.push_image()
+        control.push_still()
 
 
 def test_every_engine_opens_mpv_holding_images_up_for_its_own_clock_to_end():
@@ -554,7 +554,7 @@ def test_an_image_is_drawn_closer_as_its_hold_runs_out():
     show_an_image(control, mpv)
 
     control.now = 102.0
-    control.push_image()
+    control.push_still()
 
     assert mpv.video_zoom == pytest.approx(math.log2(CREEP.at(0.5).zoom))
 
@@ -565,11 +565,11 @@ def test_a_clip_after_an_image_is_drawn_as_it_comes():
     control.set_pace(4.0)
     show_an_image(control, mpv)
     control.now = 101.0
-    control.push_image()
+    control.push_still()
 
     mpv.report("path", "made-up-scene.mp4")
     mpv.report("current-tracks/video/image", False)
-    control.push_image()
+    control.push_still()
 
     assert (mpv.video_zoom, mpv.video_align_x, mpv.video_align_y) == (0.0, 0.0, 0.0)
 
@@ -583,7 +583,7 @@ def test_a_frozen_room_holds_the_image_where_its_move_had_got_to():
     control.now = 101.0
     control.set_paused(True)
     control.now = 103.0
-    control.push_image()
+    control.push_still()
 
     assert mpv.video_zoom == pytest.approx(math.log2(CREEP.at(0.25).zoom))
 
@@ -594,7 +594,7 @@ def test_a_pan_reaches_mpv_as_how_far_the_image_leans_each_way():
     control.set_pace(4.0)
     show_an_image(control, mpv)
 
-    control.push_image()
+    control.push_still()
 
     assert (mpv.video_zoom, mpv.video_align_x, mpv.video_align_y) == DRIFT.at(0.0).placement()
 
@@ -612,7 +612,7 @@ def test_a_zoom_about_the_middle_asks_mpv_for_the_zoom_alone():
     show_an_image(control, mpv)
     control.now = 102.0
 
-    control.push_image()
+    control.push_still()
 
     assert [call[1] for call in mpv.calls if call[0] == "set"] == ["video_zoom"]
 
@@ -622,10 +622,10 @@ def test_an_image_that_has_not_moved_since_the_last_frame_asks_mpv_for_nothing()
     control = Control(mpv, now=100.0, move=DRIFT)
     control.set_pace(4.0)
     show_an_image(control, mpv)
-    control.push_image()
+    control.push_still()
     asked = list(mpv.calls)
 
-    control.push_image()
+    control.push_still()
 
     assert mpv.calls == asked
 
@@ -640,7 +640,7 @@ def test_a_still_swapped_in_carries_on_the_move_of_the_image_it_replaced():
 
     control.swap_image(Path("made-up-frame.png"))
     mpv.report("path", "made-up-frame.png")
-    control.push_image()
+    control.push_still()
 
     assert deals.dealt == 1
     assert mpv.video_zoom == pytest.approx(math.log2(CREEP.at(0.5).zoom))
@@ -687,7 +687,7 @@ def test_an_image_mpv_rolled_onto_by_itself_stays_up_until_the_funestra_follows_
     mpv.playlist_pos = 1
     mpv.report("path", "made-up-next.png")
     mpv.report("current-tracks/video/image", True)
-    control.push_image()
+    control.push_still()
 
     assert [call for call in mpv.calls if call[0] == "command"] == []
 
@@ -921,7 +921,7 @@ def test_an_image_settled_on_from_under_a_still_swapped_in_over_it_is_dealt_one_
     swapped_in(mpv, control, at=102.0)
 
     control.now = 104.05
-    control.push_image()
+    control.push_still()
     mpv.playlist_pos = 1
     mpv.report("path", "made-up-scene.png")
     control.settle_on_the_next()
@@ -953,7 +953,7 @@ def test_a_still_swapped_in_after_the_engine_let_go_of_its_file_stages_nothing()
 
 def drawn_at(control: Control, mpv: FakeMpv, now: float) -> tuple[float, float, float]:
     control.now = now
-    control.push_image()
+    control.push_still()
     return mpv.video_zoom, mpv.video_align_x, mpv.video_align_y
 
 
@@ -1004,11 +1004,11 @@ def test_between_two_files_a_still_is_left_where_its_move_had_got_to():
     control.set_pace(4.0)
     show_an_image(control, mpv)
     control.now = 101.0
-    control.push_image()
+    control.push_still()
 
     mpv.report("current-tracks/video/image", None)
     control.now = 101.5
-    control.push_image()
+    control.push_still()
 
     assert (mpv.video_zoom, mpv.video_align_x, mpv.video_align_y) == DRIFT.at(0.25).placement()
 

@@ -54,7 +54,7 @@ def _on_the_row(funestra, engine, part: str = "track", *, along: int | None = No
         return left + x + (along if along is not None else (x0 + x1) // 2), top + y + height - 4
     if part == "dial":
         return left + x + row.dial + DIAL_SIZE - 3, top + y + PARTS_Y + DIAL_SIZE // 2  # quarter past
-    cx, cy = volume_control_xy(win_w=width, win_h=height, scrubber_h=SCRUBBER_HEIGHT)
+    cx, cy = volume_control_xy(win_w=width, win_h=height, timeline_h=SCRUBBER_HEIGHT)
     across = 4 if part == "speaker" else VOLUME_CONTROL_W - PAD
     return left + x + cx + across, top + y + cy + VOLUME_CONTROL_H // 2
 
@@ -77,7 +77,7 @@ def _channels(tmp_path: Path, lines: list[str], *, commands: str = "QUIT\n",
         command=tmp_path / "cmd.txt",
         paused=tmp_path / "paused.txt",
         status=tmp_path / "status.txt",
-        message=tmp_path / "notice.txt" if message else None,
+        notice=tmp_path / "notice.txt" if message else None,
         hud=tmp_path / "portrait_hud.json" if hud else None,
         dashboard_cmd=tmp_path / "dashboard_cmd.txt" if hud or in_a_session else None,
     )
@@ -727,7 +727,7 @@ def _publish_hud(tmp_path: Path, **hud) -> None:
 def test_a_satellite_handed_a_place_for_the_osr2_visualizer_hands_on_its_motion(tmp_path):
     channels = replace(_channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  commands="", hud=True),
-                       drive=tmp_path / "drive.txt", osr2_visualizer=tmp_path / "visualizer.txt")
+                       drive=tmp_path / "drive.txt", osr2_readout=tmp_path / "visualizer.txt")
     _publish_hud(tmp_path, osr2=Osr2State.ROBOT_HAND)
     publish_drive(tmp_path / "drive.txt", DriveHud(speed=40))
     funestra = Funestra(FakeEngine(), channels=channels, playlist=read_playlist(channels.playlist))
@@ -802,7 +802,7 @@ def test_on_a_window_the_way_of_playing_is_mpv_opened_on_that_window(tmp_path):
 
 def _main_hud_channels(tmp_path: Path, lines: list[str], *, commands: str = "") -> Channels:
     channels = _channels(tmp_path, lines, commands=commands, in_a_session=True)
-    return replace(channels, main_hud_model=tmp_path / "main_hud.json", drive=tmp_path / "drive.txt")
+    return replace(channels, console=tmp_path / "main_hud.json", drive=tmp_path / "drive.txt")
 
 
 def _publish_main_hud(tmp_path: Path, **over) -> None:
@@ -880,7 +880,7 @@ def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
           host_controls=None, clock=time.monotonic,
           osr2_visualizer: Path | None = None) -> tuple[Funestra, FakeEngine, Kino]:
     channels = replace(_main_hud_channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1")],
-                                         commands=commands), osr2_visualizer=osr2_visualizer)
+                                         commands=commands), osr2_readout=osr2_visualizer)
     _publish_main_hud(tmp_path)
     engine = FakeEngine()
     made: list[Kino] = []
@@ -891,7 +891,7 @@ def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
 
     users = {"kino": make, **({"genau": Genau} if genau else {})}
     funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                        locked=True, sound_is_the_apps=True, users=users,
+                        locked=True, sound_is_the_rooms=True, users=users,
                         host_controls=host_controls, clock=clock)
     return funestra, engine, made[0]
 
@@ -1056,7 +1056,7 @@ def _scripted_main(tmp_path: Path) -> tuple[Funestra, FakeEngine]:
     engine = FakeEngine(duration_ms=600_000.0)
     engine.screenshot = np.zeros((10, 20, 4), dtype=np.uint8)
     return Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                    locked=True, sound_is_the_apps=True, users={"kino": Kino}), engine
+                    locked=True, sound_is_the_rooms=True, users={"kino": Kino}), engine
 
 
 class TestAStretchOfTheItem:
@@ -1510,7 +1510,7 @@ class TestAHudBesideTheItem:
         engine = FakeEngine()
         users = {"kino": Kino, **({"genau": Genau} if genau else {})}
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                            locked=True, sound_is_the_apps=True, users=users,
+                            locked=True, sound_is_the_rooms=True, users=users,
                             hud_surface=surface, users_frames=users_frames)
         funestra.tick(window=WINDOW)
         return funestra, engine
@@ -1692,7 +1692,7 @@ class TestTheWindowsOwnVerbs:
         _publish_main_hud(tmp_path)
         engine = FakeEngine()
         funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                            locked=True, sound_is_the_apps=True, users={"kino": Kino},
+                            locked=True, sound_is_the_rooms=True, users={"kino": Kino},
                             window_verbs=window_verbs)
         return funestra, engine, heard
 
