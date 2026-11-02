@@ -666,6 +666,14 @@ class TestPresses:
 
         assert painter.hover_at(mx, my) == (mx - left, my - top)
 
+    def test_a_button_with_no_tooltip_still_answers_the_pointer(self):
+        painter = ConsolePainter()
+        painter.bgra(ConsoleHud(console=ConsoleModel(rows=((Button("go_kino", "Kino", ""),),))))
+        mx, my = _over(painter, "go_kino")
+        left, top = hud_xy()
+
+        assert painter.hover_at(mx, my) == (mx - left, my - top)
+
 
 class TestThePointer:
     """The console follows the pointer itself, so every window that draws one -- a

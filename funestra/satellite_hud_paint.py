@@ -147,7 +147,7 @@ class _DrawnWith:
     video: str
     hover_loop: str
     hover_tip: str
-    hover_pos: tuple[int, int]
+    hover_pos: tuple[int, int] | None
     may_grow_on_hover: bool
     minus_on_the_hud: bool
     flash: str
@@ -242,7 +242,7 @@ class HudRenderer:
         heatmap: np.ndarray | None = None,
         hover_loop: str = "",
         hover_tip: str = "",
-        hover_pos: tuple[int, int] = (0, 0),
+        hover_pos: tuple[int, int] | None = None,
         may_grow_on_hover: bool = True,
         minus_on_the_hud: bool = True,
         flash: str = "",
@@ -270,10 +270,7 @@ class HudRenderer:
         own — the same split the Main Funestra draws, which names its file from its own
         session and takes the rest of its console off the wire.
         """
-        # Where the pointer is for this frame, or None off the HUD.  The
-        # position is only current while something under it has a tooltip —
-        # every control here has one — so an empty tip means "not on a button".
-        self._pointer = hover_pos if hover_tip else None
+        self._pointer = hover_pos
         if model.hud_minimized:
             bgra, buttons = collapsed_hud(
                 model.funestra, model.hud_corner, hover=self._pointer,
