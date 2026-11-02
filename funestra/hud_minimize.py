@@ -19,14 +19,14 @@ from .hud import (
     to_bgra,
 )
 from .hud_button import Button
-from .hud_marks import shared_mark
+from .hud_icons import shared_icon
 from .hud_placement import HudCorner
 
 BUTTON = BUTTON_SIZE_HUD
 ROOM = BUTTON + BUTTON_GAP
 
-MINIMIZE_GLYPH = shared_mark("minus")
-RESTORE_GLYPH = shared_mark("plus")
+MINIMIZE_ICON = shared_icon("minus")
+RESTORE_ICON = shared_icon("plus")
 MINIMIZE_TOOLTIP = "Minimize this HUD"
 RESTORE_TOOLTIP = "Show this HUD again"
 
@@ -40,7 +40,7 @@ _TOOLTIP_ROOM_H = 26
 
 
 @lru_cache(maxsize=1)
-def mark_font():
+def icon_font():
     return load_font(SIZE_SMALL)
 
 
@@ -75,11 +75,11 @@ def restore_at_command(funestra: str, place: str) -> str:
 
 
 def minimize_button(funestra: str) -> Button:
-    return Button(minimize_command(funestra), MINIMIZE_GLYPH, MINIMIZE_TOOLTIP)
+    return Button(minimize_command(funestra), MINIMIZE_ICON, MINIMIZE_TOOLTIP)
 
 
 def restore_button(funestra: str) -> Button:
-    return Button(restore_command(funestra), RESTORE_GLYPH, RESTORE_TOOLTIP)
+    return Button(restore_command(funestra), RESTORE_ICON, RESTORE_TOOLTIP)
 
 
 def corner_button_rect(corner: HudCorner, *, hud: tuple[int, int],
@@ -116,11 +116,11 @@ def collapsed_button(funestra: str, corner: HudCorner = HudCorner.UPPER_LEFT, *,
     image = Image.new("RGBA", size, (0, 0, 0, 0))
     rect = corner_button_rect(corner, hud=size, inset=(0, 0))
     draw_button(image, ImageDraw.Draw(image), rect, restore_button(funestra),
-                hovered=hover is not None, glyph_font=mark_font(), word_font=mark_font())
+                hovered=hover is not None, icon_font=icon_font(), word_font=icon_font())
     if named is not None:
         image.alpha_composite(named, (0 if corner.right else ROOM, 0))
     if hover is not None:
-        draw_tooltip(ImageDraw.Draw(image), mark_font(), RESTORE_TOOLTIP, hover, size)
+        draw_tooltip(ImageDraw.Draw(image), icon_font(), RESTORE_TOOLTIP, hover, size)
     return image, [(rect, restore_button(funestra))]
 
 

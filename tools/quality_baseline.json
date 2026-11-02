@@ -100,7 +100,7 @@
     "funestra/heatmap.py": 1,
     "funestra/hud.py": 108,
     "funestra/hud_button.py": 23,
-    "funestra/hud_marks.py": 19,
+    "funestra/hud_icons.py": 19,
     "funestra/hud_minimize.py": 3,
     "funestra/hud_osr2.py": 57,
     "funestra/hud_overlay.py": 27,

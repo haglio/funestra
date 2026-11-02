@@ -30,14 +30,14 @@ from funestra.hud_controls import (
     versions_button,
     why_it_cannot_step,
 )
-from funestra.hud_marks import (
+from funestra.hud_icons import (
     BACK_ICON,
     FMODE_ICON,
     FORWARD_ICON,
     LOCK_ICON,
     NEXT_ICON,
     PREVIOUS_ICON,
-    shared_mark_name,
+    shared_icon_name,
 )
 from funestra.hud_title import F_MODE_LABEL, LATEST_LABEL, SHUFFLE_LABEL
 from funestra.status import FunestraStatus
@@ -53,7 +53,7 @@ class TestTheTransport:
 
         assert [button.command for button in row] == [
             "portrait_prev", "portrait_nudge_prev", "portrait_nudge_next", "portrait_next"]
-        assert [button.glyph for button in row] == [
+        assert [button.icon for button in row] == [
             PREVIOUS_ICON, BACK_ICON, FORWARD_ICON, NEXT_ICON]
         assert [button.tooltip for button in row] == [
             "Previous clip", "Back 10s", "Forward 10s", "Next clip"]
@@ -106,8 +106,8 @@ class TestSkipAhead:
         jump = funscript_jump_button("portrait_funscript_jump", noun="clip", has_osr2=True,
                                      has_funscript=True)
 
-        assert shared_mark_name(jump.glyph) == "funscript_jump"
-        assert jump.glyph == FUNSCRIPT_JUMP_ICON
+        assert shared_icon_name(jump.icon) == "funscript_jump"
+        assert jump.icon == FUNSCRIPT_JUMP_ICON
         assert jump.tooltip == "Skip ahead to where this clip's scripting starts up again"
         assert not jump.dim
 
@@ -130,7 +130,7 @@ class TestTheSwitchesAndTheThingsDone:
         held = lock_button("portrait", locked=True, tooltip=lock_tooltip(True, "clip"))
         free = lock_button("portrait", locked=False, tooltip=lock_tooltip(False, "clip"))
 
-        assert (held.command, held.glyph) == ("portrait_lock", LOCK_ICON)
+        assert (held.command, held.icon) == ("portrait_lock", LOCK_ICON)
         assert (held.lit, held.favorite, held.group_break) == (True, True, True)
         assert not free.lit
         assert held.tooltip == "Locked — this clip repeats; press to play on through the playlist"
@@ -139,7 +139,7 @@ class TestTheSwitchesAndTheThingsDone:
     def test_the_trash_unfavorites_a_favorite_and_sends_anything_else_to_trash(self):
         trash = trash_button("portrait")
 
-        assert (trash.command, trash.glyph, trash.tooltip) == (
+        assert (trash.command, trash.icon, trash.tooltip) == (
             "portrait_trash", TRASH_ICON,
             "Unfavorite it — or send it to Trash when it is not a favorite")
         assert trash.danger
@@ -147,7 +147,7 @@ class TestTheSwitchesAndTheThingsDone:
     def test_f_mode_is_the_favorites_green_switch(self):
         fmode = fmode_button("portrait", favorites_only_tooltip(), lit=True)
 
-        assert (fmode.command, fmode.glyph) == ("portrait_fmode", FMODE_ICON)
+        assert (fmode.command, fmode.icon) == ("portrait_fmode", FMODE_ICON)
         assert fmode.tooltip == f"{F_MODE_LABEL} — browse only the favorites on this Funestra"
         assert (fmode.lit, fmode.favorite) == (True, True)
         assert not fmode_button("portrait", "F-Mode — only the scripted ones", lit=False).lit
@@ -155,7 +155,7 @@ class TestTheSwitchesAndTheThingsDone:
     def test_reset_is_a_thing_done_faded_with_nothing_to_put_back(self):
         reset = reset_button("portrait", nothing_to_reset=True, tooltip=RESET_TOOLTIP)
 
-        assert (reset.command, reset.glyph) == ("portrait_reset", RESET_ICON)
+        assert (reset.command, reset.icon) == ("portrait_reset", RESET_ICON)
         assert (reset.dim, reset.group_break, reset.lit) == (True, True, False)
         assert reset.tooltip.startswith("Reset — ")
         assert not reset_button("portrait", nothing_to_reset=False, tooltip="Reset — this set").dim
@@ -165,8 +165,8 @@ class TestTheSwitchesAndTheThingsDone:
     def test_the_order_pair_lights_the_order_in_play(self):
         shuffle, latest = browse_order_buttons("portrait", latest=True)
 
-        assert (shuffle.command, shuffle.glyph) == ("portrait_shuffle", SHUFFLE_ICON)
-        assert (latest.command, latest.glyph) == ("portrait_latest", LATEST_ICON)
+        assert (shuffle.command, shuffle.icon) == ("portrait_shuffle", SHUFFLE_ICON)
+        assert (latest.command, latest.icon) == ("portrait_latest", LATEST_ICON)
         assert [button.tooltip.split(" ")[0] for button in (shuffle, latest)] == [
             SHUFFLE_LABEL, LATEST_LABEL]
         assert (shuffle.lit, latest.lit) == (False, True)
@@ -184,6 +184,6 @@ class TestTheSwitchesAndTheThingsDone:
         alone = versions_button("portrait_cycle_version", noun="clip", has_other_versions=False)
         among = versions_button("portrait_cycle_version", noun="clip", has_other_versions=True)
 
-        assert (alone.glyph, alone.group_break) == (VERSIONS_ICON, True)
+        assert (alone.icon, alone.group_break) == (VERSIONS_ICON, True)
         assert (alone.dim, alone.tooltip) == (True, "Another version of this clip" + NONE_FOR_THIS_ONE)
         assert (among.dim, among.tooltip) == (False, "Another version of this clip")

@@ -77,7 +77,7 @@ and the `CLIP_SECONDS` verbs. So does what only the headset's copies of the row
 from before haglio/fun_time#391 reached (`lower_edge_height`, `readout_xy`,
 `on_readout`, `timeline_x`, `timeline_bgra`, `time_at`, both `row_rect`s, and the
 strip's height they drew it at), and the minus a funestra from before v0.1.571
-published (`hud_marks.current_glyph`).
+published (`hud_icons.current_glyph`).
 
 Three answer still, each while something still uses it: the HUD's `player` key,
 which Fun Time's tests still write and read; the title's old names from
@@ -191,7 +191,7 @@ shared_ui's, and `tests/test_family_look.py` holds it there. Gone, each replaced
 by the family's own: `hud_panel.BODY_PT`, `TINY_PT` and `px` (shared_ui's
 `SIZE_*` and `in_pixels`), `hud_panel.draw_icon` and `draw_minimize_bar` (the
 family's marks), and `timeline.RED`; `drive_readout.DISABLED_INK` and
-`hud_marks.MINIMIZE_ICON` keep their names over the family's gray and minus.
+`hud_icons.MINIMIZE_ICON` keep their names over the family's gray and minus.
 
 Numbers that moved: the act labels down a satellite's map 7 to 8 points, a
 flick's loading notice 13 to 14; the console's row gap 5 to 8, a satellite
@@ -838,7 +838,7 @@ both go then.
 shared_ui draws a stand-in, a rounded square with a question mark in it, for a
 mark its installed version does not have, where it used to raise `KeyError`
 inside the paint. `Button.tooltip_on_hover` is what a HUD shows for a button: the
-source's own `tooltip`, and when the button's face is one of the family's marks
+source's own `tooltip`, and when the button's face is one of the family's icons
 that shared_ui lacks, shared_ui's `tooltip_for` explanation on the lines under it.
 `console.tooltip_at` and `satellite_hud.button_tooltip` answer with it, and the
 satellite map's own loop, strike, expand and favorite controls ask `tooltip_for`
@@ -1078,7 +1078,7 @@ Fun Time's players and Origenerator's shows and console now declare every
 button they draw, so the fixed rows a panel declaring none was drawn from are
 gone: `satellite_hud.standard_rows` with its tables (`CONTROL_GROUPS`,
 `MODE_BUTTONS`, `MODE_TOOLTIPS`, `CONTROL_TOOLTIPS`, the faces), and
-`console.console_rows` with `osr2_row`, `CONSOLE_VERBS`, the glyphs it typed
+`console.console_rows` with `osr2_row`, `CONSOLE_VERBS`, the icon it typed
 and the marks it named. So are the panel fields only those rows read, which no
 source writes: `HudModel`'s `favorites_filter`, `enhanced_filter`, `latest` and
 `satellites_mode`; `ConsoleModel`'s `broker`, `loop_state`, `scripted_filter`,
@@ -1118,7 +1118,7 @@ routes through it; Fun Time's audio companion is the second caller.
 
 Fun Time now imports the buttons contract, so each module a sibling reaches
 through declares its API in `__all__`: `hud_button` (`Button`, `BUTTON`,
-`FIT_THE_WORD`), `hud_marks` (the shared-mark and app-mark names), `hud_panel`
+`FIT_THE_WORD`), `hud_icons` (the shared-mark and app-mark names), `hud_panel`
 (`SYMBOL_FONT`, `load_font`), and `console`'s layout names (`GAP`, `GROUP_GAP`,
 `ROW_LABEL_W`, `VALUE_W`, `place_rows`, `hit_test`, `parse_console`). The OSR2
 control states a console consumer reaches, `robot_hand`'s two hold centers and
@@ -1310,7 +1310,7 @@ kept the invariant a war story was protecting and dropped the story.
 |---|---|
 | Stale docs: `mpv_player` "not unit-tested", "three applications", the README's six-of-27 module list | 0.7669 → 0.7658 |
 | Six comments describing things that are not there (see the commit for each) | 0.7658 → 0.7630 |
-| The symbol face named once in `hud_panel` instead of three times, and the glyph notes that named the wrong glyphs | 0.7630 → 0.7590 |
+| The symbol face named once in `hud_panel` instead of three times, and the icon notes that named the wrong icon | 0.7630 → 0.7590 |
 | `funscript`'s three bounds explained by the incident that set them | 0.7590 → 0.7579 |
 | `HudRenderer.render`'s section headings became `_draw_status_band` and `_draw_mode_row` | 0.7579 → 0.7528 |
 | `ConsolePainter._paint`'s top block became `_draw_top_block` (CC 18 → 15) | 0.7528 → 0.7525 |

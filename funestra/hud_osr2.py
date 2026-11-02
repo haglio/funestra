@@ -233,7 +233,7 @@ class Osr2Section:
 
     def __init__(self) -> None:
         self._tiny = load_font(SIZE_TINY)
-        self._glyph = load_font(SIZE_BODY, SYMBOL_FONT)
+        self._icon = load_font(SIZE_BODY, SYMBOL_FONT)
 
     def width(self, line: Osr2Line) -> int:
         """How wide the line runs — a floor on the HUD holding it."""
@@ -253,7 +253,7 @@ class Osr2Section:
             rect = (run_x, y, button.width, HEIGHT)
             draw_button(image, draw, rect, button,
                         hovered=hover is not None and contains(rect, *hover),
-                        glyph_font=self._glyph, word_font=self._tiny)
+                        icon_font=self._icon, word_font=self._tiny)
             placed.append((rect, button))
             run_x += button.width + GAP
 

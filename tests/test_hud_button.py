@@ -6,14 +6,14 @@ import json
 from shared_ui.icon_geometry import tooltip_for
 
 from funestra.hud_button import Button, rows_from_raw, rows_raw
-from funestra.hud_marks import (
+from funestra.hud_icons import (
     BACK_ICON,
     FORWARD_ICON,
     LOCK_ICON,
     MINIMIZE_ICON,
     NEXT_ICON,
     PREVIOUS_ICON,
-    shared_mark,
+    shared_icon,
 )
 
 _A_MARK_THIS_VERSION_LACKS = "a_mark_from_another_version"
@@ -32,23 +32,23 @@ def test_a_declared_button_survives_the_round_trip_through_json():
 
 
 def test_a_button_wearing_a_mark_this_version_lacks_says_why_under_its_own_tooltip():
-    button = Button("auto", shared_mark(_A_MARK_THIS_VERSION_LACKS), "Generate on its own")
+    button = Button("auto", shared_icon(_A_MARK_THIS_VERSION_LACKS), "Generate on its own")
 
     assert button.tooltip_on_hover == tooltip_for(_A_MARK_THIS_VERSION_LACKS,
                                                   "Generate on its own")
 
 
-def test_a_button_with_a_typed_glyph_or_a_word_keeps_its_own_tooltip():
+def test_a_button_with_a_typed_icon_or_a_word_keeps_its_own_tooltip():
     for face in ("⏮", "Origenerator", ""):
         assert Button("go", face, "Go there").tooltip_on_hover == "Go there", face
 
 
 def test_a_button_wearing_a_real_mark_keeps_its_own_tooltip():
-    assert Button("weird", shared_mark("trash"), "Mark weird").tooltip_on_hover == "Mark weird"
+    assert Button("weird", shared_icon("trash"), "Mark weird").tooltip_on_hover == "Mark weird"
 
 
 def test_minimize_wears_the_familys_minus():
-    assert shared_mark("minus") == MINIMIZE_ICON
+    assert shared_icon("minus") == MINIMIZE_ICON
 
 
 def test_the_transport_and_the_lock_every_source_declares_wear_the_familys_marks():
@@ -56,5 +56,5 @@ def test_the_transport_and_the_lock_every_source_declares_wear_the_familys_marks
     their faces from here rather than each typing its own."""
     faces = (PREVIOUS_ICON, BACK_ICON, FORWARD_ICON, NEXT_ICON, LOCK_ICON)
 
-    assert faces == tuple(shared_mark(name) for name in
+    assert faces == tuple(shared_icon(name) for name in
                           ("chevron_left", "chevrons_left", "chevrons_right", "chevron_right", "lock"))

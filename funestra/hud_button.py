@@ -13,7 +13,7 @@ from dataclasses import dataclass, fields
 from shared_ui.icon_geometry import tooltip_for
 from shared_ui.spacing import BUTTON_SIZE_HUD
 
-from .hud_marks import SHARED_MARK, shared_mark_name
+from .hud_icons import SHARED_ICON, shared_icon_name
 
 BUTTON = BUTTON_SIZE_HUD  # a square control; the wider ones say their own width
 
@@ -42,7 +42,7 @@ class Button:
     """
 
     command: str
-    glyph: str
+    icon: str
     tooltip: str
     width: int = BUTTON
     lit: bool = False
@@ -58,21 +58,21 @@ class Button:
 
     @property
     def is_a_name(self) -> bool:
-        return self.glyph[:1].isalpha()
+        return self.icon[:1].isalpha()
 
     @property
     def tooltip_on_hover(self) -> str:
-        if not self.glyph.startswith(SHARED_MARK):
+        if not self.icon.startswith(SHARED_ICON):
             return self.tooltip
-        return tooltip_for(shared_mark_name(self.glyph), self.tooltip)
+        return tooltip_for(shared_icon_name(self.icon), self.tooltip)
 
 
 _FLAGS = tuple(f.name for f in fields(Button) if f.type == "bool")
-_WORDS = ("command", "glyph", "tooltip", "host_value")
+_WIRE_KEYS = {"command": "command", "icon": "glyph", "tooltip": "tooltip", "host_value": "host_value"}
 
 
 def button_raw(button: Button) -> dict:
-    raw: dict = {name: getattr(button, name) for name in _WORDS if getattr(button, name)}
+    raw: dict = {key: getattr(button, name) for name, key in _WIRE_KEYS.items() if getattr(button, name)}
     raw["width"] = button.width
     raw.update({name: True for name in _FLAGS if getattr(button, name)})
     return raw
@@ -81,7 +81,7 @@ def button_raw(button: Button) -> dict:
 def button_from_raw(raw: object) -> Button | None:
     if not isinstance(raw, dict):
         return None
-    words = {name: str(raw.get(name, "") or "") for name in _WORDS}
+    words = {name: str(raw.get(key, "") or "") for name, key in _WIRE_KEYS.items()}
     flags = {name: bool(raw.get(name, False)) for name in _FLAGS}
     return Button(**words, width=int(raw.get("width", BUTTON) or 0), **flags)
 

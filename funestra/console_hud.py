@@ -238,7 +238,7 @@ class ConsolePainter:
         self._minus_on_the_hud = minus_on_the_hud
         self._body = load_font(SIZE_BODY)
         self._tiny = load_font(SIZE_TINY)
-        self._glyph = load_font(SIZE_BODY, SYMBOL_FONT)
+        self._icon = load_font(SIZE_BODY, SYMBOL_FONT)
         self._drive = DriveSection()
         self._osr2 = Osr2Section()
         self._item_row = RowSection()
@@ -419,7 +419,7 @@ class ConsolePainter:
         for rect, button in placed:
             draw_button(hud.image, hud.draw, rect, button,
                         hovered=hover is not None and contains(rect, *hover),
-                        glyph_font=self._glyph, word_font=self._tiny,
+                        icon_font=self._icon, word_font=self._tiny,
                         row_label=rect[1] != row_top)
             row_top = rect[1]
         return placed
@@ -532,7 +532,7 @@ class ConsolePainter:
                      minimize_button(console.funestra))
             draw_button(hud.image, draw, *minus,
                         hovered=hover is not None and contains(minus[0], *hover),
-                        glyph_font=self._glyph, word_font=self._tiny)
+                        icon_font=self._icon, word_font=self._tiny)
             self.buttons.append(minus)
         self._draw_the_foot(hud.image, corner, reserves, item_row, row_top, row_h, heatmap,
                             host_controls, host_top)
@@ -601,15 +601,15 @@ class ConsolePainter:
         """
         if button.command:
             return button
-        glyph = button.glyph
+        icon = button.icon
         if button.host_value == "playback_speed":
-            glyph = _format_rate(hud.console.playback_speed)
+            icon = _format_rate(hud.console.playback_speed)
         elif button.host_value == "advance_interval":
-            glyph = f"{hud.advance_interval}s"
+            icon = f"{hud.advance_interval}s"
         width = button.width
         if button.is_a_name:
-            width = max(width, text_width(self._tiny, glyph) + BUTTON_GAP)
-        return replace(button, glyph=glyph, width=width)
+            width = max(width, text_width(self._tiny, icon) + BUTTON_GAP)
+        return replace(button, icon=icon, width=width)
 
 
 def with_playback_speed(console: ConsoleModel, speed: float) -> ConsoleModel:

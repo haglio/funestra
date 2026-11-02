@@ -454,7 +454,7 @@ def test_render_draws_the_sides_own_controls_even_with_no_clip():
     ]
 
 
-def test_the_minimize_button_wears_a_bar_rather_than_a_font_glyph():
+def test_the_minimize_button_wears_a_bar_rather_than_a_font_icon():
     """The minimize mark Windows uses lives in a face these buttons don't load, and
     Pillow draws a ".notdef" tofu for a codepoint a face doesn't carry — so it is
     drawn: one horizontal run of ink across the middle of the button, wider than it
@@ -469,7 +469,7 @@ def test_the_minimize_button_wears_a_bar_rather_than_a_font_glyph():
     ys, xs = np.nonzero((inside > 150).all(axis=2))
 
     assert len(ys), "the minimize button drew no mark at all"
-    assert xs.max() - xs.min() > ys.max() - ys.min()  # a bar, not a square or a glyph
+    assert xs.max() - xs.min() > ys.max() - ys.min()  # a bar, not a square or a icon
 
 
 def _lit_ink(rect, rendered) -> int:
@@ -680,7 +680,7 @@ def test_the_more_marks_are_the_familys_dots_along_the_row_and_down_the_column(
 
 
 def test_the_filter_button_wears_the_familys_filter(thumb, monkeypatch):
-    drawn = _marks_drawn(monkeypatch, "draw_mark")
+    drawn = _marks_drawn(monkeypatch, "draw_icon")
 
     HudRenderer("portrait").render(
         _model(corner=HudCell(path="c.mp4", thumb=thumb), current_action="alpha"))

@@ -26,7 +26,7 @@ from .geometry import Rect
 AMPLITUDE, CENTER, SPEED = "amp", "center", "speed"
 MAX_INTENSITY = "max_intensity"
 
-# One pair of the family's marks for every axis: speed, amplitude and center are
+# One pair of the family's icons for every axis: speed, amplitude and center are
 # the same kind of control, so the same minus and plus step all three.
 LESS, MORE = "minus", "plus"
 

@@ -1,4 +1,4 @@
-"""The satellite HUD wears the family's marks, not lookalikes of them.
+"""The satellite HUD wears the family's icons, not lookalikes of them.
 
 The HUD is painted into the video frame with Pillow and there is no Qt in a
 satellite process, so every mark here used to be whatever Segoe UI Symbol
@@ -14,17 +14,17 @@ from shared_ui.icon_geometry import icon_names
 from shared_ui.palette import TEXT_PRIMARY
 
 from funestra.satellite_hud import (
-    EXPAND_MARK,
-    FAVORITE_MARK,
-    LOOP_MARK,
-    WRONG_ACTION_MARK,
+    EXPAND_ICON,
+    FAVORITE_ICON,
+    LOOP_ICON,
+    WRONG_ACTION_ICON,
 )
 from funestra.satellite_hud_paint import HudRenderer
 
 
 def _named() -> dict[str, str]:
-    return {"loop": LOOP_MARK, "favorite": FAVORITE_MARK, "expand": EXPAND_MARK,
-            "wrong action": WRONG_ACTION_MARK}
+    return {"loop": LOOP_ICON, "favorite": FAVORITE_ICON, "expand": EXPAND_ICON,
+            "wrong action": WRONG_ACTION_ICON}
 
 
 def test_the_loop_buttons_wear_the_circuit_rather_than_a_single_arc():
