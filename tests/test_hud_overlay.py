@@ -224,7 +224,7 @@ def test_tick_redraws_when_the_clip_on_screen_changes(tmp_path: Path, hud: Path)
     """The HUD names the file the engine has open, and a Funestra left alone walks
     its playlist by itself — the source republishes the HUD only when the map under
     it moves, so the name has to redraw off the engine's own answer or it would sit
-    on a clip that had already rolled past."""
+    on a video that had already rolled past."""
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
 

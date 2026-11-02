@@ -268,7 +268,7 @@ class RowPress:
     The Funestra's own overlays place a press on the row with this, so the
     track, the dial, the slider and the speaker answer the same way on each of
     them.  *layout* is where the row landed in the HUD's own coordinates,
-    and *duration_ms* how long the track spans -- the clip, or the window a
+    and *duration_ms* how long the track spans -- the video, or the window a
     loop being recorded has zoomed it to.
     """
 
@@ -285,7 +285,7 @@ class RowPress:
 
     def press(self, px: int, py: int, *, layout: RowLayout | None, duration_ms: float) -> bool:
         """Whether this press landed on a control of the row, and if it did,
-        what it asked: the track runs the clip there, the dial turns its loop,
+        what it asked: the track runs the video there, the dial turns its loop,
         the slider sets the level, the speaker mutes."""
         if layout is None or not layout.inside(px, py):
             return False

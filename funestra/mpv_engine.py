@@ -70,7 +70,7 @@ _MPV_LEVELS = {"fatal": logging.CRITICAL, "error": logging.ERROR, "warn": loggin
 def _log_mpv(level: str, prefix: str, text: str) -> None:
     """Write one of mpv's own messages to the host's log.
 
-    Failures inside the engine are otherwise invisible from Python: a clip mpv
+    Failures inside the engine are otherwise invisible from Python: a video mpv
     cannot open, a codec it cannot initialize, a hardware decoder it cannot
     create — none of them raise, and playback carries on with an empty video
     output.  What the host is left with is a black window over a healthy process
@@ -179,7 +179,7 @@ def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool
     if prefetch:
         # Open and demux the *next* playlist entry during the tail of the
         # current one, so a satellite's end-of-file auto-advance cuts to an
-        # already-loaded clip instead of cold-opening it on screen.  Only
+        # already-loaded video instead of cold-opening it on screen.  Only
         # satellites pass this; the Main Funestra plays one file at a time (loop_file=inf,
         # explicit [ ] nav) and has no next entry to prefetch.
         options["prefetch_playlist"] = "yes"
@@ -210,7 +210,7 @@ def tiles_across(source: tuple[int, int], window: tuple[int, int]) -> int:
 # that are genuinely in flight: the gate turns every *later* call into a no-op
 # the instant close() starts, so a worker looping on mpv does not extend this.
 # A single property read waiting on the core lock of a file being opened
-# measured 72-492ms in the shutdown probe, and a cold clip off the network
+# measured 72-492ms in the shutdown probe, and a cold video off the network
 # drive is slower again.
 CLOSE_DRAIN_TIMEOUT_S = 10.0
 
@@ -279,7 +279,7 @@ class _MpvControl:
     def __init__(self, moves: Moves | None = None, *, looping: bool = False) -> None:
         self._gate = CallGate()
         self._frame_rate = 0.0
-        # mpv's word on the file's video track: an image, a clip, or None
+        # mpv's word on the file's video track: an image, a video, or None
         # while it has none -- between two files, before the next one's tracks.
         self._image_track: bool | None = None
         self._overlays: dict[int, np.ndarray] = {}
@@ -363,7 +363,7 @@ class _MpvControl:
         What a host measures its own chrome against: where to float the stills
         either side of the item, where to seat a HUD under it.  Callers
         keep their last size through the gap between files, which is what keeps
-        the previous clip's final frame on screen during a transition instead
+        the previous video's final frame on screen during a transition instead
         of a teardown flicker.
         """
         return self._video_dims
@@ -390,7 +390,7 @@ class _MpvControl:
         self._staged = None
         self._begin_the_new_clip(str(path))
         self._mpv.play(str(path))
-        # Reset to just this file: drop any entry the previous clip had staged as
+        # Reset to just this file: drop any entry the previous video had staged as
         # its prefetched next, so the caller stages a fresh one from a clean base.
         # A no-op for the Main Funestra (single-file playlist); the reset is what a satellite's
         # jump/discard/filter navigation needs.
@@ -404,13 +404,13 @@ class _MpvControl:
         if self._staged is not None:
             self._mpv.loadfile(self._staged, "append")
 
-    # Everything below trims mpv's playlist down to the clip on screen, and each
+    # Everything below trims mpv's playlist down to the video on screen, and each
     # does it with ``playlist-clear`` — "clear the playlist, except the currently
     # played file" — rather than by removing computed indices.
     #
     # Which entry is current is mpv's to know, and it changes underneath us: with
     # prefetch on, mpv rolls onto the staged entry by itself at end-of-file, so an
-    # index read a moment earlier can already name the clip now playing.  Removing
+    # index read a moment earlier can already name the video now playing.  Removing
     # by that index takes the playing entry out from under mpv, which leaves it on
     # an empty playlist — a black window for the rest of the session, with a
     # healthy process, a running loop and nothing raised anywhere.  There is no
@@ -429,10 +429,10 @@ class _MpvControl:
 
     @mpv_call()
     def stage_next(self, path: Path) -> None:
-        """Make *path* the single entry queued after the current clip.
+        """Make *path* the single entry queued after the current video.
 
         With ``prefetch-playlist`` on, mpv opens and demuxes this entry before the
-        current clip ends, so the end-of-file auto-advance onto it is seamless.
+        current video ends, so the end-of-file auto-advance onto it is seamless.
         Any previously-staged entry is replaced.
         """
         if str(path) == self._staged:
@@ -443,7 +443,7 @@ class _MpvControl:
 
     @mpv_call()
     def clear_next(self) -> None:
-        """Drop the staged next entry (used when a lock pins the current clip)."""
+        """Drop the staged next entry (used when a lock pins the current video)."""
         self._staged = None
         self._mpv.playlist_clear()
 
@@ -451,7 +451,7 @@ class _MpvControl:
     @mpv_call(False)
     def advanced_to_next(self) -> bool:
         """True once mpv has reached end-of-file and auto-advanced off the current
-        clip onto the staged next one (its playlist position moved past the head).
+        video onto the staged next one (its playlist position moved past the head).
 
         -1 is mpv's "no entry playing", which is not past the head.
         """
@@ -460,7 +460,7 @@ class _MpvControl:
 
     @mpv_call()
     def settle_on_the_next(self) -> None:
-        """After an auto-advance the spent clip still occupies index 0; clearing
+        """After an auto-advance the spent video still occupies index 0; clearing
         around the current entry shifts it back to the head (mpv keeps playing it
         uninterrupted), restoring the [current, next] window.
         """
@@ -607,9 +607,9 @@ class _MpvControl:
         self._mpv.audio_device = self._audio_device = picked.handle
         return picked.label
 
-    def radio_station(self, clips: Sequence[Path]) -> MpvStation | None:
-        """A station of *clips*, sounding wherever this engine's own sound goes."""
-        return MpvStation.opened(clips, audio_device=self._audio_device)
+    def radio_station(self, videos: Sequence[Path]) -> MpvStation | None:
+        """A station of *videos*, sounding wherever this engine's own sound goes."""
+        return MpvStation.opened(videos, audio_device=self._audio_device)
 
     @mpv_call()
     def seek_ms(self, ms: float) -> None:
@@ -755,23 +755,23 @@ def _station_options(audio_device: str | None) -> dict:
 
 
 class MpvStation:
-    """One of a radio's stations: its clips' sound alone, round and round in a
+    """One of a radio's stations: its videos' sound alone, round and round in a
     fresh order each time round (mpv reshuffles a looped list as it comes round,
-    and gives up on one whose every clip fails, both probed against libmpv on
+    and gives up on one whose every video fails, both probed against libmpv on
     2026-10-16), playing on whether or not it is heard."""
 
-    def __init__(self, handle, clips: Sequence[Path]) -> None:
+    def __init__(self, handle, videos: Sequence[Path]) -> None:
         self._mpv = handle
         self._heard_at: int | None = None
         self._paused = False
-        first, *rest = clips
+        first, *rest = videos
         handle.loadfile(str(first), "replace")
-        for clip in rest:
-            handle.loadfile(str(clip), "append")
+        for video in rest:
+            handle.loadfile(str(video), "append")
 
     @classmethod
-    def opened(cls, clips: Sequence[Path], *, audio_device: str | None = None) -> MpvStation:
-        return cls(_import_mpv().MPV(**_station_options(audio_device)), clips)
+    def opened(cls, videos: Sequence[Path], *, audio_device: str | None = None) -> MpvStation:
+        return cls(_import_mpv().MPV(**_station_options(audio_device)), videos)
 
     def tune(self, level: int | None) -> None:
         """Be heard at *level*, or not at all for None."""

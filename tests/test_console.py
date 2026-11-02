@@ -344,7 +344,7 @@ class TestThePublishedConsoleIsWrittenWhereItIsRead:
         assert (parsed.rows, parsed.osr2_rows) == (ROWS, aim)
 
     def test_what_the_drawing_funestra_folds_in_is_not_published(self):
-        """The playback rate and the clip pace are the drawing host's own --
+        """The playback rate and the video pace are the drawing host's own --
         Fun Time neither sets them nor hears about them -- so the text does not
         carry them and they come back at rest."""
         model = ConsoleModel(playback_speed=1.5, advance_interval=12)

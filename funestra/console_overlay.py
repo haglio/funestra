@@ -166,7 +166,7 @@ class ConsoleOverlay:
         return x - self._origin[0], y - self._origin[1]
 
     def _track_duration(self) -> float:
-        """How long the track spans -- the clip, or the window a loop being
+        """How long the track spans -- the video, or the window a loop being
         recorded has zoomed it to, which is what the row was drawn from."""
         return 0.0 if self._item_row is None else self._item_row.duration_ms
 

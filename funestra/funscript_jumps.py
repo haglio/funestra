@@ -1,5 +1,5 @@
-"""Getting to the scripted parts of what a Funestra plays: past this clip's
-lull, or on to the next clip in its list that has scripting at all."""
+"""Getting to the scripted parts of what a Funestra plays: past this video's
+lull, or on to the next video in its list that has scripting at all."""
 from __future__ import annotations
 
 import logging
@@ -33,13 +33,13 @@ class FunscriptJumps:
         if entry is None:
             self._notices.say("no other funscripted video", level=NoticeLevel.WARNING)
             return
-        index, clip = entry
+        index, video = entry
         self._playback.load(index)
         funscript = self._playback.current_funscript
         onset = None if funscript is None else funscript.first_real_event_ms
         if onset is not None:
             self._playback.seek_to(onset)
-        logger.info("Next funscripted: %s", clip.name)
+        logger.info("Next funscripted: %s", video.name)
         self._notices.say("next funscripted", level=NoticeLevel.HIGHLIGHT)
 
     def _next_funscripted_entry(self):
@@ -47,7 +47,7 @@ class FunscriptJumps:
         current = self._playback.index
         for offset in range(1, len(playlist) + 1):
             index = (current + offset) % len(playlist)
-            clip = playlist[index]
-            if self._playback.funscript_of(clip) is not None and index != current:
-                return index, clip
+            video = playlist[index]
+            if self._playback.funscript_of(video) is not None and index != current:
+                return index, video
         return None

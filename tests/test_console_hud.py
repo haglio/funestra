@@ -132,9 +132,9 @@ class TestLine:
     def test_a_genau_primary_says_its_order_and_the_pace_it_moves_at(self):
         """Genau has no library, no compilation and no filters.  What it has is the
         same lock every Funestra has, the same two browse orders, and — while that
-        lock is off — the seconds it leaves each clip up.  Order then pace, in the
-        slot the satellites put theirs in: the order says which clip is next, the
-        pace says when.  Held, there is no pace to report: the clip stays until
+        lock is off — the seconds it leaves each video up.  Order then pace, in the
+        slot the satellites put theirs in: the order says which video is next, the
+        pace says when.  Held, there is no pace to report: the video stays until
         something moves it."""
         def line(**over) -> str:
             return ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU, latest=False, **over),
@@ -146,7 +146,7 @@ class TestLine:
     def test_a_genau_primary_says_which_order_it_was_put_in(self):
         """Genau browses in the same two orders every other Funestra does, and asking
         it for one used to leave the answer nowhere on screen: this slot printed the
-        pace instead, so "latest" changed the clips and said nothing."""
+        pace instead, so "latest" changed the videos and said nothing."""
         def line(**over) -> str:
             return ConsoleHud(console=ConsoleModel(main_mode=MainMode.GENAU, **over),
                               drive=_drive(advance_interval=5)).title
@@ -1375,7 +1375,7 @@ class TestTheHandoffKeepsMoving:
 
 
 class TestTheLockIsGreen:
-    """A lock puts the clip in the favorites, so it wears the color this family
+    """A lock puts the video in the favorites, so it wears the color this family
     spends on them — the same green the satellite HUDs' lock has always lit."""
 
     def test_a_held_clip_lights_the_lock_green(self):

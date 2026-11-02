@@ -118,13 +118,13 @@ def test_parse_hud_reads_the_hud_fun_time_published():
 
 def test_parse_hud_reads_whether_the_clip_is_a_favorite():
     """What the dashboard's HUD said by turning green — now a mark on the HUD,
-    so it is read off the Funestra showing the clip rather than off a schematic."""
+    so it is read off the Funestra showing the video rather than off a schematic."""
     assert parse_hud(json.dumps({"funestra": "portrait", "is_favorite": True})).is_favorite is True
     assert parse_hud(json.dumps({"funestra": "portrait"})).is_favorite is False
 
 
 def test_parse_hud_defaults_an_empty_hud():
-    """A satellite with nothing to map (no clip yet) still parses — it simply has
+    """A satellite with nothing to map (no video yet) still parses — it simply has
     no corner, so nothing is drawn."""
     model = parse_hud(json.dumps({"funestra": "landscape", "locked": False, "title": "Unlocked"}))
 
@@ -144,7 +144,7 @@ def test_parse_hud_rejects_garbage():
 
 # --- the window a long loop is drawn through ---------------------------------
 # The window is a count, not a measurement: MAP_CELLS of an axis however long, and
-# whatever shape the clips in it are.
+# whatever shape the videos in it are.
 _LOOP = 12
 
 
@@ -157,8 +157,8 @@ def test_a_loop_short_enough_to_fit_is_drawn_whole():
 
 
 def test_a_loop_just_started_opens_on_the_clip_on_screen():
-    """The loop's head is the clip it started on, so at that moment the window opens
-    there — the clip you pressed loop on is drawn in the corner, never mid-row."""
+    """The loop's head is the video it started on, so at that moment the window opens
+    there — the video you pressed loop on is drawn in the corner, never mid-row."""
     window = map_window(_LOOP, playing=0)
 
     assert (window.start, window.count) == (0, MAP_CELLS)
@@ -244,8 +244,8 @@ def test_pressing_a_partly_matching_button_narrows_the_filter_before_lifting_it(
 
 
 def test_pressing_a_two_act_rows_button_filters_to_both_of_its_acts():
-    """A clip carrying two acts filters to the pair, which is the query fun_time
-    keeps clips having both under — and pressing it again lifts it, since that row is
+    """A video carrying two acts filters to the pair, which is the query fun_time
+    keeps videos having both under — and pressing it again lifts it, since that row is
     now exactly the filter."""
     clicks = HudClicks("portrait")
 
@@ -339,7 +339,7 @@ def test_expand_button_sits_in_the_row_right_of_the_seed_loop_button():
 
 def test_build_and_hit_test_click_targets():
     """Targets zip the drawn rects to their paths — corner=current, then each
-    seed, then each action — and a point resolves to the clip it falls in."""
+    seed, then each action — and a point resolves to the video it falls in."""
     corner = (10, 10, 20, 20)
     seeds = [(40, 10, 20, 20)]
     actions = [(10, 40, 20, 20)]
@@ -381,25 +381,25 @@ def test_filter_button_rects_puts_one_at_the_head_of_each_row():
 
 
 def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it():
-    """fun_time keeps a clip when the query is a substring of its metadata, so a row
+    """fun_time keeps a video when the query is a substring of its metadata, so a row
     it keeps has to light even when its label is not the query exactly — "Side Gamma"
-    and "Gamma, Theta" are both clips a "gamma" filter holds you to.
+    and "Gamma, Theta" are both videos a "gamma" filter holds you to.
 
     The cases below are the rule as this repo owns it.  That it still agrees with
     fun_time's own matcher — the authority it mirrors — is pinned over THERE, in
     fun_time's test_media_metadata, because only the wearer of this HUD can import
     both sides; this suite runs with funestra alone on the path.  The empty query
-    is the one deliberate difference: it matches every clip there, and lights no row
+    is the one deliberate difference: it matches every video there, and lights no row
     here.
     """
     cases = [
         ("Gamma", "gamma", True),               # the row that names it
         ("Side Gamma", "gamma", True),          # the query is one act of the row
         ("Side Gamma", "side gamma", True),     # the filter set from that very row
-        ("Gamma, Theta", "gamma", True),        # one of two acts on the clip
+        ("Gamma, Theta", "gamma", True),        # one of two acts on the video
         ("Gamma   Theta", "gamma theta", True),  # whitespace collapsed on both sides
-        ("Gamma, Theta", "gamma, theta", True),  # the filter set from that very clip
-        ("Gamma", "gamma, theta", False),       # …which does not keep a one-act clip
+        ("Gamma, Theta", "gamma, theta", True),  # the filter set from that very video
+        ("Gamma", "gamma, theta", False),       # …which does not keep a one-act video
         ("Alpha", "gamma", False),
         ("Gam", "gamma", False),                # the label is not the longer query
     ]
@@ -410,7 +410,7 @@ def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it():
 
 
 def test_act_is_filtered_picks_out_which_of_a_rows_acts_the_filter_named():
-    """The row says whether the clip is here; this says which of its acts is why —
+    """The row says whether the video is here; this says which of its acts is why —
     the rule that whitens one line of a label and leaves its neighbors gray."""
     def lit(act: str, filter_query: str) -> bool:
         return act_is_filtered(act, filter_query, CAMERA_WORDS)
@@ -419,7 +419,7 @@ def test_act_is_filtered_picks_out_which_of_a_rows_acts_the_filter_named():
     assert lit("XYZ", "gamma") is False        # a camera word is not the act
     assert lit("Side", "gamma") is False
     assert lit("Theta Gamma", "gamma") is True  # an act the query is part of
-    # A filter set from a two-act clip names both, so both of that row's acts light.
+    # A filter set from a two-act video names both, so both of that row's acts light.
     assert lit("Gamma", "gamma, theta") is True
     assert lit("Theta", "gamma, theta") is True
     assert lit("Alpha", "gamma, theta") is False
@@ -564,7 +564,7 @@ def test_a_title_that_fits_at_none_of_the_familys_sizes_takes_the_tiny_one():
 
 
 def test_action_label_blocks_separate_comma_joined_acts():
-    """Several acts on one clip ("Alpha, Theta Motion") become one block each
+    """Several acts on one video ("Alpha, Theta Motion") become one block each
     (drawn with a gap between), commas dropped; one act is a single block."""
     assert action_label_blocks("alpha, theta motion", CAMERA_WORDS) == [["Alpha"], ["Theta", "Motion"]]
     assert action_label_blocks("", CAMERA_WORDS) == [["(unknown)"]]
@@ -618,7 +618,7 @@ def test_single_click_switches_and_double_click_locks():
 
 def test_a_second_click_past_the_window_is_another_single_click():
     """The window is what makes the second press a double.  Past it, the same
-    cell pressed again is someone picking that clip a second time — it defers
+    cell pressed again is someone picking that video a second time — it defers
     like any other single press rather than locking what it lands on."""
     clicks = HudClicks("landscape")
     targets = _targets(click=[((0, 0, 30, 30), "C:/v/pick.mp4")])

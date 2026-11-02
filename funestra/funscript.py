@@ -445,7 +445,7 @@ def snap_loop(fs: Funscript | None, in_ms: int, out_ms: int) -> tuple[int, int]:
     # Widen before snapping: both snaps only ever move a boundary outward, so a
     # mark shorter than a loop is lengthened here and stays long afterwards.
     hi = max(hi, lo + _MIN_LOOP_MS)
-    # No funscript is simply nothing to snap to — a plain clip loop keeps its mark.
+    # No funscript is simply nothing to snap to — a plain video loop keeps its mark.
     actions = fs.actions if fs is not None else []
     bases = [t for t, p in actions if p >= _BASE_THRESHOLD]
     return _snap_back(bases, lo), _snap_forward(bases, hi)
