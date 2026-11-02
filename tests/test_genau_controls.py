@@ -85,7 +85,7 @@ class TestHalfACommandIsNotACommand:
 # here so a verb added to the registry is a deliberate line in a diff -- the
 # spellings are a contract with the orchestrator that sends them.
 WRITTEN_DOWN_VERBS = frozenset({
-    "QUIT", "PREV", "NEXT", "WEIRD", "FLIP_ENDS", "LATEST", "SHUFFLE",
+    "QUIT", "PREV", "NEXT", "TRASH", "WEIRD", "FLIP_ENDS", "LATEST", "SHUFFLE",
     "PAUSE", "RESUME", "PARK", "RETRACT", "SPEED_DOWN", "SPEED_UP", "AMPLITUDE_DOWN", "AMPLITUDE_UP",
     "CENTER_DOWN", "CENTER_UP", "CYCLE_SHAPE", "CYCLE_SHAPE_PREV",
     "TOGGLE_LEARNED", "LEARNED_ON", "LEARNED_OFF",
@@ -103,6 +103,7 @@ class TestTheVocabularyIsWrittenDown:
 # The verbs Genau answers that every Funestra answers -- the family's, spelled in
 # funestra_verbs and imported from there.  The rest are Genau's own.
 FAMILY_VERBS = frozenset({
+    "TRASH",
     "NEXT", "PREV", "TOGGLE_LOCK", "LOCK_ON", "LOCK_OFF", "QUIT", "SET_VOLUME",
     "SET_TCODE_ENABLED", "SET_MAX_INTENSITY", "SPEED_DOWN", "SPEED_UP", "PLAY_FILE",
 })

@@ -595,12 +595,12 @@ class TestFlickAdvanceCommands:
             assert handled is False, f"{cmd} should be ignored without flick_advance_state"
 
 
-class TestWeirdCommand:
-    def test_weird_condemns_the_flick_on_screen(self):
+class TestTrashCommand:
+    def test_trash_condemns_the_flick_on_screen(self):
         calls: list[int] = []
 
         handled = _answered(
-            "WEIRD",
+            "TRASH",
             engine=BeatEngine(phase=0.0, last_tick=0.0),
             paused=Flag(),
             step_flick=lambda _step: None,
@@ -610,9 +610,9 @@ class TestWeirdCommand:
         assert handled is True
         assert calls == [1]
 
-    def test_weird_ignored_without_a_way_to_condemn(self):
+    def test_trash_ignored_without_a_way_to_condemn(self):
         handled = _answered(
-            "WEIRD",
+            "TRASH",
             engine=BeatEngine(phase=0.0, last_tick=0.0),
             paused=Flag(),
             step_flick=lambda _step: None,

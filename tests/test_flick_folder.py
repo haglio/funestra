@@ -9,10 +9,12 @@ from app_support import flick_folder as shared_layout
 
 from funestra.flick_folder import (
     flat_flicks_in,
+    move_flick_to_trash,
     move_flick_to_weird,
     scan_flicks,
+    trash_folder_beside,
+    trash_folder_for,
     vr_flicks_in,
-    weird_dir_for_flicks_folder,
     weird_folder_for,
 )
 
@@ -172,25 +174,25 @@ class TestLatestOrder:
 
 
 def test_the_flicks_folders_layout_is_the_one_every_app_reads_from_app_support():
-    assert (flat_flicks_in, vr_flicks_in, weird_dir_for_flicks_folder) == (
+    assert (flat_flicks_in, vr_flicks_in, trash_folder_beside) == (
         shared_layout.flat_flicks_in,
         shared_layout.vr_flicks_in,
-        shared_layout.weird_dir_for_flicks_folder,
+        shared_layout.trash_folder_beside,
     )
 
 
-def test_a_flick_goes_to_its_own_place_in_the_weird_pile():
+def test_a_flick_goes_to_its_own_place_in_the_trash_pile():
     flicks = Path("C:/videos/genau/flicks")
 
-    assert weird_folder_for(flicks / "2D" / "AI" / "loop one.mp4", flicks) == Path(
+    assert trash_folder_for(flicks / "2D" / "AI" / "loop one.mp4", flicks) == Path(
         "C:/videos/genau/weird/2D/AI"
     )
 
 
-def test_a_flick_from_outside_the_flicks_folder_goes_to_the_top_of_the_weird_pile():
+def test_a_flick_from_outside_the_flicks_folder_goes_to_the_top_of_the_trash_pile():
     flicks = Path("C:/videos/genau/flicks")
 
-    assert weird_folder_for(Path("D:/elsewhere/loop one.mp4"), flicks) == Path(
+    assert trash_folder_for(Path("D:/elsewhere/loop one.mp4"), flicks) == Path(
         "C:/videos/genau/weird"
     )
 
@@ -200,31 +202,31 @@ def test_move_takes_the_flick_out_of_rotation(tmp_path: Path):
     flicks.mkdir()
     flick = flicks / "odd.mp4"
     flick.write_bytes(b"flick")
-    weird = tmp_path / "weird"
+    trash = tmp_path / "weird"
 
-    landed = move_flick_to_weird(flick, weird)
+    landed = move_flick_to_trash(flick, trash)
 
-    assert landed == weird / "odd.mp4"
+    assert landed == trash / "odd.mp4"
     assert landed.read_bytes() == b"flick"
     assert not flick.exists()
 
 
-def test_move_creates_the_weird_dir_on_first_use(tmp_path: Path):
+def test_move_creates_the_trash_dir_on_first_use(tmp_path: Path):
     flick = tmp_path / "odd.mp4"
     flick.write_bytes(b"flick")
-    weird = tmp_path / "weird"
-    assert not weird.exists()
+    trash = tmp_path / "weird"
+    assert not trash.exists()
 
-    move_flick_to_weird(flick, weird)
+    move_flick_to_trash(flick, trash)
 
-    assert weird.is_dir()
+    assert trash.is_dir()
 
 
 def test_a_flick_already_gone_is_not_an_error(tmp_path: Path):
-    """Two WEIRD verbs can race the same flick; the second must not crash Genau."""
-    weird = tmp_path / "weird"
+    """Two TRASH verbs can race the same flick; the second must not crash Genau."""
+    trash = tmp_path / "weird"
 
-    assert move_flick_to_weird(tmp_path / "missing.mp4", weird) is None
+    assert move_flick_to_trash(tmp_path / "missing.mp4", trash) is None
 
 
 class TestSeveralFoldersBrowsedAsOne:
@@ -291,3 +293,11 @@ class TestSeveralFoldersBrowsedAsOne:
         vr, _flat = self._two_folders(tmp_path)
 
         assert scan_flicks(vr, shuffle_on_load=False) == scan_flicks((vr,), shuffle_on_load=False)
+
+
+def test_the_old_names_answer_until_fun_time_has_moved(tmp_path):
+    flick = tmp_path / "flicks" / "2D" / "scene.mp4"
+    flick.parent.mkdir(parents=True)
+    flick.write_bytes(b"x")
+    assert weird_folder_for(flick, tmp_path / "flicks") == trash_folder_for(flick, tmp_path / "flicks")
+    assert move_flick_to_weird(flick, tmp_path / "away") == tmp_path / "away" / "scene.mp4"

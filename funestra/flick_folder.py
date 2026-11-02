@@ -13,8 +13,8 @@ from pathlib import Path
 
 from app_support.flick_folder import (
     flat_flicks_in,  # noqa: F401 -- handed on to the apps, which import it from here
+    trash_folder_beside,
     vr_flicks_in,  # noqa: F401
-    weird_dir_for_flicks_folder,
 )
 
 SUPPORTED_VIDEO_EXTS = {".mp4", ".mkv", ".mov", ".avi", ".webm", ".m4v"}
@@ -58,24 +58,32 @@ def scan_flicks(
     return files
 
 
-def weird_folder_for(flick: Path, flicks_folder: Path) -> Path:
-    weird = weird_dir_for_flicks_folder(flicks_folder)
+def trash_folder_for(flick: Path, flicks_folder: Path) -> Path:
+    trash = trash_folder_beside(flicks_folder)
     try:
-        return weird / flick.parent.relative_to(flicks_folder)
+        return trash / flick.parent.relative_to(flicks_folder)
     except ValueError:
-        return weird
+        return trash
 
 
-def move_flick_to_weird(flick_path: Path, weird_dir: Path) -> Path | None:
-    """Move *flick_path* into *weird_dir*, returning where it landed.
+def move_flick_to_trash(flick_path: Path, trash_dir: Path) -> Path | None:
+    """Move *flick_path* into *trash_dir*, returning where it landed.
 
-    Returns None when the flick is already gone — two WEIRD verbs can name the
+    Returns None when the flick is already gone — two TRASH verbs can name the
     same flick before the first has finished, and the second must not take the
     Funestra down with it.
     """
     if not flick_path.exists():
         return None
-    weird_dir.mkdir(parents=True, exist_ok=True)
-    destination = weird_dir / flick_path.name
+    trash_dir.mkdir(parents=True, exist_ok=True)
+    destination = trash_dir / flick_path.name
     flick_path.replace(destination)
     return destination
+
+
+def weird_folder_for(flick: Path, flicks_folder: Path) -> Path:
+    return trash_folder_for(flick, flicks_folder)
+
+
+def move_flick_to_weird(flick_path: Path, trash_dir: Path) -> Path | None:
+    return move_flick_to_trash(flick_path, trash_dir)

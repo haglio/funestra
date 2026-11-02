@@ -147,11 +147,11 @@ def test_a_flick_that_goes_up_gives_its_decode_ahead_slot_back():
     leaves one place for its own two neighbors -- so the sweep decodes them
     alternately, for as long as the session runs.
     """
-    pipeline = Pipeline("weird.mp4", "after.mp4", "third.mp4", "before.mp4")
-    pipeline.open_on("weird.mp4")
+    pipeline = Pipeline("trash.mp4", "after.mp4", "third.mp4", "before.mp4")
+    pipeline.open_on("trash.mp4")
     for _ in range(4):
         pipeline.turn()
-    assert pipeline.decodes == ["weird.mp4", "after.mp4", "before.mp4"]
+    assert pipeline.decodes == ["trash.mp4", "after.mp4", "before.mp4"]
 
     assert pipeline.selection.condemn_current() is True
     for _ in range(20):
@@ -159,7 +159,7 @@ def test_a_flick_that_goes_up_gives_its_decode_ahead_slot_back():
 
     assert pipeline.on_screen == "after.mp4"
     assert pipeline.decodes == [
-        "weird.mp4", "after.mp4", "before.mp4", "third.mp4"]
+        "trash.mp4", "after.mp4", "before.mp4", "third.mp4"]
 
 
 def test_an_advance_that_catches_a_decode_running_does_not_start_it_again():

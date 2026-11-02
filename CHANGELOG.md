@@ -556,7 +556,7 @@ library vocabulary and so never in source; in source they are flicks. The eleven
 `FlickCacheStore`, `FlickLoadController`, `FlickRenderController`,
 `FlickSelectionController`, `FlickSequenceController`, `FlickFlip`,
 `FlickScrub`, `FlickPicture`, `flat_flicks_in`, `vr_flicks_in`, `scan_flicks`,
-`load_flick_frames`, `move_flick_to_weird`, `playhead.flick_playhead`, and the
+`load_flick_frames`, `move_flick_to_trash`, `playhead.flick_playhead`, and the
 keyword names and attributes of each. Genau's seconds verbs are
 `FLICK_SECONDS_DOWN`, `FLICK_SECONDS_UP` and `FLICK_SECONDS`; its status says
 the flick on screen as `flick=`; its audio companion hears `FLICK <stem>`.
@@ -794,12 +794,12 @@ playhead visualizer as mpv overlays.  With it come fun_time's `satellite/session
 a painter out of this one except the drawers still to move onto a Funestra,
 listed in `KNOWN_DRAWERS`, and on a listed one that has stopped drawing.
 
-## 2026-10-07 — Genau's clips folder forks into 2D and VR, and the weird pile follows it
+## 2026-10-07 — Genau's clips folder forks into 2D and VR, and the trash folder follows it
 
 `scan_clips` walks into the folders inside the ones it is given, so a 2D folder
 split into `AI` and `non_AI` plays as one. `flat_clips_in` and `vr_clips_in`
 name the `2D` and `VR` folders inside Genau's clips folder, and
-`weird_folder_for` is where a condemned clip goes: the same place in the weird
+`trash_folder_for` is where a condemned clip goes: the same place in the trash
 pile beside the clips folder that it had in the clips folder. The three are
 declared in `__all__` once an app that imports them has landed.
 
@@ -1201,7 +1201,7 @@ which took the hand's control limits. The names moved with the responsibility:
 | `drive_readout` (`DriveReadout`) | `genau_readout` (`GenauReadout`) |
 | `status_writer` | `genau_status` (with the status file's name) |
 | `notifier` | `genau_notifier` |
-| `video`, `weird` | `clip_folder` (the scan, and the piles beside the folder) and `clip_decode` (ffmpeg, and the frame cache) |
+| `video`, `trash` | `clip_folder` (the scan, and the trash folder beside the folder) and `clip_decode` (ffmpeg, and the frame cache) |
 | `frame_cache` | `clip_decode`, reading WebP through Pillow rather than cv2 |
 | `clip_runtime`, `cache_utils` | `clip_cache` |
 | `refresh_logic.display_index_for_phase` | `clip_renderer` |

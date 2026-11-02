@@ -44,7 +44,7 @@ def test_a_button_with_a_typed_icon_or_a_word_keeps_its_own_tooltip():
 
 
 def test_a_button_wearing_a_real_mark_keeps_its_own_tooltip():
-    assert Button("weird", shared_icon("trash"), "Mark weird").tooltip_on_hover == "Mark weird"
+    assert Button("trash", shared_icon("trash"), "Send to Trash").tooltip_on_hover == "Send to Trash"
 
 
 def test_minimize_wears_the_familys_minus():
