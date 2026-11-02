@@ -235,7 +235,6 @@
     "tests/test_sdl_hints.py": 7,
     "tests/test_session_quit.py": 5,
     "tests/test_shared_marks.py": 20,
-    "tests/test_sibling_pins.py": 1,
     "tests/test_status.py": 28,
     "tests/test_tcode.py": 8,
     "tests/test_tcode_driver.py": 56,
