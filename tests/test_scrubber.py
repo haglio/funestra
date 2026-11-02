@@ -174,11 +174,11 @@ def _rgba(bar, y, x):
 
 
 class TestAScriptedItemsStrip:
-    def _framed_strip(self, win_w=1000):
-        x0, x1 = bar_track_x(win_w)
+    def _framed_strip(self, viewport_w=1000):
+        x0, x1 = bar_track_x(viewport_w)
         strip = Heatmap()
         strip.update("v.mp4", _funscript(), 4000.0, track_w=x1 - x0)
-        return progress_bar_bgra(2000, 4000.0, (1000, 3000), win_w, heatmap=strip.colors), x0, x1
+        return progress_bar_bgra(2000, 4000.0, (1000, 3000), viewport_w, heatmap=strip.colors), x0, x1
 
     def test_the_strip_runs_from_the_rows_edge_to_the_chips_slot(self):
         bgra, x0, x1 = self._framed_strip()
@@ -254,7 +254,7 @@ class TestWhereTheLoopsTwoFramesGo:
 
     def _xys(self, heatmap, thumbs, bounds):
         return loop_thumbnail_xys(heatmap, thumbs, bounds, track=self.TRACK,
-                                  win_w=self.WIN_W, top=self.TOP)
+                                  viewport_w=self.WIN_W, top=self.TOP)
 
     def _scripted(self) -> Heatmap:
         strip = Heatmap()

@@ -68,7 +68,7 @@ def _overlay(tmp_path: Path, *, top_block=None, gate=None, drive: bool = True,
 
 
 def _tick(overlay: MainHudOverlay, speed: float = 1.0) -> None:
-    overlay.tick(playback_speed=speed, window=WINDOW)
+    overlay.tick(playback_speed=speed, viewport=WINDOW)
 
 
 def _asked(tmp_path: Path) -> list[str]:
@@ -407,14 +407,14 @@ class TestANameFlashingWhileMinimized:
     def test_it_is_drawn_beside_the_plus(self, tmp_path):
         overlay = _published(tmp_path, hud_minimized=True)
 
-        overlay.tick(playback_speed=1.0, window=WINDOW, flash="scene one")
+        overlay.tick(playback_speed=1.0, viewport=WINDOW, flash="scene one")
 
         bgra = overlay._engine.overlays[HUD_OVERLAY_ID][2]
         assert np.array_equal(bgra, collapsed_hud("main", flash="scene one")[0])
 
     def test_the_plus_is_alone_again_once_it_is_over(self, tmp_path):
         overlay = _published(tmp_path, hud_minimized=True)
-        overlay.tick(playback_speed=1.0, window=WINDOW, flash="scene one")
+        overlay.tick(playback_speed=1.0, viewport=WINDOW, flash="scene one")
 
         _tick(overlay)
 

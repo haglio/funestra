@@ -124,11 +124,11 @@ class LoopThumbCapture:
             self.out_thumb = thumb
 
 
-def label_xs(in_x: int, out_x: int, in_w: int, out_w: int, win_w: int) -> tuple[int, int]:
-    ix = max(0, min(win_w - in_w, in_x - in_w // 2))
-    ox = max(0, min(win_w - out_w, out_x - out_w // 2))
+def label_xs(in_x: int, out_x: int, in_w: int, out_w: int, viewport_w: int) -> tuple[int, int]:
+    ix = max(0, min(viewport_w - in_w, in_x - in_w // 2))
+    ox = max(0, min(viewport_w - out_w, out_x - out_w // 2))
     if ox < ix + in_w:
-        ox = min(win_w - out_w, ix + in_w + 2)
+        ox = min(viewport_w - out_w, ix + in_w + 2)
     return ix, ox
 
 
@@ -145,7 +145,7 @@ def loop_thumbnail_xys(
     bounds: tuple[int, int],
     *,
     track: tuple[int, int],
-    win_w: int,
+    viewport_w: int,
     top: int,
 ) -> tuple[tuple[int, int] | None, tuple[int, int] | None]:
     """Where the loop's in and out frames go: ``(in_xy, out_xy)``, either None
@@ -163,7 +163,7 @@ def loop_thumbnail_xys(
         in_x, out_x,
         in_t.shape[1] if in_t is not None else 1,
         out_t.shape[1] if out_t is not None else 1,
-        win_w,
+        viewport_w,
     )
     return (
         (ix, top) if in_t is not None else None,

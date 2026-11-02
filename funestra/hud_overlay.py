@@ -149,7 +149,7 @@ class HudOverlay:
         self._foot_held = False
         self._shown = False
         self._draw_owed = False
-        self._window: tuple[int, int] | None = None
+        self._viewport: tuple[int, int] | None = None
         self._origin = (MARGIN, MARGIN)
         self._hud_size: tuple[int, int] | None = None
         self.targets: HudTargets = _EMPTY_TARGETS
@@ -174,14 +174,14 @@ class HudOverlay:
         return self._clicks.active_loop if self._clicks is not None else ""
 
     def tick(self, video: str = "", playback_speed: float | None = None,
-             window: tuple[int, int] | None = None,
+             viewport: tuple[int, int] | None = None,
              item_row: RowHud | None = None, heatmap=None, flash: str = "") -> None:
         redraw = (video != self._video or playback_speed != self._playback_speed
-                  or window != self._window or flash != self._flash
+                  or viewport != self._viewport or flash != self._flash
                   or item_row != self._item_row or heatmap is not self._heatmap)
         self._video = video
         self._playback_speed = playback_speed
-        self._window = window
+        self._viewport = viewport
         self._flash = flash
         self._item_row, self._heatmap = item_row, heatmap
         model, changed = self._source.next(self._model)
@@ -248,7 +248,7 @@ class HudOverlay:
 
     @property
     def row_track(self) -> tuple[int, int, int] | None:
-        """The row's track in the window's coordinates, for a host hanging the
+        """The row's track in the viewport's coordinates, for a host hanging the
         loop's frames under it."""
         return track_on_screen(
             self.targets.row, origin=self._origin,
@@ -327,9 +327,9 @@ class HudOverlay:
         return x - left, y - top
 
     def _place(self, corner: HudCorner, size: tuple[int, int]) -> tuple[int, int]:
-        if self._window is None:
+        if self._viewport is None:
             return MARGIN, MARGIN
-        return replace(self.hud_place, corner=corner).origin(hud=size, window=self._window)
+        return replace(self.hud_place, corner=corner).origin(hud=size, viewport=self._viewport)
 
     def _motion(self) -> DriveHud | None:
         if self._drive_file is None or self._model is None or not self._model.osr2:

@@ -117,13 +117,13 @@ def compilation_label(title: str) -> str:
 _PAD = MARGIN_STANDARD
 _MINUS_INSET = (_PAD, _PAD)
 DOT_GAP = GAP_MEDIUM  # the app between the active-Funestra dot and the words beside it
-MARGIN = MARGIN_STANDARD    # inset from the window's top-left corner
+MARGIN = MARGIN_STANDARD    # inset from the viewport's top-left corner
 _BLOCK_GAP = GAP_SMALL
 _SUBTITLE_GAP = GAP_SMALL  # between the title and the file name under it
 
 
 def hud_xy() -> tuple[int, int]:
-    """Where the HUD goes: the window's top-left corner, the same place the
+    """Where the HUD goes: the viewport's top-left corner, the same place the
     satellites put theirs."""
     return MARGIN, MARGIN
 
@@ -313,7 +313,7 @@ class MainHudPainter:
         return True
 
     def press_at(self, mx: int, my: int) -> str:
-        """The command a press at *window* point ``(mx, my)`` posts, "" over none.
+        """The command a press at *viewport* point ``(mx, my)`` posts, "" over none.
 
         A press inside one of the OSR2 visualizer's bars takes hold of it as well
         as posting: :meth:`drag_to` then goes on setting that level as the pointer
@@ -345,12 +345,12 @@ class MainHudPainter:
         self._grip.release()
 
     def hover_at(self, mx: int, my: int) -> tuple[int, int] | None:
-        """Where to name the button under *window* point ``(mx, my)``, else None."""
+        """Where to name the button under *viewport* point ``(mx, my)``, else None."""
         local = self._local(mx, my)
         return local if tooltip_at(self.buttons, *local) or hit_test(self.buttons, *local) else None
 
     def motion(self, mx: int, my: int) -> None:
-        """Follow the pointer to *window* point ``(mx, my)``: the next painting
+        """Follow the pointer to *viewport* point ``(mx, my)``: the next painting
         lights the button under it and names it, until the pointer moves off or
         the HUD moves to another corner."""
         self._pointer.take(self.hover_at(mx, my))
@@ -368,10 +368,10 @@ class MainHudPainter:
         return HudPlace(main_hud_model.funestra, main_hud_model.hud_corner, MARGIN,
                         minimized=main_hud_model.hud_minimized, inset=_MINUS_INSET)
 
-    def place(self, *, window: tuple[int, int], lower_edge: int = 0) -> tuple[int, int]:
+    def place(self, *, viewport: tuple[int, int], lower_edge: int = 0) -> tuple[int, int]:
         place = self.hud_place or HudPlace("", HudCorner.UPPER_LEFT, MARGIN)
         size = self._image.size if self._image is not None else (0, 0)
-        self._origin = place.origin(hud=size, window=window, lower_edge=lower_edge)
+        self._origin = place.origin(hud=size, viewport=viewport, lower_edge=lower_edge)
         return self._origin
 
     def _local(self, mx: int, my: int) -> tuple[int, int]:

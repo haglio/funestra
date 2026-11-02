@@ -89,7 +89,7 @@ CLOSEST = 8.0
 
 @dataclass(frozen=True)
 class Fit:
-    window: tuple[int, int]
+    viewport: tuple[int, int]
     shown: tuple[int, int]
     tiles: int = 1
 
@@ -107,13 +107,13 @@ class Fit:
         fitted = self._fitted()
         if fitted is None:
             return 1.0, 1.0
-        return self.window[0] / fitted[0], self.window[1] / fitted[1]
+        return self.viewport[0] / fitted[0], self.viewport[1] / fitted[1]
 
     def _fitted(self) -> tuple[float, float] | None:
-        (window_w, window_h), (shown_w, shown_h) = self.window, self.shown
-        if not (window_w and window_h and shown_w and shown_h):
+        (viewport_w, viewport_h), (shown_w, shown_h) = self.viewport, self.shown
+        if not (viewport_w and viewport_h and shown_w and shown_h):
             return None
-        scale = min(window_w / shown_w, window_h / shown_h)
+        scale = min(viewport_w / shown_w, viewport_h / shown_h)
         return shown_w * scale, shown_h * scale
 
 

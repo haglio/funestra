@@ -132,4 +132,4 @@ def test_an_offscreen_engine_frames_its_close_ups_for_the_target_it_last_drew_in
 
     engine.render(0, 1600, 900)
 
-    assert engine._fit().window == (1600, 900)
+    assert engine._fit().viewport == (1600, 900)

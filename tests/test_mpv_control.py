@@ -105,12 +105,12 @@ class Control(_MpvControl):
     """
 
     def __init__(self, mpv, now: float = 0.0, move: Move = CREEP,
-                 window: tuple[int, int] = (0, 0), deals: Deals | None = None,
+                 viewport: tuple[int, int] = (0, 0), deals: Deals | None = None,
                  looping: bool = False) -> None:
         # the call gate every method here runs under
         super().__init__(deals or Deals(move), looping=looping)
         self.now = now
-        self._window = window
+        self._viewport = viewport
         self._adopt(mpv)
 
     def _now(self) -> float:
@@ -1181,7 +1181,7 @@ FACE = (0.4, 0.1, 0.6, 0.3)
 
 def test_a_locked_image_with_places_is_drawn_on_the_close_up_its_window_frames():
     mpv = FakeMpv()
-    control = Control(mpv, now=100.0, window=WIDE, deals=Deals(CREEP), looping=True)
+    control = Control(mpv, now=100.0, viewport=WIDE, deals=Deals(CREEP), looping=True)
     control.set_pace(4.0)
     show_an_image(control, mpv, (832, 1216))
 
@@ -1209,4 +1209,4 @@ def test_a_windowed_engine_frames_its_close_ups_for_the_window_it_draws_into(mon
 
     engine = MpvEngine(desktop)
 
-    assert engine._fit().window == _client_size(desktop)
+    assert engine._fit().viewport == _client_size(desktop)

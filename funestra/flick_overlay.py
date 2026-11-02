@@ -65,17 +65,17 @@ def black_bgra(width: int, height: int) -> np.ndarray:
     return frame
 
 
-def tile_rects(frame_size: tuple[int, int], window: tuple[int, int]) -> list[tuple[int, int, int, int]]:
+def tile_rects(frame_size: tuple[int, int], viewport: tuple[int, int]) -> list[tuple[int, int, int, int]]:
     frame_w, frame_h = frame_size
-    window_w, window_h = window
-    tile_h = window_h
-    tile_w = int(frame_w * (window_h / frame_h))
-    if tile_w > window_w:
-        tile_w = window_w
-        tile_h = int(frame_h * (window_w / frame_w))
-    tiles = max(1, window_w // max(1, tile_w)) if frame_h > frame_w else 1
-    margin = (window_w - tile_w * tiles) // 2
-    y = (window_h - tile_h) // 2
+    viewport_w, viewport_h = viewport
+    tile_h = viewport_h
+    tile_w = int(frame_w * (viewport_h / frame_h))
+    if tile_w > viewport_w:
+        tile_w = viewport_w
+        tile_h = int(frame_h * (viewport_w / frame_w))
+    tiles = max(1, viewport_w // max(1, tile_w)) if frame_h > frame_w else 1
+    margin = (viewport_w - tile_w * tiles) // 2
+    y = (viewport_h - tile_h) // 2
     return [(margin + i * tile_w, y, tile_w, tile_h) for i in range(tiles)]
 
 
@@ -123,18 +123,18 @@ class FlickOverlay:
         self._tiles_up = 0
         self._loading: str | None = None
 
-    def show(self, frame: FlickFrame, window: tuple[int, int]) -> None:
-        if self._backdrop_at != window:
-            self._engine.overlay(BACKDROP_OVERLAY_ID, 0, 0, black_bgra(*window))
-            self._backdrop_at = window
-        self._show_the_frame(frame.frame, window)
-        self._show_the_loading(frame.loading, window)
+    def show(self, frame: FlickFrame, viewport: tuple[int, int]) -> None:
+        if self._backdrop_at != viewport:
+            self._engine.overlay(BACKDROP_OVERLAY_ID, 0, 0, black_bgra(*viewport))
+            self._backdrop_at = viewport
+        self._show_the_frame(frame.frame, viewport)
+        self._show_the_loading(frame.loading, viewport)
 
-    def _show_the_frame(self, frame: np.ndarray | None, window: tuple[int, int]) -> None:
-        tiles_of = None if frame is None else (id(frame), window)
+    def _show_the_frame(self, frame: np.ndarray | None, viewport: tuple[int, int]) -> None:
+        tiles_of = None if frame is None else (id(frame), viewport)
         if tiles_of == self._tiles_of and frame is not None:
             return
-        rects = [] if frame is None else tile_rects((frame.shape[1], frame.shape[0]), window)
+        rects = [] if frame is None else tile_rects((frame.shape[1], frame.shape[0]), viewport)
         for index, (x, y, w, h) in enumerate(rects):
             self._engine.overlay(FIRST_TILE_OVERLAY_ID + index, x, y, self._scaled.get(frame, (w, h)))
         for index in range(len(rects), self._tiles_up):
@@ -142,14 +142,14 @@ class FlickOverlay:
         self._tiles_up = len(rects)
         self._tiles_of = tiles_of
 
-    def _show_the_loading(self, loading: str | None, window: tuple[int, int]) -> None:
+    def _show_the_loading(self, loading: str | None, viewport: tuple[int, int]) -> None:
         if loading == self._loading and not loading:
             return
         if not loading:
             self._engine.remove_overlay(LOADING_OVERLAY_ID)
         else:
             message = loading_message_bgra(loading)
-            self._engine.overlay(LOADING_OVERLAY_ID, window[0] - message.shape[1] - _LOADING_INSET,
+            self._engine.overlay(LOADING_OVERLAY_ID, viewport[0] - message.shape[1] - _LOADING_INSET,
                                  _LOADING_INSET, message)
         self._loading = loading
 

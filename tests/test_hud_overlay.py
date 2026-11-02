@@ -138,7 +138,7 @@ class TestTheClipsRowAtItsFoot:
         )
         overlay.tick(item_row=self._ROW)
         _x, _y, width, height = overlay.targets.row.rect
-        cx, cy = volume_control_xy(win_w=width, win_h=height, timeline_h=SCRUBBER_HEIGHT)
+        cx, cy = volume_control_xy(viewport_w=width, viewport_h=height, timeline_h=SCRUBBER_HEIGHT)
 
         overlay.press(*self._on_the_row(overlay, cx + SPEAKER_W // 2, cy + VOLUME_CONTROL_H // 2))
         overlay.drag_to(*self._on_the_row(overlay, cx + VOLUME_CONTROL_W - 2, cy + VOLUME_CONTROL_H // 2))
@@ -719,7 +719,7 @@ def _publish(hud_path: Path, **hud_changes) -> None:
 def _hud_at(tmp_path: Path, hud_path: Path, engine, **hud_changes):
     _publish(hud_path, **hud_changes)
     overlay = _overlay(tmp_path, hud_path, engine)
-    overlay.tick(window=(1200, 800))
+    overlay.tick(viewport=(1200, 800))
     return overlay
 
 
@@ -735,7 +735,7 @@ def test_the_minus_sits_where_the_plus_of_the_minimized_hud_sits(
                      if b.command == "portrait_hud_minimize"]
 
     _publish(hud, hud_minimized=True)
-    overlay.tick(window=(1200, 800))
+    overlay.tick(viewport=(1200, 800))
 
     (plus_left, plus_top, _bgra), = engine.overlays.values()
     ((px, py, pw, ph), _plus), = overlay.targets.buttons
@@ -848,7 +848,7 @@ def test_a_hud_collapsed_by_a_press_on_its_minus_draws_the_plus_alone(
     overlay.press(left + x + w // 2, top + y + h // 2)
 
     _publish(hud, hud_minimized=True)
-    overlay.tick(window=(1200, 800))
+    overlay.tick(viewport=(1200, 800))
 
     (_x, _y, bgra), = engine.overlays.values()
     assert bgra.shape[:2] == (BUTTON_SIZE_HUD, BUTTON_SIZE_HUD)
@@ -866,7 +866,7 @@ def test_its_place_is_the_corner_the_room_put_it_in_and_whether_it_is_minimized(
 def test_a_hud_with_nothing_published_has_no_place(tmp_path: Path):
     overlay = _overlay(tmp_path, tmp_path / "unpublished.json", FakeEngine())
 
-    overlay.tick(window=(1200, 800))
+    overlay.tick(viewport=(1200, 800))
 
     assert overlay.hud_place is None
 
@@ -890,7 +890,7 @@ class TestANameFlashingWhileMinimized:
         _publish(hud, hud_minimized=True)
         overlay = _overlay(tmp_path, hud, engine)
 
-        overlay.tick(window=(1200, 800), flash="scene one")
+        overlay.tick(viewport=(1200, 800), flash="scene one")
 
         (_x, _y, bgra), = engine.overlays.values()
         assert np.array_equal(bgra, collapsed_hud("portrait", flash="scene one")[0])
@@ -899,9 +899,9 @@ class TestANameFlashingWhileMinimized:
         engine = FakeEngine()
         _publish(hud, hud_minimized=True)
         overlay = _overlay(tmp_path, hud, engine)
-        overlay.tick(window=(1200, 800), flash="scene one")
+        overlay.tick(viewport=(1200, 800), flash="scene one")
 
-        overlay.tick(window=(1200, 800))
+        overlay.tick(viewport=(1200, 800))
 
         (_x, _y, bgra), = engine.overlays.values()
         assert bgra.shape[:2] == (BUTTON_SIZE_HUD, BUTTON_SIZE_HUD)
@@ -912,7 +912,7 @@ class TestANameFlashingWhileMinimized:
         overlay = _hud_at(tmp_path, hud, engine, hud_minimized=True, hud_corner=corner.value)
         alone = self._plus_on_the_screen(overlay, engine)
 
-        overlay.tick(window=(1200, 800), flash="scene one")
+        overlay.tick(viewport=(1200, 800), flash="scene one")
 
         assert self._plus_on_the_screen(overlay, engine) == alone
 
@@ -936,7 +936,7 @@ def test_a_hud_hanging_on_its_own_screen_keeps_its_default_justification(
         hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
         engine=engine, clock=lambda: 0.0, over_the_video=False)
 
-    overlay.tick(window=(1200, 800))
+    overlay.tick(viewport=(1200, 800))
 
     assert overlay.edge is HudEdge.RIGHT
     assert min(rect[0] for rect, _b in overlay.targets.buttons) == PAD
@@ -1047,7 +1047,7 @@ class TestTheBlockAtTheFoot:
         Image.new("RGBA", (120, 40), (10, 20, 30, 255)).save(painted)
         _publish(hud, foot={"file": str(painted), "width": 120, "height": 40})
         overlay = _overlay(tmp_path, hud, FakeEngine())
-        overlay.tick(window=(1200, 800))
+        overlay.tick(viewport=(1200, 800))
         left, top = self._foot_at(overlay)
 
         overlay.press(left + 30, top + 7)
