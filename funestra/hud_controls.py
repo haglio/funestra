@@ -1,12 +1,3 @@
-"""The controls every HUD carries, declared once.
-
-The transport with its ten-second steps and Skip ahead, the lock, the trash,
-F-Mode, reset, the order pair and the versions button: each is one
-:class:`~funestra.hud_button.Button` here, so it wears the same face, sits in
-the same place and grays by the same rule on every Funestra, whichever source
-draws it.  A source says what it plays (*noun*) and, where the words differ
-from one source to the next, what the control does there.
-"""
 from __future__ import annotations
 
 from .funestra_controls import SEEK_STEP_MS
@@ -31,7 +22,6 @@ LATEST_ICON = shared_mark("latest")
 VERSIONS_ICON = shared_mark("versions")
 FUNSCRIPT_JUMP_ICON = shared_mark("funscript_jump")
 
-# Said after a faded button's words, so it reads as out of range rather than broken.
 NONE_FOR_THIS_ONE = " (none for this one)"
 AN_IMAGE = "this is an image"
 TRASH_TOOLTIP = "Unfavorite it — or send it to Trash when it is not a favorite"
@@ -92,8 +82,6 @@ def funscript_jump_button(command: str, *, noun: str, has_osr2: bool,
 
 
 def lock_tooltip(locked: bool, noun: str) -> str:
-    """What a lock means on a Funestra playing a list: the item repeats until
-    it is let go."""
     if locked:
         return f"Locked — this {noun} repeats; press to play on through the playlist"
     return f"Unlocked — plays on through the playlist; press to hold this {noun}"

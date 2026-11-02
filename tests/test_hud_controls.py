@@ -1,5 +1,3 @@
-"""The controls every HUD carries, declared once: the same face, place and
-graying on every Funestra, with the words a source has of its own."""
 from __future__ import annotations
 
 import pytest
