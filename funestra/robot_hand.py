@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import NamedTuple
 
 from .tcode import POSITION_MAX
 
@@ -212,23 +213,35 @@ def _waveform_raw(phase: float, shape: WaveformShape) -> float:
     return (1 - math.cos(2 * math.pi * phase)) / 2
 
 
+class Waveform(NamedTuple):
+    shape: WaveformShape
+    amplitude: int
+    center: int
+
+
+class TraceSpan(NamedTuple):
+    phase: float
+    bpm: float
+    samples: int
+    span_s: float
+
+
 def trace_window(
-    shape: WaveformShape,
-    amplitude: int,
-    center: int,
-    *,
-    phase: float,
-    bpm: float,
-    samples: int,
-    span_s: float,
+    waveform: Waveform | WaveformShape,
+    span: TraceSpan | int | None = None,
+    *old_center: int,
+    **old,
 ) -> tuple[list[float], float]:
+    if not isinstance(waveform, Waveform):
+        waveform, span = Waveform(waveform, span, *old_center), TraceSpan(**old)
+    phase, bpm, samples, span_s = span
     grid = span_s / max(1, samples - 1) * bpm / 60.0
     if grid <= 0:
-        held = position_fraction(phase, shape=shape, amplitude=amplitude, center=center)
+        held = position_fraction(phase, **waveform._asdict())
         return [held] * (samples + 1), 0.0
     first = math.floor(phase / grid) * grid
     heights = [
-        position_fraction(first + i * grid, shape=shape, amplitude=amplitude, center=center)
+        position_fraction(first + i * grid, **waveform._asdict())
         for i in range(samples + 1)
     ]
     return heights, (phase - first) / grid
