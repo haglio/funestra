@@ -9,6 +9,8 @@ from funestra.robot_hand import (
     POSITION_MAX,
     RETRACT_CENTER,
     RobotHandState,
+    TraceSpan,
+    Waveform,
     WaveformShape,
     adjust_amplitude,
     adjust_center,
@@ -585,19 +587,26 @@ def test_the_two_held_ends_are_the_ends_of_the_travel():
 
 
 class TestTheWaveTracedOnKnots:
+    def test_the_old_arguments_trace_the_same_window(self):
+        old = trace_window(
+            WaveformShape.TRIANGLE, 80, 40, phase=0.3, bpm=90.0, samples=7, span_s=2.0)
+
+        assert old == trace_window(
+            Waveform(WaveformShape.TRIANGLE, 80, 40), TraceSpan(0.3, 90.0, 7, 2.0))
+
     def test_the_knots_start_at_or_before_the_phase(self):
         heights, slide = trace_window(
-            WaveformShape.SINE, 100, 50, phase=0.0, bpm=60.0, samples=5, span_s=1.0)
+            Waveform(WaveformShape.SINE, 100, 50), TraceSpan(0.0, 60.0, 5, 1.0))
 
         assert heights == pytest.approx([0.0, 0.5, 1.0, 0.5, 0.0, 0.5], abs=1e-9)
         assert slide == 0.0
 
     def test_between_knots_the_heights_hold_and_the_slide_grows(self):
         at_knot, _ = trace_window(
-            WaveformShape.SINE, 100, 50, phase=3.0, bpm=60.0, samples=5, span_s=1.0)
+            Waveform(WaveformShape.SINE, 100, 50), TraceSpan(3.0, 60.0, 5, 1.0))
 
         later, slide = trace_window(
-            WaveformShape.SINE, 100, 50, phase=3.1, bpm=60.0, samples=5, span_s=1.0)
+            Waveform(WaveformShape.SINE, 100, 50), TraceSpan(3.1, 60.0, 5, 1.0))
 
         assert later == pytest.approx(at_knot, abs=1e-9)
         assert slide == pytest.approx(0.4)
@@ -611,17 +620,17 @@ class TestTheWaveTracedOnKnots:
 
     def test_crossing_a_knot_moves_the_window_on_by_one(self):
         at_knot, _ = trace_window(
-            WaveformShape.SINE, 100, 50, phase=3.0, bpm=60.0, samples=5, span_s=1.0)
+            Waveform(WaveformShape.SINE, 100, 50), TraceSpan(3.0, 60.0, 5, 1.0))
 
         later, slide = trace_window(
-            WaveformShape.SINE, 100, 50, phase=3.3, bpm=60.0, samples=5, span_s=1.0)
+            Waveform(WaveformShape.SINE, 100, 50), TraceSpan(3.3, 60.0, 5, 1.0))
 
         assert later[:-1] == pytest.approx(at_knot[1:], abs=1e-9)
         assert slide == pytest.approx(0.2)
 
     @pytest.mark.parametrize("shape", list(WaveformShape))
     def test_every_shape_stays_on_the_axis_and_inside_the_bars(self, shape):
-        heights, _ = trace_window(shape, 50, 50, phase=0.7, bpm=45.0, samples=60, span_s=12.0)
+        heights, _ = trace_window(Waveform(shape, 50, 50), TraceSpan(0.7, 45.0, 60, 12.0))
 
         assert len(heights) == 61
         assert min(heights) >= 0.24

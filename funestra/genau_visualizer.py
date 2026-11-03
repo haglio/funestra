@@ -10,6 +10,8 @@ from .osr2_visualizer import TRACE_SAMPLES, DriveHud, DrivePublisher
 from .robot_hand import (
     MIN_BPM,
     POSITION_MAX,
+    TraceSpan,
+    Waveform,
     WaveformShape,
     control_limits,
     position_fraction,
@@ -33,9 +35,9 @@ class AutoMotion:
     def trace(self, seconds: float, beats_per_loop: float,
               ) -> tuple[list[float], float, float]:
         heights, slide = trace_window(
-            WaveformShape.SINE, _AUTO_AMPLITUDE, _AUTO_CENTER, phase=self.phase,
-            bpm=self.bpm / beats_per_loop if self.bpm > 0 else 0.0,
-            samples=TRACE_SAMPLES, span_s=seconds)
+            Waveform(WaveformShape.SINE, _AUTO_AMPLITUDE, _AUTO_CENTER),
+            TraceSpan(self.phase, self.bpm / beats_per_loop if self.bpm > 0 else 0.0,
+                      TRACE_SAMPLES, seconds))
         return heights[:TRACE_SAMPLES], slide, heights[TRACE_SAMPLES]
 
 
@@ -119,8 +121,8 @@ class GenauVisualizer:
         else:
             ds = self.robot_hand
             heights, slide = trace_window(
-                ds.shape, ds.amplitude, ds.center, phase=start_phase,
-                bpm=phase_per_second * 60.0, samples=TRACE_SAMPLES, span_s=display_seconds)
+                Waveform(ds.shape, ds.amplitude, ds.center),
+                TraceSpan(start_phase, phase_per_second * 60.0, TRACE_SAMPLES, display_seconds))
         return heights[:TRACE_SAMPLES], slide, heights[TRACE_SAMPLES]
 
     def _publish_drive(self, hud: DriveHud, now: float) -> None:
