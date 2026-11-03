@@ -211,3 +211,18 @@ class TestTheModelThatShips:
         assert model
         assert len({cls[0] for cls in model.phrases}) > 3
         assert all(len(phrase.swings) == 16 for kept in model.phrases.values() for phrase in kept)
+
+
+class TestWithoutPhrasesOrABar:
+    def test_a_motion_with_no_phrases_rests_at_the_floor(self):
+        state = LearnedMotionState()
+
+        assert learned_motion.position(state, RobotHandState()) == 0.0
+        assert learned_motion.trace_window(state, RobotHandState(), 3, 1.0) == ([0.0] * 4, 0.0)
+
+    def test_with_no_bar_to_ask_the_motion_is_drawn_at_full_reach(self):
+        hand, state = _playing(_model(_phrase(500, 20, 80)), amplitude=50)
+        _run(hand, state, 0.25)
+
+        assert learned_motion.position(state, None) == pytest.approx(40.0)
+        assert learned_motion.position(state, hand) == pytest.approx(45.0)
