@@ -392,10 +392,6 @@ class TestPainter:
             assert drawn == list(grid), action
 
     def test_minimize_draws_the_familys_minus_rather_than_leaving_it_to_a_font(self):
-        """Windows' minimize mark lives in Segoe MDL2 Assets, which this HUD does
-        not load, and Pillow draws a ".notdef" tofu for what a face lacks.  So it
-        wears the family's minus: a run of ink across the middle of the button,
-        wider than it is tall."""
         pixels = self._button_pixels(
             "main_minimize", MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows()))
         inside = pixels[2:-2, 2:-2]

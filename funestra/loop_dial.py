@@ -31,14 +31,7 @@ def turn_at(px: int, py: int, *, at: tuple[int, int]) -> float:
 
 
 class LoopDialPainter(KeptBitmap):
-    """The dial, kept until the hand moves a step.
-
-    Drawn larger and scaled back down, the way the OSR2 visualizer draws its
-    trace: Pillow's lines have no antialiasing of their own, and a hand two
-    pixels wide turning on a dial this small would otherwise jump between
-    staircases.
-    """
-
+    # Drawn larger and scaled down: Pillow's lines are not antialiased.
     @staticmethod
     def hand(turn: float) -> int:
         return round(turn * HAND_STEPS) % HAND_STEPS

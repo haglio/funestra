@@ -1,14 +1,3 @@
-"""The chrome the Funestras' in-video HUDs are drawn on.
-
-Every Funestra in this family paints its HUD into the video as a BGRA bitmap mpv
-composites, rather than into a window of its own: an mpv overlay has no z-order,
-so it can neither fall beneath the video nor float above the desktop.
-
-What the HUDs share is the look, not the contents: a rounded translucent slab,
-the Segoe UI face sized the way Qt sized it, and the RGBA -> BGRA hand-off mpv
-wants.  What each one *says* is its own business — the satellite draws a nav map of
-videos, the Main Funestra's HUD a couple of mode lines — so this owns the chrome and stops there.
-"""
 from __future__ import annotations
 
 import numpy as np
@@ -18,10 +7,6 @@ from shared_ui.app_icon import draw_letter
 from shared_ui.button_pil import slab
 from shared_ui.icons_pil import paste_icon
 from shared_ui.lettering import BOLD_FACE, wrap_text
-
-# The palette is shared_ui's, read without Qt: shared_ui.palette imports
-# nothing, and these HUDs are Pillow.  Every HUD painter reads it there too,
-# so a Funestra reaching for its own blue has the family's to reach for.
 from shared_ui.palette import (
     BG_BUTTON,
     BG_BUTTON_ACTIVE,
@@ -49,9 +34,7 @@ from .hud_icons import (
     shared_icon_name,
 )
 
-# Segoe UI Symbol, for the marks these HUDs type rather than draw.  Segoe UI Bold
-# carries none of them, and Pillow draws a ".notdef" tofu for a codepoint a face
-# lacks, where Qt falls back silently — so anything typed names this face.
+# Segoe UI Bold lacks these marks, and Pillow draws a .notdef box for a missing glyph.
 SYMBOL_FONT = "seguisym.ttf"
 
 HUD_ALPHA = 224
@@ -61,12 +44,6 @@ hovered_fill = hovered
 
 
 def load_font(points: int, family: str = BOLD_FACE) -> ImageFont.FreeTypeFont:
-    """*family* at *points*, sized the way Qt sizes a point, in shared_ui's one loader.
-
-    Every label on these HUDs is bold, because they are read at a glance over
-    moving video, and a missing face degrades to Pillow's own rather than raise
-    into the run loop.
-    """
     return lettering.load_font(in_pixels(points), family)
 
 
@@ -93,14 +70,6 @@ def ink_center_offset(font: ImageFont.FreeTypeFont, icon: str) -> tuple[float, f
 
 def draw_character(draw: ImageDraw.ImageDraw, cx: float, cy: float, icon: str,
                font: ImageFont.FreeTypeFont, fill) -> None:
-    """Draw *icon* centered on its own ink at ``(cx, cy)``.
-
-    Pillow's ``anchor="mm"`` centers the font's ascent/descent bounds, not the mark
-    inside it — and on the symbol faces these HUDs use, the mark sits high in
-    bounds that run down to the descender.  Every icon button was therefore drawing
-    its icon two to six pixels low.  Centering the ink puts it where the eye
-    expects it, whatever the icon.
-    """
     offset = ink_center_offset(font, icon)
     if offset is None:
         return
@@ -109,15 +78,6 @@ def draw_character(draw: ImageDraw.ImageDraw, cx: float, cy: float, icon: str,
 
 def draw_icon(image: Image.Image, name: str, rect: tuple[int, int, int, int],
               fill) -> None:
-    """One of the family's icons, centered in *rect*.
-
-    The same drawing the apps' Qt chrome paints -- shared_ui holds the geometry
-    and each side renders it -- so a trash can on a HUD is the trash can on
-    Origenerator's toolbar rather than whatever character a symbol font had.
-
-    Takes the HUD's IMAGE rather than its pen, the way the OSR2 visualizer does:
-    the mark is supersampled and composited back, which a pen cannot carry.
-    """
     x, y, w, h = rect
     paste_icon(image, name,
                (x + BUTTON_ICON_INSET, y + BUTTON_ICON_INSET, w - 2 * BUTTON_ICON_INSET,
@@ -162,27 +122,11 @@ def draw_tooltip(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: 
 
 
 def to_bgra(image: Image.Image) -> np.ndarray:
-    """An RGBA Pillow image as the contiguous BGRA array mpv's overlays take."""
     rgba = np.asarray(image, dtype=np.uint8)
     return np.ascontiguousarray(rgba[:, :, [2, 1, 0, 3]], dtype=np.uint8)
 
 
 class Hud:
-    """A rounded translucent slab to draw a HUD onto, and hand to mpv.
-
-    Callers draw through :attr:`draw` and :attr:`image` — the HUD is a surface,
-    not a layout — and finish with :meth:`to_bgra`.
-
-    *ground* is the gray the slab is made of.  It defaults to the canvas color,
-    which is right where the HUD floats over a video: the item beneath it is
-    what it reads against, and a HUD the color of a dark frame still reads as a
-    HUD over one.  A host that draws this on its own chrome instead has no
-    item beneath it, and on a window painted that very gray the slab vanishes
-    and leaves its one-pixel border outlining nothing — so it says which gray it
-    wants, and gets a HUD that sits on that window the way the window's own
-    HUDs do.
-    """
-
     def __init__(self, width: int, height: int, *,
                  ground: tuple[int, int, int] = BG_PRIMARY) -> None:
         self.image = Image.new("RGBA", (width, height), (0, 0, 0, 0))
@@ -224,9 +168,6 @@ def draw_track(draw: ImageDraw.ImageDraw, left: int, right: int, middle: int, *,
 
 
 class KeptBitmap:
-    """A painting kept until what it shows changes, handed out in both shapes the
-    Funestras take: a BGRA array for mpv's overlays, RGBA bytes for a pygame blit."""
-
     def __init__(self) -> None:
         self._painted = None
         self._image: Image.Image | None = None

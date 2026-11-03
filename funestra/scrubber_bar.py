@@ -1,16 +1,3 @@
-"""The scrubber every Funestra in this family draws along the lower edge of its video.
-
-An inset, floated, bordered track with a full-height playcursor and loop/record
-marks, filled with the colors of the video's funscript where it has one and
-with a dark translucent fill where it has none.  Every Funestra draws it, in
-separate processes and separate repos, so the whole of it lives here.
-
-The track starts where the row's visualizer and dial end (``bar_track_x`` is told
-how far in by the row that lays them out) and stops short of the volume control
-that shares its row — it subtracts :data:`funestra.volume.SLOT_W` — so none
-of them overlap and click-to-seek maps onto exactly the drawn track.  These
-are plain numpy arrays (BGRA, mpv's overlay format); no pygame.
-"""
 from __future__ import annotations
 
 import numpy as np
@@ -40,8 +27,6 @@ def bar_track_x(width: int, *, left: int = 0) -> tuple[int, int]:
 
 
 def paint_rect(bgra, x0, x1, y0, y1, color):
-    """Fill rows [y0:y1], cols [x0:x1] with an RGBA ``color``, clamped to the
-    array (stored BGRA for mpv)."""
     h, w = bgra.shape[:2]
     x0, x1 = max(0, x0), min(w, x1)
     y0, y1 = max(0, y0), min(h, y1)

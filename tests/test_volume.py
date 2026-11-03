@@ -138,7 +138,6 @@ class TestPainter:
         assert drawn == [("speaker", TEXT_PRIMARY), ("speaker_off", TEXT_MUTED)]
 
     def test_an_unchanged_control_is_not_repainted(self):
-        """Asked for every frame at 60fps; Pillow is nowhere near that cheap."""
         painter = VolumeHudPainter()
 
         assert painter.bgra(VolumeHud(volume=50)) is painter.bgra(VolumeHud(volume=50))
@@ -150,9 +149,6 @@ class TestPainter:
             painter.bgra(VolumeHud(volume=50)), painter.bgra(VolumeHud(volume=55)))
 
     def test_the_pygame_shape_is_the_same_volume_control_the_mpv_one_is(self):
-        """The Main Funestra composites an mpv overlay and Genau blits a pygame surface, so the
-        chip is handed out in both shapes — off one painting, or the two Funestras
-        would be free to show different chips."""
         painter = VolumeHudPainter()
         hud = VolumeHud(volume=40, muted=True)
 

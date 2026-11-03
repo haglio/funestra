@@ -135,16 +135,6 @@ def _section_rect(corner: HudCorner, width: int, reserve: int, top: int,
 
 
 class MainHudPainter:
-    """Paints the Main Funestra's HUD, and only when something on it has moved.
-
-    A Funestra redraws its overlays every frame at 60 fps and Pillow is nowhere
-    near cheap enough for that, so the bitmap is kept until the HUD's contents
-    change.  The button rects from the last painting are kept beside it — the
-    HUD's own and the OSR2 visualizer's arrows — so what is clickable is exactly
-    what was drawn, and the visualizer's own bars with them, so what is draggable is
-    too.
-    """
-
     def __init__(self, *, width: int | None = None, device_only: bool = False,
                  minus_on_the_hud: bool = True,
                  clock: Callable[[], float] = time.monotonic) -> None:
@@ -174,7 +164,6 @@ class MainHudPainter:
     def bgra(self, hud: MainHud, *, hover: tuple[int, int] | None = None,
              item_row: RowHud | None = None, heatmap=None,
              host_controls: HostControlsHud | None = None) -> np.ndarray:
-        """*hud* as an mpv overlay bitmap — what the Main Funestra composites into its video."""
         if (self._ensure(self._resolve(hud), hover, item_row, heatmap, host_controls)
                 or self._bgra is None):
             self._bgra = to_bgra(self._image)
@@ -183,9 +172,6 @@ class MainHudPainter:
     def rgba(self, hud: MainHud, *, hover: tuple[int, int] | None = None,
              item_row: RowHud | None = None, heatmap=None,
              host_controls: HostControlsHud | None = None) -> tuple[bytes, tuple[int, int]]:
-        """*hud* as ``(rgba_bytes, size)`` — what pygame takes, for Genau to blit
-        into its own window in genau mode.  The size varies with the contents, so
-        the caller sizes its blit from what comes back."""
         self._ensure(self._resolve(hud), hover, item_row, heatmap, host_controls)
         return self._image.tobytes(), self._image.size
 
@@ -199,11 +185,6 @@ class MainHudPainter:
     def _ensure(self, hud: MainHud, hover: tuple[int, int] | None,
                 item_row: RowHud | None = None, heatmap=None,
                 host_controls: HostControlsHud | None = None) -> bool:
-        """Repaint if *hud*/*hover*/the item's row/the host's controls moved; report whether it did
-        (so a cached bitmap can be reused).  The HUD is redrawn a few times a
-        minute at most — Pillow is too slow to run every frame — so the image is
-        kept until it changes.  The row is the one part that moves with playback,
-        which is why a Funestra redrawing on its beat gets a fresh HUD."""
         hover = hover if hover is not None else self._pointer.on(hud.main_hud_model)
         if ((hud, hover, item_row, host_controls) == self._painted[:4]
                 and heatmap is self._painted[4] and self._image is not None):

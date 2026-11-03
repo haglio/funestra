@@ -1,19 +1,3 @@
-"""The controls on the Main Funestra's HUD, and where they sit.
-
-The Main Funestra draws it, whether Kino or Genau runs on it.  The Main Funestra's HUD is the
-same under both, so the mode switch and the drive
-controls do not move as you flip between them; only the transport changes,
-because prev/next step Kino's video in kino mode and Genau's flicks in genau.
-
-Kept free of Pillow, so the geometry and the hit-testing are testable
-without a font.  :mod:`funestra.main_hud_painter` paints them; the
-OSR2 visualizer's own arrows come from :mod:`funestra.osr2_visualizer`.
-
-The buttons are the source's own (:attr:`MainHudModel.rows`), each posting its
-command verbatim to the command file that source reads; this module places them
-and says which one a press landed on.  The one row built here is the one every
-source with the OSR2 draws alike, :func:`aim_row`.
-"""
 from __future__ import annotations
 
 import json

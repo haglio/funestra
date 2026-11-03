@@ -1,11 +1,3 @@
-"""The scrubber a Funestra draws along its lower edge, and the loop frames above it.
-
-The track is the whole item, filled with its script's colors where it has one;
-while a stretch is being marked out it is zoomed into the section around the
-mark, so the end of the stretch can be judged.  The frames a running A/B range
-starts and ends on sit above their marks.  Pure decisions here, no pygame: the
-Funestra turns them into mpv overlays.
-"""
 from __future__ import annotations
 
 from .heatmap import build_heatmap
