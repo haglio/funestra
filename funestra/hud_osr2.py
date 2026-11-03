@@ -18,7 +18,7 @@ from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 from .device_walk import Walk, the_broker_holding, the_hand_taking_back
 from .drive_layout import BAR_H, MAX_INTENSITY, DriveTrack, fraction
 from .geometry import Rect, contains
-from .hud import SYMBOL_FONT, draw_button, load_font, text_width
+from .hud import SYMBOL_FONT, ButtonLook, draw_button, load_font, text_width
 from .hud_button import BUTTON, Button
 from .main_hud import GAP, HELD_HEIGHT, HOLD_VERB, OSR2_PARKED, OSR2_RETRACTED
 from .modes import UNHEARD, Osr2State
@@ -192,8 +192,10 @@ class Osr2Section:
         for button in line.controls:
             rect = (run_x, y, button.width, HEIGHT)
             draw_button(image, draw, rect, button,
-                        hovered=hover is not None and contains(rect, *hover),
-                        icon_font=self._icon, word_font=self._tiny)
+                ButtonLook(
+                    hovered=hover is not None and contains(rect, *hover),
+                    icon_font=self._icon,
+                    word_font=self._tiny))
             placed.append((rect, button))
             run_x += button.width + GAP
 

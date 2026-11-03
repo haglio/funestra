@@ -21,6 +21,8 @@ from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
 from funestra.hud import (
     SYMBOL_FONT,
+    ButtonGroundState,
+    ButtonLook,
     Hud,
     button_ground,
     draw_active_dot,
@@ -357,8 +359,11 @@ class HudRenderer:
     def _draw_minus(self, hud: Hud, model: HudModel) -> tuple[Rect, Button]:
         minus = (corner_button_rect(model.hud_corner, hud=hud.image.size, inset=MINUS_INSET),
                  minimize_button(model.funestra))
-        draw_button(hud.image, hud.draw, *minus, hovered=self._pointer_is_on(minus[0]),
-                    icon_font=self._icon, word_font=self._tiny)
+        draw_button(hud.image, hud.draw, *minus,
+            ButtonLook(
+                hovered=self._pointer_is_on(minus[0]),
+                icon_font=self._icon,
+                word_font=self._tiny))
         return minus
 
     def _draw_button_rows(self, hud: Hud, model: HudModel, rows, widths,
@@ -370,9 +375,11 @@ class HudRenderer:
                 y, row, row_widths)
             for index, (rect, button) in enumerate(placed):
                 draw_button(hud.image, hud.draw, rect, button,
-                            hovered=self._pointer_is_on(rect),
-                            icon_font=self._icon, word_font=self._tiny,
-                            row_label=index == 0)
+                    ButtonLook(
+                        hovered=self._pointer_is_on(rect),
+                        icon_font=self._icon,
+                        word_font=self._tiny,
+                        row_label=index == 0))
             buttons.extend(placed)
             y += CONTROL_ROW_H
         return buttons
@@ -386,8 +393,11 @@ class HudRenderer:
         hud.draw.text((speed_x, y + CTRL_BTN / 2), PLAYBACK_SPEED_LABEL,
                       font=self._tiny, anchor="lm", fill=(*TEXT_MUTED, 255))
         for rect, button in speed_buttons:
-            draw_button(hud.image, hud.draw, rect, button, hovered=self._pointer_is_on(rect),
-                        icon_font=self._icon, word_font=self._tiny)
+            draw_button(hud.image, hud.draw, rect, button,
+                ButtonLook(
+                    hovered=self._pointer_is_on(rect),
+                    icon_font=self._icon,
+                    word_font=self._tiny))
         rx, ry, rw, rh = rate_rect
         hud.draw.text((rx + rw / 2, ry + rh / 2), format_rate(model.playback_speed),
                       font=self._tiny, anchor="mm", fill=(*TEXT_PRIMARY, 255))
@@ -586,7 +596,9 @@ class HudRenderer:
     def _button_square(self, draw, rect: Rect, *, on: bool,
                        on_color=BLUE, ink=None) -> tuple[int, int, int, int]:
         return button_ground(draw, rect, on_color if on else BG_BUTTON,
-                             hovered=self._pointer_is_on(rect), rest_ink=ink)
+            ButtonGroundState(
+                hovered=self._pointer_is_on(rect),
+                rest_ink=ink))
 
     def _icon_button(self, hud: Hud, rect: Rect, icon: str, *, on: bool = False) -> None:
         ink = self._button_square(hud.draw, rect, on=on, on_color=WHITE)

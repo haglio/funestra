@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from shared_ui import lettering
@@ -193,25 +195,42 @@ class KeptBitmap:
         raise NotImplementedError
 
 
+@dataclass(frozen=True)
+class ButtonGroundState:
+    hovered: bool = False
+    dim: bool = False
+    rest_ink: tuple[int, int, int] | None = None
+
+
+@dataclass(frozen=True)
+class ButtonLook:
+    hovered: bool
+    icon_font: ImageFont.FreeTypeFont
+    word_font: ImageFont.FreeTypeFont
+    row_label: bool = False
+
+
 def button_ground(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int], fill,
-                  *, hovered: bool = False, dim: bool = False,
-                  rest_ink=None) -> tuple[int, int, int, int]:
-    edge = TEXT_MUTED if (dim or fill in (BG_BUTTON, BG_BUTTON_ACTIVE)) else fill
-    if hovered and not dim:
+                  state: ButtonGroundState | None = None,
+                  **old) -> tuple[int, int, int, int]:
+    state = ButtonGroundState(**old) if state is None else state
+    edge = TEXT_MUTED if (state.dim or fill in (BG_BUTTON, BG_BUTTON_ACTIVE)) else fill
+    if state.hovered and not state.dim:
         fill = hovered_fill(fill)
     slab(draw, rect, fill, edge)
     if fill in (WHITE, YELLOW):
         return (*BG_PRIMARY, 255)
     if fill in (BG_BUTTON, BG_BUTTON_ACTIVE):
-        return (*(TEXT_MUTED if dim else rest_ink or TEXT_PRIMARY), 255)
+        return (*(TEXT_MUTED if state.dim else state.rest_ink or TEXT_PRIMARY), 255)
     return (*WHITE, 255)
 
 
 def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
-                rect: tuple[int, int, int, int], button, *, hovered: bool,
-                icon_font: ImageFont.FreeTypeFont,
-                word_font: ImageFont.FreeTypeFont,
-                row_label: bool = False) -> None:
+                rect: tuple[int, int, int, int], button, look: ButtonLook | None = None,
+                **old) -> None:
+    look = ButtonLook(**old) if look is None else look
+    hovered, icon_font, word_font, row_label = (
+        look.hovered, look.icon_font, look.word_font, look.row_label)
     x, y, w, h = rect
     if not button.command:
         named = button.is_a_name and not button.lit
@@ -231,8 +250,9 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
     lit = GREEN if button.favorite else YELLOW if button.enhanced else BLUE
     fill = (lit if button.lit else RED if button.warn else BLUE if button.hold
             else BG_BUTTON_ACTIVE if button.remembered else BG_BUTTON)
-    ink = button_ground(draw, rect, fill, hovered=hovered, dim=button.dim,
-                        rest_ink=RED if button.danger else YELLOW if button.enhanced else None)
+    ink = button_ground(draw, rect, fill, ButtonGroundState(
+        hovered=hovered, dim=button.dim,
+        rest_ink=RED if button.danger else YELLOW if button.enhanced else None))
     icon = button.icon
     if icon.startswith(APP_ICON):
         draw_letter(draw, rect, app_mark_letter(icon))
