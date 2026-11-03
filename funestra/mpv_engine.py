@@ -264,6 +264,8 @@ class _MpvControl:
         if self._staged is not None:
             self._mpv.loadfile(self._staged, "append")
 
+    # mpv's playlist-clear resolves "current" itself; removing by an index read earlier
+    # can take the playing entry out from under it.
     @mpv_call()
     def stop(self) -> None:
         self._staged = None
