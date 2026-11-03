@@ -189,7 +189,7 @@ def _ids(rows):
     return [f"{verb}-from-{sorted(start)}" if start else verb for verb, start, _ in rows]
 
 
-@pytest.mark.parametrize("verb, start, moves", SEAM, ids=_ids(SEAM))
+@pytest.mark.parametrize(("verb", "start", "moves"), SEAM, ids=_ids(SEAM))
 def test_a_verb_reaches_its_collaborator_and_moves_nothing_else(verb, start, moves, tmp_path):
     seam = Seam(tmp_path, **start)
     before = seam.state()

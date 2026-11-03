@@ -37,7 +37,7 @@ class TestTheTravelEnds:
 
 class TestTheCenterIsClampedByTheTravel:
     @pytest.mark.parametrize(
-        "amplitude, at_max, at_min",
+        ("amplitude", "at_max", "at_min"),
         [
             (60, 70, 30),
             (100, 50, 50),
