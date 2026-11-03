@@ -1034,6 +1034,35 @@ def test_the_learned_motion_ticks_during_refresh(tmp_path):
     assert "learned=1" in (tmp_path / "status.txt").read_text(encoding="utf-8")
 
 
+def _learned_start(*, sender, amplitude=100):
+    dc = RobotHandState(playing=True, bpm=120.0, amplitude=amplitude)
+    learned = LearnedMotionState(model=_learned_model(), rng=random.Random(1), active=True)
+    built = _build_controller(
+        entry={"frames": [object() for _ in range(8)]}, robot_hand=dc,
+        tcode_sender=sender, learned=learned,
+    )
+    built["controller"].refresh()
+    return learned.positions[0]
+
+
+def test_the_learned_motion_begins_where_the_device_already_is():
+    tcode = FakeTCodeSender()
+    tcode._position = 5000
+
+    assert _learned_start(sender=tcode) == pytest.approx(50.0, abs=1.0)
+
+
+def test_with_no_sender_the_learned_motion_begins_at_the_floor():
+    assert _learned_start(sender=None) == 0.0
+
+
+def test_with_no_travel_in_the_bars_the_learned_motion_begins_at_the_floor():
+    tcode = FakeTCodeSender()
+    tcode._position = 5000
+
+    assert _learned_start(sender=tcode, amplitude=0) == 0.0
+
+
 class TestAFlippedFlick:
     @staticmethod
     def _metadata_root(tmp_path) -> Path:

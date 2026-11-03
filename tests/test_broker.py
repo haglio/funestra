@@ -57,6 +57,15 @@ class TestTheImagePattern:
             assert not re.match(pattern, name), name
 
 
+class TestTheBrokerCommandLinePattern:
+    def test_it_finds_the_broker_and_not_the_tray_that_runs_beside_it(self, tmp_path):
+        contract = broker.read_contract(_a_broker_checkout(tmp_path))
+
+        assert re.search(contract.broker_command_line_pattern, "pythonw -m relay_pkg.app")
+        assert not re.search(contract.broker_command_line_pattern, "pythonw -m relay_pkg.tray")
+        assert re.search(contract.command_line_pattern, "pythonw -m relay_pkg.tray")
+
+
 class TestReadingTheContract:
     def test_a_launcher_with_no_contract_beside_it_reads_as_nothing(self, tmp_path):
         (tmp_path / "launch_relay_tray.vbs").write_text("' a launcher", encoding="utf-8")
