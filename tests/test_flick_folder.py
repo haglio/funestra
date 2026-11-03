@@ -10,12 +10,10 @@ from app_support import flick_folder as shared_layout
 from funestra.flick_folder import (
     flat_flicks_in,
     move_flick_to_trash,
-    move_flick_to_weird,
     scan_flicks,
     trash_folder_beside,
     trash_folder_for,
     vr_flicks_in,
-    weird_folder_for,
 )
 
 # ---------------------------------------------------------------------------
@@ -185,7 +183,7 @@ def test_a_flick_goes_to_its_own_place_in_the_trash_pile():
     flicks = Path("C:/videos/genau/flicks")
 
     assert trash_folder_for(flicks / "2D" / "AI" / "loop one.mp4", flicks) == Path(
-        "C:/videos/genau/weird/2D/AI"
+        "C:/videos/genau/trash/2D/AI"
     )
 
 
@@ -193,7 +191,7 @@ def test_a_flick_from_outside_the_flicks_folder_goes_to_the_top_of_the_trash_pil
     flicks = Path("C:/videos/genau/flicks")
 
     assert trash_folder_for(Path("D:/elsewhere/loop one.mp4"), flicks) == Path(
-        "C:/videos/genau/weird"
+        "C:/videos/genau/trash"
     )
 
 
@@ -202,7 +200,7 @@ def test_move_takes_the_flick_out_of_rotation(tmp_path: Path):
     flicks.mkdir()
     flick = flicks / "odd.mp4"
     flick.write_bytes(b"flick")
-    trash = tmp_path / "weird"
+    trash = tmp_path / "trash"
 
     landed = move_flick_to_trash(flick, trash)
 
@@ -214,7 +212,7 @@ def test_move_takes_the_flick_out_of_rotation(tmp_path: Path):
 def test_move_creates_the_trash_dir_on_first_use(tmp_path: Path):
     flick = tmp_path / "odd.mp4"
     flick.write_bytes(b"flick")
-    trash = tmp_path / "weird"
+    trash = tmp_path / "trash"
     assert not trash.exists()
 
     move_flick_to_trash(flick, trash)
@@ -224,7 +222,7 @@ def test_move_creates_the_trash_dir_on_first_use(tmp_path: Path):
 
 def test_a_flick_already_gone_is_not_an_error(tmp_path: Path):
     """Two TRASH verbs can race the same flick; the second must not crash Genau."""
-    trash = tmp_path / "weird"
+    trash = tmp_path / "trash"
 
     assert move_flick_to_trash(tmp_path / "missing.mp4", trash) is None
 
@@ -294,10 +292,3 @@ class TestSeveralFoldersBrowsedAsOne:
 
         assert scan_flicks(vr, shuffle_on_load=False) == scan_flicks((vr,), shuffle_on_load=False)
 
-
-def test_the_old_names_answer_until_fun_time_has_moved(tmp_path):
-    flick = tmp_path / "flicks" / "2D" / "scene.mp4"
-    flick.parent.mkdir(parents=True)
-    flick.write_bytes(b"x")
-    assert weird_folder_for(flick, tmp_path / "flicks") == trash_folder_for(flick, tmp_path / "flicks")
-    assert move_flick_to_weird(flick, tmp_path / "away") == tmp_path / "away" / "scene.mp4"
