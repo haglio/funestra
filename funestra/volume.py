@@ -50,7 +50,7 @@ def hit_part(x: int, y: int) -> str:
 def volume_at(x: int) -> int:
     span = max(1, _TRACK_X1 - _TRACK_X0)
     fraction = (x - _TRACK_X0) / span
-    return int(round(min(1.0, max(0.0, fraction)) * MAX_VOLUME))
+    return round(min(1.0, max(0.0, fraction)) * MAX_VOLUME)
 
 
 @dataclass(frozen=True)
