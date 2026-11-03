@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import NamedTuple
 
 import numpy as np
 from PIL import Image
@@ -56,6 +57,11 @@ class RowHud:
     loop_bounds: tuple[float, float] | None = None
     record_in_ms: float | None = None
     loop: tuple[int, int] | None = None
+
+
+class ItemRowDraw(NamedTuple):
+    row: RowHud
+    heatmap: object = None
 
 
 _WIDEST_ROWS = (

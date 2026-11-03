@@ -12,10 +12,11 @@ from shared_ui.spacing import BUTTON_SIZE_HUD
 
 from funestra.hud_corners import HudPlace
 from funestra.hud_minimize import collapsed_hud
-from funestra.hud_overlay import HUD_OVERLAY_ID
+from funestra.hud_overlay import HUD_OVERLAY_ID, DrawnOn, DriveFeed
 from funestra.hud_placement import HudCorner
+from funestra.hud_row import RowPress
 from funestra.main_hud import MainHudModel, ModeHud, main_hud_text
-from funestra.main_hud_overlay import MainHudOverlay
+from funestra.main_hud_overlay import MainHudFiles, MainHudHost, MainHudOverlay
 from funestra.main_hud_painter import _PAD as PAD
 from funestra.main_hud_painter import MARGIN
 from funestra.modes import LengthMode, MainMode, Osr2State
@@ -53,15 +54,16 @@ def _drive_file(path: Path, position: int = 4_000) -> Path:
 
 
 def _overlay(tmp_path: Path, *, top_block=None, gate=None, drive: bool = True,
-             host_controls=None, visualizer=None) -> tuple[MainHudOverlay, FakeEngine, SpyGate]:
+             **extras) -> tuple[MainHudOverlay, FakeEngine, SpyGate]:
     engine = FakeEngine()
     gate = gate or SpyGate()
     overlay = MainHudOverlay(
-        main_hud_file=tmp_path / "main_hud.json",
-        drive_file=tmp_path / "drive.txt" if drive else None,
-        command_file=tmp_path / "dashboard_cmd.txt",
-        engine=engine, drive_gate=gate, top_block=top_block or ModeHud,
-        host_controls=host_controls, visualizer=visualizer, clock=lambda: 0.0,
+        files=MainHudFiles(tmp_path / "main_hud.json", tmp_path / "dashboard_cmd.txt"),
+        drawn_on=DrawnOn(engine),
+        host=MainHudHost(top_block or ModeHud, RowPress(), extras.get("host_controls")),
+        drive=DriveFeed(tmp_path / "drive.txt" if drive else None, gate,
+                        extras.get("visualizer")),
+        clock=lambda: 0.0,
     )
     return overlay, engine, gate
 
