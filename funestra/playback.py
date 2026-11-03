@@ -50,8 +50,7 @@ class Playback:
         self._points_of_interest = dict(setup.points_of_interest or {})
         self._points_told: tuple = ()
         self._loaded_funscript: tuple[Path | None, Funscript | None] = (None, None)
-        self._paused = setup.start_paused
-        self._locked = setup.locked
+        self._paused, self._locked = setup.start_paused, setup.locked
         self._held_by_the_pace = False
         self._speed = 1.0
         self._index = 0

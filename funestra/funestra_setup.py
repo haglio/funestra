@@ -4,6 +4,10 @@ import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, NamedTuple
 
+from .play_points import PlayPoints
+from .playback import funscripts_of, points_of_interest_of
+from .playback_setup import PlaybackSetup
+
 if TYPE_CHECKING:
     from .funestra import Channels, HudSurface, Users, UsersFrames
     from .host_controls import HostControls
@@ -35,6 +39,14 @@ class FunestraSetup(NamedTuple):
     radio: Tuner | None = None
     on_volume_moved: Callable[[VolumeHud], None] | None = None
     clock: Callable[[], float] = time.monotonic
+
+    def playback_setup(self, start_paused: bool) -> PlaybackSetup:
+        channels, playlist, tcode = self[:3]
+        return PlaybackSetup(
+            start_paused=start_paused, locked=self.locked,
+            play_points=PlayPoints(channels.play_points),
+            funscripts=funscripts_of(playlist),
+            points_of_interest=points_of_interest_of(playlist), tcode=tcode)
 
     @classmethod
     def of(cls, setup: FunestraSetup | None, old: dict) -> FunestraSetup:

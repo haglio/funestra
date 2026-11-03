@@ -165,7 +165,7 @@ def test_the_old_keywords_build_a_loader_that_reads_the_same_state():
         current_flick_path_getter=lambda: None,
         decode_flick=lambda _path: [],
         start_thread=JobStarter(),
-        logger=MagicMock(),
+        logger=None,
         on_active_flick_loaded=lambda: None,
     )
 
