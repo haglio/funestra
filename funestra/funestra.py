@@ -26,7 +26,7 @@ from .host_controls import HostControls
 from .hud_corners import HudCorners
 from .hud_minimize import NameFlash
 from .hud_overlay import HudOverlay
-from .hud_placement import HudEdge, takes_the_old_viewport_word
+from .hud_placement import HudEdge
 from .hud_row import RowHud
 from .main_hud import ModeHud
 from .main_hud_overlay import MainHudOverlay
@@ -389,25 +389,21 @@ class Funestra:
         if quit_gesture(self._channels.dashboard_cmd):
             self._stop.set()
 
-    @takes_the_old_viewport_word
     def press(self, x: int, y: int, *, viewport: tuple[int, int]) -> None:
         self._pointer.press(x, y)
 
     def release(self) -> None:
         self._pointer.release()
 
-    @takes_the_old_viewport_word
     def motion(self, x: int, y: int, *, held: bool, viewport: tuple[int, int]) -> None:
         self._pointer.motion(x, y, held=held)
 
-    @takes_the_old_viewport_word
     def wheel(self, x: int, y: int, steps: int, *, viewport: tuple[int, int]) -> None:
         self._pointer.wheel(x, y, steps)
 
     def leave(self) -> None:
         self._pointer.leave()
 
-    @takes_the_old_viewport_word
     def tick(self, *, viewport: tuple[int, int]) -> None:
         channels = self._channels
         if channels.paused is not None:
