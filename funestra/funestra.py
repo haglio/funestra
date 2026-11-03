@@ -30,9 +30,7 @@ from .messages import MessageWriter
 from .mpv_engine import MpvEngine
 from .osr2_visualizer import DrivePublisher
 from .outside_buttons import OutsideButtons
-from .play_points import PlayPoints
-from .playback import Playback, funscripts_of, points_of_interest_of
-from .playback_setup import PlaybackSetup
+from .playback import Playback
 from .playhead import framed_playhead, time_playhead, video_playhead
 from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
@@ -141,9 +139,9 @@ class Funestra:
     OUT_FRAME_OVERLAY_ID = 9
 
     def __init__(self, engine, setup: FunestraSetup | None = None, **old) -> None:
-        (channels, playlist, tcode, audible, tiles, locked, sound_is_the_rooms, users, hud,
+        (channels, playlist, _tcode, audible, tiles, _locked, sound_is_the_rooms, users, hud,
          muted, hud_surface, users_frames, window_verbs, host_controls, radio,
-         on_volume_moved, clock) = FunestraSetup.of(setup, old)
+         on_volume_moved, clock) = (setup := FunestraSetup.of(setup, old))
         self._engine = engine
         self._clock = clock
         self._volume_moved = on_volume_moved
@@ -156,11 +154,8 @@ class Funestra:
         start_paused = (channels.paused is not None
                         and read_paused_state(channels.paused, logger=logger))
         self._playback = Playback(
-            [item.path for item in playlist], engine=engine, setup=PlaybackSetup(
-                start_paused=start_paused, locked=locked,
-                play_points=PlayPoints(channels.play_points),
-                funscripts=funscripts_of(playlist),
-                points_of_interest=points_of_interest_of(playlist), tcode=tcode))
+            [item.path for item in playlist], engine=engine,
+            setup=setup.playback_setup(start_paused))
         self._follower = (None if channels.playlist is None
                           else PlaylistFollower(channels.playlist, take=self.take_the_list))
         self._users: dict[str, User] = (
