@@ -206,7 +206,7 @@ class TestTheSocketLoop:
         stop.set()
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         try:
-            bound = bind_with_retry(sock, "127.0.0.1", port, stop, MagicMock(), (30.0, 30.0))
+            bound = bind_with_retry(sock, "127.0.0.1", port, stop, logging.getLogger("broker_feed_test"), (30.0, 30.0))
         finally:
             sock.close()
             blocker.close()
