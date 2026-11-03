@@ -145,7 +145,7 @@ def _crowded(funestra: str, thumb: str) -> HudModel:
     )
 
 
-@pytest.mark.parametrize("funestra,shape", _sides_and_shapes())
+@pytest.mark.parametrize(("funestra", "shape"), _sides_and_shapes())
 def test_the_nav_map_is_three_cells_a_side_whatever_shape_its_clips_are(funestra, shape, video_thumb):
     rendered = HudRenderer(funestra).render(_crowded(funestra, video_thumb(funestra, shape)))
 
@@ -155,7 +155,7 @@ def test_the_nav_map_is_three_cells_a_side_whatever_shape_its_clips_are(funestra
     assert (len(columns), len(rows)) == (NAV_MAP_CELLS, NAV_MAP_CELLS)
 
 
-@pytest.mark.parametrize("funestra,shape", _sides_and_shapes())
+@pytest.mark.parametrize(("funestra", "shape"), _sides_and_shapes())
 def test_the_hud_stops_where_its_last_controls_do(funestra, shape, video_thumb):
     rendered = HudRenderer(funestra).render(_crowded(funestra, video_thumb(funestra, shape)))
     height, width = rendered.bgra.shape[:2]

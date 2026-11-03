@@ -324,7 +324,7 @@ class TestTheDescentTopIsSelectedOnce:
 
         assert resumed.waveform[opens] != frozen.waveform[opens]
 
-    @pytest.mark.parametrize("control, moved_to", [
+    @pytest.mark.parametrize(("control", "moved_to"), [
         ("amplitude", 90), ("center", 60), ("speed", 70),
     ])
     def test_moving_a_control_re_selects_the_top(self, control, moved_to):
