@@ -1,17 +1,13 @@
 from __future__ import annotations
 
-import time
-from functools import partial
-from pathlib import Path
-
 from .broker_feed import snapshot
 from .device_walk import Walk, the_broker_holding, the_hand_taking_back
-from .file_channel import consume_command_file
 from .flick_advance import set_elapsed, tick_flick_advance
 from .flick_flip import HALF_A_LOOP
 from .flick_renderer import display_index_for_phase
 from .flick_scrub import FlickScrub, scrub_flick
-from .genau_controls import GenauControls, apply_runtime_command
+from .genau_controls import apply_runtime_command
+from .genau_refresh_parts import GenauRefreshParts
 from .genau_status import GENAU_STATUS_FILENAME, FlickOnScreen, build_status_text, write_status_file
 from .genau_visualizer import AutoMotion, GenauVisualizer
 from .learned_motion import tick_learned_motion
@@ -21,33 +17,13 @@ from .robot_hand_beat import Beat, BeatTuning, advance_beat
 from .robot_hand_driver import DeviceHandoff
 from .tick_failures import TickFailures
 
-consume_command_keeping_its_case = partial(consume_command_file, uppercase=False)
-
 
 class GenauRefreshController:
-    def __init__(
-        self,
-        *,
-        controls: GenauControls,
-        broker,
-        loader,
-        notifier,
-        renderer,
-        selection,
-        command_file: Path,
-        paused_file: Path,
-        beats_per_loop: float,
-        bpm_smoothing: float,
-        sync_strength: float,
-        set_loading_text,
-        logger,
-        now_source=time.monotonic,
-        consume_command=consume_command_keeping_its_case,
-        read_paused_state=None,
-        tcode_sender=None,
-        status_file: Path | None = None,
-        drive_file: Path | None = None,
-    ):
+    def __init__(self, parts: GenauRefreshParts | None = None, **old):
+        (controls, broker, loader, notifier, renderer, selection, command_file, paused_file,
+         beats_per_loop, bpm_smoothing, sync_strength, set_loading_text, logger, now_source,
+         consume_command, read_paused_state, tcode_sender, status_file,
+         drive_file) = GenauRefreshParts.of(parts, old)
         self.controls = controls
         self.engine = controls.engine
         self.paused = controls.paused

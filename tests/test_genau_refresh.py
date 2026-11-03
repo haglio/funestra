@@ -15,6 +15,7 @@ from funestra.flick_advance import FlickAdvanceState
 from funestra.flick_flip import FlickFlip
 from funestra.genau_controls import GenauControls
 from funestra.genau_refresh import GenauRefreshController
+from funestra.genau_refresh_parts import GenauRefreshParts
 from funestra.learned_model import LearnedModel, Phrase, classify
 from funestra.learned_motion import LearnedMotionState
 from funestra.robot_hand import RobotHandState, position_fraction
@@ -214,7 +215,7 @@ def _build_controller(*, broker: BrokerFeed | None = None,
         set_volume=lambda _level, _muted: None,
         flick_flip=hands.flick_flip if hands.flick_flip is not None else FlickFlip(),
     )
-    controller = GenauRefreshController(
+    parts = GenauRefreshParts(
         controls=controls,
         broker=broker or BrokerFeed(),
         loader=loader,
@@ -235,9 +236,11 @@ def _build_controller(*, broker: BrokerFeed | None = None,
         tcode_sender=tcode_sender,
         drive_file=files.drive_file,
     )
+    controller = GenauRefreshController(parts)
     return {
         "drained_from": drained_from,
         "controller": controller,
+        "parts": parts,
         "loader": loader,
         "notifier": notifier,
         "renderer": renderer,
@@ -868,6 +871,15 @@ class TestTheRoomHoldingTheDevice:
                  tick(self.SETTLED)]
 
         assert shown == _heights(0.5, 0.25, 0.0)
+
+
+def test_the_old_keywords_build_a_controller_over_the_same_files():
+    parts = _build_controller()["parts"]
+
+    controller = GenauRefreshController(**parts._asdict())
+
+    assert (controller.command_file, controller.paused_file) == (
+        parts.command_file, parts.paused_file)
 
 
 def test_the_controller_cannot_be_built_without_a_direct_state():
