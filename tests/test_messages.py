@@ -1,4 +1,3 @@
-"""The one-shot messages a Funestra raises for the room to flash over it."""
 from __future__ import annotations
 
 from funestra.messages import MessageWriter
@@ -14,15 +13,6 @@ def _read(path):
 
 
 def test_the_record_it_writes_is_what_fun_time_parses(tmp_path):
-    """The whole file as written, because it is a cross-repo contract and
-    nothing else in this repo can see it.
-
-    Fun Time's dispatch loop splits each line on its first "=" and reads `seq`
-    as a float; the tests around this one parse the file the same way, so a
-    reordered, renamed or re-separated record -- or a `seq` that stopped being
-    three decimal places -- would keep every one of them green while the
-    overlay stopped flashing.
-    """
     path = tmp_path / "main_player_notice.txt"
 
     MessageWriter(path, clock=lambda: 1234.5).say("no full video", level=MessageLevel.NORMAL)
@@ -53,8 +43,6 @@ def test_each_say_advances_the_sequence(tmp_path):
 
 
 def test_a_restarted_writer_still_reads_as_newer(tmp_path):
-    """A counter restarts at 1 whenever the Funestra does, so its messages read
-    as older than the previous session's and never flashed. A clock stamp cannot."""
     path = tmp_path / "main_player_notice.txt"
     MessageWriter(path, clock=lambda: 100.0).say("before the restart", level=MessageLevel.NORMAL)
     MessageWriter(path, clock=lambda: 101.0).say("after the restart", level=MessageLevel.NORMAL)
@@ -63,8 +51,6 @@ def test_a_restarted_writer_still_reads_as_newer(tmp_path):
 
 
 def test_without_a_path_it_is_inert(tmp_path):
-    """Nothing to say to, nothing written, and nothing raised at the caller: a
-    Funestra given no message channel still jumps, and says nothing about it."""
     MessageWriter(None).say("nothing doing", level=MessageLevel.NORMAL)
 
     assert list(tmp_path.iterdir()) == []

@@ -12,8 +12,6 @@ SUSPENDED = ("Failed to create SRV: The GPU device instance has been suspended. 
 
 
 class Later:
-    """Stands in for the timer: says how long each rebuild was set to wait, and runs it on cue."""
-
     def __init__(self) -> None:
         self.waits: list[float] = []
         self.canceled = 0

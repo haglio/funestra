@@ -1,5 +1,3 @@
-"""Where an item asked for next goes in a list a Funestra plays through: right
-after the one up, moved there when it is listed already, and the one up stays up."""
 from __future__ import annotations
 
 

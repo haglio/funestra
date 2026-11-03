@@ -1,5 +1,3 @@
-"""A list and a bar a host hands a Funestra for its Main Funestra's HUD: drawn here, pressed here, and
-what was picked or set handed back."""
 from __future__ import annotations
 
 from dataclasses import replace

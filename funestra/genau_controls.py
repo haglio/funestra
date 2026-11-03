@@ -1,21 +1,3 @@
-"""What Genau's controls can reach, and every verb that moves one.
-
-Genau -- on the Main Funestra, whether on the desktop or in the headset --
-is spoken to from two places: a verb in ``genau_cmd.txt`` and a press on the
-HUD.  Both of them have to be able to move the same
-handful of things: the hand's own state, the learned motion, the flick advance,
-the two flags an orchestrator flips, the flick sequence.
-
-Passing those one at a time is what made adding a control a four-to-six file
-edit: a keyword parameter on the dispatcher, another on the refresh controller,
-an attribute to store it and a line to hand it on.  They travel together here
-instead, built once where the app is wired and handed whole.
-
-Optional means *this build did not wire it* -- a test that only cares about the
-flick sequence, say.  A verb whose collaborator is absent is refused and logged
-rather than half-acted-on, which is the behavior :func:`apply_runtime_command`
-documents.
-"""
 from __future__ import annotations
 
 import logging
@@ -73,8 +55,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class GenauControls:
-    """Everything one command or HUD press may move."""
-
     engine: BeatEngine
     paused: Flag
     step_flick: Callable[[int], None]
@@ -93,8 +73,6 @@ class GenauControls:
     app_hold: RoomHold = field(default_factory=RoomHold)
 
 
-# The acts below all take these controls and the rest of the line, and say
-# whether they could.
 Act = Callable[[GenauControls, str], bool]
 
 FLICK_SECONDS = "FLICK_SECONDS"
@@ -103,7 +81,6 @@ RESUME = "RESUME"
 
 
 def _stepper(step: int) -> Act:
-    """A verb that nudges the hand's speed by a fixed amount."""
     def act(controls: GenauControls, _value: str) -> bool:
         adjust_speed(controls.robot_hand, step)
         return True
@@ -132,11 +109,6 @@ def _shape_step(step: int) -> Act:
 
 
 def _number_setter(setter) -> Act:
-    """A verb that names the value outright: ``AMP 50``, ``SPEED 90``.
-
-    A value that is not a whole number is refused rather than rounded or
-    defaulted -- what arrived was not the command it looked like.
-    """
     def act(controls: GenauControls, value: str) -> bool:
         try:
             number = int(value)
@@ -183,9 +155,6 @@ def _interval_step(step: int) -> Act:
 
 
 def _interval_named(controls: GenauControls, value: str) -> bool:
-    """"flick seconds thirty" names the seconds a flick holds the screen.  It says
-    nothing about the lock: a held flick stays held, and this is the pace it will
-    move at once it is let go."""
     try:
         seconds = int(value)
     except ValueError:
@@ -243,12 +212,6 @@ def _keep_shapes(controls: GenauControls, value: str) -> bool:
 
 
 def _playing(playing: bool) -> Act:
-    """PAUSE and RESUME move both halves of one fact.
-
-    The flag is what an orchestrator's paused file feeds and what the tick reads;
-    the hand's own flag is what the motion follows.  A build with no hand still
-    answers -- the app is paused either way.
-    """
     def act(controls: GenauControls, _value: str) -> bool:
         controls.paused.on = not playing
         if controls.robot_hand is not None:
@@ -277,18 +240,6 @@ def _flag_set(name: str, value: bool) -> Act:
 
 
 def _volume_shown(controls: GenauControls, value: str) -> bool:
-    """``SET_VOLUME <level> [muted]`` — the sound level the orchestrator is
-    publishing.
-
-    Genau neither owns the level (the orchestrator does, for the whole primary
-    display) nor plays the audio: a companion process carries the flick music.
-    What arrives here is only what the volume control Genau draws should show, which is why
-    the mute rides alongside the level — a level of zero cannot say whether the
-    speaker is off or turned all the way down, nor what unmuting returns to.
-
-    The mute is optional so an orchestrator that sends the level alone still
-    moves the slider rather than being ignored outright.
-    """
     said = value.split()
     try:
         level = int(said[0])
@@ -299,8 +250,6 @@ def _volume_shown(controls: GenauControls, value: str) -> bool:
     return True
 
 
-# One entry per thing a person can move.  Add a control by adding a record here;
-# nothing else in the app needs to learn its name.
 CONTROLS: tuple[Control, ...] = (
     Control(
         name="speed",
@@ -351,8 +300,6 @@ CONTROLS: tuple[Control, ...] = (
             Verb("LEARNED_OFF", _learned_off),
         ),
     ),
-    # The lock, under the same three verbs Kino answers to, because
-    # it is the same thing on both: hold what is on screen, or let it move on.
     Control(
         name="lock",
         needs=("flick_advance_state",),
@@ -362,9 +309,6 @@ CONTROLS: tuple[Control, ...] = (
             Verb(LOCK_OFF, _lock_set(False)),
         ),
     ),
-    # How long a flick holds the screen, a second at a time.  Named for the number
-    # rather than for the auto-advance that spends it, so the verb reads as what
-    # the orchestrator's reference shows and what its speaker says aloud.
     Control(
         name="flick_seconds",
         needs=("flick_advance_state",),
@@ -397,10 +341,6 @@ CONTROLS: tuple[Control, ...] = (
         name="flip_ends",
         verbs=(Verb("FLIP_ENDS", _flip_ends),),
     ),
-    # The two browse orders every Funestra in the app has, said to Genau, the one
-    # with no playlist file to hand it: Genau owns its own sequence, so the order
-    # is a verb rather than a rewritten list, and answering it rescans the flicks
-    # folder — which is most of what Latest is for.
     Control(
         name="browse_order",
         needs=("reorder_flicks",),
@@ -444,14 +384,5 @@ VERBS = bind(CONTROLS)
 
 
 def apply_runtime_command(command, controls: GenauControls) -> None:
-    """Act on one command, or say on the log that we cannot.
-
-    The dispatcher reports an unanswered verb itself rather than returning a
-    flag for a caller to check: it is the only thing that knows, and there is
-    one of it rather than one per call site. Two kinds land here — a verb no
-    branch matches, and a verb whose collaborator this build did not wire —
-    and both mean the same thing to whoever sent it, which is that nothing
-    happened.
-    """
     if not look_up(command, VERBS, controls):
         logger.warning("Unhandled command: %s", str(command).strip())

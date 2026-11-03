@@ -15,9 +15,6 @@ class FakeLoader:
         self.prefetch_requests: list[Path] = []
 
     def frames_ready(self, path: Path) -> bool:
-        """The real loader's one question, answered the way it answers it: in
-        the flicks-on-screen cache, or decoded ahead and moved across by the
-        asking."""
         if path in self.flick_store.flick_cache:
             return True
         frames = self.flick_store.decoded_frame_cache.get(path)
@@ -98,8 +95,6 @@ def test_set_current_flick_requests_load_for_uncached_entry():
 
 
 def test_set_current_flick_takes_up_frames_decoded_ahead_without_loading():
-    """A flick decoded ahead of being asked for is as ready as one that has been
-    up before: it goes straight on screen, and nothing is decoded again."""
     controller, flick_store, loader, renderer, notifier = _build_controller("a.mp4", "b.mp4")
     path = Path("b.mp4")
     flick_store.decoded_frame_cache[path] = ["f0"]
@@ -127,19 +122,14 @@ def test_step_switches_immediately_when_cached():
 
 def test_step_defers_switch_when_not_cached():
     controller, _flick_store, loader, renderer, notifier = _build_controller("a.mp4", "b.mp4")
-    # Set initial flick on renderer
     renderer.current_flick_path = Path("a.mp4")
 
     controller.step(1)
 
     assert controller.current_number == 2
-    # Renderer still shows old flick
     assert renderer.current_flick_path == Path("a.mp4")
-    # No notification yet — deferred
     assert notifier.flick_notifications == []
-    # Load was requested
     assert loader.load_requests == [Path("b.mp4")]
-    # Pending flick name is set
     assert controller.pending_flick_name == "b.mp4"
 
 
@@ -147,9 +137,8 @@ def test_adopt_pending_flick_switches_when_loaded():
     controller, flick_store, loader, renderer, notifier = _build_controller("a.mp4", "b.mp4")
     renderer.current_flick_path = Path("a.mp4")
 
-    controller.step(1)  # defers — b.mp4 not cached
+    controller.step(1)
 
-    # Simulate async load completing
     flick_store.flick_cache[Path("b.mp4")] = {"frames": ["f0"]}
     result = controller.adopt_pending_flick()
 
@@ -164,7 +153,7 @@ def test_a_flick_still_decoding_is_not_adopted():
     controller, _flick_store, loader, renderer, notifier = _build_controller("a.mp4", "b.mp4")
     renderer.current_flick_path = Path("a.mp4")
 
-    controller.step(1)  # defers
+    controller.step(1)
 
     result = controller.adopt_pending_flick()
 
@@ -216,9 +205,6 @@ def test_request_nearby_prefetch_is_empty_for_single_flick():
 
 class TestReorder:
     def test_takes_the_head_of_the_new_order_at_once(self):
-        """Never deferred the way a step is: the point of asking for an order is
-        to be shown what it puts first, so the head takes the screen and decodes
-        there rather than after the flick that was up."""
         controller, _store, loader, renderer, notifier = _build_controller("a.mp4", "b.mp4")
         renderer.current_flick_path = Path("a.mp4")
 
@@ -231,8 +217,6 @@ class TestReorder:
         assert controller.count == 2
 
     def test_drops_a_switch_that_was_still_waiting_to_load(self):
-        """The deferred flick belongs to the order just replaced, so adopting it
-        afterwards would put the old browse back on screen."""
         controller, flick_store, _loader, renderer, _notifier = _build_controller("a.mp4", "b.mp4")
         renderer.current_flick_path = Path("a.mp4")
         controller.step(1)
@@ -246,9 +230,6 @@ class TestReorder:
 
 
 class TestNarrow:
-    """The folder rescanned under a narrower choice of flick, which a reloaded
-    playlist answers by keeping the item on screen where it survived."""
-
     def test_the_flick_on_screen_stays_where_it_survived(self):
         controller, _store, _loader, renderer, notifier = _build_controller(
             "a.mp4", "b.mp4", "c.mp4")
@@ -303,7 +284,6 @@ class TestDiscardCurrent:
         assert notifier.flick_notifications == [Path("b.mp4")]
 
     def test_the_only_flick_is_never_condemned(self):
-        """Genau always has something on screen, so the last flick is untouchable."""
         condemned: list[Path] = []
         controller, _store, _loader, renderer, _notifier = _build_controller(
             "a.mp4", condemn_flick=condemned.append,

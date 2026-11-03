@@ -1,4 +1,3 @@
-"""Which of the library's videos belong together, read off their records."""
 from __future__ import annotations
 
 IMAGE_IDENTITY_FIELDS = (

@@ -1,4 +1,3 @@
-"""A Funestra's radio: stations of sound playing out of sight, one tuned in while an image is up."""
 from __future__ import annotations
 
 from pathlib import Path

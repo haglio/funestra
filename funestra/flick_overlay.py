@@ -26,10 +26,6 @@ BACKDROP_OVERLAY_ID = 1
 FIRST_TILE_OVERLAY_ID = 2
 LOADING_OVERLAY_ID = 6
 
-# Scaled frames kept between passes: a flick's frames come round again every
-# cycle of the motion, and scaling one costs milliseconds on the thread that
-# drives the device.  Bounded, so a long flick at a large window cannot grow it
-# without end; past the bound a frame is scaled again rather than kept.
 SCALED_FRAMES_BYTES = 192 * 1024 * 1024
 
 _LOADING_PAD = MARGIN_STANDARD
@@ -43,11 +39,6 @@ def _nothing(_value: float) -> None:
 
 @dataclass(frozen=True)
 class FlickFrame:
-    """A frame of a flick, with the flick's two senses of time for the row: how
-    many of its frames have played of how many (the dial and the frame count;
-    none before a frame is up), and how long it has been up of the time it
-    gets (the track)."""
-
     frame: np.ndarray | None
     played: int = 0
     count: int = 0

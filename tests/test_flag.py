@@ -1,4 +1,3 @@
-"""A boolean two parts of the app share."""
 from __future__ import annotations
 
 from funestra.flag import Flag

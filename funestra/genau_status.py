@@ -1,4 +1,3 @@
-"""What Genau publishes back: the status file an orchestrator reads."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -10,9 +9,6 @@ from .flick_advance import FlickAdvanceState
 from .learned_motion import LearnedMotionState
 from .robot_hand import RobotHandState, control_limits
 
-# Where the status goes when nobody names a path: beside the command file, which
-# is where every version of the orchestrator so far has looked.  The name is
-# the family's, spelled once where the orchestrator reads it too.
 GENAU_STATUS_FILENAME = GENAU_STATUS
 
 
@@ -34,7 +30,6 @@ def build_status_text(
     return (
         f"learned={'1' if learned is not None and learned.active else '0'}\n"
         f"locked={'1' if advance.locked else '0'}\n"
-        # Which flick is up.  Empty until the first flick is on screen.
         f"flick={flick if flick is not None else ''}\n"
         f"flipped={'1' if flipped else '0'}\n"
         f"portrait={_flag_or_unknown(portrait)}\n"

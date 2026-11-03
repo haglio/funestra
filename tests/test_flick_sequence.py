@@ -25,9 +25,6 @@ def test_starts_at_first_flick():
 
 
 class TestStartAt:
-    """Where a reopened session picks up: the flick that was on screen, named
-    into whatever order the launch scanned the folder in."""
-
     def test_opens_on_the_named_flick(self):
         controller = FlickSequenceController(_paths(), start_at=Path("c.mp4"))
 
@@ -35,8 +32,6 @@ class TestStartAt:
         assert controller.current_number == 3
 
     def test_a_flick_that_is_no_longer_there_leaves_the_order_alone(self):
-        """Deleted or condemned since, so there is nothing to open on — the scan
-        order stands, from its top, rather than the sequence refusing to build."""
         controller = FlickSequenceController(_paths(), start_at=Path("gone.mp4"))
 
         assert controller.current_path == Path("a.mp4")
@@ -62,9 +57,6 @@ def test_step_wraps_forward_and_backward():
 
 
 class TestTakeUp:
-    """A rescanned folder in a fresh browse order, which is what "latest" and
-    "shuffle" hand Genau — it has no playlist file to be rewritten."""
-
     def test_browses_the_new_list_from_its_top(self):
         controller = FlickSequenceController(_paths())
         controller.step(1)
@@ -75,7 +67,6 @@ class TestTakeUp:
         assert controller.count == 2
 
     def test_stepping_walks_the_new_list(self):
-        """The old list is gone, not merely reordered around the index."""
         controller = FlickSequenceController(_paths())
         controller.take_up([Path("one.mp4"), Path("two.mp4")])
 
@@ -83,8 +74,6 @@ class TestTakeUp:
         assert controller.step(1) == Path("one.mp4")
 
     def test_an_empty_scan_is_refused(self):
-        """Genau always has something on screen, so a folder that scanned to
-        nothing leaves the sequence it already has rather than emptying it."""
         controller = FlickSequenceController(_paths())
 
         with pytest.raises(ValueError, match="requires at least one flick"):
@@ -124,7 +113,6 @@ class TestDropCurrent:
         assert seq.count == 1
 
     def test_the_only_flick_is_never_dropped(self):
-        """An empty sequence has nothing to show, so the last flick stays."""
         seq = FlickSequenceController([Path("a.mp4")])
 
         assert seq.remove_current() is None

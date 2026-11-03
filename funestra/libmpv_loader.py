@@ -11,7 +11,6 @@ import os
 import sys
 from pathlib import Path
 
-# FOLDERID_Profile: the folder %USERPROFILE% normally names.
 _USER_FOLDER_ID = "{5E6C858F-0E22-4760-9AFE-EA3317B67173}"
 
 

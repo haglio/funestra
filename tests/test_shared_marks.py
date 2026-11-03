@@ -27,7 +27,6 @@ from funestra.hud_icons import TOGGLE_SWITCH, shared_icon, shared_icon_name
 
 
 def _drawn(hud, draw, button) -> None:
-    """One declared control, drawn the way every HUD here draws one."""
     draw_button(hud, draw, (0, 0, 18, 18), button, hovered=False,
                 icon_font=load_font(11, SYMBOL_FONT), word_font=load_font(8))
 
@@ -39,8 +38,6 @@ class TestNamingTheMarks:
 
 class TestDrawingThem:
     def test_a_mark_lands_inside_the_button_it_was_given(self):
-        # HUD buttons draw their own rounded border, so a mark filling the whole
-        # rect runs into it. The inset is what keeps the two apart.
         hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
         draw_icon(hud, "trash", (0, 0, 18, 18), (255, 255, 255, 255))
         ink = np.asarray(hud)[:, :, 0] > 128
@@ -50,8 +47,6 @@ class TestDrawingThem:
         assert not ink[-BUTTON_ICON_INSET:, :].any()
 
     def test_a_mark_is_laid_over_what_the_button_already_painted(self):
-        # It composites onto the button's fill rather than stamping a
-        # transparent square over it, which would cut a gap in the HUD.
         hud = Image.new("RGBA", (18, 18), (0, 90, 0, 255))
         draw_icon(hud, "reset", (0, 0, 18, 18), (255, 255, 255, 255))
         pixels = np.asarray(hud)
@@ -61,8 +56,6 @@ class TestDrawingThem:
         assert (pixels[:, :, 1] == 90).any(), "the fill is gone"
 
     def test_two_marks_are_two_different_drawings(self):
-        # The point of naming them: a control that names the wrong one shows the
-        # wrong one, and only a difference here would ever reveal that.
         def drawn(name: str) -> bytes:
             hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
             draw_icon(hud, name, (0, 0, 18, 18), (255, 255, 255, 255))
@@ -86,9 +79,6 @@ class TestDangerIsRed:
 
 class TestButtonGrounds:
     def test_a_resting_control_sits_on_the_familys_button_ground(self):
-        # It was an outline over the slab and nothing else, which read as a gap
-        # in the HUD rather than as the raised button every window in this
-        # family offers for the same act.
         hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
         _drawn(hud, ImageDraw.Draw(hud), Button("x", "🔒", ""))
         middle = np.asarray(hud)[9, 3]
@@ -96,8 +86,6 @@ class TestButtonGrounds:
         assert tuple(middle[:3]) == BG_BUTTON
 
     def test_a_control_that_is_on_still_comes_forward(self):
-        # The ground is the resting state, not the lit one: a lit control fills
-        # white, and would say nothing if resting looked the same.
         def ground(lit: bool):
             hud = Image.new("RGBA", (18, 18), (0, 0, 0, 255))
             _drawn(hud, ImageDraw.Draw(hud), Button("x", "🔒", "", lit=lit))

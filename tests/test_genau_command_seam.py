@@ -1,18 +1,3 @@
-"""Every verb, driven the way Fun Time drives it: through the command file.
-
-``tests/test_genau_verbs.py`` calls the dispatcher directly, and
-``tests/test_genau_refresh.py`` builds a tick.  Between them sits the
-wiring neither one watches: the refresh controller stores thirteen collaborators
-and hands them to the dispatcher under thirteen names, and a name that stops
-matching is silent -- the verb arrives, no branch can act on it, and the tick
-goes on.  Six of the thirteen have no test that crosses the seam at all.
-
-So this drives the whole path once per verb: a line written into a real
-``genau_cmd.txt``, drained by the real file channel inside a real
-``refresh()``, and asserted against the one thing it is supposed to move --
-*and* against everything it must leave alone, which is the half that catches a
-verb wired to its neighbor's collaborator.
-"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -38,19 +23,10 @@ from funestra.main_hud import OSR2_PARKED, OSR2_RETRACTED
 from funestra.robot_hand import RobotHandState, WaveformShape
 from funestra.robot_hand_beat import BeatEngine
 
-# One frozen instant for the whole tick, so the engine's phase only moves when a
-# verb moves it.
 NOW = 5.0
 
 
 class Seam:
-    """A Genau with every collaborator wired, spoken to through its command file.
-
-    The starting state is chosen so every move is visible: amplitude 60 leaves
-    the center free to travel (30..70), speed 50 is clear of both clamps, and
-    TRIANGLE has a distinct neighbor in each direction.
-    """
-
     def __init__(self, tmp_path: Path, **start):
         self.paused = Flag(on=bool(start.get("paused", False)))
         self.hud = Flag(on=bool(start.get("hud", False)))
@@ -118,7 +94,6 @@ class Seam:
         )
 
     def send(self, line: str) -> None:
-        """Write one line where Fun Time writes it, then run one tick."""
         line = line.replace(PICKED, str(self.picked))
         self.command_file.write_text(line + "\n", encoding="utf-8")
         self.controller.refresh()
@@ -152,8 +127,6 @@ class Seam:
 
 
 class _Stop:
-    """A stop flag the tick can set without ending the test's own loop."""
-
     def __init__(self) -> None:
         self._set = False
 
@@ -166,7 +139,6 @@ class _Stop:
 
 PICKED = "<picked flick>"
 
-# verb, what it starts from, and the ONLY keys it may move.
 SEAM = [
     ("QUIT", {}, {"stopping": True}),
     ("PREV", {}, {"steps": (-1,)}),
@@ -199,7 +171,6 @@ SEAM = [
     ("FLICK_SECONDS_UP", {}, {"interval": 21}),
     ("HUD_ON", {}, {"hud": True}),
     ("HUD_OFF", {"hud": True}, {"hud": False}),
-    # The ones that carry a value -- a path among them, whose case has to survive.
     (f"PLAY_FILE {PICKED}", {}, {"played": ("Picked Scene.mp4",)}),
     ("AMP 80", {}, {"amplitude": 80}),
     ("CENTER 65", {}, {"center": 65, "intended_center": 65}),
@@ -229,7 +200,6 @@ def test_a_verb_reaches_its_collaborator_and_moves_nothing_else(verb, start, mov
 
 
 def test_a_tick_with_no_command_moves_nothing(tmp_path):
-    """The baseline the rows above are read against: a bare tick is inert."""
     seam = Seam(tmp_path)
     before = seam.state()
 
@@ -239,11 +209,5 @@ def test_a_tick_with_no_command_moves_nothing(tmp_path):
 
 
 def test_every_verb_genau_answers_is_driven_here(tmp_path):
-    """The rows above are the vocabulary, or they are not a seam test.
-
-    A verb added to the dispatcher without a row here would cross the seam
-    untested, which is the exact gap this module exists to close.
-    """
-
     driven = {verb.split()[0] for verb, _start, _moves in SEAM}
     assert driven == set(VERBS)

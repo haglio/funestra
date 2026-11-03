@@ -178,13 +178,9 @@ class KenBurns:
 
     @property
     def holds_for_s(self) -> float:
-        """How long the image holds the screen: its pace, or less where it
-        was told to move on sooner."""
         return self._pace_s if self._hold_s is None else min(self._hold_s, self._pace_s)
 
     def hold_for(self, seconds: float | None) -> None:
-        """Hold this image *seconds* rather than its pace, its move kept to
-        the pace; a new image holds for its pace again."""
         self._hold_s = seconds or None
 
     def set_looping(self, looping: bool, now_s: float) -> None:

@@ -247,9 +247,6 @@ class TestDiscard:
 
 
 class TestVersions:
-    """Another rendition of the video on screen, put up in the video's own place:
-    the list, and everything Fun Time knows the video by, stay as they are."""
-
     @staticmethod
     def _other_version(tmp_path, playback):
         other = tmp_path / f"{playback.current_video.stem}_sorted.mp4"
@@ -332,8 +329,6 @@ class TestVersions:
         assert playback.showing == video
 
     def test_a_family_the_file_on_screen_is_not_in_is_left_alone(self, tmp_path):
-        """The step carries the versions of the item the source last saw playing,
-        which a playback left to roll on may have moved past."""
         playback, engine = _make_playback(tmp_path, entries=2)
         opened = len(engine.opened)
         stale = tmp_path / "somebody else.mp4"
@@ -584,8 +579,6 @@ class TestTheOsr2:
         assert tcode.parks == 1
 
     def test_an_image_that_has_moved_once_is_not_asked_again(self, tmp_path):
-        """The gate is the resume's own edge, not a per-tick liveness check: a
-        video legitimately still between frames must not stop the device."""
         playback, engine, tcode = _driving(tmp_path)
         playback.set_tcode_enabled(True)
         playback.set_paused(True)
@@ -594,7 +587,7 @@ class TestTheOsr2:
         playback.advance()
         drove = len(tcode.updates) + tcode.parks
 
-        playback.advance()  # the same position, one pass later
+        playback.advance()
 
         assert len(tcode.updates) + tcode.parks > drove
 
@@ -804,7 +797,6 @@ class TestClose:
 
 
 def _watch_to(playback, engine, position_ms):
-    """Two ticks at *position_ms*: the jump onto it, then playing on from it."""
     engine.position_ms = position_ms
     playback.advance()
     playback.advance()
@@ -1018,9 +1010,6 @@ class TestAFrameInTheImagesPlace:
 
 
 class TestOpeningLocked:
-    """The Main Funestra opens holding its item, as it always has; a satellite
-    opens letting the list move on."""
-
     def test_a_playback_opened_locked_holds_its_item_from_the_first_frame(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2, locked=True)
 
@@ -1156,9 +1145,6 @@ class TestASeekOverAFileOpen:
 
 
 class TestAStretchBeingMarked:
-    """A mark is where a stretch of the item starts to be marked out; nothing may
-    rewind the playhead before it until the mark is closed or dropped."""
-
     def test_a_mark_is_a_floor_under_every_seek(self, tmp_path):
         playback, engine = _make_playback(tmp_path, duration_ms=60_000.0)
         engine.position_ms = 5_000.0
@@ -1238,9 +1224,6 @@ class TestAStretchRepeated:
 
 
 class TestCountingTheItemsOpened:
-    """How many times an item has been opened on the engine, so whatever runs on
-    a Funestra can tell a reopened item from the one it was already looking at."""
-
     def test_every_open_counts_including_the_same_item_again(self, tmp_path):
         playback, _engine = _make_playback(tmp_path, entries=2)
         opened = playback.loads

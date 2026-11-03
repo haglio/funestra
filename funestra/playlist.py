@@ -1,16 +1,3 @@
-"""The playlist a content source hands a Funestra: one item per line.
-
-The source -- Fun Time, or an Origenerator show it hosts -- writes this file,
-tells the Funestra to RELOAD_PLAYLIST, and the Funestra reads it back.  Each line names one
-item, with a TAB and its funscript after it when it has one, and a second TAB and
-the places a lock punches in on after that when it has those; blank lines and
-#-comments are ignored.  The same line is what PLAY_FILE carries, so a source
-naming an item to jump to spells it exactly as the file does.
-
-Written and read here, in one module, because more than one Funestra reads the
-one shape the sources write: the Main Funestra drives the OSR2 from the funscript
-column, and every Funestra colors its scrubber with it.
-"""
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -26,16 +13,6 @@ class _Pair(NamedTuple):
 
 
 class PlaylistItem(_Pair):
-    """One thing a Funestra shows: its path, the script that drives the device
-    while it plays, and the places in an image a lock punches in on, as
-    ``(x0, y0, x1, y1)`` fractions of it.
-
-    A pair as well as a record, on purpose: every reader in the family took
-    the item as a ``(video, funscript)`` pair before it had a name, and a
-    checkout that has not moved to the names yet still unpacks it -- so the
-    places ride beside the pair rather than inside it.
-    """
-
     points_of_interest: tuple = ()
 
     def __new__(cls, path: Path, funscript: Path | None = None, points_of_interest=()):
@@ -63,7 +40,6 @@ class PlaylistItem(_Pair):
 
 
 def item_from_line(line: str) -> PlaylistItem | None:
-    """The item one line names, or None for a line naming nothing."""
     path_part, _, rest = line.partition("\t")
     funscript_part, _, points_part = rest.partition("\t")
     path_part = path_part.strip()
@@ -75,7 +51,6 @@ def item_from_line(line: str) -> PlaylistItem | None:
 
 
 def item_line(item: PlaylistItem) -> str:
-    """*item* as the one line that names it, the inverse of :func:`item_from_line`."""
     columns = [str(item.path), str(item.funscript or "")]
     if item.points_of_interest:
         columns.append(";".join(",".join(f"{round(edge, 4):g}" for edge in box)
@@ -117,7 +92,6 @@ _RETRY_SPACING_S = 0.005
 
 
 def write_playlist(path: Path, items: Iterable[PlaylistItem]) -> None:
-    """Write *items* as the file :func:`read_playlist` reads back, whole or not at all."""
     write_whole(path, "".join(f"{item_line(item)}\n" for item in items),
                 attempts=round(READER_HOLD_BUDGET_S / _RETRY_SPACING_S),
                 delay_s=_RETRY_SPACING_S)

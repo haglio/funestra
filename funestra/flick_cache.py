@@ -1,10 +1,3 @@
-"""Decoded flicks kept in memory, and the decode requests that fill the cache.
-
-Two caches, both bounded and both least-recently-used: the flicks that have been
-taken up on screen, and frames decoded ahead of being taken up.  The flick on
-screen is protected from trimming, whatever its age -- the frame must not
-vanish under the viewer to make room for its neighbor.
-"""
 from __future__ import annotations
 
 from collections import OrderedDict
@@ -36,13 +29,6 @@ def trim_path_lru_cache[T](
 
 @dataclass
 class DecodeRequestState:
-    """One decode in flight, and the result it left for the loop to take.
-
-    A result carrying a request id older than the latest request is stale --
-    the loop asked for something else since -- and is dropped when taken, with
-    the state left loading for the request that superseded it.
-    """
-
     request_id: int = 0
     loading: bool = False
     decoding_path: Path | None = None
@@ -62,7 +48,6 @@ class DecodeRequestState:
         return self.request_id
 
     def is_decoding(self, path: Path) -> bool:
-        """Whether the decode in flight is this flick's."""
         return self.loading and self.decoding_path == path
 
     def record_success(self, path: Path, frames: list, request_id: int) -> None:
@@ -119,7 +104,6 @@ class FlickCacheStore:
         )
 
     def holds(self, path: Path) -> bool:
-        """Whether this flick's frames are in hand at all -- up, or decoded ahead."""
         return path in self.flick_cache or path in self.decoded_frame_cache
 
     def flick_entry_for(self, path: Path) -> dict:
@@ -128,7 +112,6 @@ class FlickCacheStore:
         return entry
 
     def cache_flick(self, path: Path, frames: list, *, protected_paths: set[Path] | None = None) -> None:
-        """Keep *frames* as the flick at *path*, ready to go on screen."""
         self.flick_cache[path] = {
             "frames": frames,
         }
@@ -141,12 +124,6 @@ class FlickCacheStore:
         self.trim_decoded_cache(protected_paths=protected_paths)
 
     def adopt_decoded_frames(self, path: Path, *, protected_paths: set[Path] | None = None) -> bool:
-        """Move *path*'s decode-ahead frames into the flicks-on-screen cache.
-
-        Moved rather than copied: decode-ahead room is for flicks that are not up
-        yet, and a flick left on both piles holds one of the two places against
-        its own neighbors for as long as it is showing.
-        """
         frames = self.decoded_frame_cache.pop(path, None)
         if frames is None:
             return False

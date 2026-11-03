@@ -1,12 +1,3 @@
-"""Which flick is up: the step, the switch and what is deferred between them.
-
-A step to a flick that is already decoded switches at once; a step to one that
-is not keeps the current flick playing and takes the new one up when its decode
-lands, so the screen never goes blank waiting.  A condemned flick's successor, a
-reordered folder's head, and the head of a narrowed folder that left out the
-flick on screen are never deferred, because in each the point is to see the new
-flick now.
-"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -48,7 +39,6 @@ class FlickSelectionController:
         return self._pending_path.name if self._pending_path is not None else None
 
     def set_current_flick(self, path: Path) -> None:
-        """Switch to a flick immediately, decoding it if its frames aren't in hand."""
         self._pending_path = None
         self._show(path)
 
@@ -64,13 +54,6 @@ class FlickSelectionController:
         self.sequence.play_next(flick)
 
     def reorder(self, flicks: list[Path]) -> None:
-        """Browse *flicks* — the folder rescanned in a new order — from the top.
-
-        Unlike :meth:`step` the switch is never deferred: the point of asking for
-        an order is to be shown what it puts first, so the new head takes the
-        screen at once and decodes there, exactly as a condemned flick's successor
-        does.
-        """
         self.set_current_flick(self.sequence.take_up(flicks))
 
     def narrow(self, flicks: list[Path]) -> None:
@@ -82,10 +65,6 @@ class FlickSelectionController:
             self.set_current_flick(up)
 
     def step(self, delta: int) -> None:
-        """Advance to next/prev flick.  A flick whose frames are in hand -- up
-        before, or decoded ahead of being asked for -- goes up at once;
-        otherwise the current flick keeps playing and the switch waits for the
-        decode."""
         path = self.sequence.step(delta)
 
         if self.loader.frames_ready(path):
@@ -96,13 +75,6 @@ class FlickSelectionController:
         self.loader.request_flick_load(path)
 
     def condemn_current(self) -> bool:
-        """Condemn the flick on screen and move on to the one after it.
-
-        Unlike :meth:`step` there is nothing to defer to: the condemned flick is
-        on its way out of the folder, so the successor takes the screen at once
-        even if it still has to be decoded.  Returns False, having done nothing,
-        when it is the only flick left — Genau has to keep something on screen.
-        """
         condemned = self.sequence.current_path
         successor = self.sequence.remove_current()
         if successor is None:
@@ -114,8 +86,6 @@ class FlickSelectionController:
         return True
 
     def adopt_pending_flick(self) -> bool:
-        """Called from the refresh loop.  If a deferred flick has finished
-        decoding, switch the renderer to it and return True."""
         if self._pending_path is None:
             return False
         if not self.loader.frames_ready(self._pending_path):
@@ -134,12 +104,10 @@ class FlickSelectionController:
                 return
 
     def _show(self, path: Path) -> None:
-        """Point the renderer at a flick and tell the world it is up."""
         self.renderer.set_current_flick_path(path)
         self.notifier.notify_flick(path)
 
     def _switch_to(self, path: Path) -> None:
-        """Take up an already-cached flick, canceling any deferred switch."""
         self._pending_path = None
         self._show(path)
         self._prepare_active_flick()

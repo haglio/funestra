@@ -1,10 +1,3 @@
-"""What Genau tells its audio companion: which flick is up, and whether it is on.
-
-Two datagrams over UDP.  ``FLICK <stem>`` goes out when a flick takes the screen,
-so the companion can play the music cut beside it; ``VISIBLE 0|1`` goes out on
-the edge only, because the tick says it every frame and the companion wants to
-hear it once.
-"""
 from __future__ import annotations
 
 import socket

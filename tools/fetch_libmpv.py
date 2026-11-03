@@ -38,8 +38,6 @@ _DOWNLOAD_TIMEOUT = 300
 
 
 def _loader():
-    """funestra's own loader, read from this checkout by path: it is standard
-    library only, and this script runs before anything is installed."""
     spec = importlib.util.spec_from_file_location(
         "_funestra_libmpv_loader", LOADER)
     module = importlib.util.module_from_spec(spec)
@@ -48,12 +46,10 @@ def _loader():
 
 
 def dll_path() -> Path:
-    """Where the DLL goes: the machine-wide copy every install of funestra finds."""
     return _loader().machine_libmpv_dir() / "libmpv-2.dll"
 
 
 def lock() -> dict[str, str]:
-    """The pin, as ``key = value`` lines; ``#`` starts a comment."""
     pinned = {}
     for raw in LOCK.read_text(encoding="utf-8").splitlines():
         line = raw.split("#", 1)[0].strip()
@@ -79,7 +75,6 @@ def _releases(repository: str) -> list[dict]:
 
 
 def newest_asset(repository: str) -> tuple[str, str] | None:
-    """The newest matching asset in *repository*, as (url, sha256 or "")."""
     for release in _releases(repository):
         for asset in release.get("assets", []):
             if _ASSET.search(asset["name"]):
@@ -102,11 +97,6 @@ def _reachable(url: str) -> bool:
 
 
 def resolve(pinned: dict[str, str]) -> tuple[str, str]:
-    """The asset to fetch and the digest to hold it to, pin first.
-
-    An empty digest means nothing verifies it -- which is what every run did
-    before this file, and is reported as the exception it now is.
-    """
     url, digest = pinned_asset(pinned)
     if _reachable(url):
         return url, digest
@@ -134,7 +124,6 @@ def download(url: str, digest: str, into: Path) -> Path:
 
 
 def extract(archive: Path, into: Path) -> Path:
-    """The DLL out of the 7-zip archive, using whichever 7z the machine has."""
     subprocess.run(["7z", "x", str(archive), f"-o{into}"], check=True,
                    stdout=subprocess.DEVNULL)
     found = next(into.rglob("libmpv-2.dll"), None)
@@ -144,7 +133,6 @@ def extract(archive: Path, into: Path) -> Path:
 
 
 def fetch() -> Path:
-    """Put the pinned DLL in its machine-wide home, and say which build it is."""
     pinned = lock()
     url, digest = resolve(pinned)
     dll = dll_path()

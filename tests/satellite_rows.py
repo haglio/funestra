@@ -1,5 +1,3 @@
-"""A Funestra's declared rows, made up for the tests that lay them out, draw them
-and press them: the shape a source's bar takes, every state set here."""
 from __future__ import annotations
 
 from funestra.hud_button import FIT_THE_WORD, Button
@@ -9,8 +7,6 @@ from funestra.hud_icons import FMODE_ICON, MINIMIZE_ICON, shared_icon
 def bar(funestra: str = "portrait", *, locked: bool = False, favorites: bool = False,
          enhanced: bool | None = None, newest: bool | None = None,
          minimize: bool = True) -> tuple[Button, ...]:
-    """Stepping, the video on screen, the browse -- the enhanced switch and the
-    order pair only where asked for -- and the window."""
     def own(name: str, face: str, **state) -> Button:
         return Button(f"{funestra}_{name}", face, f"{name} tip", **state)
 
@@ -33,8 +29,6 @@ def bar(funestra: str = "portrait", *, locked: bool = False, favorites: bool = F
 
 def funestra_rows(funestra: str = "portrait", *, mode: str = "",
                 **state) -> tuple[tuple[Button, ...], ...]:
-    """*Funestra*'s bar, under the session's mode pair -- with minimize moved up
-    beside it -- where a *mode* is named."""
     if not mode:
         return (bar(funestra, **state),)
     pair = (
@@ -48,8 +42,6 @@ def funestra_rows(funestra: str = "portrait", *, mode: str = "",
 
 
 def short_name(button: Button) -> str:
-    """What a Funestra's button is for, the Funestra prefix dropped: "lock",
-    "fmode"; a mode button keeps its whole command, naming no Funestra."""
     for prefix in ("portrait_", "landscape_"):
         if button.command.startswith(prefix):
             return button.command[len(prefix):]

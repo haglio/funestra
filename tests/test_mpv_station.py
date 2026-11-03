@@ -1,4 +1,3 @@
-"""A radio station: library videos' sound alone, round and round, heard only while it is tuned in."""
 from __future__ import annotations
 
 from pathlib import Path

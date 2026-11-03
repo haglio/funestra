@@ -1,4 +1,3 @@
-"""Every verb Genau answers, driven through the dispatcher one at a time."""
 from __future__ import annotations
 
 import logging
@@ -21,7 +20,6 @@ from funestra.robot_hand_beat import BeatEngine
 
 @contextmanager
 def _nothing_logged():
-    """Collect the dispatcher's warnings for the duration of one call."""
     records: list[logging.LogRecord] = []
 
     class _Collect(logging.Handler):
@@ -40,12 +38,6 @@ def _nothing_logged():
 
 
 def _answered(command, **collaborators) -> bool:
-    """Run one verb; True when the dispatcher answered it.
-
-    The dispatcher returns nothing — an unanswered verb goes on the log, which
-    is the only place production can see it — so every case below asks the log
-    the same question it used to ask the return value.
-    """
     with _nothing_logged() as unanswered:
         apply_runtime_command(command, GenauControls(**collaborators))
     return not unanswered
@@ -283,7 +275,7 @@ class TestApplyRuntimeCommand:
         )
 
         assert handled is True
-        assert ds.shape == WaveformShape.SAWTOOTH  # SINE wraps backward to SAWTOOTH
+        assert ds.shape == WaveformShape.SAWTOOTH
 
     def test_direct_commands_ignored_without_direct_state(self):
         engine = BeatEngine(phase=0.0, last_tick=0.0)
@@ -525,8 +517,6 @@ class TestFlickAdvanceCommands:
         assert aa.locked is True
 
     def test_a_number_names_the_seconds_and_leaves_the_lock_alone(self):
-        """Naming a pace used to arm the moving as well, which made it both a
-        setting and a switch.  The padlock is the only switch."""
         aa = FlickAdvanceState(locked=True)
         assert self._apply("FLICK_SECONDS 30", aa) is True
         assert aa.interval == 30
@@ -547,10 +537,6 @@ class TestFlickAdvanceCommands:
         assert aa.interval == 10
 
     def test_the_published_sound_level_reaches_the_volume_control(self):
-        """Genau draws the primary display's volume but owns neither the level
-        nor the audio, so Fun Time tells it what to show.  The mute comes with
-        the level: a zero cannot say whether the speaker is off or turned all the
-        way down, nor what unmuting would return to."""
         shown = []
         assert self._apply_volume("SET_VOLUME 40 1", shown.append) is True
         assert shown == [(40, True)]
@@ -558,8 +544,6 @@ class TestFlickAdvanceCommands:
         assert shown[-1] == (70, False)
 
     def test_a_level_with_no_mute_still_moves_the_slider(self):
-        """An orchestrator that sends the level alone is answered rather than
-        ignored — the volume control has a level to show either way."""
         shown = []
         assert self._apply_volume("SET_VOLUME 55", shown.append) is True
         assert shown == [(55, False)]
@@ -571,10 +555,6 @@ class TestFlickAdvanceCommands:
         assert shown == []
 
     def test_the_retired_advance_verbs_are_not_answered_to(self):
-        """The interval is named for the number now, not for the auto-advance
-        that spends it.  The old spelling is gone rather than kept alongside:
-        two verbs for one setting is how the two drift into meaning different
-        things."""
         aa = FlickAdvanceState(interval=10)
         for cmd in ("ADVANCE_UP", "ADVANCE_DOWN", "ADVANCE 30"):
             assert self._apply(cmd, aa) is False, f"{cmd} should no longer be answered"
@@ -683,10 +663,6 @@ class TestPlayFileCommand:
 
 
 class TestBrowseOrderCommands:
-    """The two orders every Funestra in the app browses in.  Genau owns its own
-    sequence rather than being handed a playlist file, so the order arrives as a
-    verb and the answer is a rescan of the flicks folder."""
-
     def test_latest_asks_for_newest_first(self):
         asked: list[bool] = []
 
@@ -728,10 +704,6 @@ class TestBrowseOrderCommands:
 
 
 class TestShapeCommands:
-    """Which of the two shapes a flick can be mastered in Genau browses: the
-    headset's VR flicks, the flat ones, or both.  A verb for the same reason the
-    browse order is one: Genau owns its sequence."""
-
     def _asked(self, command) -> tuple[bool, list[tuple[bool, bool]]]:
         asked: list[tuple[bool, bool]] = []
         handled = _answered(
@@ -764,13 +736,6 @@ class TestShapeCommands:
 
 
 class TestAnUnhandledCommand:
-    """The dispatcher says so itself, because it is the only thing that knows.
-
-    Genau's channel takes what Fun Time posts and what its own voice grammar
-    hears; a verb from a build that has moved on, or one whose collaborator
-    this app did not wire, used to be dropped without a word.
-    """
-
     def _run(self, command, caplog, **collaborators):
         with caplog.at_level("WARNING", logger="funestra.genau_controls"):
             apply_runtime_command(command, GenauControls(
@@ -786,7 +751,6 @@ class TestAnUnhandledCommand:
         assert "CYCLE_PROJECTION" in caplog.text
 
     def test_a_verb_this_build_did_not_wire_is_named_too(self, caplog):
-        """SPEED_UP with no motion state: as unanswerable as a typo."""
         self._run("SPEED_UP", caplog)
 
         assert "SPEED_UP" in caplog.text
@@ -798,8 +762,6 @@ class TestAnUnhandledCommand:
 
 
 class TestLearnedMotionVerbs:
-    """The learned motion answers a flip and an explicit on and off."""
-
     def _learned(self, active: bool = False) -> LearnedMotionState:
         return LearnedMotionState(model=LearnedModel(), active=active)
 

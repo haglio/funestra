@@ -1,4 +1,3 @@
-"""The verbs a content source sends a Funestra, and the two whose values it reads: an item and a pace."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -15,9 +14,6 @@ def _spellings() -> dict[str, str]:
 
 
 def test_every_verb_is_spelled_as_a_registry_looks_it_up():
-    """A registry folds the keyword to upper case and splits it from its value at
-    the first space, so a spelling with a space or a lower-case letter in it is a
-    verb nothing could ever answer."""
     for name, spelling in _spellings().items():
         assert spelling == name, f"{name} is spelled {spelling!r}"
         assert spelling == spelling.upper()
@@ -34,8 +30,6 @@ def test_no_two_verbs_share_a_spelling():
     (funestra_verbs.play_next, funestra_verbs.PLAY_NEXT),
 ])
 def test_a_verb_naming_an_item_carries_it_as_the_playlist_would(spell, verb):
-    """The value is a playlist line, so a receiver reads it back with the file's
-    own parser and cannot take the script for part of the path."""
     item = PlaylistItem(Path("C:/vids/My Clip.mp4"), Path("C:/scripts/My Clip.funscript"))
 
     line = spell(item)

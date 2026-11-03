@@ -1,4 +1,3 @@
-"""A window takes the list its playlist file holds whenever that list changes."""
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -8,8 +7,6 @@ from .playlist import PlaylistItem, read_playlist
 
 
 class PlaylistFollower:
-    """Hands on the list the playlist file holds, as often as that list changes."""
-
     def __init__(self, playlist_file: Path, *,
                  take: Callable[[list[PlaylistItem]], None]) -> None:
         self._playlist_file = playlist_file

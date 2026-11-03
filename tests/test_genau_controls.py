@@ -1,4 +1,3 @@
-"""The registry's own rules — the ones no single control's test would catch."""
 from __future__ import annotations
 
 import ast
@@ -28,8 +27,6 @@ def _moved(_controls_arg, _value) -> bool:
 
 class TestOneVerbHasOneOwner:
     def test_two_controls_cannot_claim_the_same_spelling(self):
-        """The loser would go silently unreachable, which is the drift the
-        registry exists to stop."""
         clash = (
             Control(name="one", verbs=(Verb("EXAMPLE_VERB", _moved),)),
             Control(name="two", verbs=(Verb("EXAMPLE_VERB", _moved),)),
@@ -60,7 +57,6 @@ class TestAControlSaysWhatItCannotActWithout:
         assert needy.can_act(_controls(robot_hand=RobotHandState())) is True
 
     def test_every_need_names_a_field_that_exists(self):
-        """A misspelled need would read as absent and silence the control."""
         fields = set(GenauControls.__dataclass_fields__)
 
         for control in CONTROLS:
@@ -68,8 +64,6 @@ class TestAControlSaysWhatItCannotActWithout:
 
 
 class TestHalfACommandIsNotACommand:
-    """The arity is part of the spelling, and both halves of the rule matter."""
-
     @pytest.mark.parametrize("spelling", ["SPEED", "AMP", "CENTER"])
     def test_a_verb_that_wants_a_value_says_so(self, spelling):
         assert VERBS[spelling][1].takes_a_value is True
@@ -81,9 +75,6 @@ class TestHalfACommandIsNotACommand:
         assert VERBS[spelling][1].takes_a_value is False
 
 
-# Every verb the registry answers.  Written down
-# here so a verb added to the registry is a deliberate line in a diff -- the
-# spellings are a contract with the orchestrator that sends them.
 WRITTEN_DOWN_VERBS = frozenset({
     "QUIT", "PREV", "NEXT", "TRASH", "FLIP_ENDS", "LATEST", "SHUFFLE",
     "PAUSE", "RESUME", "PARK", "RETRACT", "SPEED_DOWN", "SPEED_UP", "AMPLITUDE_DOWN", "AMPLITUDE_UP",
@@ -100,8 +91,6 @@ class TestTheVocabularyIsWrittenDown:
         assert set(VERBS) == WRITTEN_DOWN_VERBS
 
 
-# The verbs Genau answers that every Funestra answers -- the family's, spelled in
-# funestra_verbs and imported from there.  The rest are Genau's own.
 FAMILY_VERBS = frozenset({
     "TRASH",
     "NEXT", "PREV", "TOGGLE_LOCK", "LOCK_ON", "LOCK_OFF", "QUIT", "SET_VOLUME",
@@ -110,16 +99,6 @@ FAMILY_VERBS = frozenset({
 
 
 class TestAVerbIsSpelledInOneFile:
-    """A control used to be hand-plumbed through four to six files -- a branch in
-    the dispatcher, a parameter and an attribute and a hand-off line on the
-    tick, a branch in the key handler -- and the two hottest files in Genau's
-    repo changed together in half its commits because of it.  Held as a ceiling
-    that fails rather than as a note, and measured the way a reader would: which
-    modules in this package spell the verb at all.  One is allowed: the
-    registry that declares it, or funestra_verbs for a verb every Funestra answers.
-    A module's table of the names it used to have spells none of them.
-    """
-
     @staticmethod
     def _files_naming(verb: str) -> set[str]:
 

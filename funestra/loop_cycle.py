@@ -1,4 +1,3 @@
-"""What every Funestra's loop key steps through."""
 from __future__ import annotations
 
 from collections.abc import Callable

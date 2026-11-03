@@ -159,12 +159,9 @@ class Playback:
 
     @property
     def idle(self) -> bool:
-        """Whether the engine has nothing up at all: the item would not open,
-        or it was let go of."""
         return self._engine.idle
 
     def let_go(self) -> None:
-        """Play nothing, so the file on screen can be moved or deleted."""
         self._engine.stop()
 
     def step_version(self, versions: list[Path], delta: int) -> None:
@@ -343,8 +340,6 @@ class Playback:
         return True
 
     def _playback_has_resumed(self, position_ms: float) -> bool:
-        """Un-pausing is a request, not what is on screen: the device waits for the
-        first frame after it, a image counting as there at once."""
         if self._held_at is None:
             return True
         if position_ms == self._held_at and not self._engine.showing_image:

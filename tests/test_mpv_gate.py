@@ -46,7 +46,6 @@ def test_a_call_inside_holds_the_close_off_and_then_lets_it_through():
     assert inside.wait(5.0)
     shutting = threading.Thread(target=closer)
     shutting.start()
-    # Still inside the call, so the closer must be waiting, not answering.
     shutting.join(timeout=0.3)
     assert shutting.is_alive()
     assert not answered
@@ -57,12 +56,6 @@ def test_a_call_inside_holds_the_close_off_and_then_lets_it_through():
 
 
 def test_close_gives_up_rather_than_freeing_under_a_live_call():
-    """A call that never comes back must not be answered with a free.
-
-    Freeing anyway is the access violation; leaving the handle to the exiting
-    process is a leak.  The wait is bounded either way, so a wedged decoder
-    cannot hold a session open.
-    """
     gate = CallGate()
     inside = threading.Event()
     release = threading.Event()
@@ -83,7 +76,6 @@ def test_close_gives_up_rather_than_freeing_under_a_live_call():
 
 
 def test_a_close_that_gave_up_can_be_answered_once_the_call_returns():
-    """Declining is not final — the handle is still freeable afterwards."""
     gate = CallGate()
     release = threading.Event()
     inside = threading.Event()
@@ -104,11 +96,6 @@ def test_a_close_that_gave_up_can_be_answered_once_the_call_returns():
 
 
 def test_closing_bars_new_calls_immediately_so_a_looping_worker_cannot_extend_the_wait():
-    """A pump that never noticed the stop flag gets no-ops, not a longer drain.
-
-    Without this the drain would chase a worker round its loop for as long as
-    the worker kept calling, and the bounded wait would expire every time.
-    """
     gate = CallGate()
     assert gate.close(timeout=5.0)
     with gate.entered() as live:
@@ -136,8 +123,6 @@ def test_leases_nest_so_a_guarded_method_may_call_another():
 
 
 class Guarded:
-    """A stand-in engine: two decorated calls and the gate they run under."""
-
     def __init__(self) -> None:
         self._gate = CallGate()
         self.calls: list[str] = []
@@ -153,9 +138,6 @@ class Guarded:
 
 
 def test_a_guarded_call_after_the_close_does_nothing_and_says_so():
-    """Losing the shutdown race is the ordinary case, so it returns rather than
-    raises: a worker thread raising on its last turn would bury the real reason
-    the session ended under a traceback about an engine nobody wants any more."""
     engine = Guarded()
     assert engine.position_ms() == 42.0
     assert engine._gate.close(timeout=5.0)
