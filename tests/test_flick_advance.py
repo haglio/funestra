@@ -29,7 +29,7 @@ def _run(state, *, playing=True, seconds=30.0, step=0.1, start=0.0, on_screen="f
 
 def _series(state, start, stop, on_screen, *, playing=True, step=0.1):
     fires: list[float] = []
-    n = int(round((stop - start) / step))
+    n = round((stop - start) / step)
     for i in range(n + 1):
         now = round(start + step * i, 3)
         tick_flick_advance(
