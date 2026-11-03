@@ -29,9 +29,10 @@ def build_status_text(
     *,
     learned: LearnedMotionState | None = None,
     flick_advance: FlickAdvanceState | None = None,
-    on_screen: FlickOnScreen = FlickOnScreen(),
+    on_screen: FlickOnScreen | None = None,
 ) -> str:
     limits = control_limits(hand)
+    on_screen = on_screen or FlickOnScreen()
     advance = flick_advance or FlickAdvanceState()
     return (
         f"learned={'1' if learned is not None and learned.active else '0'}\n"

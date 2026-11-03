@@ -6,6 +6,7 @@ import queue
 import time
 from dataclasses import replace
 from pathlib import Path
+from typing import NamedTuple
 from unittest.mock import patch
 
 import numpy as np
@@ -64,8 +65,15 @@ def _videos(tmp_path: Path, *names: str) -> list[Path]:
     return videos
 
 
+class _Wanted(NamedTuple):
+    hud: bool = False
+    in_a_session: bool = False
+    message: bool = False
+
+
 def _channels(tmp_path: Path, lines: list[str], *, commands: str = "QUIT\n",
-              hud: bool = False, in_a_session: bool = False, message: bool = False) -> Channels:
+              **wanted) -> Channels:
+    wants = _Wanted(**wanted)
     (tmp_path / "playlist.tsv").write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
     (tmp_path / "cmd.txt").write_text(commands, encoding="utf-8")
     return Channels(
@@ -73,9 +81,9 @@ def _channels(tmp_path: Path, lines: list[str], *, commands: str = "QUIT\n",
         command=tmp_path / "cmd.txt",
         paused=tmp_path / "paused.txt",
         status=tmp_path / "status.txt",
-        notice=tmp_path / "notice.txt" if message else None,
-        hud=tmp_path / "portrait_hud.json" if hud else None,
-        dashboard_cmd=tmp_path / "dashboard_cmd.txt" if hud or in_a_session else None,
+        notice=tmp_path / "notice.txt" if wants.message else None,
+        hud=tmp_path / "portrait_hud.json" if wants.hud else None,
+        dashboard_cmd=tmp_path / "dashboard_cmd.txt" if wants.hud or wants.in_a_session else None,
     )
 
 
@@ -849,8 +857,8 @@ class Genau(Kino):
 
 
 def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
-          host_controls=None, clock=time.monotonic,
-          osr2_visualizer: Path | None = None) -> tuple[Funestra, FakeEngine, Kino]:
+          osr2_visualizer: Path | None = None,
+          **funestra_options) -> tuple[Funestra, FakeEngine, Kino]:
     channels = replace(_main_hud_channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1")],
                                          commands=commands), osr2_readout=osr2_visualizer)
     _publish_main_hud(tmp_path)
@@ -864,7 +872,7 @@ def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
     users = {"kino": make, **({"genau": Genau} if genau else {})}
     funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
                         locked=True, sound_is_the_rooms=True, users=users,
-                        host_controls=host_controls, clock=clock)
+                        **funestra_options)
     return funestra, engine, made[0]
 
 

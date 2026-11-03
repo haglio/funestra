@@ -75,7 +75,7 @@ class TestPacingTheForum:
             return _FakeResponse(b'{"ok": 1}')
 
         forum = harvest.Forum("https://forum.invalid", {}, opener=opener,
-                              sleep=clock.sleep, clock=lambda: clock.now, pace_s=2.5)
+                              pacing=harvest.Pacing(2.5, clock.sleep, lambda: clock.now))
 
         forum.get_json("/a.json")
         forum.get_json("/b.json")
@@ -95,7 +95,7 @@ class TestPacingTheForum:
             return _FakeResponse(b'{"ok": 1}')
 
         forum = harvest.Forum("https://forum.invalid", {}, opener=opener,
-                              sleep=clock.sleep, clock=lambda: clock.now, pace_s=1.0)
+                              pacing=harvest.Pacing(1.0, clock.sleep, lambda: clock.now))
 
         assert forum.get_json("/a.json") == {"ok": 1}
         assert calls == 2
@@ -113,7 +113,7 @@ class TestPacingTheForum:
             return _FakeResponse(b'{"ok": 1}')
 
         forum = harvest.Forum("https://forum.invalid", {}, opener=opener,
-                              sleep=clock.sleep, clock=lambda: clock.now, pace_s=1.0,
+                              pacing=harvest.Pacing(1.0, clock.sleep, lambda: clock.now),
                               log=logging.getLogger("harvest-under-test"))
 
         with caplog.at_level(logging.INFO, logger="harvest-under-test"):
@@ -138,7 +138,7 @@ class TestPacingTheForum:
             return _FakeResponse(b'{"ok": 1}')
 
         forum = harvest.Forum("https://forum.invalid", {}, opener=opener,
-                              sleep=clock.sleep, clock=lambda: clock.now, pace_s=1.0,
+                              pacing=harvest.Pacing(1.0, clock.sleep, lambda: clock.now),
                               log=logging.getLogger("harvest-under-test"))
 
         with caplog.at_level(logging.INFO, logger="harvest-under-test"):
@@ -157,7 +157,7 @@ class TestPacingTheForum:
             raise TimeoutError("The read operation timed out")
 
         forum = harvest.Forum("https://forum.invalid", {}, opener=opener,
-                              sleep=clock.sleep, clock=lambda: clock.now, pace_s=1.0)
+                              pacing=harvest.Pacing(1.0, clock.sleep, lambda: clock.now))
 
         with pytest.raises(TimeoutError):
             forum.get_json("/a.json")
@@ -174,7 +174,7 @@ class TestPacingTheForum:
             return _FakeResponse(b'{"ok": 1}')
 
         forum = harvest.Forum("https://forum.invalid", {}, opener=opener,
-                              sleep=clock.sleep, clock=lambda: clock.now, pace_s=1.0,
+                              pacing=harvest.Pacing(1.0, clock.sleep, lambda: clock.now),
                               log=logging.getLogger("harvest-under-test"))
 
         with caplog.at_level(logging.INFO, logger="harvest-under-test"):
@@ -193,7 +193,7 @@ class TestPacingTheForum:
             raise _not_found(request.full_url)
 
         forum = harvest.Forum("https://forum.invalid", {}, opener=opener,
-                              sleep=clock.sleep, clock=lambda: clock.now, pace_s=1.0)
+                              pacing=harvest.Pacing(1.0, clock.sleep, lambda: clock.now))
 
         with pytest.raises(urllib.error.HTTPError):
             forum.get_json("/a.json")
@@ -265,7 +265,7 @@ class TestDownloadingAScript:
             return _FakeResponse(b'{"actions": []}')
 
         forum = harvest.Forum("https://forum.invalid", {"User-Api-Key": "k"}, opener=opener,
-                              sleep=clock.sleep, clock=lambda: clock.now, pace_s=1.0)
+                              pacing=harvest.Pacing(1.0, clock.sleep, lambda: clock.now))
 
         body, where = forum.download(_short_link())
 
@@ -287,7 +287,7 @@ class TestDownloadingAScript:
             return _FakeResponse(b'{"actions": []}')
 
         forum = harvest.Forum("https://forum.invalid", {"User-Api-Key": "k"}, opener=opener,
-                              sleep=clock.sleep, clock=lambda: clock.now, pace_s=1.0)
+                              pacing=harvest.Pacing(1.0, clock.sleep, lambda: clock.now))
 
         body, where = forum.download("/uploads/short-url/aaa.funscript")
 
