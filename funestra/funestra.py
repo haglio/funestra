@@ -22,11 +22,11 @@ from .funscript_jumps import FunscriptJumps
 from .host_controls import HostControls
 from .hud_corners import HudCorners
 from .hud_minimize import NameFlash
-from .hud_overlay import HudOverlay
+from .hud_overlay import DrawnOn, DriveFeed, HudOverlay, PublishedHud, WindowsOwnHud
 from .hud_placement import HudEdge
-from .hud_row import RowHud
+from .hud_row import ItemRowDraw, RowHud, RowPress
 from .main_hud import ModeHud
-from .main_hud_overlay import MainHudOverlay
+from .main_hud_overlay import MainHudFiles, MainHudHost, MainHudOverlay
 from .messages import MessageWriter
 from .mpv_engine import MpvEngine
 from .osr2_visualizer import DrivePublisher
@@ -242,32 +242,27 @@ class Funestra:
             if hud is None:
                 return None
             return HudOverlay(
-                hud=hud, post=self.apply, engine=drawn_on,
-                minus_on_the_hud=self._hud_surface is None,
-                seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
-                **self._volume_presses(),
+                source=WindowsOwnHud(hud, self.apply),
+                drawn_on=DrawnOn(drawn_on, minus_on_the_hud=self._hud_surface is None),
+                row=self._row_press(),
             )
         if channels.console is not None:
             return MainHudOverlay(
-                main_hud_file=channels.console, drive_file=channels.drive,
-                command_file=channels.dashboard_cmd, engine=drawn_on,
-                drive_gate=self._drive_gate, top_block=self._top_block,
-                width=None if self._hud_surface is None else self._hud_surface.width,
-                minus_on_the_hud=self._hud_surface is None,
-                seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
-                **self._volume_presses(),
-                host_controls=self._host_controls,
-                visualizer=self._visualizer_for(channels), clock=self._clock,
+                files=MainHudFiles(channels.console, channels.dashboard_cmd),
+                drawn_on=DrawnOn(
+                    drawn_on, minus_on_the_hud=self._hud_surface is None,
+                    width=None if self._hud_surface is None else self._hud_surface.width),
+                host=MainHudHost(self._top_block, self._row_press(), self._host_controls),
+                drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
+                clock=self._clock,
             )
         if channels.hud is not None:
             return HudOverlay(
-                hud_file=channels.hud, command_file=channels.dashboard_cmd, engine=drawn_on,
-                drive_file=channels.drive, drive_gate=self._drive_gate,
-                visualizer=self._visualizer_for(channels), clock=self._clock,
-                over_the_video=self._hud_surface is None,
-                minus_on_the_hud=self._hud_surface is None,
-                seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
-                **self._volume_presses(),
+                source=PublishedHud(channels.hud, channels.dashboard_cmd),
+                drawn_on=DrawnOn(drawn_on, over_the_video=self._hud_surface is None,
+                                 minus_on_the_hud=self._hud_surface is None),
+                drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
+                row=self._row_press(), clock=self._clock,
             )
         return None
 
@@ -275,9 +270,10 @@ class Funestra:
     def _visualizer_for(channels: Channels) -> DrivePublisher | None:
         return None if channels.osr2_readout is None else DrivePublisher(channels.osr2_readout)
 
-    def _volume_presses(self) -> dict[str, Callable[..., None]]:
-        return {"set_volume": self._told_to_the_host(self._volume.set_level),
-                "toggle_mute": self._told_to_the_host(self._volume.toggle_mute)}
+    def _row_press(self) -> RowPress:
+        return RowPress(seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
+                        set_volume=self._told_to_the_host(self._volume.set_level),
+                        toggle_mute=self._told_to_the_host(self._volume.toggle_mute))
 
     def _told_to_the_host(self, move: Callable[..., None]) -> Callable[..., None]:
         def moved(*args) -> None:
@@ -501,15 +497,16 @@ class Funestra:
                    playback_speed: float) -> None:
         if self._hud is None:
             return
+        item_row = None if row is None else ItemRowDraw(row, colors)
         if isinstance(self._hud, MainHudOverlay):
             self._flash = self._name_flash.showing(self._top_block().video)
             self._hud.tick(playback_speed=playback_speed, viewport=viewport,
-                           item_row=row, heatmap=colors, flash=self._flash)
+                           item_row=item_row, flash=self._flash)
         else:
             video = self._front.top_block().video or self.playback.name_on_screen
             self._flash = self._name_flash.showing(video)
             self._hud.tick(video=video, playback_speed=playback_speed, viewport=viewport,
-                           item_row=row, heatmap=colors, flash=self._flash)
+                           item_row=item_row, flash=self._flash)
 
     def _paint_loop_frames(self, viewport: tuple[int, int]) -> None:
         playback, engine, frames = self.playback, self._engine, self._loop_frames

@@ -12,9 +12,15 @@ from shared_ui.spacing import BUTTON_SIZE_HUD
 from funestra.hud_button import Button
 from funestra.hud_corners import HudPlace
 from funestra.hud_minimize import collapsed_hud
-from funestra.hud_overlay import HudOverlay
+from funestra.hud_overlay import (
+    DrawnOn,
+    DriveFeed,
+    HudOverlay,
+    PublishedHud,
+    WindowsOwnHud,
+)
 from funestra.hud_placement import HudCorner, HudEdge
-from funestra.hud_row import UNDER_THE_HUD_GAP, RowHud
+from funestra.hud_row import UNDER_THE_HUD_GAP, ItemRowDraw, RowHud, RowPress
 from funestra.osr2_visualizer import DriveHud, DrivePublisher, publish_drive, read_drive
 from funestra.satellite_hud import MARGIN, MINUS_INSET, PAD, HudModel
 from funestra.satellite_hud_paint import HudRenderer
@@ -44,10 +50,11 @@ def hud(tmp_path: Path) -> Path:
     return path
 
 
-def _overlay(tmp_path: Path, hud_path: Path, engine, clock=None) -> HudOverlay:
+def _overlay(tmp_path: Path, hud_path: Path, engine, clock=None, **parts) -> HudOverlay:
+    drawn_on = parts.pop("drawn_on", None) or DrawnOn(engine)
     return HudOverlay(
-        hud_file=hud_path, command_file=tmp_path / "dashboard_cmd.txt",
-        engine=engine, clock=clock or (lambda: 0.0),
+        source=PublishedHud(hud_path, tmp_path / "dashboard_cmd.txt"),
+        drawn_on=drawn_on, clock=clock or (lambda: 0.0), **parts,
     )
 
 
@@ -73,7 +80,7 @@ class TestTheClipsRowAtItsFoot:
         engine = FakeEngine()
         overlay = _overlay(tmp_path, hud, engine)
 
-        overlay.tick(item_row=self._ROW)
+        overlay.tick(item_row=ItemRowDraw(self._ROW))
 
         assert overlay.targets.row is not None
 
@@ -91,11 +98,8 @@ class TestTheClipsRowAtItsFoot:
 
     def test_a_press_along_the_track_runs_the_clip_there(self, tmp_path, hud):
         seeks: list[float] = []
-        overlay = HudOverlay(
-            hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
-            engine=FakeEngine(), clock=lambda: 0.0, seek=seeks.append,
-        )
-        overlay.tick(item_row=self._ROW)
+        overlay = _overlay(tmp_path, hud, FakeEngine(), row=RowPress(seek=seeks.append))
+        overlay.tick(item_row=ItemRowDraw(self._ROW))
         _x, _y, _width, height = overlay.targets.row.rect
         x0, x1 = overlay.targets.row.track
 
@@ -106,11 +110,8 @@ class TestTheClipsRowAtItsFoot:
 
     def test_a_drag_along_the_track_keeps_running_the_clip(self, tmp_path, hud):
         seeks: list[float] = []
-        overlay = HudOverlay(
-            hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
-            engine=FakeEngine(), clock=lambda: 0.0, seek=seeks.append,
-        )
-        overlay.tick(item_row=self._ROW)
+        overlay = _overlay(tmp_path, hud, FakeEngine(), row=RowPress(seek=seeks.append))
+        overlay.tick(item_row=ItemRowDraw(self._ROW))
         _x, _y, _width, height = overlay.targets.row.rect
         x0, x1 = overlay.targets.row.track
         along = height - SCRUBBER_HEIGHT // 2
@@ -123,12 +124,9 @@ class TestTheClipsRowAtItsFoot:
     def test_a_press_on_the_speaker_mutes_and_a_drag_across_it_does_not(self, tmp_path, hud):
         mutes: list[int] = []
         levels: list[int] = []
-        overlay = HudOverlay(
-            hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
-            engine=FakeEngine(), clock=lambda: 0.0,
-            set_volume=levels.append, toggle_mute=lambda: mutes.append(1),
-        )
-        overlay.tick(item_row=self._ROW)
+        overlay = _overlay(tmp_path, hud, FakeEngine(), row=RowPress(
+            set_volume=levels.append, toggle_mute=lambda: mutes.append(1)))
+        overlay.tick(item_row=ItemRowDraw(self._ROW))
         _x, _y, width, height = overlay.targets.row.rect
         cx, cy = volume_control_xy(viewport_w=width, viewport_h=height, timeline_h=SCRUBBER_HEIGHT)
 
@@ -140,10 +138,10 @@ class TestTheClipsRowAtItsFoot:
 
     def test_a_scripted_clip_colors_its_track(self, tmp_path, hud):
         plain, scripted = FakeEngine(), FakeEngine()
-        _overlay(tmp_path, hud, plain).tick(item_row=self._ROW)
+        _overlay(tmp_path, hud, plain).tick(item_row=ItemRowDraw(self._ROW))
         colored = _overlay(tmp_path, hud, scripted)
-        colored.tick(item_row=self._ROW)
-        colored.tick(item_row=self._ROW, heatmap=_colors_across(colored.row))
+        colored.tick(item_row=ItemRowDraw(self._ROW))
+        colored.tick(item_row=ItemRowDraw(self._ROW, _colors_across(colored.row)))
 
         (_x, _y, bare), = plain.overlays.values()
         (_x, _y, filled), = scripted.overlays.values()
@@ -152,10 +150,10 @@ class TestTheClipsRowAtItsFoot:
 
     def test_a_fill_measured_across_some_other_track_is_dropped(self, tmp_path, hud):
         plain, mismatched = FakeEngine(), FakeEngine()
-        _overlay(tmp_path, hud, plain).tick(item_row=self._ROW)
+        _overlay(tmp_path, hud, plain).tick(item_row=ItemRowDraw(self._ROW))
         overlay = _overlay(tmp_path, hud, mismatched)
-        overlay.tick(item_row=self._ROW)
-        overlay.tick(item_row=self._ROW, heatmap=[(255, 0, 0)] * 7)
+        overlay.tick(item_row=ItemRowDraw(self._ROW))
+        overlay.tick(item_row=ItemRowDraw(self._ROW, [(255, 0, 0)] * 7))
 
         (_x, _y, bare), = plain.overlays.values()
         (_x, _y, drawn), = mismatched.overlays.values()
@@ -164,7 +162,7 @@ class TestTheClipsRowAtItsFoot:
     def test_the_host_is_told_where_the_row_landed(self, tmp_path, hud):
         overlay = _overlay(tmp_path, hud, FakeEngine())
 
-        overlay.tick(item_row=self._ROW)
+        overlay.tick(item_row=ItemRowDraw(self._ROW))
 
         x, _y, _width, _height = overlay.row.rect
         x0, x1 = overlay.row.track
@@ -533,8 +531,7 @@ def _publish_motion(path: Path, offset: float) -> None:
 
 
 def _overlay_with_the_motion(tmp_path: Path, hud: Path, engine) -> HudOverlay:
-    return HudOverlay(hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
-                      engine=engine, clock=lambda: 0.0, drive_file=tmp_path / "drive.txt")
+    return _overlay(tmp_path, hud, engine, drive=DriveFeed(tmp_path / "drive.txt"))
 
 
 class TestAHudWithTheOsr2:
@@ -585,9 +582,8 @@ class TestAHudWithTheOsr2:
 
 
 def _overlay_handing_on_the_motion(tmp_path: Path, hud: Path, engine) -> HudOverlay:
-    return HudOverlay(hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
-                      engine=engine, clock=lambda: 0.0, drive_file=tmp_path / "drive.txt",
-                      visualizer=DrivePublisher(tmp_path / "visualizer.txt"))
+    return _overlay(tmp_path, hud, engine, drive=DriveFeed(
+        tmp_path / "drive.txt", visualizer=DrivePublisher(tmp_path / "visualizer.txt")))
 
 
 class TestAHudWhoseHostDrawsTheOsr2:
@@ -652,9 +648,8 @@ class TestAHudWithTheOsr2ItsOwnFunestraScripts:
         composed = DriveHud(speed=50, amplitude=80, center=50, driven="funscript",
                             waveform=tuple(0.2 for _ in range(80)))
         gate = _Gate(composed)
-        overlay = HudOverlay(hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
-                             engine=FakeEngine(), clock=lambda: 0.0,
-                             drive_file=tmp_path / "drive.txt", drive_gate=gate)
+        overlay = _overlay(tmp_path, hud, FakeEngine(),
+                           drive=DriveFeed(tmp_path / "drive.txt", gate))
 
         overlay.tick()
 
@@ -739,8 +734,7 @@ def test_a_hud_on_its_own_screen_holds_the_tooltips_room_from_the_start(
         tmp_path: Path, hud: Path):
     engine = FakeEngine()
     _publish(hud, hud_minimized=True)
-    overlay = HudOverlay(hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
-                         engine=engine, clock=lambda: 0.0, over_the_video=False)
+    overlay = _overlay(tmp_path, hud, engine, drawn_on=DrawnOn(engine, over_the_video=False))
 
     overlay.tick()
 
@@ -751,9 +745,8 @@ def test_a_hud_on_its_own_screen_holds_the_tooltips_room_from_the_start(
 class TestAHudWhoseMinusHangsOutsideIt:
     @staticmethod
     def _overlay(tmp_path: Path, hud: Path, engine) -> HudOverlay:
-        return HudOverlay(hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
-                          engine=engine, clock=lambda: 0.0, over_the_video=False,
-                          minus_on_the_hud=False)
+        return _overlay(tmp_path, hud, engine, drawn_on=DrawnOn(
+            engine, over_the_video=False, minus_on_the_hud=False))
 
     def test_the_hud_draws_no_minus(self, tmp_path: Path, hud: Path):
         engine = FakeEngine()
@@ -868,9 +861,7 @@ def test_a_hud_hanging_on_its_own_screen_keeps_its_default_justification(
     _publish(hud, hud_corner="lower_right", hud_edge="right",
              rows=[[{"command": "portrait_next", "glyph": "N",
                      "tooltip": "Next", "width": 18}]])
-    overlay = HudOverlay(
-        hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
-        engine=engine, clock=lambda: 0.0, over_the_video=False)
+    overlay = _overlay(tmp_path, hud, engine, drawn_on=DrawnOn(engine, over_the_video=False))
 
     overlay.tick(viewport=(1200, 800))
 
@@ -895,8 +886,8 @@ def _a_windows_own_hud(engine, *, foot=None, posts=None):
     model = HudModel(funestra="portrait", title="Unlocked",
                      rows=((Button("portrait_next", "N", "Next"),),), foot=foot)
     posted = [] if posts is None else posts
-    overlay = HudOverlay(hud=lambda: model, post=posted.append, engine=engine,
-                         clock=lambda: 0.0)
+    overlay = HudOverlay(source=WindowsOwnHud(lambda: model, posted.append),
+                         drawn_on=DrawnOn(engine), clock=lambda: 0.0)
     overlay.tick()
     return overlay, posted
 
@@ -918,8 +909,8 @@ class TestAWindowsOwnHud:
                            waveform=tuple(0.5 for _ in range(80)))
         model = HudModel(funestra="portrait", title="Unlocked", osr2="robot_hand",
                          osr2_control="driving", drive=visualizer)
-        overlay = HudOverlay(hud=lambda: model, post=lambda command: None, engine=engine,
-                             clock=lambda: 0.0)
+        overlay = HudOverlay(source=WindowsOwnHud(lambda: model, lambda command: None),
+                             drawn_on=DrawnOn(engine), clock=lambda: 0.0)
 
         overlay.tick()
 

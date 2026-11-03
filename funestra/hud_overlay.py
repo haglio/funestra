@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import NamedTuple
 
@@ -10,7 +10,7 @@ from .dashboard import ask
 from .hud_button import Button
 from .hud_corners import HudPlace
 from .hud_placement import HudCorner, HudEdge, PointerReading
-from .hud_row import RowHud, RowLayout, RowPress, track_on_screen
+from .hud_row import ItemRowDraw, RowHud, RowLayout, RowPress, track_on_screen
 from .modes import Osr2State
 from .osr2_visualizer import DriveHud, DrivePublisher, read_drive
 from .satellite_hud import (
@@ -37,6 +37,25 @@ FOOT_WHEEL = "foot_wheel"
 _EMPTY_TARGETS = HudTargets(click=[], loop=[], filter=[], expand=None)
 
 
+@dataclass(frozen=True)
+class DrawnOn:
+    engine: object
+    overlay_id: int = HUD_OVERLAY_ID
+    over_the_video: bool = True
+    minus_on_the_hud: bool = True
+    width: int | None = None
+
+
+@dataclass(frozen=True)
+class DriveFeed:
+    file: Path | None = None
+    gate: object = None
+    visualizer: DrivePublisher | None = None
+
+
+NO_DRIVE = DriveFeed()
+
+
 class _Hover(NamedTuple):
     loop: str
     tip: str
@@ -50,7 +69,7 @@ class _Hover(NamedTuple):
 _ON_NO_CONTROL = _Hover("", "", None, None)
 
 
-class _PublishedHud:
+class PublishedHud:
     def __init__(self, hud_file: Path, command_file: Path) -> None:
         self._hud_file = Path(hud_file)
         self._command_file = Path(command_file)
@@ -72,7 +91,7 @@ class _PublishedHud:
         ask(self._command_file, command)
 
 
-class _WindowsOwnHud:
+class WindowsOwnHud:
     def __init__(self, hud: Callable[[], HudModel | None],
                  post: Callable[[str], None]) -> None:
         self._hud = hud
@@ -87,35 +106,23 @@ class HudOverlay:
     def __init__(
         self,
         *,
-        engine,
-        hud_file: Path | None = None,
-        command_file: Path | None = None,
-        hud: Callable[[], HudModel | None] | None = None,
-        post: Callable[[str], None] | None = None,
-        overlay_id: int = HUD_OVERLAY_ID,
+        source: PublishedHud | WindowsOwnHud,
+        drawn_on: DrawnOn,
+        drive: DriveFeed = NO_DRIVE,
+        row: RowPress | None = None,
         clock=time.monotonic,
-        drive_file: Path | None = None,
-        drive_gate=None,
-        visualizer: DrivePublisher | None = None,
-        over_the_video: bool = True,
-        minus_on_the_hud: bool = True,
-        seek=None,
-        seek_loop=None,
-        set_volume=None,
-        toggle_mute=None,
     ) -> None:
-        self._source = (_WindowsOwnHud(hud, post) if hud is not None
-                        else _PublishedHud(hud_file, command_file))
-        self._drive_file = None if drive_file is None else Path(drive_file)
-        self._drive_gate = drive_gate
-        self._visualizer = visualizer
+        self._source = source
+        self._drive_file = None if drive.file is None else Path(drive.file)
+        self._drive_gate = drive.gate
+        self._visualizer = drive.visualizer
         self._published_drive: DriveHud | None = None
         self._drive: DriveHud | None = None
-        self._engine = engine
-        self.overlay_id = overlay_id
+        self._engine = drawn_on.engine
+        self.overlay_id = drawn_on.overlay_id
         self._clock = clock
-        self._over_the_video = over_the_video
-        self._minus_on_the_hud = minus_on_the_hud
+        self._over_the_video = drawn_on.over_the_video
+        self._minus_on_the_hud = drawn_on.minus_on_the_hud
         self._renderer: HudRenderer | None = None
         self._clicks: HudClicks | None = None
         self._model: HudModel | None = None
@@ -124,8 +131,7 @@ class HudOverlay:
         self._playback_speed: float | None = None
         self._item_row: RowHud | None = None
         self._heatmap = None
-        self._row = RowPress(seek=seek, seek_loop=seek_loop, set_volume=set_volume,
-                             toggle_mute=toggle_mute)
+        self._row = RowPress() if row is None else row
         self._hover: PointerReading[_Hover] = PointerReading(_ON_NO_CONTROL)
         self._pointer_at = (0, 0)
         self._foot_held = False
@@ -155,17 +161,18 @@ class HudOverlay:
     def active_loop(self) -> str:
         return self._clicks.active_loop if self._clicks is not None else ""
 
-    def tick(self, video: str = "", playback_speed: float | None = None,
+    def tick(self, *, video: str = "", playback_speed: float | None = None,
              viewport: tuple[int, int] | None = None,
-             item_row: RowHud | None = None, heatmap=None, flash: str = "") -> None:
+             item_row: ItemRowDraw | None = None, flash: str = "") -> None:
+        row, heatmap = (None, None) if item_row is None else item_row
         redraw = (video != self._video or playback_speed != self._playback_speed
                   or viewport != self._viewport or flash != self._flash
-                  or item_row != self._item_row or heatmap is not self._heatmap)
+                  or row != self._item_row or heatmap is not self._heatmap)
         self._video = video
         self._playback_speed = playback_speed
         self._viewport = viewport
         self._flash = flash
-        self._item_row, self._heatmap = item_row, heatmap
+        self._item_row, self._heatmap = row, heatmap
         model, changed = self._source.next(self._model)
         if changed:
             if model is not None:

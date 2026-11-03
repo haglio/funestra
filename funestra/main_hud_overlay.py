@@ -2,61 +2,63 @@ from __future__ import annotations
 
 import time
 from collections.abc import Callable
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import NamedTuple
 
 from .dashboard import ask
 from .host_controls import HostControls, HostControlsPress
 from .hud_corners import HudPlace
-from .hud_overlay import HUD_OVERLAY_ID
+from .hud_overlay import NO_DRIVE, DrawnOn, DriveFeed
 from .hud_placement import HudEdge
-from .hud_row import RowHud, RowLayout, RowPress, track_on_screen
+from .hud_row import ItemRowDraw, RowHud, RowLayout, RowPress, track_on_screen
 from .main_hud import MainHudModel, ModeHud, kino_shows, read_main_hud
 from .main_hud_painter import MainHud, MainHudPainter, with_playback_speed
-from .osr2_visualizer import DriveHud, DrivePublisher, read_drive
+from .osr2_visualizer import DriveHud, read_drive
+
+
+class MainHudFiles(NamedTuple):
+    main_hud: Path
+    command: Path | None
+
+
+@dataclass(frozen=True)
+class MainHudHost:
+    top_block: Callable[[], ModeHud]
+    row: RowPress
+    host_controls: HostControls | None = None
 
 
 class MainHudOverlay:
     def __init__(
         self,
         *,
-        main_hud_file: Path,
-        drive_file: Path | None,
-        command_file: Path | None,
-        engine,
-        drive_gate,
-        top_block: Callable[[], ModeHud],
-        overlay_id: int = HUD_OVERLAY_ID,
-        width: int | None = None,
-        minus_on_the_hud: bool = True,
-        seek=None,
-        seek_loop=None,
-        set_volume=None,
-        toggle_mute=None,
-        host_controls: HostControls | None = None,
-        visualizer: DrivePublisher | None = None,
+        files: MainHudFiles,
+        drawn_on: DrawnOn,
+        host: MainHudHost,
+        drive: DriveFeed = NO_DRIVE,
         clock: Callable[[], float] = time.monotonic,
     ) -> None:
-        self._main_hud_file = Path(main_hud_file)
-        self._drive_file = None if drive_file is None else Path(drive_file)
-        self._command_file = command_file
-        self._engine = engine
-        self._drive_gate = drive_gate
-        self._visualizer = visualizer
+        self._main_hud_file = Path(files.main_hud)
+        self._drive_file = None if drive.file is None else Path(drive.file)
+        self._command_file = files.command
+        self._engine = drawn_on.engine
+        self._drive_gate = drive.gate
+        self._visualizer = drive.visualizer
         self._clock = clock
-        self._top_block = top_block
-        self.overlay_id = overlay_id
-        self._painter = MainHudPainter(width=width, minus_on_the_hud=minus_on_the_hud)
-        self._minus_on_the_hud = minus_on_the_hud
+        self._top_block = host.top_block
+        self.overlay_id = drawn_on.overlay_id
+        self._painter = MainHudPainter(width=drawn_on.width,
+                                       minus_on_the_hud=drawn_on.minus_on_the_hud)
+        self._minus_on_the_hud = drawn_on.minus_on_the_hud
         self._main_hud = MainHudModel()
         self._drive: DriveHud | None = None
         self._shown = False
         self._origin = (0, 0)
         self._hud_height = 0
         self._item_row: RowHud | None = None
-        self._row = RowPress(seek=seek, seek_loop=seek_loop, set_volume=set_volume,
-                             toggle_mute=toggle_mute)
-        self._host_controls = HostControlsPress(host_controls)
+        self._row = host.row
+        self._host_controls = HostControlsPress(host.host_controls)
 
     @property
     def main_hud_model(self) -> MainHudModel:
@@ -75,7 +77,8 @@ class MainHudOverlay:
         return self._painter.hud_place
 
     def tick(self, *, playback_speed: float, viewport: tuple[int, int],
-             item_row: RowHud | None = None, heatmap=None, flash: str = "") -> None:
+             item_row: ItemRowDraw | None = None, flash: str = "") -> None:
+        row, heatmap = (None, None) if item_row is None else item_row
         self._main_hud = read_main_hud(self._main_hud_file) or self._main_hud
         if self._drive_file is not None:
             self._drive = read_drive(self._drive_file) or self._drive
@@ -84,7 +87,7 @@ class MainHudOverlay:
             video_shows=kino_shows(self._main_hud.main_mode))
         if self._visualizer is not None and self._main_hud.has_osr2:
             self._visualizer.publish(drive, self._clock())
-        self._item_row = item_row
+        self._item_row = row
         if self.minimized and not self._minus_on_the_hud:
             self.close()
             return
@@ -96,7 +99,7 @@ class MainHudOverlay:
             main_hud_model=main_hud_model,
             drive=drive,
             flash=flash,
-        ), item_row=item_row, heatmap=heatmap, host_controls=self._host_controls.drawing())
+        ), item_row=row, heatmap=heatmap, host_controls=self._host_controls.drawing())
         self._origin = self._painter.place(viewport=viewport)
         self._hud_height = bgra.shape[0]
         self._engine.overlay(self.overlay_id, *self._origin, bgra)
