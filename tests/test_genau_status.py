@@ -4,7 +4,7 @@ from pathlib import Path
 
 from funestra import genau_status
 from funestra.flick_advance import FlickAdvanceState
-from funestra.genau_status import build_status_text, write_status_file
+from funestra.genau_status import FlickOnScreen, build_status_text, write_status_file
 from funestra.learned_motion import LearnedMotionState
 from funestra.robot_hand import RobotHandState, WaveformShape
 
@@ -118,7 +118,7 @@ def test_build_status_text_reports_a_released_flick():
 
 def test_build_status_text_names_the_flick_on_screen():
     text = build_status_text(
-        RobotHandState(), flick=Path("C:/flicks/alpha.mp4"),
+        RobotHandState(), on_screen=FlickOnScreen(Path("C:/flicks/alpha.mp4")),
     )
 
     assert "flick=C:\\flicks\\alpha.mp4" in text or "flick=C:/flicks/alpha.mp4" in text
@@ -140,12 +140,12 @@ def test_build_status_text_says_whether_the_learned_motion_has_the_hand():
 
 def test_build_status_text_says_whether_the_flick_on_screen_is_flipped():
     assert "flipped=0" in build_status_text(RobotHandState())
-    assert "flipped=1" in build_status_text(RobotHandState(), flipped=True)
+    assert "flipped=1" in build_status_text(RobotHandState(), on_screen=FlickOnScreen(flipped=True))
 
 
 def test_build_status_text_says_whether_the_flick_on_screen_is_portrait():
-    assert "portrait=1\n" in build_status_text(RobotHandState(), portrait=True)
-    assert "portrait=0\n" in build_status_text(RobotHandState(), portrait=False)
+    assert "portrait=1\n" in build_status_text(RobotHandState(), on_screen=FlickOnScreen(portrait=True))
+    assert "portrait=0\n" in build_status_text(RobotHandState(), on_screen=FlickOnScreen(portrait=False))
 
 
 def test_build_status_text_leaves_the_shape_empty_until_a_flick_is_up():

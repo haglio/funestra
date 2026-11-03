@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 
 from app_support.state_files import GENAU_STATUS
@@ -16,23 +17,28 @@ def _flag_or_unknown(flag: bool | None) -> str:
     return "" if flag is None else "1" if flag else "0"
 
 
+@dataclass(frozen=True)
+class FlickOnScreen:
+    path: Path | None = None
+    flipped: bool = False
+    portrait: bool | None = None
+
+
 def build_status_text(
     hand: RobotHandState,
     *,
     learned: LearnedMotionState | None = None,
     flick_advance: FlickAdvanceState | None = None,
-    flick: Path | None = None,
-    flipped: bool = False,
-    portrait: bool | None = None,
+    on_screen: FlickOnScreen = FlickOnScreen(),
 ) -> str:
     limits = control_limits(hand)
     advance = flick_advance or FlickAdvanceState()
     return (
         f"learned={'1' if learned is not None and learned.active else '0'}\n"
         f"locked={'1' if advance.locked else '0'}\n"
-        f"flick={flick if flick is not None else ''}\n"
-        f"flipped={'1' if flipped else '0'}\n"
-        f"portrait={_flag_or_unknown(portrait)}\n"
+        f"flick={on_screen.path if on_screen.path is not None else ''}\n"
+        f"flipped={'1' if on_screen.flipped else '0'}\n"
+        f"portrait={_flag_or_unknown(on_screen.portrait)}\n"
         f"shape={hand.shape.value}\n"
         f"amp_at_max={'1' if limits.amp_at_max else '0'}\n"
         f"amp_at_min={'1' if limits.amp_at_min else '0'}\n"

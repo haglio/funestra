@@ -135,7 +135,8 @@ def controls(x: int, y: int, center: int, limits: Limits, *,
 
 
 def tracks(x: int, y: int, center: int, *, dim: bool = False,
-           amplitude_ceiling: int = 100, speed_ceiling: int = 100) -> list[DriveTrack]:
+           ceilings: tuple[int, int] = (100, 100)) -> list[DriveTrack]:
+    amplitude_ceiling, speed_ceiling = ceilings
     center_frac = fraction(center)
     g = geometry(x, y, center_frac)
     return [
