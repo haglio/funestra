@@ -46,6 +46,7 @@ from .tcode import UdpTCodeSink
 from .tcode_driver import FunscriptTCodeDriver
 from .volume import VolumeHud
 from .volume_control import AppVolume, VolumeControl
+from .volume_press import told_to_the_host
 
 logger = logging.getLogger(__name__)
 
@@ -272,15 +273,10 @@ class Funestra:
 
     def _row_press(self) -> RowPress:
         return RowPress(seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
-                        set_volume=self._told_to_the_host(self._volume.set_level),
-                        toggle_mute=self._told_to_the_host(self._volume.toggle_mute))
-
-    def _told_to_the_host(self, move: Callable[..., None]) -> Callable[..., None]:
-        def moved(*args) -> None:
-            move(*args)
-            if self._volume_moved is not None:
-                self._volume_moved(self._volume.hud)
-        return moved
+                        set_volume=told_to_the_host(
+                            self._volume.set_level, self._volume, self._volume_moved),
+                        toggle_mute=told_to_the_host(
+                            self._volume.toggle_mute, self._volume, self._volume_moved))
 
     def _seek_along_the_track(self, ms: float) -> None:
         frame = self._front.own_frame()

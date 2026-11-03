@@ -47,16 +47,15 @@ from funestra.satellite_hud import (
     TITLE_ROW_H,
     TITLE_X,
     HudCell,
-    HudClicks,
     HudModel,
     NavMapRects,
     PaintedFoot,
-    button_tooltip,
     ellipsis_rects,
     looped_group_rect,
     nav_map_row_width,
     place_width,
 )
+from funestra.satellite_hud_clicks import HudClicks, button_tooltip
 from funestra.satellite_hud_paint import DrawnWith, HudRenderer
 from funestra.volume import VolumeHud
 
