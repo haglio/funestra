@@ -803,15 +803,6 @@ def test_on_a_window_the_way_of_playing_is_mpv_opened_on_that_window(tmp_path):
     assert funestra.playback.current_video == videos[0]
 
 
-def test_the_old_keywords_open_a_funestra_that_plays_the_same_playlist(tmp_path):
-    videos = _videos(tmp_path, "v0")
-    channels = _channels(tmp_path, [str(videos[0])])
-
-    funestra = Funestra(FakeEngine(), channels=channels, playlist=read_playlist(channels.playlist))
-
-    assert funestra.playback.current_video == videos[0]
-
-
 def _main_hud_channels(tmp_path: Path, lines: list[str], *, commands: str = "") -> Channels:
     channels = _channels(tmp_path, lines, commands=commands, in_a_session=True)
     return replace(channels, console=tmp_path / "main_hud.json", drive=tmp_path / "drive.txt")

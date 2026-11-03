@@ -14,8 +14,7 @@ class FlickSelectionParts(NamedTuple):
 
 
 class FlickSelectionController:
-    def __init__(self, parts: FlickSelectionParts | None = None, **old):
-        parts = FlickSelectionParts(**old) if parts is None else parts
+    def __init__(self, parts: FlickSelectionParts):
         (self.sequence, self.flick_store, self.loader, self.renderer, self.notifier,
          self.condemn_flick) = parts
         self._pending_path: Path | None = None

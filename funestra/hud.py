@@ -211,9 +211,7 @@ class ButtonLook:
 
 
 def button_ground(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int], fill,
-                  state: ButtonGroundState | None = None,
-                  **old) -> tuple[int, int, int, int]:
-    state = ButtonGroundState(**old) if state is None else state
+                  state: ButtonGroundState) -> tuple[int, int, int, int]:
     edge = TEXT_MUTED if (state.dim or fill in (BG_BUTTON, BG_BUTTON_ACTIVE)) else fill
     if state.hovered and not state.dim:
         fill = hovered_fill(fill)
@@ -226,9 +224,7 @@ def button_ground(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int], fi
 
 
 def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
-                rect: tuple[int, int, int, int], button, look: ButtonLook | None = None,
-                **old) -> None:
-    look = ButtonLook(**old) if look is None else look
+                rect: tuple[int, int, int, int], button, look: ButtonLook) -> None:
     hovered, icon_font, word_font, row_label = (
         look.hovered, look.icon_font, look.word_font, look.row_label)
     x, y, w, h = rect

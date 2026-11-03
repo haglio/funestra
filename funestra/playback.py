@@ -10,7 +10,7 @@ from .funscript import Funscript
 from .funscript import load as load_funscript
 from .play_points import PlayPoints
 from .playback_rate import clamp_rate
-from .playback_setup import PlaybackSetup
+from .playback_setup import PLAIN_PLAYBACK, PlaybackSetup
 from .playlist import PlaylistItem
 from .scripted_device import REWIND_MS, ScriptedDevice
 from .seeking import OwedSeek, seek_if_taken
@@ -37,10 +37,8 @@ class Playback:
         playlist: list[Path],
         *,
         engine,
-        setup: PlaybackSetup | None = None,
-        **old,
+        setup: PlaybackSetup = PLAIN_PLAYBACK,
     ) -> None:
-        setup = PlaybackSetup(**old) if setup is None else setup
         if not playlist:
             raise ValueError("playlist must not be empty")
         self._device = ScriptedDevice(setup.tcode, enabled=False)

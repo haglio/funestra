@@ -33,8 +33,7 @@ class HudTitleFacts:
     filters: Sequence[str] = ()
 
 
-def hud_title(facts: HudTitleFacts | None = None, **old) -> str:
-    facts = HudTitleFacts(**old) if facts is None else facts
+def hud_title(facts: HudTitleFacts) -> str:
     parts = [facts.playing_set] if facts.playing_set else []
     if facts.locked:
         parts.append(LOCKED_LABEL)

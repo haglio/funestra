@@ -8,8 +8,7 @@ from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
-# DXGI's three codes for a device that is gone, 0x887A0005 to 7, which mpv and FFmpeg print
-# with and without the 0x.
+# mpv and FFmpeg print DXGI's device-gone codes 0x887A0005 to 7, with or without the 0x.
 _GONE = re.compile(r"887a000[567]", re.IGNORECASE)
 
 FIRST_WAIT_S = 2.0

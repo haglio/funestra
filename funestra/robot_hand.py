@@ -226,14 +226,7 @@ class TraceSpan(NamedTuple):
     span_s: float
 
 
-def trace_window(
-    waveform: Waveform | WaveformShape,
-    span: TraceSpan | int | None = None,
-    *old_center: int,
-    **old,
-) -> tuple[list[float], float]:
-    if not isinstance(waveform, Waveform):
-        waveform, span = Waveform(waveform, span, *old_center), TraceSpan(**old)
+def trace_window(waveform: Waveform, span: TraceSpan) -> tuple[list[float], float]:
     phase, bpm, samples, span_s = span
     grid = span_s / max(1, samples - 1) * bpm / 60.0
     if grid <= 0:

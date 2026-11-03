@@ -15,3 +15,6 @@ class PlaybackSetup:
     funscripts: Mapping[Path, Path] | None = None
     points_of_interest: Mapping[Path, tuple] | None = None
     tcode: object = None
+
+
+PLAIN_PLAYBACK = PlaybackSetup()

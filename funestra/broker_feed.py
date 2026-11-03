@@ -85,9 +85,7 @@ class UdpListener:
     retry_delays: tuple[float, ...] = _BIND_RETRY_DELAYS
 
 
-def udp_reader(listener: UdpListener | str, *old_positional, **old) -> None:
-    if not isinstance(listener, UdpListener):
-        listener = UdpListener(listener, *old_positional, **old)
+def udp_reader(listener: UdpListener) -> None:
     host, port, feed, stop_event, logger, retry_delays = (
         listener.host, listener.port, listener.feed, listener.stop_event, listener.logger,
         listener.retry_delays)

@@ -99,7 +99,7 @@ def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool
 
 TILES_SHADER = Path(__file__).with_name("tiles.glsl")
 
-# video/out/aspect.c places an overhanging image from -1 (flush with one edge) to +1 (the other).
+# mpv's video/out/aspect.c places an overhanging image from -1 (flush with one edge) to +1.
 _PLACING = ("video_zoom", "video_align_x", "video_align_y")
 
 
@@ -263,9 +263,6 @@ class _MpvControl:
         self._mpv.playlist_clear()
         if self._staged is not None:
             self._mpv.loadfile(self._staged, "append")
-
-    # playlist-clear resolves "current" inside mpv; removing by an index read earlier
-    # can take the playing entry out from under it.
 
     @mpv_call()
     def stop(self) -> None:
