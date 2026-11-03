@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 from collections.abc import Callable
 from pathlib import Path
 
@@ -85,8 +86,6 @@ class MpvRenderEngine(_MpvControl):
 
     def _release(self) -> None:
         # libmpv: a render context outstanding when the core is destroyed is undefined behavior.
-        try:
+        with contextlib.suppress(Exception):
             self._render_context.free()
-        except Exception:
-            pass
         super()._release()

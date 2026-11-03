@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import ctypes
 import ctypes.wintypes
 import functools
@@ -145,10 +146,8 @@ def _terminate_outside_the_callers_apartment(handle) -> None:
     # libmpv's WASAPI output ends with an unpaired CoUninitialize on the terminating thread,
     # which takes a Qt GUI thread's drag and drop with it.
     def terminate() -> None:
-        try:
+        with contextlib.suppress(Exception):
             handle.terminate()
-        except Exception:
-            pass
 
     if not _holds_a_com_apartment():
         terminate()

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
@@ -94,10 +95,8 @@ class PaintedFoot:
 
     def paint(self, image: Image.Image, x: int, y: int, width: int,
               pointer: tuple[int, int] | None) -> list[tuple[Rect, Button]]:
-        try:
+        with contextlib.suppress(OSError):
             image.alpha_composite(_painted_at(self.file, self.stamp), (x, y))
-        except OSError:
-            pass
         return [((x + left, y + top, w, h), button)
                 for (left, top, w, h), button in self.targets]
 
