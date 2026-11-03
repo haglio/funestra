@@ -259,6 +259,9 @@ def phase_to_position(
         phase, shape=shape, amplitude=amplitude, center=center))
 
 
+_PHASE_SEARCH_SAMPLES = 720
+
+
 def phase_for_position_fraction(
     fraction: float,
     *,
@@ -266,8 +269,8 @@ def phase_for_position_fraction(
     amplitude: int = 100,
     center: int = 50,
     rising: bool = True,
-    samples: int = 720,
 ) -> float:
+    samples = _PHASE_SEARCH_SAMPLES
     fraction = min(1.0, max(0.0, fraction))
     heights = [
         position_fraction(i / samples, shape=shape, amplitude=amplitude, center=center)

@@ -17,7 +17,7 @@ from .genau_visualizer import AutoMotion, GenauVisualizer
 from .learned_motion import tick_learned_motion
 from .main_hud import HELD_HEIGHT, HOLD_VERB
 from .robot_hand import POSITION_MAX, phase_for_position_fraction
-from .robot_hand_beat import Beat, advance_beat
+from .robot_hand_beat import Beat, BeatTuning, advance_beat
 from .robot_hand_driver import DeviceHandoff
 from .tick_failures import TickFailures
 
@@ -110,15 +110,9 @@ class GenauRefreshController:
         self.notifier.notify_visible(not self._over_a_video)
 
         advance_beat(
-            self.engine,
+            self.engine, beat,
+            BeatTuning(self.beats_per_loop, self.bpm_smoothing, self.sync_strength),
             now=now,
-            auto_active=beat.auto_active,
-            raw_bpm=beat.raw_bpm,
-            sync_pulse_id=beat.sync_pulse_id,
-            beats_per_loop=self.beats_per_loop,
-            bpm_smoothing=self.bpm_smoothing,
-            sync_strength=self.sync_strength,
-            paused=beat.paused,
         )
 
         self.handoff.watch(self.robot_hand.playing)

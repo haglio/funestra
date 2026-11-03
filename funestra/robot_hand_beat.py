@@ -25,38 +25,34 @@ class Beat:
     sync_pulse_id: int
 
 
-def advance_beat(
-    engine: BeatEngine,
-    *,
-    now: float,
-    auto_active: bool,
-    raw_bpm: float | None,
-    sync_pulse_id: int,
-    beats_per_loop: float,
-    bpm_smoothing: float,
-    sync_strength: float,
-    paused: bool,
-) -> None:
+@dataclass(frozen=True)
+class BeatTuning:
+    beats_per_loop: float
+    bpm_smoothing: float
+    sync_strength: float
+
+
+def advance_beat(engine: BeatEngine, beat: Beat, tuning: BeatTuning, *, now: float) -> None:
     dt = now - engine.last_tick
     engine.last_tick = now
     dt = max(0.0, min(dt, _MAX_TICK_SECONDS))
 
-    if raw_bpm is not None:
-        engine.target_bpm = float(raw_bpm)
+    if beat.raw_bpm is not None:
+        engine.target_bpm = float(beat.raw_bpm)
         if engine.estimated_bpm is None:
-            engine.estimated_bpm = float(raw_bpm)
+            engine.estimated_bpm = float(beat.raw_bpm)
 
     if engine.estimated_bpm is not None and engine.target_bpm is not None:
-        alpha = max(0.0, min(1.0, bpm_smoothing))
+        alpha = max(0.0, min(1.0, tuning.bpm_smoothing))
         engine.estimated_bpm = engine.estimated_bpm + (engine.target_bpm - engine.estimated_bpm) * alpha
 
-    if auto_active and engine.estimated_bpm and engine.estimated_bpm > 0 and not paused:
-        loop_duration = (60.0 / engine.estimated_bpm) * beats_per_loop
+    if beat.auto_active and engine.estimated_bpm and engine.estimated_bpm > 0 and not beat.paused:
+        loop_duration = (60.0 / engine.estimated_bpm) * tuning.beats_per_loop
         engine.phase = (engine.phase + (dt / loop_duration)) % 1.0
 
-    if sync_pulse_id != engine.seen_sync_pulse_id:
-        engine.seen_sync_pulse_id = sync_pulse_id
+    if beat.sync_pulse_id != engine.seen_sync_pulse_id:
+        engine.seen_sync_pulse_id = beat.sync_pulse_id
         phase = engine.phase
         if phase > HALF_A_LOOP:
-            strength = max(0.0, min(1.0, sync_strength))
+            strength = max(0.0, min(1.0, tuning.sync_strength))
             engine.phase = (engine.phase + (1.0 - phase) * strength) % 1.0
