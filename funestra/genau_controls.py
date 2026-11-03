@@ -386,7 +386,7 @@ CONTROLS: tuple[Control, ...] = (
     Control(
         name="condemn",
         needs=("condemn_flick",),
-        verbs=(Verb(TRASH, _condemn), Verb("WEIRD", _condemn)),
+        verbs=(Verb(TRASH, _condemn),),
     ),
     Control(
         name="play_file",

@@ -80,10 +80,3 @@ def move_flick_to_trash(flick_path: Path, trash_dir: Path) -> Path | None:
     flick_path.replace(destination)
     return destination
 
-
-def weird_folder_for(flick: Path, flicks_folder: Path) -> Path:
-    return trash_folder_for(flick, flicks_folder)
-
-
-def move_flick_to_weird(flick_path: Path, trash_dir: Path) -> Path | None:
-    return move_flick_to_trash(flick_path, trash_dir)
