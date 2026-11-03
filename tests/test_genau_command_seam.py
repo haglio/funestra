@@ -17,6 +17,7 @@ from funestra.flag import Flag
 from funestra.flick_advance import FlickAdvanceState
 from funestra.genau_controls import VERBS, GenauControls
 from funestra.genau_refresh import GenauRefreshController
+from funestra.genau_refresh_parts import GenauRefreshParts
 from funestra.learned_model import LearnedModel
 from funestra.learned_motion import LearnedMotionState
 from funestra.main_hud import OSR2_PARKED, OSR2_RETRACTED
@@ -58,7 +59,7 @@ class Seam:
         self.stop_event = _Stop()
         self.command_file = tmp_path / "genau_cmd.txt"
 
-        self.controller = GenauRefreshController(
+        self.controller = GenauRefreshController(GenauRefreshParts(
             controls=GenauControls(
                 engine=self.engine,
                 paused=self.paused,
@@ -91,7 +92,7 @@ class Seam:
             now_source=lambda: NOW,
             read_paused_state=lambda _path, logger=None: self.paused.on,
             tcode_sender=self.tcode,
-        )
+        ))
 
     def send(self, line: str) -> None:
         line = line.replace(PICKED, str(self.picked))
