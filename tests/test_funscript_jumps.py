@@ -1,5 +1,3 @@
-"""Getting to the scripted parts: past this video's lull, or on to a video
-that has scripting at all -- the same moves on every Funestra."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -8,23 +6,15 @@ from funestra.funscript import Funscript
 from funestra.funscript_jumps import FunscriptJumps
 from funestra.modes import MessageLevel
 
-# Two runs of dense action with a long quiet stretch between them — the shape
-# these jumps exist for.
 _TWO_RUNS = Funscript(actions=[
     (10000, 0), (10300, 100), (10600, 0),
     (40000, 0), (40300, 100), (40600, 0),
 ])
-# Action from the top: nothing to skip forward to, and nothing to skip into
-# when a video like this is the one landed on.
 _PROMPT = Funscript(actions=[(0, 0), (300, 100), (600, 0), (900, 100)])
-# A long quiet lead-in, then action — what "next funscripted" has to land past.
 _LATE = Funscript(actions=[(60000, 0), (60300, 100), (60600, 0)])
 
 
 class FakeSession:
-    """Records the moves the jumps drive, over a fixed playlist, in the
-    Funestra's shape: a list of files, and the script named beside each."""
-
     def __init__(self, playlist, *, index: int = 0, funscripts=None) -> None:
         self.playlist = [video for video, _script in playlist]
         self._scripts = dict(playlist)
@@ -32,8 +22,6 @@ class FakeSession:
         self.position_ms = 0.0
         self.seeks: list[float] = []
         self.loads: list[int] = []
-        # Which Funscript each playlist entry's script parses to, so loading an
-        # entry publishes it exactly as the real playback's load does.
         self._funscripts = funscripts or {}
 
     def funscript_of(self, video):
@@ -80,8 +68,6 @@ class TestJumpToFunscript:
         jumps.jump_to_funscript()
 
         assert session.seeks == [40000]
-        # A highlight, not a message: Fun Time flashes that level green, which is
-        # what it reserves for the favorites and the funscripts.
         assert messages.said == [("funscript jump", MessageLevel.HIGHLIGHT)]
 
     def test_the_quiet_lead_in_counts_as_a_lull(self, tmp_path):
@@ -96,7 +82,7 @@ class TestJumpToFunscript:
     def test_nothing_scripted_ahead_says_so_and_stays_put(self, tmp_path):
         video, script = _scripted(tmp_path, "alpha")
         session = FakeSession([(video, script)], funscripts={script: _TWO_RUNS})
-        session.position_ms = 50000.0  # past the last run
+        session.position_ms = 50000.0
         jumps, messages = _jumps(session)
 
         jumps.jump_to_funscript()
@@ -115,8 +101,6 @@ class TestJumpToFunscript:
         assert messages.said == [("no funscripting ahead", MessageLevel.WARNING)]
 
     def test_it_never_goes_backward_into_the_run_already_playing(self, tmp_path):
-        """Mid-run, "next" is the run after this one — a jump that landed on the
-        start of the run you are inside would rewind, which is not a jump."""
         video, script = _scripted(tmp_path, "alpha")
         session = FakeSession([(video, script)], funscripts={script: _TWO_RUNS})
         session.position_ms = 10300.0
@@ -156,8 +140,6 @@ class TestNextFunscripted:
         assert session.seeks == [60000]
 
     def test_a_clip_scripted_from_the_top_is_not_seeked_into(self, tmp_path):
-        """The action already starts where the video does, so there is nothing to
-        skip — and seeking anyway would drop the first cycles."""
         video0 = tmp_path / "alpha.mp4"
         video1, script1 = _scripted(tmp_path, "beta")
         session = FakeSession(
@@ -185,9 +167,6 @@ class TestNextFunscripted:
         assert session.loads == [0]
 
     def test_the_clip_on_screen_is_never_the_answer(self, tmp_path):
-        """The only script in the playlist is the one already playing, so "next"
-        has nowhere to go — reloading it would read as the command restarting the
-        video for nothing."""
         video0 = tmp_path / "alpha.mp4"
         video1, script1 = _scripted(tmp_path, "beta")
         session = FakeSession(

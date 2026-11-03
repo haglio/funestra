@@ -44,7 +44,6 @@ class TestUpdateEngine:
         assert engine.estimated_bpm == pytest.approx(107.5)
 
     def test_auto_active_advances_phase_by_one_tick_of_the_loop(self):
-        """0.05 s at 120 bpm over 4 beats is a fortieth of a 2 s loop."""
         engine = BeatEngine(last_tick=100.0, estimated_bpm=120.0, target_bpm=120.0, phase=0.1)
 
         returned = advance_beat(
@@ -81,8 +80,6 @@ class TestUpdateEngine:
         assert engine.phase == pytest.approx(0.4)
 
     def test_a_sync_pulse_never_pulls_the_phase_backward(self):
-        # A downbeat the loop has already passed (phase in the first half) would
-        # step the cursor back, so the pulse holds the phase instead.
         engine = BeatEngine(last_tick=100.0, phase=0.4, seen_sync_pulse_id=1)
 
         advance_beat(
@@ -101,8 +98,6 @@ class TestUpdateEngine:
         assert engine.phase == pytest.approx(0.4)
 
     def test_a_sync_pulse_pulls_a_lagging_phase_forward(self):
-        # Past the half the downbeat is ahead, so the pulse eases the loop up
-        # toward the loop's end — forward, never wrapping past it.
         engine = BeatEngine(last_tick=100.0, phase=0.8, seen_sync_pulse_id=1)
 
         advance_beat(
@@ -117,7 +112,6 @@ class TestUpdateEngine:
             paused=False,
         )
 
-        # error = 1 - 0.8 = 0.2, a forward step of 0.2 * 0.5 = 0.1
         assert engine.seen_sync_pulse_id == 2
         assert engine.phase == pytest.approx(0.9)
 
@@ -136,5 +130,4 @@ class TestUpdateEngine:
             paused=False,
         )
 
-        # dt should clamp to 0.1s, so phase advance is 0.05 over a 2s loop.
         assert engine.phase == pytest.approx(0.05)

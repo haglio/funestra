@@ -1,4 +1,3 @@
-"""The OSR2 driven from the script of the item on screen, while this Funestra has the device."""
 from __future__ import annotations
 
 from .robot_hand import FULL_INTENSITY

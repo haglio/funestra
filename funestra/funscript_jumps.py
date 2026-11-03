@@ -1,5 +1,3 @@
-"""Getting to the scripted parts of what a Funestra plays: past this video's
-lull, or on to the next video in its list that has scripting at all."""
 from __future__ import annotations
 
 import logging

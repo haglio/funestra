@@ -1,30 +1,9 @@
-"""The beat the Robot Hand moves to.
-
-A phase that runs round once per loop at a BPM, and two things that bend it:
-the BPM it is told is smoothed into rather than jumped to, and a sync pulse eases
-the phase toward the downbeat by a fraction of the error — but only ever forward.
-A pulse that arrives while the loop is already past the downbeat catches it up;
-one that arrives while the loop leads the beat holds rather than dragging the
-phase back, because the phase is what a video is scrubbed by and the cursor must
-never run backwards.  The phase is the one clock the hand and the drawing share.
-
-Where the beat comes from is the caller's question, and :class:`Beat` is its
-answer for one tick.  Under the broker it is a BPM and a pulse published over
-UDP and a paused flag read off a file; on its own the hand's speed *is* the BPM
-and its stopping *is* the pause.  The four numbers are the same four either way,
-which is what lets one engine serve both.
-
-Pure arithmetic: no device, no clock of its own.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass
 
 from .flick_flip import HALF_A_LOOP
 
-# The most wall time one tick may move the phase, the same cap
-# :func:`funestra.robot_hand.phase_advanced` puts on a caller's own clock: a
-# clock that stalled comes back owing a step the motion should not take at once.
 _MAX_TICK_SECONDS = 0.1
 
 
@@ -39,12 +18,6 @@ class BeatEngine:
 
 @dataclass(frozen=True)
 class Beat:
-    """What the engine is told this tick, and which of the two decided it.
-
-    ``robot_hand_active`` is which of the two answered -- the hand itself, or
-    the broker -- and it is the fact the rest of a tick branches on.
-    """
-
     robot_hand_active: bool
     auto_active: bool
     raw_bpm: float | None

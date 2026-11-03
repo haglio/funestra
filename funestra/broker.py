@@ -1,10 +1,3 @@
-"""The Broker as a HUD's Broker button shows it: whether it is running, and the
-press that starts or stops it.
-
-No app imports the Broker, so what one needs to know about it -- the names its
-processes run under, the launcher that starts its tray, the file that asks it
-to stop -- it publishes in ``broker_contract.json`` beside that launcher.
-"""
 from __future__ import annotations
 
 import json
@@ -23,8 +16,6 @@ logger = logging.getLogger(__name__)
 
 CONTRACT_FILE = "broker_contract.json"
 HEARTBEAT_FRESH_S = 3.0
-# Inert where the starting process is in no job that permits breakaway, which is
-# every launch but an integration run's.
 CREATE_BREAKAWAY_FROM_JOB = 0x01000000
 
 
@@ -39,7 +30,6 @@ class BrokerContract:
 
     @property
     def image_pattern(self) -> str:
-        # The bare interpreters too: naming a process is best-effort.
         return ProcessNamer(self.app_name).process_name_pattern
 
     @property
@@ -48,7 +38,6 @@ class BrokerContract:
 
     @property
     def broker_command_line_pattern(self) -> str:
-        # The broker alone: a live tray is not a live broker.
         return _as_pattern(self.broker_module)
 
     @property
@@ -61,7 +50,6 @@ def _as_pattern(literal: str) -> str:
 
 
 def read_contract(tray_launcher: Path | str | None) -> BrokerContract | None:
-    """The document beside *tray_launcher*, or None with a line in the log."""
     if tray_launcher is None:
         return None
     return _contract_at(Path(tray_launcher).parent / CONTRACT_FILE)
@@ -95,11 +83,6 @@ def is_running(state_dir: Path, *, now: float | None = None) -> bool:
 
 
 def start(tray_launcher: Path | None) -> None:
-    """Start the Broker's tray, which starts the Broker.
-
-    Safe over a live one: the tray holds a single-instance mutex, so the launch
-    costs one process that exits at once.
-    """
     if not (tray_launcher and Path(tray_launcher).is_file()):
         logger.warning("No broker started: no tray launcher at %s", tray_launcher)
         return

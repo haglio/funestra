@@ -13,8 +13,6 @@ from funestra.tcode import (
 
 
 class RaisingSock:
-    """A socket that refuses every datagram, the way a closed one does."""
-
     def __init__(self):
         self.sent: list[tuple[bytes, tuple[str, int]]] = []
         self.closed = False
@@ -58,10 +56,6 @@ class TestUdpTCodeSink:
         assert sock.sent == [(b"L09999I50\n", ("127.0.0.1", 50557))]
 
     def test_a_send_after_close_is_silence_not_a_raise(self):
-        """A closed sink is still reached at shutdown by whatever thread is
-        driving it — Fun Time's VR worker ticks its main role after the render
-        thread has closed that role's driver — and a raise there kills the
-        worker mid-teardown (WSAENOTSOCK, observed in the integration suite)."""
         sock = RaisingSock()
         sink = UdpTCodeSink(sock=sock)
         sink.close()
@@ -69,7 +63,6 @@ class TestUdpTCodeSink:
         assert sock.sent == []
 
     def test_a_send_that_fails_while_the_sink_is_open_still_raises(self):
-        """Only closing is forgiven; a misaddressed sink stays as loud as it was."""
         sink = UdpTCodeSink(sock=RaisingSock())
         with pytest.raises(OSError, match="not a socket"):
             sink.send("L05000I33")
@@ -93,9 +86,6 @@ class TestFormatTcodeCommand:
 
 
 class TestToTcodePosition:
-    """Funscripts and the Main Funestra's HUD both measure a motion 0-100; the wire is 0-9999,
-    and both ends of the range have to land exactly on it."""
-
     def test_the_ends_of_the_range_are_the_ends_of_the_range(self):
         assert to_tcode_position(0) == 0
         assert to_tcode_position(100) == POSITION_MAX

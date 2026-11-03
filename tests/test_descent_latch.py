@@ -1,15 +1,3 @@
-"""The forecasts a trace is holding: one choice per approaching turn.
-
-A descent's top and touch-down are chosen once for the turn they belong to and
-then held.  Holding them means having somewhere to hold them, and this is that
-place: the three modules that used to pass one bare dict around -- :mod:`funestra.drive_trace` writing it as it paints,
-:mod:`funestra.status` reading it as it publishes, :mod:`funestra.drive_gate` voiding it
--- now share a type that names its own fields.
-
-What each held choice MEANS, and when it stops being true, is
-:mod:`funestra.drive_trace`'s and :mod:`funestra.drive_gate`'s to say and is tested
-there.  Here is only the holding.
-"""
 from __future__ import annotations
 
 from funestra.descent_latch import DescentChoice, DescentLatch, DriveKey
@@ -25,8 +13,6 @@ def _choice(top: float = 0.35, touch: int | None = 3_600) -> DescentChoice:
 
 class TestTheWaveAChoiceWasCutFrom:
     def test_a_key_is_the_five_fields_that_identify_a_wave(self):
-        """Anything else about a publish moves every frame; these five move
-        only when the motion is really a different motion."""
         publish = DriveHud(center=50, amplitude=100, speed=40, let_go=0.44, max_intensity=30)
 
         assert DriveKey.cut_from(publish) == DriveKey(
@@ -45,7 +31,6 @@ class TestWhatIsHeldForATurn:
         assert DescentLatch().choice_for(TURN_MS) is None
 
     def test_choosing_again_for_a_turn_replaces_what_was_held(self):
-        """The wave realigned, so the old wave's answer is not carried."""
         latch = DescentLatch()
         latch.remember(TURN_MS, _choice(), stale_before=0)
 
@@ -54,7 +39,6 @@ class TestWhatIsHeldForATurn:
         assert latch.choice_for(TURN_MS) == _choice(top=0.5, touch=3_800)
 
     def test_voiding_leaves_nothing_held_for_any_turn(self):
-        """What the gate does when the wave stops describing this approach."""
         latch = DescentLatch()
         latch.remember(TURN_MS, _choice(), stale_before=0)
 
@@ -64,13 +48,7 @@ class TestWhatIsHeldForATurn:
 
 
 class TestTurnsThePlayheadHasPassed:
-    """A session runs for hours and every turn it approaches leaves an entry,
-    so the ones it is long past are dropped.  Only once there are enough to be
-    worth scanning: this is housekeeping, not a rule about what is true, and a
-    turn just before the playhead is still the one a status read lands on.
-    """
-
-    CROWD = range(1_000, 18_000, 1_000)  # 17 turns: one more than it takes
+    CROWD = range(1_000, 18_000, 1_000)
 
     def test_a_turn_left_over_goes_once_there_are_enough_to_scan(self):
         latch = DescentLatch()
@@ -90,8 +68,6 @@ class TestTurnsThePlayheadHasPassed:
         assert latch.choice_for(17_000) == _choice()
 
     def test_a_handful_of_turns_is_never_worth_scanning(self):
-        """Nothing is dropped while the latch is small, so a long-held choice
-        cannot go missing on a Funestra that has only just started."""
         latch = DescentLatch()
 
         latch.remember(1_000, _choice(), stale_before=9_000)

@@ -94,13 +94,11 @@ class TestRoundedSquareWaveform:
         assert phase_to_position(1.0, shape=WaveformShape.ROUNDED_SQUARE) == pytest.approx(0, abs=1)
 
     def test_flatter_near_tip_than_sine(self):
-        # At phase 0.4 (near tip), rounded square should be closer to 9999 than sine
         sq = phase_to_position(0.4, shape=WaveformShape.ROUNDED_SQUARE)
         sine = phase_to_position(0.4, shape=WaveformShape.SINE)
         assert sq > sine
 
     def test_flatter_near_base_than_sine(self):
-        # At phase 0.1 (near base), rounded square should be closer to 0 than sine
         sq = phase_to_position(0.1, shape=WaveformShape.ROUNDED_SQUARE)
         sine = phase_to_position(0.1, shape=WaveformShape.SINE)
         assert sq < sine
@@ -111,30 +109,23 @@ class TestSawtoothWaveform:
         assert phase_to_position(0.0, shape=WaveformShape.SAWTOOTH) == 0
 
     def test_phase_half_is_falling(self):
-        # At 0.5, sawtooth is in the slow-fall region (past the 0.3 peak)
-        # raw = 1 - (0.5 - 0.3) / 0.7 ≈ 0.714
         pos = phase_to_position(0.5, shape=WaveformShape.SAWTOOTH)
         assert 6000 < pos < 8000
 
     def test_peak_at_rise_fraction(self):
-        # Peak should be at phase 0.3 (the rise fraction)
         assert phase_to_position(0.3, shape=WaveformShape.SAWTOOTH) == 9999
 
     def test_the_cycle_ends_back_at_the_base(self):
         assert phase_to_position(1.0, shape=WaveformShape.SAWTOOTH) == pytest.approx(0, abs=1)
 
     def test_asymmetric_rise_is_faster(self):
-        # At phase 0.15 (half of rise), should be ~50% up
         pos = phase_to_position(0.15, shape=WaveformShape.SAWTOOTH)
         assert 4000 < pos < 6000
 
 
 class TestWaveformContinuousPhase:
-    """All shapes must work with continuous phase > 1.0 (accumulated motion_phase)."""
-
     @pytest.mark.parametrize("shape", list(WaveformShape))
     def test_phase_1_5_matches_phase_0_5(self, shape):
-        # phase 1.5 should give the same position as phase 0.5 (one full cycle later)
         assert phase_to_position(1.5, shape=shape) == pytest.approx(
             phase_to_position(0.5, shape=shape), abs=1
         )
@@ -154,7 +145,6 @@ class TestWaveformContinuousPhase:
 
 class TestAmplitudeAndCenter:
     def test_amplitude_50_halves_range(self):
-        # At amplitude 50%, center 50%: range is 2500-7499
         tip = phase_to_position(0.5, amplitude=50)
         base = phase_to_position(0.0, amplitude=50)
         assert tip == pytest.approx(7500, abs=1)
@@ -169,8 +159,6 @@ class TestAmplitudeAndCenter:
         assert phase_to_position(0.5, amplitude=0) == pytest.approx(5000, abs=1)
 
     def test_center_75_shifts_toward_tip(self):
-        # amplitude=50, center=75: center at 7499, half_range=2500
-        # low=4999, high=9999
         base = phase_to_position(0.0, amplitude=50, center=75)
         tip = phase_to_position(0.5, amplitude=50, center=75)
         assert base == pytest.approx(5000, abs=1)
@@ -183,8 +171,6 @@ class TestAmplitudeAndCenter:
         assert tip == pytest.approx(5000, abs=1)
 
     def test_center_clamping_at_high_amplitude(self):
-        # amplitude=100, center=75: center at 7499, half_range=5000
-        # low=max(0, 2499)=2499, high=min(9999, 12499)=9999
         base = phase_to_position(0.0, amplitude=100, center=75)
         tip = phase_to_position(0.5, amplitude=100, center=75)
         assert base == pytest.approx(2500, abs=1)
@@ -260,11 +246,11 @@ class TestSetAmplitude:
 
     def test_recomputes_center(self):
         state = RobotHandState(amplitude=20, intended_center=90)
-        assert state.center == 90  # within range for amp=20
+        assert state.center == 90
 
         set_amplitude(state, 100)
 
-        assert state.center == 50  # forced to center for full amplitude
+        assert state.center == 50
 
 
 class TestSetMaxIntensity:
@@ -402,12 +388,10 @@ class TestAdjustAmplitude:
 
     def test_increasing_amplitude_pushes_center_toward_50(self):
         state = RobotHandState(amplitude=40, intended_center=80)
-        # range [20, 80], center=80 is valid
         adjust_amplitude(state, 10)
-        # amplitude=50, range [25, 75], intended=80 is outside → center clamped to 75
         assert state.amplitude == 50
         assert state.center == 75
-        assert state.intended_center == 80  # unchanged
+        assert state.intended_center == 80
 
     def test_repeated_amplitude_increase_forces_center_to_50(self):
         state = RobotHandState(amplitude=0, intended_center=80)
@@ -418,11 +402,10 @@ class TestAdjustAmplitude:
 
     def test_decreasing_amplitude_restores_intended_center(self):
         state = RobotHandState(amplitude=40, intended_center=80)
-        # Increase then decrease amplitude
-        adjust_amplitude(state, 10)  # amp=50, center clamped to 75
-        adjust_amplitude(state, 10)  # amp=60, center clamped to 70
-        adjust_amplitude(state, -10)  # amp=50, center restores to 75
-        adjust_amplitude(state, -10)  # amp=40, center restores to 80
+        adjust_amplitude(state, 10)
+        adjust_amplitude(state, 10)
+        adjust_amplitude(state, -10)
+        adjust_amplitude(state, -10)
         assert state.center == 80
         assert state.intended_center == 80
 
@@ -447,7 +430,6 @@ class TestSetCenter:
 
         set_center(state, 90)
 
-        # With amplitude=100, effective center is clamped to 50
         assert state.intended_center == 90
         assert state.center == 50
 
@@ -466,24 +448,18 @@ class TestAdjustCenter:
         assert state.intended_center == 40
 
     def test_half_step_when_5_from_edge(self):
-        # amplitude=80, range [40, 60]. intended=55, try +10 → would be 65 > 60
-        # 55 is 5 from edge (60), accept half → intended=60
         state = RobotHandState(amplitude=80, intended_center=55)
         adjust_center(state, 10)
         assert state.intended_center == 60
         assert state.center == 60
 
     def test_ignored_when_at_edge(self):
-        # amplitude=80, range [40, 60]. intended=60, try +10 → at edge, ignore
         state = RobotHandState(amplitude=80, intended_center=60)
         adjust_center(state, 10)
         assert state.intended_center == 60
         assert state.center == 60
 
     def test_half_step_when_5_from_the_low_edge(self):
-        # The low side is the same rule mirrored, and nothing was asking it —
-        # amplitude=80, range [40, 60]. intended=45, try -10 → would be 35 < 40,
-        # and 45 is 5 clear of the edge, so accept half → intended=40.
         state = RobotHandState(amplitude=80, intended_center=45)
         adjust_center(state, -10)
         assert state.intended_center == 40
@@ -559,24 +535,18 @@ def test_position_fraction_and_phase_to_position_are_one_curve_at_two_scales():
 def test_phase_advanced_moves_by_the_time_that_passed_and_wraps():
 
     assert phase_advanced(0.0, 60.0, 0.0) == 0.0
-    assert phase_advanced(0.0, 60.0, 0.05) == pytest.approx(0.05)  # 60/min = 1/s
+    assert phase_advanced(0.0, 60.0, 0.05) == pytest.approx(0.05)
     assert phase_advanced(0.9, 60.0, 0.09) == pytest.approx(0.99)
-    assert phase_advanced(0.99, 60.0, 0.02) == pytest.approx(0.01)  # wraps, not 1.01
+    assert phase_advanced(0.99, 60.0, 0.02) == pytest.approx(0.01)
 
 
 def test_a_stalled_clock_cannot_slingshot_the_phase():
-    # The app blocked, or the machine suspended: the step owed is capped, so the
-    # motion slows through the gap instead of flinging the device across it.
     capped = phase_advanced(0.0, 60.0, 5.0)
     assert capped == pytest.approx(phase_advanced(0.0, 60.0, MAX_TICK_SECONDS))
-    assert phase_advanced(0.0, 60.0, -1.0) == 0.0  # a clock that went backwards
+    assert phase_advanced(0.0, 60.0, -1.0) == 0.0
 
 
 class TestThePhaseForAHeight:
-    """position_fraction inverted, for a seek that has to put the device at a
-    named point on its axis. Every shape takes each height twice a cycle -- once
-    climbing, once falling -- so the caller says which visit it means."""
-
     @pytest.mark.parametrize("shape", list(WaveformShape))
     @pytest.mark.parametrize("height", [0.0, 0.25, 0.5, 0.75, 1.0])
     @pytest.mark.parametrize("rising", [True, False])
@@ -593,8 +563,6 @@ class TestThePhaseForAHeight:
         assert up < down
 
     def test_a_height_the_amplitude_never_reaches_lands_on_the_nearest(self):
-        """Turned down to the middle of the axis, the motion cannot be sent to
-        the top; the top of its own travel is where the drawing would be."""
         phase = phase_for_position_fraction(1.0, amplitude=40, center=50, rising=True)
 
         assert position_fraction(phase, amplitude=40, center=50) == pytest.approx(0.7, abs=0.01)
@@ -606,9 +574,6 @@ class TestThePhaseForAHeight:
 
 
 def test_the_two_held_ends_are_the_ends_of_the_travel():
-    """A hold settles the motion at one end of the axis or the other, and the
-    two apps that hold it have to mean the same end by the same word."""
-
     for center in (PARK_CENTER, RETRACT_CENTER):
         state = RobotHandState()
         set_amplitude(state, 0)
@@ -620,16 +585,10 @@ def test_the_two_held_ends_are_the_ends_of_the_travel():
 
 
 class TestTheWaveTracedOnKnots:
-    """The single wave's drawing for the visualizer: read on knots a fixed stretch
-    of phase apart, anchored to a phase that never wraps, so it holds still
-    between knots and slides rather than being redrawn at fixed columns."""
-
     def test_the_knots_start_at_or_before_the_phase(self):
         heights, slide = trace_window(
             WaveformShape.SINE, 100, 50, phase=0.0, bpm=60.0, samples=5, span_s=1.0)
 
-        # A quarter second a knot at 60 a minute is a quarter cycle: floor,
-        # halfway, ceiling, halfway, floor, halfway.
         assert heights == pytest.approx([0.0, 0.5, 1.0, 0.5, 0.0, 0.5], abs=1e-9)
         assert slide == 0.0
 

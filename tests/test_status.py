@@ -1,10 +1,3 @@
-"""Tests for funestra.status.
-
-The *fields* each Funestra publishes are that Funestra's own concern and are covered
-in its repo (fun_time's ``test_main_player_status.py`` and ``test_satellite_status.py``).
-What is shared — and tested here — is the publishing mechanism: the throttle, the
-directory, and surviving a file that cannot be written.
-"""
 from __future__ import annotations
 
 import threading
@@ -43,8 +36,6 @@ class TestStatusWriter:
         assert "position_ms=12345\n" in text
 
     def test_writes_one_key_per_line_in_the_funestras_own_order(self, tmp_path):
-        # Each Funestra owns its file's layout, so the writer must not reorder or
-        # reformat what the fields callable returned — a reader parses these keys.
         status_path = tmp_path / "status.txt"
         writer = StatusWriter(
             status_path, lambda _s: {"b": "2", "a": "1"}, now_source=lambda: 0.0,
@@ -55,7 +46,6 @@ class TestStatusWriter:
         assert status_path.read_text(encoding="utf-8") == "b=2\na=1\n"
 
     def test_creates_the_state_directory(self, tmp_path):
-        # A Funestra can publish before anything else has created its state dir.
         status_path = tmp_path / "state" / "status.txt"
         writer = StatusWriter(status_path, _fields, now_source=lambda: 0.0)
 
@@ -93,12 +83,6 @@ class TestStatusWriter:
         assert "position_ms=12400" in status_path.read_text(encoding="utf-8")
 
     def test_a_poller_never_reads_a_half_written_record(self, tmp_path):
-        # The orchestrator polls this file several times a second while the
-        # Funestra rewrites it several times a second.  A write that truncates the
-        # file in place leaves a window in which the poller reads nothing — and
-        # a poller cannot tell "I caught it mid-write" from "this Funestra has no
-        # video", so it acts on the blank.  The write has to land whole or not at
-        # all.
         status_path = tmp_path / "status.txt"
         writer = StatusWriter(status_path, _fields, min_interval=0.0)
         session = StubSession()
@@ -129,19 +113,14 @@ class TestStatusWriter:
         assert not torn, f"the poller read {len(torn)} incomplete records, e.g. {torn[0]!r}"
 
     def test_an_unwritable_path_is_reported_not_raised(self, tmp_path):
-        # A locked or vanished status file must never take down a run loop; the
-        # next tick will try again — and a publish that never landed leaves
-        # nothing on disk, not even the file it staged.
         status_path = tmp_path / "status.txt"
-        status_path.mkdir()  # a directory where the file should be
+        status_path.mkdir()
         writer = StatusWriter(status_path, _fields, now_source=lambda: 0.0)
 
         assert writer.write(StubSession()) is False
         assert list(tmp_path.iterdir()) == [status_path]
 
     def test_a_failed_write_does_not_start_the_throttle(self, tmp_path):
-        # Throttling off a write that never landed would suppress the retry that
-        # is supposed to recover from a transient lock.
         status_path = tmp_path / "state"
         status_path.mkdir()
         clock = {"t": 0.0}
@@ -156,9 +135,6 @@ class TestStatusWriter:
 
 
 class TestWhatEveryFunestraPublishes:
-    """The lines every Funestra's status leads with, written and read here so a
-    Funestra and the source polling it cannot disagree about a key."""
-
     def test_the_lines_in_the_order_they_are_written(self):
         fields = status_fields(FunestraStatus(
             video="C:/vids/a.mp4", position_ms=1500, duration_ms=5000, paused=False, locked=True,
@@ -175,9 +151,6 @@ class TestWhatEveryFunestraPublishes:
         assert status_fields(FunestraStatus(position_ms=12345.9))["position_ms"] == "12345"
 
     def test_a_status_says_when_its_playhead_was_read(self):
-        """A reader keeping in step extrapolates the playhead from when it was
-        true; the file's own write time can trail that by every property read
-        the Funestra made after it."""
         status = FunestraStatus(video="C:/vids/a.mp4", position_ms=1500, read_at=1_000.25)
 
         assert status_fields(status)["read_at"] == "1000.250"
@@ -196,9 +169,6 @@ class TestWhatEveryFunestraPublishes:
         assert parse_status(status_fields(status)) == status
 
     def test_a_key_the_file_does_not_carry_keeps_the_readers_default(self):
-        """A status from before a key existed, or a file read before the Funestra's
-        first write, says what that Funestra is doing at rest -- and what that is
-        differs: a satellite opens unlocked, the Main Funestra locked."""
         assert parse_status({}) == FunestraStatus()
         assert parse_status({}, default=FunestraStatus(locked=True)).locked is True
         assert parse_status({"locked": "0"}, default=FunestraStatus(locked=True)).locked is False

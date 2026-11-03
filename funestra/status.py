@@ -1,20 +1,3 @@
-"""The status file a Funestra publishes for its content source to read.
-
-The reverse leg of :mod:`funestra.file_channel`: commands and the paused flag
-go in, this comes back out.  Fun Time polls it to know what each Funestra is
-showing — the item on screen, the playhead, whether the Funestra is paused or
-holding — and whatever else that Funestra's features need.
-
-Every Funestra leads with the same lines, :class:`FunestraStatus`, written by
-:func:`status_fields` and read back by :func:`parse_status`; a Funestra adds its
-own lines after them (the Main Funestra's loop and funscript, a satellite's
-playlist length), and its reader takes those off the same file.
-
-Writes are throttled because the playhead changes every tick, while a poller
-only ever samples a few times a second.  *What* to publish arrives as a
-``fields`` callable; *how* to publish it — the throttle, the directory, and
-surviving a locked or vanished file — is identical everywhere and lives here.
-"""
 from __future__ import annotations
 
 import time
@@ -27,11 +10,6 @@ from .file_channel import publish_whole
 
 @dataclass(frozen=True)
 class FunestraStatus:
-    """What every Funestra says about itself: the item on screen, where the
-    playhead is in it and when that was read, whether the Funestra is paused or
-    holding it, the rate it plays at, and whether what is on screen is a still
-    image."""
-
     video: str = ""
     position_ms: int = 0
     duration_ms: int = 0
@@ -47,7 +25,6 @@ def _flag(on: bool) -> str:
 
 
 def status_fields(status: FunestraStatus) -> dict[str, str]:
-    """The lines every Funestra publishes, in the order they are written."""
     return {
         "video": status.video,
         "position_ms": str(int(status.position_ms)),
@@ -83,13 +60,6 @@ def _bool(text: str | None, default: bool) -> bool:
 
 
 def parse_status(fields: Mapping[str, str], *, default: FunestraStatus | None = None) -> FunestraStatus:
-    """The record a read status file's ``key=value`` pairs carry.
-
-    A key the file does not carry keeps *default*'s answer — a status from before
-    the key existed, or one read before the Funestra's first write, says what that
-    Funestra is doing at rest, which differs: a satellite opens unlocked, the Main
-    Funestra locked.  A number that cannot be read keeps it too.
-    """
     if default is None:
         default = FunestraStatus()
     return FunestraStatus(
@@ -119,18 +89,10 @@ class StatusWriter:
         self._last_write: float | None = None
 
     def write(self, session) -> bool:
-        """Publish *session*'s status, unless the last write was too recent.
-
-        Returns whether anything reached disk, so a caller can tell a throttled
-        tick from a failed one.
-        """
         now = self._now()
         if self._last_write is not None and now - self._last_write < self._min_interval:
             return False
         text = "".join(f"{key}={value}\n" for key, value in self._fields(session).items())
-        # Published whole rather than truncated in place: the orchestrator polls
-        # this file, and a poller that caught a truncating write would read no
-        # video at all — which it cannot tell from a Funestra that has none.
         if not publish_whole(self._path, text):
             return False
         self._last_write = now

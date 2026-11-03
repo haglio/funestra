@@ -1,4 +1,3 @@
-"""The Broker as a HUD's Broker button shows it, and what a press on it does."""
 from __future__ import annotations
 
 import json
@@ -14,8 +13,6 @@ from app_support.process_identity import ProcessNamer
 
 from funestra import broker
 
-# A Broker checkout as it publishes itself -- invented, not this machine's, so
-# the test says what it depends on rather than inheriting it.
 PUBLISHED = {
     "app_name": "Relay",
     "package_dir": "relay_pkg",
@@ -27,7 +24,6 @@ PUBLISHED = {
 
 
 def _a_broker_checkout(checkout: Path, **published: str | None) -> Path:
-    """A checkout publishing PUBLISHED, and the launcher path a host holds."""
     named = {key: value for key, value in {**PUBLISHED, **published}.items() if value is not None}
     checkout.mkdir(parents=True, exist_ok=True)
     (checkout / broker.CONTRACT_FILE).write_text(json.dumps(named), encoding="utf-8")
@@ -41,8 +37,6 @@ def _stamped(path: Path, age: float, *, now: float = 1000.0) -> None:
 
 
 class TestTheImagePattern:
-    """Built from the published label by the same rule the Broker names by."""
-
     def test_it_matches_the_names_a_broker_of_that_name_launches_under(self, tmp_path):
         pattern = broker.read_contract(_a_broker_checkout(tmp_path)).image_pattern
 
@@ -51,8 +45,6 @@ class TestTheImagePattern:
             assert re.match(pattern, name), name
 
     def test_it_still_matches_a_broker_that_could_not_be_named(self, tmp_path):
-        # The copy is best-effort, so a broker can arrive under the plain
-        # interpreter and must stay reachable.
         pattern = broker.read_contract(_a_broker_checkout(tmp_path)).image_pattern
 
         for name in ("pythonw.exe", "python.exe", "py.exe"):
@@ -90,9 +82,6 @@ class TestReadingTheContract:
 
 
 class TestWhetherItIsRunning:
-    """Lit while the Broker holds the serial port, which it says every half
-    second -- or while it is up looking for an OSR2 that is unplugged."""
-
     def test_its_heartbeat_counts_as_fresh_up_to_three_seconds_old(self, tmp_path):
         _stamped(tmp_path / state_files.BROKER_HEARTBEAT, 3.0)
         assert broker.is_running(tmp_path, now=1000.0)
@@ -114,8 +103,6 @@ class TestWhetherItIsRunning:
 
 class TestStarting:
     def test_it_starts_the_tray_hidden_and_outside_a_run_s_job_object(self, tmp_path):
-        """The tray has to outlive whatever started it, an integration run's job
-        object included."""
         launcher = _a_broker_checkout(tmp_path)
 
         with patch("funestra.broker.subprocess.Popen") as popen:
@@ -136,8 +123,6 @@ class TestStarting:
         popen.assert_not_called()
 
     def test_a_missing_launcher_says_so_rather_than_going_quiet(self, tmp_path, caplog):
-        """A host whose launcher is not there gets no Broker, and with no line
-        about it that is a silent OSR2 with nothing anywhere to explain it."""
         with caplog.at_level(logging.WARNING, logger="funestra.broker"):
             broker.start(tmp_path / "nowhere" / "launch_relay_tray.vbs")
 
@@ -165,8 +150,6 @@ class TestStopping:
 
 
 class TestThePress:
-    """Which way a press on the button goes is what its light says."""
-
     def test_a_press_on_a_running_broker_stops_it(self, tmp_path):
         launcher = _a_broker_checkout(tmp_path / "checkout")
         state = tmp_path / "state"

@@ -1,15 +1,3 @@
-"""The Robot Hand: the motion this family generates itself, a waveform shaped
-by speed, amplitude and center.
-
-It is what drives the OSR2 whenever no funscript has it — the family's own auto
-mode, made so the motion could be steered from the app instead of left to the
-device's built-in one.  Genau drives it from a flick's beats and visualizes it;
-Origenerator free-runs it over slideshows of images.  Both take it from this one
-arithmetic, so :func:`phase_advanced` is offered here rather than owned here:
-what advances the phase is the caller's own clock.
-
-Pure arithmetic: no toolkit, no device, no clock.
-"""
 from __future__ import annotations
 
 import math
@@ -31,25 +19,17 @@ MIN_SPEED = 5
 MAX_SPEED = 100
 FULL_INTENSITY = 100
 
-# The two ends a image motion is held at, on the same 0-100 axis the center runs
-# on: home, and as far from the user as the travel goes.  Named here because
-# every app that holds this motion has to agree which end is which.
 PARK_CENTER = 0
 RETRACT_CENTER = 100
 
-# The most wall time one tick of a caller's clock may move the phase — see
-# :func:`phase_advanced`.
 MAX_TICK_SECONDS = 0.1
 
-# How far a float may fall short of a whole bar step and still be that step:
-# a ceiling worked out exactly on a step comes back a hair under it.
 _ROUNDING = 1e-9
 _HALVINGS = 40
 _BEND = 80
 
 
 def bpm_for_speed(speed: int) -> float:
-    """Map speed MIN_SPEED-MAX_SPEED to BPM using exponential curve."""
     t = (speed - MIN_SPEED) / (MAX_SPEED - MIN_SPEED)
     return MIN_BPM * (MAX_BPM / MIN_BPM) ** t
 
@@ -135,7 +115,6 @@ def adjust_speed(state: RobotHandState, delta: int) -> None:
 
 
 def _recompute_center(state: RobotHandState) -> None:
-    """Set effective center from intended_center, clamped to amplitude range."""
     half = state.amplitude // 2
     state.center = max(half, min(100 - half, state.intended_center))
 
@@ -213,14 +192,12 @@ def adjust_center(state: RobotHandState, delta: int) -> None:
 
 
 def cycle_shape(state: RobotHandState, step: int = 1) -> None:
-    """Advance the waveform shape by *step* (default +1; pass -1 to go back)."""
     shapes = list(WaveformShape)
     idx = shapes.index(state.shape)
     state.shape = shapes[(idx + step) % len(shapes)]
 
 
 def _waveform_raw(phase: float, shape: WaveformShape) -> float:
-    """Return 0-1 normalized waveform value for one round trip per cycle."""
     frac = phase % 1.0
     if shape is WaveformShape.TRIANGLE:
         return 1 - abs(2 * frac - 1)
@@ -232,7 +209,6 @@ def _waveform_raw(phase: float, shape: WaveformShape) -> float:
         if frac < rise:
             return frac / rise
         return 1 - (frac - rise) / (1 - rise)
-    # SINE, and the fall-through with it: an unhandled shape still moves.
     return (1 - math.cos(2 * math.pi * phase)) / 2
 
 
@@ -246,18 +222,6 @@ def trace_window(
     samples: int,
     span_s: float,
 ) -> tuple[list[float], float]:
-    """The wave as the visualizer draws it: *samples* + 1 heights (0-1) on knots
-    a fixed stretch of phase apart, the first at or before *phase* and the
-    last just past the far edge, and how far past the first knot *phase* sits
-    as a fraction of one.
-
-    *phase* has to be the wave's phase counted up without wrapping (the
-    sender's), so the knots stay put from one cycle to the next; the heights
-    change only when the phase crosses a knot, and between knots the painter
-    slides the whole line by the fraction.  Sampled from the phase itself
-    instead, the heights at fixed columns changed every frame as the wave
-    passed under them.
-    """
     grid = span_s / max(1, samples - 1) * bpm / 60.0
     if grid <= 0:
         held = position_fraction(phase, shape=shape, amplitude=amplitude, center=center)
@@ -277,12 +241,6 @@ def position_fraction(
     amplitude: int = 100,
     center: int = 50,
 ) -> float:
-    """Where the motion sits at *phase*, 0 (the floor of the axis) to 1 (the ceiling).
-
-    The scale-free form of :func:`phase_to_position`. Callers speaking T-Code
-    want that one's 0-9999; a visualizer drawing a trace, or an app whose device
-    layer takes percent, wants this.
-    """
     raw = _waveform_raw(phase, shape)
     half = amplitude / 100 / 2
     low = max(0.0, center / 100 - half)
@@ -310,17 +268,6 @@ def phase_for_position_fraction(
     rising: bool = True,
     samples: int = 720,
 ) -> float:
-    """The phase that puts the motion at *fraction* of the axis, on its way up
-    (*rising*) or on its way down.
-
-    :func:`position_fraction` inverted.  Every shape here is one round trip a
-    cycle, so it takes each height twice and the caller has to say which visit it
-    means.  Found by walking a sampled cycle rather than by four hand-written
-    inversions -- a seek asks for this once, and half a degree of phase is finer
-    than the frame a flick can show for it.  With the amplitude turned down the
-    wave never reaches the ends, and the nearest phase to an unreachable height
-    is the peak or the trough, which is where the motion would put the drawing.
-    """
     fraction = min(1.0, max(0.0, fraction))
     heights = [
         position_fraction(i / samples, shape=shape, amplitude=amplitude, center=center)
@@ -337,28 +284,11 @@ def phase_for_position_fraction(
 
 
 def phase_advanced(phase: float, bpm: float, dt_s: float) -> float:
-    """*phase* moved on by *dt_s* seconds of motion at *bpm* cycles a minute.
-
-    The step is capped at :data:`MAX_TICK_SECONDS`, because a clock that stalled
-    — the app blocked, the machine suspended — comes back owing a step no device
-    should be asked to take at once. The motion slows through the gap instead of
-    slingshotting across it, which is the same cap Genau's engine puts on its
-    own tick.
-    """
     return (phase + max(0.0, min(dt_s, MAX_TICK_SECONDS)) * bpm / 60.0) % 1.0
 
 
 @dataclass(frozen=True)
 class ControlLimits:
-    """Which of the hand's arrows would do nothing.
-
-    Six booleans, published twice: the status file an orchestrator reads has
-    them so its dashboard can dim a button, and the OSR2 visualizer the Main Funestra's HUD
-    draws has them so it can dim an arrow.  They are two publications of one
-    fact, worked out once here -- the center clamp included, so a change to it
-    cannot leave the Main Funestra's HUD dimming an arrow the status file calls live.
-    """
-
     amp_at_max: bool
     amp_at_min: bool
     ctr_at_max: bool
@@ -368,9 +298,6 @@ class ControlLimits:
 
 
 def control_limits(hand: RobotHandState) -> ControlLimits:
-    # The center's range is what the travel leaves it: it cannot push a motion
-    # off the ceiling or floor of the device, so it stops half a travel in from
-    # each end.
     half = hand.amplitude // 2
     return ControlLimits(
         amp_at_max=hand.amplitude >= amplitude_ceiling(hand.max_intensity, hand.speed),
