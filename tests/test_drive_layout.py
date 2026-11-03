@@ -1,9 +1,3 @@
-"""drive_layout — the visualizer's rects, and what a press on one asks for.
-
-The layout can be wrong and still look right: a hit target that has drifted from
-the mark drawn over it shows up only when a press lands on the wrong control. So
-these press the rects the geometry hands out, rather than trusting them.
-"""
 from __future__ import annotations
 
 import dataclasses
@@ -30,8 +24,6 @@ def test_the_block_is_as_big_as_the_parts_it_places(center):
 
 
 def test_the_center_marks_ride_the_line_they_move_and_stay_on_the_block():
-    # The dotted center line moves with the value, and its marks travel with it —
-    # but a center at either extreme must not push one off the trace's bar.
     for center in (0, 25, 50, 75, 100):
         g = layout.geometry(0, 0, layout.fraction(center))
         wave_x, wave_y, _w, wave_h = g.wave
@@ -40,7 +32,7 @@ def test_the_center_marks_ride_the_line_they_move_and_stay_on_the_block():
             assert rect[1] + rect[3] <= wave_y + wave_h
     high = layout.geometry(0, 0, 1.0).center_up[1]
     low = layout.geometry(0, 0, 0.0).center_up[1]
-    assert high < low  # a higher center sits higher up the block
+    assert high < low
 
 
 def test_the_speed_bar_is_as_wide_as_the_amplitude_bar_is_tall():
@@ -114,8 +106,6 @@ def test_nothing_driving_dims_every_mark_and_every_band():
 
 
 def test_every_mark_posts_the_command_fun_time_routes_to_the_robot_hand():
-    # The verbs are the wire, so they are written out here rather than composed:
-    # a rename has to be findable from the dispatch end as well as this one.
     posted = _by_action(layout.controls(0, 0, 50, layout.Limits()))
     assert set(posted) == {
         "robot_hand_speed_down", "robot_hand_speed_up",

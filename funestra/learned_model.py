@@ -1,13 +1,3 @@
-"""The learned motion's model: phrases of real swings, and what follows what.
-
-A swing is one movement between two turning points of a script, kept as how
-long it took and where it ended.  A phrase is :data:`PHRASE_SWINGS` of them in
-a row, cut from a real script, beginning with a swing upward.  Its class is the
-pace and the range it mostly keeps, and the model is a library of phrases by
-class together with how often each class followed each other class in the
-scripts it was trained on.  ``tools/train_learned_motion.py`` builds one;
-:mod:`funestra.learned_motion` plays it.
-"""
 from __future__ import annotations
 
 import gzip
@@ -18,15 +8,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from statistics import median
 
-# How many swings a phrase holds.  Even, so a phrase that begins going up ends
-# coming down, and the next one begins going up again from wherever it ended.
 PHRASE_SWINGS = 16
-# Pace bins: a swing of 100 ms is the fastest anyone scripts, and each bin is
-# the one before it times root two, up to swings of two and a quarter seconds.
 _TEMPO_FLOOR_MS = 100.0
 _TEMPO_RATIO = math.sqrt(2)
 TEMPO_BINS = 10
-# Range bins: the axis in fifths.
 _RANGE_STEP = 20
 RANGE_BINS = 100 // _RANGE_STEP
 
@@ -35,8 +20,6 @@ Class = tuple[int, int, int]
 
 @dataclass(frozen=True)
 class Phrase:
-    """(duration_ms, end_position) per swing, the first swing going up."""
-
     swings: tuple[tuple[int, int], ...]
 
 
@@ -52,8 +35,6 @@ def range_bin(position: float) -> int:
 
 
 def classify(phrase: Phrase) -> Class:
-    """The pace and range the phrase mostly keeps: the median swing, the median
-    high turning point and the median low one."""
     durations = [duration for duration, _end in phrase.swings]
     highs = [end for i, (_duration, end) in enumerate(phrase.swings) if i % 2 == 0]
     lows = [end for i, (_duration, end) in enumerate(phrase.swings) if i % 2 == 1]
@@ -63,12 +44,8 @@ def classify(phrase: Phrase) -> Class:
 @dataclass
 class LearnedModel:
     phrases: dict[Class, list[Phrase]] = field(default_factory=dict)
-    # How often a phrase of one class was followed, in a script, by one of another.
     successions: dict[Class, dict[Class, int]] = field(default_factory=dict)
-    # How many phrases of each class the training saw, kept or not.
     seen: dict[Class, int] = field(default_factory=dict)
-    # The cycle -- up and back down -- the scripts mostly keep, in ms: what the
-    # Speed bar's rate is measured against when the phrases are played.
     native_cycle_ms: float = 600.0
 
     def __bool__(self) -> bool:
@@ -76,9 +53,6 @@ class LearnedModel:
 
 
 def measure_native_cycle_ms(model: LearnedModel) -> float:
-    """Two swings of the median swing the model would play: every kept phrase's
-    swings, each weighted by how many phrases of its class were seen -- a class
-    kept in full and a class sampled down count by what they stood for."""
     weighted: list[tuple[int, float]] = []
     for cls, kept in model.phrases.items():
         weight = model.seen.get(cls, len(kept)) / len(kept)
@@ -141,8 +115,6 @@ def _class(key: str) -> Class:
 
 
 def next_class(model: LearnedModel, rng: random.Random, after: Class | None) -> Class:
-    """Which class of phrase comes next: drawn from what followed *after* in the
-    scripts, or from the whole library when nothing is known to follow it."""
     following = model.successions.get(after) if after is not None else None
     choices = {cls: count for cls, count in (following or model.seen).items()
                if cls in model.phrases}

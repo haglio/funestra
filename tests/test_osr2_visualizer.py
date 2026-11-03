@@ -1,4 +1,3 @@
-"""The Robot Hand's OSR2 visualizer: what it says, and the controls it carries."""
 from __future__ import annotations
 
 import numpy as np
@@ -55,8 +54,6 @@ def _rendered(drive: DriveHud) -> np.ndarray:
 
 
 class TestControls:
-    """Each axis is one object: its controls, its bar and its number together."""
-
     def test_it_offers_every_axis_a_way_up_and_down(self):
         actions = {control.command for control in controls(0, 0, _hud())}
 
@@ -67,8 +64,6 @@ class TestControls:
         }
 
     def test_every_axis_is_moved_by_the_same_pair_of_marks(self):
-        """Triangles on two axes and −/+ on the third read as two kinds of
-        control for three things that are the same kind."""
         by_command = {c.command: c.mark for c in controls(0, 0, _hud())}
 
         assert {by_command[a] for a in
@@ -77,8 +72,6 @@ class TestControls:
                 ("robot_hand_speed_down", "robot_hand_amplitude_down", "robot_hand_center_down")} == {"minus"}
 
     def test_the_speed_controls_sit_below_the_trace(self):
-        """Speed is out from between center and amplitude, under the trace, so the
-        three axes do not crowd one bar."""
         by_command = {c.command: c.rect for c in controls(0, 0, _hud())}
         _x, trace_y, _w, trace_h = next(t.rect for t in tracks(0, 0, _hud()) if t.axis == CENTER)
         wave_lower = trace_y + trace_h
@@ -87,9 +80,6 @@ class TestControls:
         assert by_command["robot_hand_speed_up"][1] >= wave_lower
 
     def test_a_mark_at_its_limit_is_dimmed(self):
-        """The flag on the visualizer says the axis has run out of range, so the mark
-        that would do nothing is grayed — the Main Funestra's HUD then drops it from the hit
-        targets, the same as any dimmed control."""
         by_command = {c.command: c for c in controls(0, 0, _hud(spd_at_max=True, amp_at_min=True))}
 
         assert by_command["robot_hand_speed_up"].dim is True
@@ -97,16 +87,12 @@ class TestControls:
         assert by_command["robot_hand_amplitude_down"].dim is True
 
     def test_the_center_marks_follow_the_line(self):
-        """They sit beside the center's dotted line, so they move up the HUD as
-        the center rises."""
         low = {c.command: c.rect for c in controls(0, 0, _hud(center=20))}
         high = {c.command: c.rect for c in controls(0, 0, _hud(center=80))}
 
         assert high["robot_hand_center_up"][1] < low["robot_hand_center_up"][1]
 
     def test_the_marks_it_offers_all_fall_on_the_block_it_draws(self):
-        """Drawing and hit-testing place the marks from one geometry, so a press
-        lands on what is on screen — at either end of the center's travel."""
         for center in (0, 50, 100):
             for x, y, w, h in (c.rect for c in controls(PAD, PAD, _hud(center=center))):
                 assert x >= PAD
@@ -176,9 +162,6 @@ class TestTheCenterLabel:
 
 
 class TestTracks:
-    """The bars themselves take a level from where you press in them, so a bar
-    is set outright instead of walked to with the marks beside it."""
-
     @staticmethod
     def _bar(hud: DriveHud, axis: str):
         return next(t for t in tracks(PAD, PAD, hud) if t.axis == axis)
@@ -187,8 +170,6 @@ class TestTracks:
         assert {t.axis for t in tracks(0, 0, _hud())} == {AMPLITUDE, CENTER, SPEED}
 
     def test_each_band_covers_the_bar_the_axis_is_drawn_as(self):
-        """The trace's bar is the trace; the speed bar sits between its two
-        marks, and the amplitude bar between its own."""
         hud = _hud()
         marks = {c.command: c.rect for c in controls(PAD, PAD, hud)}
         speed = self._bar(hud, SPEED).rect
@@ -210,12 +191,6 @@ class TestTracks:
         assert track_value(bar, x + w - 1, y + h // 2) == 100
 
     def test_a_press_in_the_trace_asks_for_the_height_it_sits_at(self):
-        """The center's dotted line is drawn at its own height across the trace,
-        so pressing there is asking for the line to come to the pointer.
-
-        Within a pixel in the middle of the bar: the trace is fewer rows tall
-        than the hundred values it spans, so a row lands between two of them.
-        """
         bar = self._bar(_hud(), CENTER)
         x, y, w, h = bar.rect
 
@@ -224,10 +199,6 @@ class TestTracks:
         assert abs(track_value(bar, x + w // 2, y + (h - 1) // 2) - 50) <= 1
 
     def test_a_press_up_the_amplitude_bar_asks_for_a_motion_that_reaches_it(self):
-        """The bar is drawn out from the center both ways, so its ends are the
-        handles: pressing where one is asks for the amplitude already set, and
-        pressing past it asks for a longer motion.  Pressing at the center itself
-        asks for no motion at all."""
         bar = self._bar(_hud(amplitude=50, center=50), AMPLITUDE)
         x, y, w, h = bar.rect
         top_of_bar = y + round(0.25 * (h - 1))
@@ -238,16 +209,12 @@ class TestTracks:
         assert abs(track_value(bar, x + w // 2, y + (h - 1) // 2)) <= 2
 
     def test_the_amplitude_bar_mirrors_about_wherever_the_center_is(self):
-        """A motion centered low reaches the top of the bar only by growing to the
-        full range and back, so the same press means different amplitudes."""
         low = self._bar(_hud(center=25), AMPLITUDE)
         x, y, w, _h = low.rect
 
         assert track_value(low, x + w // 2, y) == 100
 
     def test_a_press_beyond_a_band_reads_as_its_nearer_end(self):
-        """A drag that wanders off the bar goes on setting it rather than stopping
-        dead at the edge, the way every slider behaves."""
         bar = self._bar(_hud(), SPEED)
         x, y, w, h = bar.rect
 
@@ -273,8 +240,6 @@ class TestTracks:
         assert track_command(bar, x, y + h // 2) == "robot_hand_speed_0"
 
     def test_every_band_is_dimmed_while_a_funscript_has_the_device(self):
-        """A motion Genau is not sending cannot be dragged, for the same reason
-        its marks cannot be pressed."""
         assert all(t.dim for t in tracks(0, 0, _hud(driven=DRIVEN_BY_FUNSCRIPT)))
         assert not any(t.dim for t in tracks(0, 0, _hud()))
 
@@ -315,9 +280,6 @@ class TestVisualizer:
         assert blue(_hud(amplitude=90, waveform=())) > blue(_hud(amplitude=20, waveform=()))
 
     def test_the_speed_bar_runs_in_the_motion_s_own_blue(self):
-        """The trace, the amplitude bar and this are all one thing — the motion
-        Genau is sending — so they are one color.  It was green, which across
-        these HUDs means the favorites and the funscripts."""
         hud = _hud(speed=100, waveform=())
         rgb = _rendered(hud).astype(int)[:, :, :3]
         rects = {c.command: c.rect for c in controls(PAD, PAD, hud)}
@@ -392,8 +354,6 @@ class TestTheStretchesTheMaxIntensityRulesOut:
 
 
 class TestPublishing:
-    """In kino mode the visualizer is drawn by the Main Funestra, so Genau says it instead of drawing it."""
-
     def test_a_published_visualizer_reads_back_whole_including_its_limits(self, tmp_path):
         hud = _hud(shape="sawtooth", advance_interval=7,
                    spd_at_max=True, ctr_at_min=True)
@@ -423,9 +383,6 @@ class TestPublishing:
         assert read_drive(path).max_intensity == DriveHud.max_intensity
 
     def test_the_knot_slide_and_the_edge_go_over_the_wire_too(self, tmp_path):
-        """A trace read on knots (the learned motion's) is published with how
-        far the line is shifted and the knot past the border, so the Funestra
-        drawing it slides the same stable drawing Genau does."""
         path = tmp_path / "genau_drive.txt"
         publish_drive(path, _hud(slide=0.4, edge=0.75))
 
@@ -483,12 +440,8 @@ class TestLabelPair:
 
 
 class TestWhoseMotion:
-    """The trace is a drawing of what the device is being sent, so it is drawn in
-    the color of whoever is sending it — and drawn still when nobody is."""
-
     @staticmethod
     def _line_colors(hud: DriveHud) -> set[tuple[int, int, int]]:
-        """Every color the trace's own line is drawn in, HUD and ruler aside."""
         rgb = _rendered(hud).astype(int)[:, :, :3]
         return {tuple(pixel) for row in rgb for pixel in row} - {(0, 0, 0)}
 
@@ -496,13 +449,9 @@ class TestWhoseMotion:
         assert BLUE in self._line_colors(_hud(driven=DRIVEN_BY_ROBOT_HAND))
 
     def test_a_funscript_s_motion_is_green(self):
-        """Green is what the funscripts own everywhere else on these HUDs."""
         assert GREEN in self._line_colors(_hud(driven=DRIVEN_BY_FUNSCRIPT))
 
     def test_the_device_s_own_swing_is_neither_driver_s_color(self):
-        """In auto mode the OSR2 runs itself: neither the hand nor a funscript is
-        sending, so the line wears the third color the word beside it already
-        wears rather than borrowing either of theirs."""
         colors = self._line_colors(_hud(driven=DRIVEN_BY_AUTO))
 
         assert MAGENTA in colors
@@ -510,13 +459,9 @@ class TestWhoseMotion:
         assert GREEN not in colors
 
     def test_a_motion_nobody_is_sending_is_the_muted_gray_of_a_dead_control(self):
-        """The visualizer is switched off whole rather than a live trace sitting in
-        the middle of dead furniture."""
         assert TEXT_MUTED in self._line_colors(_hud(driven=DRIVEN_BY_NOTHING))
 
     def test_only_the_robot_hand_s_motion_carries_the_center_ruler(self):
-        """The dotted line says "the motion swings about here", which is the
-        Robot Hand's own idea — a claim about a motion a funscript is not making."""
         hand = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND, waveform=()))
         script = _rendered(_hud(driven=DRIVEN_BY_FUNSCRIPT, waveform=()))
 
@@ -529,10 +474,6 @@ class TestWhoseMotion:
 
 
 class TestSwitchedOff:
-    """With the OSR2 off nothing here is being sent, so no part of the visualizer may
-    look live: not the trace, not the bars, not the numbers, and not the marker
-    that was still bobbing after the trace had stopped."""
-
     @staticmethod
     def _colors(hud: DriveHud) -> set[tuple[int, int, int]]:
         rgb = _rendered(hud).astype(int)[:, :, :3]
@@ -543,8 +484,6 @@ class TestSwitchedOff:
         assert BLUE in self._colors(_hud(driven=DRIVEN_BY_ROBOT_HAND))
 
     def test_the_bars_go_gray_with_everything_else(self):
-        """A live blue level beside a dead control says the level is doing
-        something."""
         off = _rendered(_hud(driven=DRIVEN_BY_NOTHING, waveform=()))
         bar = {c.command: c.rect for c in controls(PAD, PAD, _hud())}["robot_hand_speed_up"]
         row = off.astype(int)[bar[1] + bar[3] // 2, PAD:PAD + SECTION_W, :3]
@@ -552,13 +491,6 @@ class TestSwitchedOff:
         assert not ((row[:, 2] > 150) & (row[:, 0] < 120)).any()
 
     def test_the_numbers_go_gray_too(self):
-        """They read as the live value of a motion otherwise.
-
-        Read off the number's own pixels — the ones that move when the number does,
-        under the bar that moves with it as well — rather than off the section's set
-        of colors.  At this size the digits are all edge: no pixel of them lands on
-        the ink exactly, so a set of colors never saw them at all.
-        """
         _x, bar_y, _w, bar_h = next(track.rect for track in tracks(PAD, PAD, _hud())
                                     if track.axis == SPEED)
         muted = max(TEXT_MUTED)
@@ -570,13 +502,10 @@ class TestSwitchedOff:
             digits[:bar_y + bar_h] = False
             return int(fifty[digits][:, :3].max())
 
-        assert brightest_digit(DRIVEN_BY_ROBOT_HAND) > muted  # brighter than its own key
-        assert brightest_digit(DRIVEN_BY_NOTHING) < muted  # and now darker than it
+        assert brightest_digit(DRIVEN_BY_ROBOT_HAND) > muted
+        assert brightest_digit(DRIVEN_BY_NOTHING) < muted
 
     def test_the_position_marker_is_not_left_white(self):
-        """It bobbed on: Genau keeps publishing a position it cannot know is going
-        nowhere, and a dot still moving is the last thing on a stopped visualizer
-        claiming to be live."""
         off = _rendered(_hud(driven=DRIVEN_BY_NOTHING, waveform=()))
         trace_x = next(t.rect for t in tracks(PAD, PAD, _hud()) if t.axis == CENTER)[0]
         edge = off.astype(int)[:, trace_x - 3:trace_x - 1, :3]
@@ -585,35 +514,24 @@ class TestSwitchedOff:
 
 
 class TestDimmedForTheScript:
-    """A funscript's turn leaves the controls in place — removing them resized
-    the HUD and shifted the trace at every handoff — but nothing on them may
-    look live: levels, numbers and marks all drop to the faint disabled gray."""
-
     @staticmethod
     def _colors(hud: DriveHud) -> set[tuple[int, int, int]]:
         rgb = _rendered(hud).astype(int)[:, :, :3]
         return {tuple(pixel) for row in rgb for pixel in row} - {(0, 0, 0)}
 
     def test_no_level_is_left_in_the_motion_s_blue(self):
-        """The bars stayed bright blue through the script's stretch, which is
-        what made the dimmed marks beside them read as merely decorative."""
         assert BLUE not in self._colors(_hud(driven=DRIVEN_BY_FUNSCRIPT))
         assert BLUE in self._colors(_hud(driven=DRIVEN_BY_ROBOT_HAND))
 
     def test_the_dimmed_marks_are_dark_not_translucent(self):
-        """"Very dimmed" is the ask, and the first try got it backwards: muted
-        ink at part alpha let the video beneath shine through, so the "disabled"
-        controls glowed bright white.  Disabled ink is a dark gray laid down
-        opaque — darker than the muted gray a live visualizer's key labels wear —
-        so it reads as switched off over any video."""
         dimmed = _rendered(_hud(driven=DRIVEN_BY_FUNSCRIPT))
         live = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND))
         x, y, w, _h = controls(PAD, PAD, _hud(driven=DRIVEN_BY_FUNSCRIPT))[0].rect
         top_middle = (y, x + w // 2)
 
-        assert dimmed[top_middle][3] == 255              # opaque: nothing shines through
+        assert dimmed[top_middle][3] == 255
         assert tuple(dimmed[top_middle][:3]) == DISABLED_INK[:3]
-        assert max(DISABLED_INK[:3]) < min(TEXT_MUTED)      # darker than muted ink
+        assert max(DISABLED_INK[:3]) < min(TEXT_MUTED)
         assert tuple(live[top_middle][:3]) == TEXT_PRIMARY
 
 
@@ -630,24 +548,15 @@ class TestSmoothTrace:
             if pixel[2] > pixel[0] + 20 and pixel[2] > pixel[1] + 20
         }
 
-        # A hard-edged line produced exactly one blue; the ramps produce many.
         assert len(blue_family) > 5
 
     def test_the_knot_shift_slides_the_scripts_line(self):
-        """The script's drawing is fixed; the fraction of a knot the playhead
-        sits past its grid point translates the drawn line."""
         still = _rendered(_hud(driven=DRIVEN_BY_FUNSCRIPT, slide=0.0, edge=0.5))
         slid = _rendered(_hud(driven=DRIVEN_BY_FUNSCRIPT, slide=0.5, edge=0.5))
 
         assert not np.array_equal(still, slid)
 
     def test_the_live_motion_slides_on_the_same_shift_as_everything_else(self):
-        """One convention for every run.  The composed trace reads the live
-        motion at fixed sample TIMES now — the values compensate the publish's
-        own advance — so the painter's one shift is what slides the whole line,
-        blue included.  The old per-run exemption, kept after the reads
-        changed, made the blue and its neighbors disagree by the slide at
-        every seam between them."""
         still = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND, slide=0.0, edge=0.5))
         slid = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND, slide=0.5, edge=0.5))
 
@@ -656,9 +565,6 @@ class TestSmoothTrace:
 
 class TestBorder:
     def test_the_trace_s_edge_is_opaque_so_it_reads_the_same_over_anything(self):
-        """At part strength the video showed through it, so one quiet gray line
-        read as a bright thick one over the drawing and a thin dark one over the
-        letterbox — the same border looking like two."""
         hud = _hud()
         x, y, w, _h = next(t.rect for t in tracks(PAD, PAD, hud) if t.axis == CENTER)
         alpha = _rendered(hud)[..., 3]
@@ -667,9 +573,6 @@ class TestBorder:
 
 
 class TestRuns:
-    """One line, two drivers: the span runs forward, so a handoff that has not
-    happened yet is inside it."""
-
     def test_with_no_marks_the_whole_line_belongs_to_whoever_has_it(self):
         hud = _hud(driven=DRIVEN_BY_FUNSCRIPT)
 
@@ -689,8 +592,6 @@ class TestRuns:
         assert {GREEN, BLUE} <= colors
 
     def test_the_neutral_buffer_wears_the_family_s_light_gray(self):
-        """The stretch belonging to neither driver is neither green nor blue —
-        a light gray between the script's turn and the motion's."""
         hud = _hud(segments=((0, DRIVEN_BY_FUNSCRIPT), (30, DRIVEN_BY_NEUTRAL),
                              (50, DRIVEN_BY_ROBOT_HAND)))
         x, y, w, h = next(t.rect for t in tracks(PAD, PAD, hud) if t.axis == CENTER)
@@ -702,9 +603,6 @@ class TestRuns:
 
 class TestPublishedSpan:
     def test_the_trace_s_span_travels_with_it(self, tmp_path):
-        """The Main Funestra samples a funscript over the same stretch Genau's motion covers,
-        and has nowhere else to learn what that is — two spans would make a
-        handoff look like a jump."""
         path = tmp_path / "genau_drive.txt"
         publish_drive(path, _hud(trace_seconds=7.5))
 

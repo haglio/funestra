@@ -1,8 +1,3 @@
-"""The learned motion's model: phrases of real swings, sorted by pace and
-range, and which kind of phrase tends to follow which.
-
-Every phrase here is invented.
-"""
 from __future__ import annotations
 
 import random
@@ -12,7 +7,6 @@ from funestra.learned_model import LearnedModel, Phrase
 
 
 def _phrase(duration_ms: int, low: int, high: int, swings: int = learned_model.PHRASE_SWINGS):
-    """A steady phrase: up to *high*, down to *low*, every swing *duration_ms*."""
     return Phrase(tuple(
         (duration_ms, high if i % 2 == 0 else low) for i in range(swings)))
 
@@ -52,9 +46,6 @@ class TestSavingAndLoading:
 
 class TestTheNativePace:
     def test_it_is_the_cycle_the_phrases_mostly_keep_weighted_by_how_many_were_seen(self):
-        # Three steady phrases kept for a class seen a hundred times outweigh
-        # one quick phrase kept for a class seen once: the pace the model was
-        # trained on is the steady one's, two swings of 400 ms a cycle.
         model = _model()
         model.seen = {learned_model.classify(_phrase(400, 20, 80)): 100,
                       learned_model.classify(_phrase(150, 40, 60)): 1}

@@ -1,8 +1,3 @@
-"""The learned motion: real phrases played back to back, inside the bars'
-envelope, at the Speed bar's pace.
-
-Every phrase here is invented.
-"""
 from __future__ import annotations
 
 import random
@@ -25,8 +20,6 @@ def _phrase(duration_ms: int, low: int, high: int, swings: int = 16) -> Phrase:
 
 
 def _model(*phrases: Phrase, native_cycle_ms: float | None = None) -> LearnedModel:
-    """A library of *phrases* whose scripts cycle at the wave's own resting
-    pace, so that at the bar's 50 the phrases play as written."""
     model = LearnedModel(native_cycle_ms=native_cycle_ms or 60_000 / bpm_for_speed(50))
     for phrase in phrases:
         model.phrases.setdefault(classify(phrase), []).append(phrase)
@@ -43,7 +36,6 @@ def _playing(model: LearnedModel, seed: int = 1, **bars) -> tuple[RobotHandState
 
 
 def _run(hand, state, seconds: float, *, start: float = 100.0, dt: float = 0.05) -> float:
-    """Carry the motion forward *seconds*, a tick every *dt*."""
     now = start
     for _ in range(round(seconds / dt)):
         now = round(now + dt, 6)
@@ -53,9 +45,6 @@ def _run(hand, state, seconds: float, *, start: float = 100.0, dt: float = 0.05)
 
 class TestPlayingThePhrases:
     def test_the_motion_follows_the_phrases_swing_by_swing(self):
-        # One phrase in the library: half-second swings between 20 and 80.  From
-        # the floor, the first swing climbs to 80 over half a second, the next
-        # falls to 20 over the next half second.
         hand, state = _playing(_model(_phrase(500, 20, 80)))
 
         assert learned_motion.position(state, hand) == pytest.approx(0.0)
@@ -69,8 +58,6 @@ class TestPlayingThePhrases:
         assert learned_motion.position(state, hand) == pytest.approx(20.0)
 
     def test_each_phrase_rises_from_where_the_last_one_ended(self):
-        # Two classes: the first phrase ends low at 20; whichever phrase comes
-        # next, its first swing climbs from 20 rather than from its own floor.
         model = _model(_phrase(500, 20, 80), _phrase(200, 40, 60))
         hand, state = _playing(model)
 
@@ -85,7 +72,6 @@ class TestPlayingThePhrases:
         hand, state = _playing(_model(_phrase(500, 20, 80)), amplitude=50, intended_center=50)
         _run(hand, state, 0.5)
 
-        # Raw 80 inside a 25-75 envelope.
         assert learned_motion.position(state, hand) == pytest.approx(25 + 0.8 * 50)
 
     def test_the_speed_bar_scales_the_pace(self):
@@ -101,9 +87,6 @@ class TestPlayingThePhrases:
             learned_motion.position(steady, steady_hand), abs=1.0)
 
     def test_the_bar_means_the_same_cycles_a_minute_it_means_for_the_wave(self):
-        # Scripts that cycle a hundred times a minute (two swings of 300 ms)
-        # are slowed to the wave's own rate at the bar's 50 -- about 29 a
-        # minute -- so one cycle takes as long as one cycle of the wave.
         hand, state = _playing(_model(_phrase(300, 20, 80), native_cycle_ms=600.0), speed=50)
         one_cycle_s = 60.0 / bpm_for_speed(50)
 
@@ -166,14 +149,10 @@ class TestWhatTheVisualizerDraws:
 
         heights, slide = learned_motion.trace_window(state, hand, samples=5, span_s=1.0)
 
-        # Five knots a quarter second apart, and the one past the edge: the
-        # floor, mid-rise, the top, mid-fall, the floor, mid-rise again.
         assert heights == pytest.approx([0.0, 0.4, 0.8, 0.5, 0.2, 0.5])
         assert slide == 0.0
 
     def test_the_drawing_holds_still_between_knots_and_slides_by_the_leftover(self):
-        # A tenth of a second on, the knots' values are the same and the line
-        # is shifted left by the tenth of a quarter-second knot it has moved.
         hand, state = _playing(_model(_phrase(500, 20, 80)))
         before, _ = learned_motion.trace_window(state, hand, samples=5, span_s=1.0)
 
@@ -200,7 +179,6 @@ class TestWhatTheVisualizerDraws:
         learned_motion.rest_at_floor(state)
         heights, slide = learned_motion.trace_window(state, hand, samples=5, span_s=1.0)
 
-        # From the floor, and climbing into the first phrase rather than flat.
         assert heights[0] == 0.0
         assert max(heights) > 0.5
         assert slide == pytest.approx(0.2)

@@ -1,4 +1,3 @@
-"""Where each video was left, so playing it again picks up there."""
 from __future__ import annotations
 
 import json
