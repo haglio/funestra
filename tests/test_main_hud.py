@@ -257,6 +257,17 @@ class TestLayout:
         assert {rect[1] for rect, _b in placed} == {0, _rect("slower")[1]}
         assert rows_height([list(row) for row in ROWS]) == _rect("slower")[1] + BUTTON
 
+    def test_rows_ending_at_a_right_edge_each_keep_their_own_order_against_it(self):
+        placed = place_rows([list(row) for row in ROWS], x=0, y=0, ends_at=300)
+
+        by_row = {}
+        for rect, button in placed:
+            by_row.setdefault(rect[1], []).append((rect, button.command))
+        for row in by_row.values():
+            assert row[-1][0][0] + row[-1][0][2] == 300
+            assert [rect[0] for rect, _c in row] == sorted(rect[0] for rect, _c in row)
+        assert [c for _r, c in by_row[0]] == ["go_kino", "go_other", "park"]
+
     def test_a_group_break_opens_the_wider_gap_and_nothing_else_does(self):
         go_kino, go_other, park = _rect("go_kino"), _rect("go_other"), _rect("park")
 

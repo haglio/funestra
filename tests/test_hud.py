@@ -53,8 +53,6 @@ def test_a_divider_is_one_line_across_the_slab_in_the_gray_of_its_edge():
 
 
 def test_a_point_size_loads_its_face_at_its_pixels_on_a_96_dpi_screen():
-    """Qt sized these HUDs' fonts in points and Pillow sizes in pixels, so the
-    HUDs keep their old proportions only if the conversion does."""
     assert (load_font(SIZE_SMALL).size, load_font(SIZE_BODY).size) == (12, 15)
 
 
@@ -174,3 +172,42 @@ def test_a_icon_with_no_ink_draws_nothing_rather_than_raising():
     assert np.asarray(image)[:, :, 3].max() == 0
 
 
+
+
+def _button_pixels(button: Button, *, hovered: bool) -> np.ndarray:
+    image = Image.new("RGBA", (40, 24), (0, 0, 0, 0))
+    draw_button(image, ImageDraw.Draw(image), (2, 2, 36, 20), button,
+                hovered=hovered, icon_font=load_font(11), word_font=load_font(11))
+    return np.asarray(image).copy()
+
+
+def test_a_dim_button_is_not_lightened_by_the_pointer():
+    dim = Button("next", "Go", "", dim=True)
+
+    assert (_button_pixels(dim, hovered=True) == _button_pixels(dim, hovered=False)).all()
+
+
+def test_hovering_a_button_lightens_its_fill_but_not_its_outline():
+    button = Button("next", "Go", "")
+    rest = _button_pixels(button, hovered=False)
+    over = _button_pixels(button, hovered=True)
+
+    assert tuple(over[2, 12]) == tuple(rest[2, 12])
+    assert tuple(over[8, 6]) != tuple(rest[8, 6])
+
+
+def test_a_button_with_no_command_draws_no_ground_under_its_word():
+    readout = _button_pixels(Button("", "1x", ""), hovered=False)
+
+    assert readout[3, 3, 3] == 0
+    assert readout[:, :, 3].max() > 0
+
+
+def test_a_tooltip_near_the_far_corner_is_nudged_back_inside_the_hud():
+    hud = Hud(150, 120)
+
+    x, y, w, h = draw_tooltip(hud.draw, load_font(8), "Next clip", (148, 118),
+                              hud.image.size)
+
+    assert (x, y) >= (0, 0)
+    assert (x + w, y + h) <= (150, 120)
