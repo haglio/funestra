@@ -415,6 +415,9 @@ class TestDepthAtSpeed:
     def test_normal_speed_leaves_every_position_where_the_script_put_it(self):
         assert self._fast().paced_position_at(200, 1.0) == 100
 
+    def test_a_slowed_video_leaves_every_position_where_the_script_put_it(self):
+        assert self._fast().paced_position_at(200, 0.5) == 100
+
     def test_a_script_already_at_the_devices_limit_halves_its_depth_at_double_speed(self):
         assert self._fast().paced_position_at(200, 2.0) == 50
 
