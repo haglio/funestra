@@ -75,9 +75,22 @@ def bind_with_retry(
     return True
 
 
-def udp_reader(host: str, port: int, feed: BrokerFeed, stop_event: threading.Event,
-               logger: logging.Logger,
-               retry_delays: tuple[float, ...] = _BIND_RETRY_DELAYS) -> None:
+@dataclass(frozen=True)
+class UdpListener:
+    host: str
+    port: int
+    feed: BrokerFeed
+    stop_event: threading.Event
+    logger: logging.Logger
+    retry_delays: tuple[float, ...] = _BIND_RETRY_DELAYS
+
+
+def udp_reader(listener: UdpListener | str, *old_positional, **old) -> None:
+    if not isinstance(listener, UdpListener):
+        listener = UdpListener(listener, *old_positional, **old)
+    host, port, feed, stop_event, logger, retry_delays = (
+        listener.host, listener.port, listener.feed, listener.stop_event, listener.logger,
+        listener.retry_delays)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
