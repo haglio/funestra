@@ -32,8 +32,10 @@ class HudPlace:
 
     def origin(self, *, hud: tuple[int, int], viewport: tuple[int, int],
                lower_edge: int = 0) -> tuple[int, int]:
-        return hud_origin(self.corner, hud=hud, viewport=viewport, margin=self.margin,
-                          lower_edge=lower_edge, inset=self.inset if self.minimized else (0, 0))
+        inset_x, inset_y = self.inset if self.minimized else (0, 0)
+        return hud_origin(self.corner, hud=hud, viewport=viewport,
+                          gap=(self.margin + inset_x, self.margin + inset_y),
+                          lower_edge=lower_edge)
 
 
 def _corner_beside(place: HudPlace, x: int, y: int, *,

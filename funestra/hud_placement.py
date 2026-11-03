@@ -87,11 +87,10 @@ def block_x(corner: HudCorner, *, hud_width: int, extent: int, pad: int,
 
 
 def hud_origin(corner: HudCorner, *, hud: tuple[int, int], viewport: tuple[int, int],
-               margin: int, lower_edge: int = 0,
-               inset: tuple[int, int] = (0, 0)) -> tuple[int, int]:
+               gap: tuple[int, int], lower_edge: int = 0) -> tuple[int, int]:
     hud_w, hud_h = hud
     viewport_w, viewport_h = viewport
-    across, down = margin + inset[0], margin + inset[1]
+    across, down = gap
     x = viewport_w - across - hud_w if corner.right else across
     y = viewport_h - lower_edge - down - hud_h if corner.lower else down
     return max(0, x), max(0, y)

@@ -360,7 +360,7 @@ class MainHudPainter:
         if main_hud_model.has_osr2:
             osr2_line = self._osr2_line(main_hud_model)
             osr2_x = self._block_x(corner, width, self._osr2.width(osr2_line), reserves[2])
-            self.buttons.extend(self._osr2.draw(hud.image, draw, osr2_x, y, osr2_line,
+            self.buttons.extend(self._osr2.draw(hud.image, draw, (osr2_x, y), osr2_line,
                                                 hover=hover))
             self.tracks.extend(self._osr2.bars(osr2_x, y, osr2_line))
             y += _OSR2_H + _BLOCK_GAP

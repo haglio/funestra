@@ -445,7 +445,7 @@ class HudRenderer:
         max_intensity_bars: list[DriveTrack] = []
         if model.osr2:
             osr2_x = self._block_x(model, width, self._osr2.width(osr2_line))
-            buttons.extend(self._osr2.draw(image, draw, osr2_x, y, osr2_line,
+            buttons.extend(self._osr2.draw(image, draw, (osr2_x, y), osr2_line,
                                            hover=self._pointer))
             max_intensity_bars = self._osr2.bars(osr2_x, y, osr2_line)
             y += OSR2_H + BLOCK_GAP
@@ -615,7 +615,7 @@ class HudRenderer:
             draw_icon(image, shared_icon_name(icon), rect, ink)
             return
         bx, by, bw, bh = rect
-        draw_character(draw, bx + bw / 2, by + bh / 2, icon, self._icon, ink)
+        draw_character(draw, (bx + bw / 2, by + bh / 2), icon, self._icon, ink)
 
     def _filter_button(self, image, draw, rect: Rect, *, on: bool = False) -> None:
         draw_icon(image, "filter", rect, self._button_square(draw, rect, on=on))

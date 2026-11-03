@@ -183,9 +183,10 @@ class Osr2Section:
                 + self._widest_word + _PILL_PAD
                 + self._max_intensity_width(line))
 
-    def draw(self, image: Image.Image, draw: ImageDraw.ImageDraw, x: int, y: int,
+    def draw(self, image: Image.Image, draw: ImageDraw.ImageDraw, at: tuple[int, int],
              line: Osr2Line, *, hover: tuple[int, int] | None = None,
              ) -> list[tuple[Rect, Button]]:
+        x, y = at
         placed: list[tuple[Rect, Button]] = []
         run_x = x
         for button in line.controls:
