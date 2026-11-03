@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from funestra.funscript import Funscript
 from funestra.playback import Playback
+from funestra.playback_setup import PlaybackSetup
 from funestra.robot_hand import FULL_INTENSITY
 from funestra.testing import FakeEngine
 
@@ -43,8 +44,9 @@ def make_playback(tmp_path, *, entries=1, duration_ms=5_000.0, funscripts=None,
     engine = FakeEngine(duration_ms=duration_ms)
     return Playback(
         playlist, engine=engine,
-        funscripts={playlist[index]: script for index, script in (funscripts or {}).items()},
-        points_of_interest={playlist[index]: points
-                            for index, points in (points_of_interest or {}).items()},
-        **playback,
+        setup=PlaybackSetup(
+            funscripts={playlist[index]: script for index, script in (funscripts or {}).items()},
+            points_of_interest={playlist[index]: points
+                                for index, points in (points_of_interest or {}).items()},
+            **playback),
     ), engine

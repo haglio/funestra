@@ -6,8 +6,11 @@ from funestra_fakes import FakeTCode
 from funestra_fakes import make_playback as _make_playback
 
 from funestra.play_points import PlayPoints
+from funestra.playback import Playback
 from funestra.playback_rate import MAX_RATE, MIN_RATE
+from funestra.playback_setup import PlaybackSetup
 from funestra.seeking import GIVE_UP_AFTER
+from funestra.testing import FakeEngine
 
 
 class TestLoadAndPlay:
@@ -23,6 +26,16 @@ class TestLoadAndPlay:
 
         assert playback.is_paused
         assert engine.paused is True
+
+
+    def test_the_old_keywords_start_it_as_a_setup_would(self, tmp_path):
+        playlist = [tmp_path / "v0.mp4"]
+        playlist[0].write_text("fake")
+        old = Playback(playlist, engine=FakeEngine(), start_paused=True, locked=True)
+        new = Playback(playlist, engine=FakeEngine(),
+                       setup=PlaybackSetup(start_paused=True, locked=True))
+
+        assert (old.is_paused, old.is_locked) == (new.is_paused, new.is_locked) == (True, True)
 
 
 class TestNavigation:
