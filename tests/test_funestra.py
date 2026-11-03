@@ -1735,13 +1735,3 @@ def test_a_funestra_named_for_the_osr2_slot_reaches_the_osr2_through_it():
     sender, said = heard.get_nowait()
     assert sender == "portrait"
     assert said.startswith("L00000I")
-
-
-def test_the_old_word_for_the_viewport_works_until_the_apps_have_moved(tmp_path):
-    funestra, _engine = _funestra(tmp_path, ["one.mp4"])
-    funestra.tick(window=(640, 480))
-    funestra.press(1, 1, window=(640, 480))
-    funestra.motion(1, 1, held=False, window=(640, 480))
-    funestra.wheel(1, 1, 1, window=(640, 480))
-    assert volume_control_xy(win_w=640, win_h=480, timeline_h=20) == volume_control_xy(
-        viewport_w=640, viewport_h=480, timeline_h=20)

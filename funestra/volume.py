@@ -53,8 +53,7 @@ PLACE_W = TRACK_GAP + VOLUME_CONTROL_W
 ROW_H = 24
 
 
-def volume_control_xy(*, viewport_w: int | None = None, viewport_h: int | None = None, timeline_h: int,
-                      win_w: int | None = None, win_h: int | None = None) -> tuple[int, int]:
+def volume_control_xy(*, viewport_w: int, viewport_h: int, timeline_h: int) -> tuple[int, int]:
     """The volume control's top-left: flush with the right end of the scrubber row,
     centered in its height.
 
@@ -68,7 +67,6 @@ def volume_control_xy(*, viewport_w: int | None = None, viewport_h: int | None =
     row puts one.
     """
     row_h = timeline_h if timeline_h > 0 else ROW_H
-    viewport_w, viewport_h = viewport_w or win_w, viewport_h or win_h
     return (
         max(0, viewport_w - VOLUME_CONTROL_W),
         max(0, viewport_h - row_h + max(0, (row_h - VOLUME_CONTROL_H) // 2)),

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from functools import wraps
 
 # What the siblings reach: a consumer declares its need by landing the code that
 # imports it, and this gate is what holds the two in step -- so a name joins this
@@ -100,10 +99,3 @@ def hud_origin(corner: HudCorner, *, hud: tuple[int, int], viewport: tuple[int, 
     x = viewport_w - across - hud_w if corner.right else across
     y = viewport_h - lower_edge - down - hud_h if corner.lower else down
     return max(0, x), max(0, y)
-
-
-def takes_the_old_viewport_word(method):
-    @wraps(method)
-    def taking(self, *args, window=None, **kwargs):
-        return method(self, *args, **(kwargs if window is None else {**kwargs, "viewport": window}))
-    return taking
