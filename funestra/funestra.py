@@ -39,7 +39,7 @@ from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
 from .radio import Radio, RadioFile, Tuner, radio_file_for
 from .satellite_hud import HudModel
-from .scrubber import Heatmap, LoopThumbCapture, loop_thumbnail_xys
+from .scrubber import Heatmap, LoopThumbCapture, MarkFollow, ThumbRow, loop_thumbnail_xys
 from .session_quit import quit_gesture
 from .status import StatusWriter
 from .tcode import UdpTCodeSink
@@ -473,9 +473,9 @@ class Funestra:
 
     def item_row(self) -> RowHud:
         playback, engine = self.playback, self._engine
+        follow = None if playback.mark is None else MarkFollow(playback.mark, playback.position_ms)
         self._strip.update(playback.showing, playback.current_funscript,
-                           playback.duration_ms, self._track_width(),
-                           mark_in_ms=playback.mark, position_ms=playback.position_ms)
+                           playback.duration_ms, self._track_width(), follow)
         if playback.showing_image:
             elapsed_ms, pace_ms = engine.image_time or (0.0, 0.0)
             return RowHud(position_ms=elapsed_ms, duration_ms=pace_ms, volume=self._volume.hud,
@@ -522,8 +522,7 @@ class Funestra:
             return
         x0, x1, top = track
         in_at, out_at = loop_thumbnail_xys(
-            self._strip, frames, playback.ab_loop,
-            track=(x0, x1), viewport_w=viewport[0], top=top)
+            self._strip, frames, playback.ab_loop, ThumbRow((x0, x1), viewport[0], top))
         if in_at is not None:
             engine.overlay(self.IN_FRAME_OVERLAY_ID, *in_at, frames.in_thumb)
             self._loop_frames_up = True

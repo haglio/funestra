@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import NamedTuple
+
 import numpy as np
 from shared_ui import palette
 
@@ -26,31 +28,47 @@ def bar_track_x(width: int, *, left: int = 0) -> tuple[int, int]:
     return inset, max(inset + 1, width - _VOLUME_PLACE_W)
 
 
-def paint_rect(bgra, x0, x1, y0, y1, color):
+class Box(NamedTuple):
+    x0: int
+    x1: int
+    y0: int
+    y1: int
+
+
+class TrackMarks(NamedTuple):
+    position_ms: float
+    duration_ms: float
+    loop_bounds: tuple[float, float] | None = None
+    record_in_ms: float | None = None
+
+
+def paint_rect(bgra, box: Box, color):
     h, w = bgra.shape[:2]
-    x0, x1 = max(0, x0), min(w, x1)
-    y0, y1 = max(0, y0), min(h, y1)
+    x0, x1 = max(0, box.x0), min(w, box.x1)
+    y0, y1 = max(0, box.y0), min(h, box.y1)
     if x1 <= x0 or y1 <= y0:
         return
     bgra[y0:y1, x0:x1] = (color[2], color[1], color[0], color[3])
 
 
-def _ring(bgra, x0, x1, y0, y1, t, color):
-    paint_rect(bgra, x0, x1, y0, y0 + t, color)
-    paint_rect(bgra, x0, x1, y1 - t, y1, color)
-    paint_rect(bgra, x0, x0 + t, y0, y1, color)
-    paint_rect(bgra, x1 - t, x1, y0, y1, color)
+def _ring(bgra, box: Box, t, color):
+    x0, x1, y0, y1 = box
+    paint_rect(bgra, Box(x0, x1, y0, y0 + t), color)
+    paint_rect(bgra, Box(x0, x1, y1 - t, y1), color)
+    paint_rect(bgra, Box(x0, x0 + t, y0, y1), color)
+    paint_rect(bgra, Box(x1 - t, x1, y0, y1), color)
 
 
-def draw_border(bgra, x0, x1, y0, y1, bw, color):
-    _ring(bgra, x0, x1, y0, y1, 1, BAR_EDGE)
-    _ring(bgra, x0 + 1, x1 - 1, y0 + 1, y1 - 1, bw - 1, color)
+def draw_border(bgra, box: Box, bw, color):
+    x0, x1, y0, y1 = box
+    _ring(bgra, box, 1, BAR_EDGE)
+    _ring(bgra, Box(x0 + 1, x1 - 1, y0 + 1, y1 - 1), bw - 1, color)
 
 
-def _paint_mark(bgra, x_center, mark_w, y0, y1, color, *, x_lo, x_hi):
-    left = max(x_lo, x_center - mark_w // 2)
-    right = min(x_hi, left + mark_w)
-    paint_rect(bgra, left, right, y0, y1, color)
+def _paint_mark(bgra, box: Box, x_center, mark_w, color):
+    left = max(box.x0, x_center - mark_w // 2)
+    right = min(box.x1, left + mark_w)
+    paint_rect(bgra, Box(left, right, box.y0, box.y1), color)
 
 
 def bar_x(ms, duration_ms, x0, x1):
@@ -61,36 +79,30 @@ def bar_x(ms, duration_ms, x0, x1):
 def framed_track(width, height, track=None):
     bar = np.zeros((height, width, 4), dtype=np.uint8)
     x0, x1 = track or bar_track_x(width)
-    return bar, x0, x1, BAR_INSET_Y, height - BAR_INSET_Y
+    return bar, Box(x0, x1, BAR_INSET_Y, height - BAR_INSET_Y)
 
 
-def draw_track_marks(bgra, *, x0, x1, y0, y1, to_x, position_ms,
-                     loop_bounds, record_in_ms):
+def draw_track_marks(bgra, box: Box, marks: TrackMarks):
     def mark(ms, mark_w, color):
-        _paint_mark(bgra, to_x(ms), mark_w, y0, y1, (*color[:3], 255),
-                    x_lo=x0, x_hi=x1)
+        x = bar_x(ms, marks.duration_ms, box.x0, box.x1)
+        _paint_mark(bgra, box, x, mark_w, (*color[:3], 255))
 
-    if record_in_ms is not None:
-        mark(record_in_ms, MARK_W, RED)
-    if loop_bounds is not None:
-        mark(loop_bounds[0], MARK_W, YELLOW)
-        mark(loop_bounds[1], MARK_W, YELLOW)
-    mark(position_ms, CURSOR_W, CURSOR)
+    if marks.record_in_ms is not None:
+        mark(marks.record_in_ms, MARK_W, RED)
+    if marks.loop_bounds is not None:
+        mark(marks.loop_bounds[0], MARK_W, YELLOW)
+        mark(marks.loop_bounds[1], MARK_W, YELLOW)
+    mark(marks.position_ms, CURSOR_W, CURSOR)
 
 
-def progress_bar_bgra(position_ms, duration_ms, loop_bounds, width,
-                      record_in_ms=None, height=SCRUBBER_HEIGHT, *, heatmap=None,
+def progress_bar_bgra(marks: TrackMarks, width, height=SCRUBBER_HEIGHT, *, heatmap=None,
                       track=None):
-    bar, x0, x1, y0, y1 = framed_track(width, height, track)
+    bar, box = framed_track(width, height, track)
     if heatmap is None or not len(heatmap):
-        paint_rect(bar, x0, x1, y0, y1, BAR_FILL)
+        paint_rect(bar, box, BAR_FILL)
     else:
-        bar[y0:y1, x0:x1, :3] = np.asarray(heatmap, dtype=np.uint8)[np.newaxis, :, ::-1]
-        bar[y0:y1, x0:x1, 3] = HEATMAP_ALPHA
-    draw_border(bar, x0, x1, y0, y1, BORDER_W, BAR_BORDER)
-    draw_track_marks(
-        bar, x0=x0, x1=x1, y0=y0, y1=y1,
-        to_x=lambda ms: bar_x(ms, duration_ms, x0, x1),
-        position_ms=position_ms, loop_bounds=loop_bounds, record_in_ms=record_in_ms,
-    )
+        bar[box.y0:box.y1, box.x0:box.x1, :3] = np.asarray(heatmap, dtype=np.uint8)[np.newaxis, :, ::-1]
+        bar[box.y0:box.y1, box.x0:box.x1, 3] = HEATMAP_ALPHA
+    draw_border(bar, box, BORDER_W, BAR_BORDER)
+    draw_track_marks(bar, box, marks)
     return bar

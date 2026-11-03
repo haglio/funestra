@@ -5,6 +5,7 @@ from shared_ui.palette import RED, YELLOW
 from funestra.scrubber_bar import (
     BAR_INSET_Y,
     HEATMAP_ALPHA,
+    TrackMarks,
     bar_track_x,
     progress_bar_bgra,
 )
@@ -37,7 +38,7 @@ class TestBarTrackX:
 
 class TestProgressBar:
     def test_the_track_runs_from_the_rows_edge_and_leaves_the_chips_slot_clear(self):
-        bar = progress_bar_bgra(0, 10_000, None, 1000)
+        bar = progress_bar_bgra(TrackMarks(0, 10_000), 1000)
         x0, x1 = bar_track_x(1000)
         my = bar.shape[0] // 2
 
@@ -47,7 +48,7 @@ class TestProgressBar:
         assert bar[my, 995, 3] == 0
 
     def test_has_a_two_tone_border_around_the_track(self):
-        bar = progress_bar_bgra(0, 10_000, None, 1000)
+        bar = progress_bar_bgra(TrackMarks(0, 10_000), 1000)
         x0, x1 = bar_track_x(1000)
         xc = (x0 + x1) // 2
         fill = _rgba(bar, bar.shape[0] // 2, xc)
@@ -58,7 +59,7 @@ class TestProgressBar:
         assert inner[3] >= 200
 
     def test_a_prominent_white_playcursor(self):
-        bar = progress_bar_bgra(5_000, 10_000, None, 1000)
+        bar = progress_bar_bgra(TrackMarks(5_000, 10_000), 1000)
         x0, x1 = bar_track_x(1000)
         my = bar.shape[0] // 2
         assert _rgba(bar, my, x0 + (x1 - x0) // 2) == (255, 255, 255, 255)
@@ -66,7 +67,7 @@ class TestProgressBar:
         assert len(white) >= 3
 
     def test_draws_prominent_yellow_loop_marks(self):
-        bar = progress_bar_bgra(0, 10_000, (2_500, 7_500), 1000)
+        bar = progress_bar_bgra(TrackMarks(0, 10_000, (2_500, 7_500)), 1000)
         x0, x1 = bar_track_x(1000)
         my = bar.shape[0] // 2
         yellow = [x for x in range(x0, x1) if _rgba(bar, my, x)[:3] == YELLOW]
@@ -76,39 +77,39 @@ class TestProgressBar:
         assert any(x > xc for x in yellow)
 
     def test_no_loop_marks_without_a_loop(self):
-        bar = progress_bar_bgra(0, 10_000, None, 1000)
+        bar = progress_bar_bgra(TrackMarks(0, 10_000), 1000)
         my = bar.shape[0] // 2
         assert not any(_rgba(bar, my, x)[:3] == YELLOW for x in range(1000))
 
     def test_record_in_point_shows_red(self):
-        bar = progress_bar_bgra(0, 10_000, None, 1000, record_in_ms=5_000)
+        bar = progress_bar_bgra(TrackMarks(0, 10_000, record_in_ms=5_000), 1000)
         x0, x1 = bar_track_x(1000)
         my = bar.shape[0] // 2
         red = [x for x in range(x0, x1) if _rgba(bar, my, x)[:3] == RED]
         assert len(red) >= 3
 
     def test_track_fill_is_uniform_either_side_of_the_cursor(self):
-        bar = progress_bar_bgra(5_000, 10_000, None, 1000)
+        bar = progress_bar_bgra(TrackMarks(5_000, 10_000), 1000)
         x0, x1 = bar_track_x(1000)
         my = bar.shape[0] // 2
         assert _rgba(bar, my, x0 + 30) == _rgba(bar, my, x1 - 30)
 
     def test_zero_duration_is_safe(self):
-        bar = progress_bar_bgra(0, 0, None, 800, height=20)
+        bar = progress_bar_bgra(TrackMarks(0, 0), 800, height=20)
         assert bar.shape == (20, 800, 4)
 
     def test_a_funscripts_colors_fill_the_track_in_place_of_the_dark_fill(self):
         x0, x1 = bar_track_x(1000)
         colors = [(40 + x % 200, 90, 220 - x % 180) for x in range(x1 - x0)]
 
-        bar = progress_bar_bgra(0, 10_000, None, 1000, heatmap=colors)
+        bar = progress_bar_bgra(TrackMarks(0, 10_000), 1000, heatmap=colors)
 
         middle = bar.shape[0] // 2
         assert [_rgba(bar, middle, x) for x in range(x0 + 10, x1 - 10)] == [
             (*colors[x - x0], HEATMAP_ALPHA) for x in range(x0 + 10, x1 - 10)]
 
     def test_the_track_ends_before_the_volume_slot(self):
-        bar = progress_bar_bgra(10_000, 10_000, None, 1000)
+        bar = progress_bar_bgra(TrackMarks(10_000, 10_000), 1000)
         my = bar.shape[0] // 2
         _x0, x1 = bar_track_x(1000)
         assert bar[my, x1 + 2, 3] == 0

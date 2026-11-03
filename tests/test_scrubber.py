@@ -8,12 +8,14 @@ from funestra.heatmap import build_heatmap
 from funestra.scrubber import (
     Heatmap,
     LoopThumbCapture,
+    MarkFollow,
+    ThumbRow,
     ZoomWindow,
     label_xs,
     loop_thumbnail_xys,
     time_to_x,
 )
-from funestra.scrubber_bar import BAR_INSET_Y, bar_track_x, progress_bar_bgra
+from funestra.scrubber_bar import BAR_INSET_Y, TrackMarks, bar_track_x, progress_bar_bgra
 
 
 def _funscript():
@@ -78,7 +80,7 @@ class TestHeatmap:
         fs = _funscript()
         strip = Heatmap()
 
-        strip.update("v0.mp4", fs, 600_000.0, track_w=TRACK_W, mark_in_ms=50_000, position_ms=50_000.0)
+        strip.update("v0.mp4", fs, 600_000.0, track_w=TRACK_W, follow=MarkFollow(50_000, 50_000.0))
 
         assert strip.window == (48_000, 70_000)
         assert strip.mark_in_ms == 50_000
@@ -87,7 +89,7 @@ class TestHeatmap:
     def test_an_unscripted_item_marked_keeps_the_plain_view(self):
         strip = Heatmap()
 
-        strip.update("plain.mp4", None, 600_000.0, track_w=TRACK_W, mark_in_ms=50_000, position_ms=50_000.0)
+        strip.update("plain.mp4", None, 600_000.0, track_w=TRACK_W, follow=MarkFollow(50_000, 50_000.0))
 
         assert strip.window == (0.0, 600_000.0)
 
@@ -95,8 +97,8 @@ class TestHeatmap:
         strip = Heatmap()
 
         def update(position_ms):
-            strip.update("v0.mp4", _funscript(), 600_000.0, track_w=TRACK_W,
-                         mark_in_ms=50_000, position_ms=position_ms)
+            strip.update("v0.mp4", _funscript(), 600_000.0, TRACK_W,
+                         MarkFollow(50_000, position_ms))
 
         update(50_000.0)
         held = strip.colors
@@ -111,7 +113,7 @@ class TestHeatmap:
     def test_closing_the_mark_restores_the_full_view(self):
         fs = _funscript()
         strip = Heatmap()
-        strip.update("v0.mp4", fs, 600_000.0, track_w=TRACK_W, mark_in_ms=50_000, position_ms=66_800.0)
+        strip.update("v0.mp4", fs, 600_000.0, track_w=TRACK_W, follow=MarkFollow(50_000, 66_800.0))
 
         strip.update("v0.mp4", fs, 600_000.0, track_w=TRACK_W)
 
@@ -119,7 +121,7 @@ class TestHeatmap:
         assert strip.mark_in_ms is None
         assert strip.colors == build_heatmap(fs, TRACK_W, start_ms=0, end_ms=600_000.0)
 
-        strip.update("v0.mp4", fs, 600_000.0, track_w=TRACK_W, mark_in_ms=100_000, position_ms=100_000.0)
+        strip.update("v0.mp4", fs, 600_000.0, track_w=TRACK_W, follow=MarkFollow(100_000, 100_000.0))
         assert strip.window == (98_000, 120_000)
 
 
@@ -174,7 +176,7 @@ class TestAScriptedItemsStrip:
         x0, x1 = bar_track_x(viewport_w)
         strip = Heatmap()
         strip.update("v.mp4", _funscript(), 4000.0, track_w=x1 - x0)
-        return progress_bar_bgra(2000, 4000.0, (1000, 3000), viewport_w, heatmap=strip.colors), x0, x1
+        return progress_bar_bgra(TrackMarks(2000, 4000.0, (1000, 3000)), viewport_w, heatmap=strip.colors), x0, x1
 
     def test_the_strip_runs_from_the_rows_edge_to_the_chips_slot(self):
         bgra, x0, x1 = self._framed_strip()
@@ -246,8 +248,8 @@ class TestWhereTheLoopsTwoFramesGo:
         return thumbs
 
     def _xys(self, heatmap, thumbs, bounds):
-        return loop_thumbnail_xys(heatmap, thumbs, bounds, track=self.TRACK,
-                                  viewport_w=self.WIN_W, top=self.TOP)
+        return loop_thumbnail_xys(heatmap, thumbs, bounds,
+                                  ThumbRow(self.TRACK, self.WIN_W, self.TOP))
 
     def _scripted(self) -> Heatmap:
         strip = Heatmap()

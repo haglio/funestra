@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import NamedTuple
+
 from .heatmap import build_heatmap
 
 _ZOOM_SPAN_START_MS = 20_000.0
@@ -29,6 +31,17 @@ class ZoomWindow:
         return start + (end - start) * _ZOOM_GROW_FRAC
 
 
+class MarkFollow(NamedTuple):
+    mark_in_ms: float
+    position_ms: float
+
+
+class ThumbRow(NamedTuple):
+    track: tuple[int, int]
+    viewport_w: int
+    top: int
+
+
 class Heatmap:
     def __init__(self) -> None:
         self._key: tuple | None = None
@@ -56,14 +69,12 @@ class Heatmap:
         funscript,
         duration_ms: float,
         track_w: int,
-        *,
-        mark_in_ms: float | None = None,
-        position_ms: float = 0.0,
+        follow: MarkFollow | None = None,
     ) -> None:
-        if mark_in_ms is not None and funscript is not None:
+        if follow is not None and funscript is not None:
             if self._zoom is None:
-                self._zoom = ZoomWindow(in_ms=mark_in_ms)
-            self._zoom.update(position_ms)
+                self._zoom = ZoomWindow(in_ms=follow.mark_in_ms)
+            self._zoom.update(follow.position_ms)
         else:
             self._zoom = None
         self._duration_ms = duration_ms
@@ -132,13 +143,10 @@ def loop_thumbnail_xys(
     heatmap: Heatmap,
     thumbs: LoopThumbCapture,
     bounds: tuple[int, int],
-    *,
-    track: tuple[int, int],
-    viewport_w: int,
-    top: int,
+    row: ThumbRow,
 ) -> tuple[tuple[int, int] | None, tuple[int, int] | None]:
     start_ms, end_ms = heatmap.window
-    tx0, tx1 = track
+    tx0, tx1 = row.track
     track_w = tx1 - tx0
     in_x = tx0 + time_to_x(bounds[0], start_ms, end_ms, track_w)
     out_x = tx0 + time_to_x(bounds[1], start_ms, end_ms, track_w)
@@ -147,11 +155,11 @@ def loop_thumbnail_xys(
         in_x, out_x,
         in_t.shape[1] if in_t is not None else 1,
         out_t.shape[1] if out_t is not None else 1,
-        viewport_w,
+        row.viewport_w,
     )
     return (
-        (ix, top) if in_t is not None else None,
-        (ox, top) if out_t is not None else None,
+        (ix, row.top) if in_t is not None else None,
+        (ox, row.top) if out_t is not None else None,
     )
 
 
