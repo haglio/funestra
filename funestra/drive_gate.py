@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 from .descent_latch import DescentLatch
-from .drive_trace import osr2_visualizer
+from .drive_trace import Playhead, osr2_visualizer
 from .osr2_visualizer import DriveHud
 from .robot_hand import FULL_INTENSITY
 from .trace_grid import on_the_grid
@@ -79,11 +79,10 @@ class DriveGate:
             return drive or DriveHud()
         return osr2_visualizer(
             drive,
+            Playhead(position, self._session.speed,
+                     getattr(self._session, "max_intensity", FULL_INTENSITY)),
             script=self._script_as_played(),
-            position_ms=position,
-            speed=self._session.speed,
             latch=self._latch,
-            max_intensity=getattr(self._session, "max_intensity", FULL_INTENSITY),
         )
 
     def handoff_touch(self) -> int | None:

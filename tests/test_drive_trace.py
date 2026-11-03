@@ -7,7 +7,7 @@ import pytest
 
 from funestra.descent_latch import DescentLatch
 from funestra.drive_gate import next_handoff_touch
-from funestra.drive_trace import osr2_visualizer
+from funestra.drive_trace import Playhead, osr2_visualizer
 from funestra.funscript import HANDOFF_RAMP_MS, Funscript
 from funestra.osr2_visualizer import (
     DRIVEN_BY_FUNSCRIPT,
@@ -62,7 +62,7 @@ def _script_ahead(*, from_ms: int = 8_000, to_ms: int = 9_000) -> Funscript:
 def _read(script, *, at: int, published=None, latch=None) -> DriveHud:
     return osr2_visualizer(
         published if published is not None else _motion(),
-        script=script, position_ms=at, latch=latch)
+        Playhead(at), script=script, latch=latch)
 
 
 def _colors(hud: DriveHud) -> list[str]:
@@ -82,7 +82,7 @@ class TestOneLineTwoDrivers:
     def test_a_script_under_a_max_intensity_is_drawn_as_shallow_as_the_device_is_sent(self):
         script = _script(until_ms=120_000)
 
-        hud = osr2_visualizer(_motion(), script=script, position_ms=0, max_intensity=30)
+        hud = osr2_visualizer(_motion(), Playhead(0, max_intensity=30), script=script)
 
         assert hud.waveform == script.planned_trace_window(
             0, round(SPAN_S * 1000), TRACE_SAMPLES, max_intensity=30)[0][:TRACE_SAMPLES]
@@ -110,7 +110,7 @@ class TestOneLineTwoDrivers:
             assert left[1] == right[0]
 
     def test_with_nothing_published_the_gap_is_nobody_s_and_rests_on_the_park(self):
-        hud = osr2_visualizer(None, script=_script(until_ms=2_000), position_ms=0)
+        hud = osr2_visualizer(None, Playhead(0), script=_script(until_ms=2_000))
         gap_start = hud.runs[-1][0]
 
         assert _colors(hud) == [
@@ -551,7 +551,7 @@ class TestALoopingFunestra:
         swings = Funscript(actions=[(0, 0), (1_250, 100), (2_500, 0), (3_760, 100), (5_010, 0)])
 
         hud = osr2_visualizer(_motion(trace_seconds=DriveHud.trace_seconds),
-                            script=swings.looped(0, 5_000), position_ms=4_999, speed=MAX_RATE)
+                            Playhead(4_999, MAX_RATE), script=swings.looped(0, 5_000))
 
         assert hud.segments == ((0, DRIVEN_BY_FUNSCRIPT),)
 
@@ -560,7 +560,7 @@ class TestNothingToFoldIn:
     def test_an_unscripted_video_leaves_the_visualizer_alone(self):
         published = _motion()
 
-        assert osr2_visualizer(published, script=None, position_ms=0) == published
+        assert osr2_visualizer(published, Playhead(0), script=None) == published
 
     def test_a_single_run_still_names_its_driver(self):
         hud = _read(_script(until_ms=120_000), at=0)
