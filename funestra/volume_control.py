@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import replace
 from pathlib import Path
 
@@ -62,3 +63,11 @@ class AppVolume:
     def set_level(self, level: int) -> None:
         self._hud = VolumeHud(volume=level, muted=False)
         ask(self._dashboard_cmd_file, f"audio_set_volume|{level}")
+
+
+def told_to_the_host(move: Callable[..., None], volume, on_moved) -> Callable[..., None]:
+    def moved(*args) -> None:
+        move(*args)
+        if on_moved is not None:
+            on_moved(volume.hud)
+    return moved

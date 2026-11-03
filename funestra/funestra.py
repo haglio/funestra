@@ -45,8 +45,7 @@ from .status import StatusWriter
 from .tcode import UdpTCodeSink
 from .tcode_driver import FunscriptTCodeDriver
 from .volume import VolumeHud
-from .volume_control import AppVolume, VolumeControl
-from .volume_press import told_to_the_host
+from .volume_control import AppVolume, VolumeControl, told_to_the_host
 
 logger = logging.getLogger(__name__)
 
