@@ -1,12 +1,3 @@
-"""The Main Funestra's HUD kept on the item: the HUD the app publishes for the main place,
-read every frame, composited, pressed.
-
-the app's two files -- the Main Funestra's HUD, and the motion whoever drives the OSR2
-publishes -- are replaced while this polls them, so a torn read keeps what was
-there: blanking either for a frame is a visible flicker on a HUD redrawn at
-60fps.  The motion is read through the gate before the HUD believes it, or
-the pill and the drawn line describe the frame before this one.
-"""
 from __future__ import annotations
 
 import time
@@ -63,7 +54,6 @@ class MainHudOverlay:
         self._origin = (0, 0)
         self._hud_height = 0
         self._item_row: RowHud | None = None
-        # The Main Funestra's HUD draws the item's row, so it places a press on it too.
         self._row = RowPress(seek=seek, seek_loop=seek_loop, set_volume=set_volume,
                              toggle_mute=toggle_mute)
         self._host_controls = HostControlsPress(host_controls)
@@ -114,14 +104,10 @@ class MainHudOverlay:
 
     @property
     def row(self) -> RowLayout | None:
-        """Where the row landed in this HUD and how it is laid out,
-        for a host measuring the track it is to fill."""
         return self._painter.row
 
     @property
     def row_track(self) -> tuple[int, int, int] | None:
-        """The row's track in the viewport's coordinates, for a host hanging the
-        loop's frames under it."""
         return track_on_screen(self._painter.row, origin=self._origin,
                                hud_height=self._hud_height)
 
@@ -166,8 +152,6 @@ class MainHudOverlay:
         return x - self._origin[0], y - self._origin[1]
 
     def _track_duration(self) -> float:
-        """How long the track spans -- the video, or the window a loop being
-        recorded has zoomed it to, which is what the row was drawn from."""
         return 0.0 if self._item_row is None else self._item_row.duration_ms
 
     def motion(self, x: int, y: int) -> None:

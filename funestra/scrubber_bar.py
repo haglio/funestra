@@ -21,32 +21,20 @@ from funestra.volume import PLACE_W as _VOLUME_PLACE_W
 RED = (*palette.RED, 245)
 YELLOW = (*palette.YELLOW, 245)
 
-# The scrubber — heatmap strip or plain bar — is drawn as one shared frame: an
-# inset, floated, bordered track with full-height marks.
-BAR_INSET_Y = 3      # upper/lower margin so the scrubber floats off the edge
-BAR_FILL = (*palette.BG_SECONDARY, 165)     # dark translucent fill (plain bar only)
-BAR_BORDER = (*palette.BORDER_DEFAULT, 235)  # light inner border (reads on the dark fill)
-BAR_EDGE = (*palette.BLACK, 235)            # dark outer edge (reads on the bright heatmap)
-HEATMAP_ALPHA = 178  # ~70%: present but unobtrusive under the video
+BAR_INSET_Y = 3
+BAR_FILL = (*palette.BG_SECONDARY, 165)
+BAR_BORDER = (*palette.BORDER_DEFAULT, 235)
+BAR_EDGE = (*palette.BLACK, 235)
+HEATMAP_ALPHA = 178
 BORDER_W = 2
-CURSOR = (*palette.WHITE, 255)  # prominent white playcursor
+CURSOR = (*palette.WHITE, 255)
 CURSOR_W = 3
-MARK_W = 4                      # prominent loop in/out and record marks
+MARK_W = 4
 
-SCRUBBER_HEIGHT = 24  # lower strip height when not recording
+SCRUBBER_HEIGHT = 24
 
 
 def bar_track_x(width: int, *, left: int = 0) -> tuple[int, int]:
-    """Left/right pixel bounds of the scrubber track.
-
-    The start is *left*, where whatever the row lays out before the track
-    ends -- the row's own edge when nothing does; the end stops short of the
-    volume control that shares the row, the way VLC's seek bar stopped clear of
-    its slider — :data:`funestra.volume.SLOT_W` is the app it leaves.
-    Clamped so the track never inverts on a very narrow window.  The heatmap
-    strip, the plain bar and click-to-seek all use this, so they agree on where
-    the track ends.
-    """
     inset = min(left, max(0, width - _VOLUME_PLACE_W - 1))
     return inset, max(inset + 1, width - _VOLUME_PLACE_W)
 
@@ -63,38 +51,29 @@ def paint_rect(bgra, x0, x1, y0, y1, color):
 
 
 def _ring(bgra, x0, x1, y0, y1, t, color):
-    """Draw a ``t``-thick hollow rectangle just inside [x0:x1] x [y0:y1]."""
-    paint_rect(bgra, x0, x1, y0, y0 + t, color)  # upper
-    paint_rect(bgra, x0, x1, y1 - t, y1, color)  # lower
-    paint_rect(bgra, x0, x0 + t, y0, y1, color)  # left
-    paint_rect(bgra, x1 - t, x1, y0, y1, color)  # right
+    paint_rect(bgra, x0, x1, y0, y0 + t, color)
+    paint_rect(bgra, x0, x1, y1 - t, y1, color)
+    paint_rect(bgra, x0, x0 + t, y0, y1, color)
+    paint_rect(bgra, x1 - t, x1, y0, y1, color)
 
 
 def draw_border(bgra, x0, x1, y0, y1, bw, color):
-    """A two-tone frame: a 1px dark outer edge inside a light inner border, so
-    it reads against both the plain bar's dark fill and the bright heatmap."""
     _ring(bgra, x0, x1, y0, y1, 1, BAR_EDGE)
     _ring(bgra, x0 + 1, x1 - 1, y0 + 1, y1 - 1, bw - 1, color)
 
 
 def _paint_mark(bgra, x_center, mark_w, y0, y1, color, *, x_lo, x_hi):
-    """Paint a ``mark_w``-wide vertical bar centered on ``x_center``, kept
-    within [x_lo, x_hi]."""
     left = max(x_lo, x_center - mark_w // 2)
     right = min(x_hi, left + mark_w)
     paint_rect(bgra, left, right, y0, y1, color)
 
 
 def bar_x(ms, duration_ms, x0, x1):
-    """Track x for a timestamp: its fraction of the video, mapped into
-    [x0, x1] and kept on-track."""
     frac = min(1.0, max(0.0, ms / max(1.0, duration_ms)))
     return x0 + int(frac * (x1 - x0 - 1))
 
 
 def framed_track(width, height, track=None):
-    """A transparent full-width BGRA array plus the inset, floated track rect
-    (x0, x1, y0, y1) that both the plain bar and the heatmap strip draw into."""
     bar = np.zeros((height, width, 4), dtype=np.uint8)
     x0, x1 = track or bar_track_x(width)
     return bar, x0, x1, BAR_INSET_Y, height - BAR_INSET_Y
@@ -102,10 +81,6 @@ def framed_track(width, height, track=None):
 
 def draw_track_marks(bgra, *, x0, x1, y0, y1, to_x, position_ms,
                      loop_bounds, record_in_ms):
-    """Full-height playcursor + yellow loop in/out (and red record-in) ticks on a
-    framed track.  ``to_x(ms)`` maps a timestamp to an absolute x in [x0, x1].
-    Ticks span the whole frame (crossing the border) and are fully opaque, so
-    they stay prominent over any fill or video."""
     def mark(ms, mark_w, color):
         _paint_mark(bgra, to_x(ms), mark_w, y0, y1, (*color[:3], 255),
                     x_lo=x0, x_hi=x1)
@@ -115,18 +90,12 @@ def draw_track_marks(bgra, *, x0, x1, y0, y1, to_x, position_ms,
     if loop_bounds is not None:
         mark(loop_bounds[0], MARK_W, YELLOW)
         mark(loop_bounds[1], MARK_W, YELLOW)
-    mark(position_ms, CURSOR_W, CURSOR)  # playcursor on top
+    mark(position_ms, CURSOR_W, CURSOR)
 
 
 def progress_bar_bgra(position_ms, duration_ms, loop_bounds, width,
                       record_in_ms=None, height=SCRUBBER_HEIGHT, *, heatmap=None,
                       track=None):
-    """A bordered, inset seek bar: the track floated in from the window edges
-    under a light border, with a full-height white playcursor and full-height
-    loop in/out marks (yellow; the in point shows red while it is still being
-    recorded).  *heatmap* is the funscript's color for each pixel of the track,
-    RGB, and fills it in place of the dark fill; *track* is where the row put
-    the track's two ends, else they are where a bare row puts them."""
     bar, x0, x1, y0, y1 = framed_track(width, height, track)
     if heatmap is None or not len(heatmap):
         paint_rect(bar, x0, x1, y0, y1, BAR_FILL)

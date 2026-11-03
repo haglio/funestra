@@ -1,4 +1,3 @@
-"""The shared scrubber: inset track geometry and the plain progress bar."""
 from __future__ import annotations
 
 from shared_ui.palette import RED, YELLOW
@@ -19,15 +18,12 @@ def _rgba(bar, y, x):
 
 class TestBarTrackX:
     def test_the_track_stops_clear_of_the_volume_slot_at_the_right(self):
-        # The way VLC's seek bar stopped short of its slider.
         assert bar_track_x(1000)[1] == 1000 - PLACE_W
 
     def test_the_track_starts_where_the_row_laying_it_out_says(self):
-        """After whatever the row puts before it: its visualizer, a flick's dial."""
         assert bar_track_x(1920, left=183) == (183, 1920 - PLACE_W)
 
     def test_the_track_starts_after_a_visualizer_wider_than_half_the_row(self):
-        """A flick's row is mostly visualizer, and its track must not run under it."""
         assert bar_track_x(302, left=172) == (172, 302 - PLACE_W)
 
     def test_a_row_with_nothing_before_the_track_starts_it_at_the_edge(self):
@@ -54,29 +50,27 @@ class TestProgressBar:
         bar = progress_bar_bgra(0, 10_000, None, 1000)
         x0, x1 = bar_track_x(1000)
         xc = (x0 + x1) // 2
-        fill = _rgba(bar, bar.shape[0] // 2, xc)      # interior fill
-        outer = _rgba(bar, BAR_INSET_Y, xc)           # dark outer edge
-        inner = _rgba(bar, BAR_INSET_Y + 1, xc)       # light inner border
-        assert max(outer[:3]) < min(fill[:3])                     # darker than fill
+        fill = _rgba(bar, bar.shape[0] // 2, xc)
+        outer = _rgba(bar, BAR_INSET_Y, xc)
+        inner = _rgba(bar, BAR_INSET_Y + 1, xc)
+        assert max(outer[:3]) < min(fill[:3])
         assert min(inner[:3]) > max(fill[:3])
         assert inner[3] >= 200
 
     def test_a_prominent_white_playcursor(self):
-        bar = progress_bar_bgra(5_000, 10_000, None, 1000)  # 50%
+        bar = progress_bar_bgra(5_000, 10_000, None, 1000)
         x0, x1 = bar_track_x(1000)
         my = bar.shape[0] // 2
-        # An opaque white cursor around the track midpoint, at least 3px wide — a
-        # prominent bar, not a 1px hairline.
         assert _rgba(bar, my, x0 + (x1 - x0) // 2) == (255, 255, 255, 255)
         white = [x for x in range(x0, x1) if _rgba(bar, my, x) == (255, 255, 255, 255)]
         assert len(white) >= 3
 
     def test_draws_prominent_yellow_loop_marks(self):
-        bar = progress_bar_bgra(0, 10_000, (2_500, 7_500), 1000)  # in 25%, out 75%
+        bar = progress_bar_bgra(0, 10_000, (2_500, 7_500), 1000)
         x0, x1 = bar_track_x(1000)
         my = bar.shape[0] // 2
         yellow = [x for x in range(x0, x1) if _rgba(bar, my, x)[:3] == YELLOW]
-        assert len(yellow) >= 6  # two marks (in and out), each a few px wide
+        assert len(yellow) >= 6
         xc = (x0 + x1) // 2
         assert any(x < xc for x in yellow)
         assert any(x > xc for x in yellow)
@@ -94,10 +88,9 @@ class TestProgressBar:
         assert len(red) >= 3
 
     def test_track_fill_is_uniform_either_side_of_the_cursor(self):
-        bar = progress_bar_bgra(5_000, 10_000, None, 1000)  # cursor mid-track
+        bar = progress_bar_bgra(5_000, 10_000, None, 1000)
         x0, x1 = bar_track_x(1000)
         my = bar.shape[0] // 2
-        # No elapsed-vs-remaining distinction: the fill reads the same on both sides.
         assert _rgba(bar, my, x0 + 30) == _rgba(bar, my, x1 - 30)
 
     def test_zero_duration_is_safe(self):
@@ -115,10 +108,7 @@ class TestProgressBar:
             (*colors[x - x0], HEATMAP_ALPHA) for x in range(x0 + 10, x1 - 10)]
 
     def test_the_track_ends_before_the_volume_slot(self):
-        """The whole point of reserving SLOT_W: the fill and border stop clear of
-        where the volume control sits, so the two never draw over each other."""
         bar = progress_bar_bgra(10_000, 10_000, None, 1000)
         my = bar.shape[0] // 2
         _x0, x1 = bar_track_x(1000)
-        # Just past the track's right edge is transparent, all the way to the volume control.
         assert bar[my, x1 + 2, 3] == 0

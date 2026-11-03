@@ -1,11 +1,10 @@
-"""The dial beside a flick's track: a clock hand going round once per loop."""
 from __future__ import annotations
 
 import pytest
 
 from funestra.loop_dial import DIAL_SIZE, LoopDialPainter, on_dial, turn_at
 
-AT = (30, 1)  # where the row put the dial's top-left corner
+AT = (30, 1)
 CENTER = (AT[0] + DIAL_SIZE // 2, AT[1] + DIAL_SIZE // 2)
 
 
@@ -31,7 +30,7 @@ class TestHowItIsDrawn:
     def _brightness(self, turn: float):
         bgra = LoopDialPainter().bgra(LoopDialPainter.hand(turn))
         assert bgra.shape == (DIAL_SIZE, DIAL_SIZE, 4)
-        return bgra[:, :, :3].astype(int).sum(axis=2)  # row by column
+        return bgra[:, :, :3].astype(int).sum(axis=2)
 
     def test_the_hand_points_up_at_the_start_of_the_turn(self):
         ink = self._brightness(0.0)
@@ -48,8 +47,6 @@ class TestHowItIsDrawn:
         assert ink[c, c + 6] > ink[c + 6, c] + 150
 
     def test_a_mark_at_twelve_and_a_dot_at_six_show_the_loops_two_ends(self):
-        """With the hand pointing right, the top and the foot of the dial
-        carry nothing but the marks."""
         ink = self._brightness(0.25)
         c = DIAL_SIZE // 2
         disc = ink[c + 3, c - 4]

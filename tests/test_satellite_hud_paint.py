@@ -62,18 +62,15 @@ from funestra.volume import VolumeHud
 
 
 def _declared(rendered) -> list:
-    """The buttons the source declared, without the HUD's own minimize."""
     return [(rect, button) for rect, button in rendered.targets.buttons
             if button.command != minimize_command(button.command.split("_")[0])]
 
 
 def _names(rendered) -> list[str]:
-    """What each drawn button is for, in the order they were laid out."""
     return [short_name(button) for _rect, button in _declared(rendered)]
 
 
 def _rects(rendered) -> dict:
-    """Each drawn button's rect, by what it is for."""
     return {short_name(button): rect for rect, button in rendered.targets.buttons}
 
 
@@ -92,7 +89,6 @@ VIDEO_SHAPES = {
 
 @pytest.fixture
 def video_thumb(tmp_path: Path):
-    """``(side, shape) -> thumbnail path`` for the shapes above."""
     def make(funestra: str, shape: tuple[int, int]) -> str:
         path = tmp_path / f"{funestra}-{shape[0]}x{shape[1]}.jpg"
         if not path.exists():
@@ -106,8 +102,6 @@ def _sides_and_shapes() -> list[tuple[str, tuple[int, int]]]:
 
 
 def _model(**overrides) -> HudModel:
-    """A Funestra's HUD, with the bar its source declares unless *rows* says
-    otherwise."""
     base = dict(funestra="portrait", locked=True, title="Locked")
     base.update(overrides)
     base.setdefault("rows", funestra_rows(base["funestra"]))
@@ -144,7 +138,6 @@ def test_render_fills_the_hud_and_draws_the_nav_map(thumb):
 
 
 def _crowded(funestra: str, thumb: str) -> HudModel:
-    """A side with more seeds and more acts than any nav map draws."""
     return _model(
         funestra=funestra, locked=False, title="Unlocked · Shuffle", current_action="Alpha",
         corner=HudCell(path="c.mp4", thumb=thumb),
@@ -166,11 +159,6 @@ def test_the_nav_map_is_three_cells_a_side_whatever_shape_its_clips_are(funestra
 
 @pytest.mark.parametrize("funestra,shape", _sides_and_shapes())
 def test_the_hud_stops_where_its_last_controls_do(funestra, shape, video_thumb):
-    """No slab past the nav map wherever the nav map is what set the width: the expand
-    button ends one margin in from the right edge and the action-loop button one
-    margin up from the lower edge, so every pixel of the HUD is carrying something —
-    for a wide cell as much as a narrow one.  (A status longer than the nav map is the
-    other case, and there it is the line that reaches the far edge.)"""
     rendered = HudRenderer(funestra).render(_crowded(funestra, video_thumb(funestra, shape)))
     height, width = rendered.bgra.shape[:2]
 
@@ -233,9 +221,6 @@ def test_a_satellite_with_no_clip_yet_keeps_the_room_its_nav_map_will_take(thumb
 
 
 def test_render_rings_the_locked_clip_in_white(thumb):
-    """The white ring marks a lock: a locked HUD rings the corner, an unlocked
-    one leaves no near-white ink on the nav map (below the lock bar, where the
-    "Locked" word can't be mistaken for the ring)."""
     def ring_ink(locked: bool) -> int:
         rendered = HudRenderer("portrait").render(
             _model(locked=locked, title="Locked" if locked else "Unlocked",
@@ -249,10 +234,6 @@ def test_render_rings_the_locked_clip_in_white(thumb):
 
 
 def test_the_lock_ring_follows_the_clip_being_held(thumb):
-    """A lock taken inside a loop holds whichever video the loop had reached, and
-    the nav map stays anchored where the loop started — so the ring has to land on the
-    cell that video is drawn in.  Left on the corner it rings a video that is neither
-    playing nor locked."""
     def ring_ink(playing) -> tuple[int, int]:
         rendered = HudRenderer("portrait").render(
             _model(playing=playing, active_loop="seed",
@@ -275,8 +256,6 @@ def test_the_lock_ring_follows_the_clip_being_held(thumb):
 
 
 def test_render_without_a_corner_still_draws_the_shell():
-    """A satellite with no video yet gets the lock bar and nothing else — and no
-    click targets, so a stray press over the empty HUD posts nothing."""
     rendered = HudRenderer("landscape").render(
         HudModel(funestra="landscape", locked=False, title="Unlocked"))
 
@@ -286,16 +265,10 @@ def test_render_without_a_corner_still_draws_the_shell():
 
 
 def test_the_dot_lights_up_only_on_the_active_side(thumb):
-    """The dot beside the title says whether a bare "lock" or "next" would
-    land here.  Lit is white, idle is the palette's gray — never absent, because a
-    missing dot could not be told from an idle one, and then the lit one on the
-    other Funestra would be the only readable state."""
     def dot(active: bool) -> np.ndarray:
         rendered = HudRenderer("portrait").render(
             _model(active=active, title="Unlocked · Shuffle",
                    corner=HudCell(path="c.mp4", thumb=thumb)))
-        # The middle of the dot, left of where the title starts, past the
-        # minus in the HUD's corner: the disc's rim is antialiased into the HUD.
         left = PAD + MINUS_ROOM
         return _rgb(rendered.bgra)[PAD + 5:PAD + 11, left + 3:left + 9]
 
@@ -304,15 +277,10 @@ def test_the_dot_lights_up_only_on_the_active_side(thumb):
 
 
 def test_the_title_starts_clear_of_the_dot(thumb):
-    """Drawn over each other they would be illegible, and the width the line asks
-    the HUD for is measured from the app the dot leaves, not from the far edge."""
     rendered = HudRenderer("portrait").render(
         _model(active=True, title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb)))
     rgb = _rgb(rendered.bgra)
 
-    # TITLE_X is absolute, so the gap runs from the dot's right edge to it —
-    # skipping the 2px where the round dot's antialiased edge feathers out, which
-    # is the dot, not text starting early.
     gap = rgb[PAD:PAD + 14, MINUS_ROOM + PAD + ACTIVE_DOT + 2:MINUS_ROOM + TITLE_X]
     assert (gap > 200).all(axis=2).sum() == 0, "text ink in the gap before the text starts"
 
@@ -332,8 +300,6 @@ def test_a_status_too_wide_for_the_nav_map_is_drawn_smaller_or_cut_short_rather_
 
 
 def _control_band_top(rendered) -> int:
-    """Where the side's own control buttons start — the row under the status block,
-    and so how deep that block ended up."""
     return min(y for (_x, y, _w, _h), _button in _declared(rendered))
 
 
@@ -358,9 +324,6 @@ def test_the_line_the_file_name_takes_is_kept_while_there_is_no_name(thumb):
 
 
 def test_a_file_name_too_wide_for_the_nav_map_widens_the_hud(thumb):
-    """Names run long, and a name cut off mid-word says nothing about which video this
-    is — which is the whole reason it is drawn.  So it takes the width it needs, the
-    way the title above it does."""
     renderer = HudRenderer("portrait")
     model = _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))
 
@@ -403,9 +366,6 @@ def test_a_note_about_a_clip_with_no_name_is_drawn_on_the_kept_name_line(thumb):
 
 
 def test_the_nav_map_sits_where_it_sits_however_long_the_status_is(thumb):
-    """The status bar is one line deep and stays one line deep, so the nav map is
-    anchored at the same place on every HUD — a side that has picked up a filter
-    does not find its nav map a line lower than the side that has not."""
     def corner(label: str):
         rendered = HudRenderer("portrait").render(
             _model(title=label, corner=HudCell(path="c.mp4", thumb=thumb)))
@@ -417,8 +377,6 @@ def test_the_nav_map_sits_where_it_sits_however_long_the_status_is(thumb):
 
 
 def test_render_exposes_the_controls_it_drew(thumb):
-    """Every drawn thumbnail, loop button and filter button comes back as a hit
-    target, so what is clickable is exactly what is visible."""
     rendered = HudRenderer("portrait").render(
         _model(corner=HudCell(path="c.mp4", thumb=thumb),
                seeds=(HudCell(path="s1.mp4", thumb=thumb),),
@@ -443,9 +401,6 @@ def test_a_hud_that_declares_no_buttons_holds_no_band_open_for_them():
 
 
 def test_render_draws_the_sides_own_controls_even_with_no_clip():
-    """The buttons are the side's, not the nav map's, so they are there before the
-    first video arrives — a satellite that came up empty can still be stepped off
-    it, and still narrowed to its favorites."""
     rendered = HudRenderer("landscape").render(
         _model(funestra="landscape", locked=False, title="Unlocked"))
 
@@ -462,18 +417,14 @@ def test_the_minimize_button_wears_a_bar_rather_than_a_font_icon():
     rendered = HudRenderer("landscape").render(
         _model(funestra="landscape", title="Unlocked"))
     x, y, w, h = _rects(rendered)["minimize"]
-    # The button's own outline is its border, so only the interior is the mark --
-    # and the interior is the button's ground now, itself gray, so the mark is
-    # what is BRIGHTER than that ground.
     inside = _rgb(rendered.bgra)[y + 2:y + h - 2, x + 2:x + w - 2]
     ys, xs = np.nonzero((inside > 150).all(axis=2))
 
     assert len(ys), "the minimize button drew no mark at all"
-    assert xs.max() - xs.min() > ys.max() - ys.min()  # a bar, not a square or a icon
+    assert xs.max() - xs.min() > ys.max() - ys.min()
 
 
 def _lit_ink(rect, rendered) -> int:
-    """How many pixels inside *rect* are the green a lit control fills with."""
     x, y, w, h = rect
     rgb = _rgb(rendered.bgra)[y:y + h, x:x + w].astype(int)
     green = (rgb[:, :, 1] > 100) & (rgb[:, :, 0] < 100) & (rgb[:, :, 2] < 100)
@@ -481,9 +432,6 @@ def _lit_ink(rect, rendered) -> int:
 
 
 def test_the_state_controls_and_favorite_mark_light_up_when_they_apply():
-    """Green is what the dashboard's HUD used, so everything that is a *state*
-    keeps it: the lock button while the Funestra is locked, the F button while
-    the Funestra is in F-mode, the star while the video is a favorite."""
     def rendered_with(*, locked=False, favorites=False, is_favorite=False):
         return HudRenderer("landscape").render(
             _model(funestra="landscape", locked=locked, title="Unlocked",
@@ -519,28 +467,20 @@ def test_the_star_is_centered_under_the_dot():
 
 
 def test_the_bin_draws_red_because_it_takes_something_away():
-    """Origenerator's Delete is red and the act reads the same wherever it
-    appears, so the drawn button is what has to be red — a table saying which
-    control is destructive says nothing about what came out on the HUD."""
     rendered = HudRenderer("landscape").render(
         _model(funestra="landscape", title="Unlocked"))
     rects = _rects(rendered)
 
     def red_ink(name: str) -> int:
-        """How far the reddest pixel of *name*'s button leads its own green."""
         x, y, w, h = rects[name]
         pixels = _rgb(rendered.bgra)[y:y + h, x:x + w].astype(int)
         return int((pixels[:, :, 0] - pixels[:, :, 1]).max())
 
     assert red_ink("trash") > 60
-    assert red_ink("prev") == 0  # and the red is the bin's, not the whole bar's
+    assert red_ink("prev") == 0
 
 
 def test_f_mode_wears_its_own_badge_rather_than_a_typed_letter():
-    """`fmode_icon.ico` is a magenta five-by-five "F" — the mark the mode has on the
-    taskbar and on the Main Funestra's HUD — and a letter set in the body face is a
-    thin thing beside it.  The mark holds whether or not the mode is on; only what
-    is beneath it changes."""
     for favorites in (False, True):
         rendered = HudRenderer("landscape").render(_model(
             funestra="landscape", title="Unlocked",
@@ -561,9 +501,6 @@ def test_f_mode_wears_its_own_badge_rather_than_a_typed_letter():
 
 
 def test_a_running_loops_button_fills_white_and_not_the_locks_green(thumb):
-    """The lock and the star are the HUD's two favorites marks, and green is
-    theirs alone; a loop is just this side repeating a group, so its button lights
-    in the plain white every other control here uses."""
     rendered = HudRenderer("portrait").render(_loop_model(thumb, ("corner", 0)))
     x, y, w, h = dict((kind, rect) for rect, kind in rendered.targets.loop)["seed"]
     rgb = _rgb(rendered.bgra)[y:y + h, x:x + w].astype(int)
@@ -574,8 +511,6 @@ def test_a_running_loops_button_fills_white_and_not_the_locks_green(thumb):
 
 
 def test_the_playing_cell_is_brighter_than_the_others(tmp_path: Path):
-    """The video actually on screen is drawn at full opacity and the rest dim, so
-    the bright one reads as "this is what's on" even mid-loop."""
     bright_thumb = tmp_path / "bright.jpg"
     Image.new("RGB", (40, 60), (240, 240, 240)).save(bright_thumb)
     cells = dict(
@@ -600,7 +535,6 @@ def test_the_playing_cell_is_brighter_than_the_others(tmp_path: Path):
 
 
 def _loop_model(thumb: str, playing, *, count: int = 12, loop: str = "seed") -> HudModel:
-    """A seed row far longer than the nav map can draw, at *playing*."""
     return _model(
         locked=False, title=f"Looping {count + 1} seeds" if loop else "Unlocked",
         corner=HudCell(path="c.mp4", thumb=thumb),
@@ -610,8 +544,6 @@ def _loop_model(thumb: str, playing, *, count: int = 12, loop: str = "seed") -> 
 
 
 def _tail_ink(rendered) -> int:
-    """Ink in the place kept past the right-hand end of the drawn row, inset from its
-    edges so the loop rectangle's own border is never counted as a mark."""
     corner_rect = rendered.targets.click[0][0]
     seed_rects = [rect for rect, _p in rendered.targets.click[1:]]
     _before, after = ellipsis_rects(corner_rect, seed_rects, [], "seed")
@@ -620,9 +552,6 @@ def _tail_ink(rendered) -> int:
 
 
 def test_a_nav_map_with_more_clips_than_fit_says_so_even_off_a_loop(thumb):
-    """The mark is about the nav map, not about looping: a browse row longer than the
-    HUD draws what fits and says there is more, rather than dropping the rest
-    silently."""
     long_row = HudRenderer("portrait").render(_loop_model(thumb, ("corner", 0), loop=""))
     short_row = HudRenderer("portrait").render(_loop_model(thumb, ("corner", 0), count=1, loop=""))
 
@@ -631,10 +560,6 @@ def test_a_nav_map_with_more_clips_than_fit_says_so_even_off_a_loop(thumb):
 
 
 def test_switching_a_loop_off_leaves_the_nav_map_exactly_where_it_was(thumb):
-    """The whole of what a loop toggle may change is the loop's own chrome.  Given the
-    same cells, the drawn map — which videos, in which rects — is identical looping and
-    not, so turning the loop off takes away the lit button and the rectangle and
-    nothing else."""
     renderer = HudRenderer("portrait")
     looping = renderer.render(_loop_model(thumb, ("seed", 5)))
     ended = renderer.render(_loop_model(thumb, ("seed", 5), loop=""))
@@ -645,8 +570,6 @@ def test_switching_a_loop_off_leaves_the_nav_map_exactly_where_it_was(thumb):
 
 
 def test_the_more_mark_reads_as_three_dots(thumb):
-    """Fat dots at a tight spacing merged into one pill.  The mark has to read as
-    three dots, so there are gaps between them."""
     rendered = HudRenderer("portrait").render(_loop_model(thumb, ("corner", 0)))
     corner_rect = rendered.targets.click[0][0]
     seed_rects = [rect for rect, _p in rendered.targets.click[1:]]
@@ -689,8 +612,6 @@ def test_the_filter_button_wears_the_familys_filter(thumb, monkeypatch):
 
 
 def test_the_more_mark_does_not_touch_the_loop_rectangle(thumb):
-    """Dots drawn hard against the rectangle read as part of its border rather than
-    as a mark inside it."""
     rendered = HudRenderer("portrait").render(_loop_model(thumb, ("seed", 5)))
     corner_rect = rendered.targets.click[0][0]
     seed_rects = [rect for rect, _p in rendered.targets.click[1:]]
@@ -699,14 +620,10 @@ def test_the_more_mark_does_not_touch_the_loop_rectangle(thumb):
 
     assert before[0] - rect[0] >= NAV_MAP_GAP
     bx, by, bw, bh = rect
-    # The strip just inside the rectangle's left border carries no ink at all.
     assert int((_rgb(rendered.bgra)[by + 2:by + bh - 2, bx + 2:bx + NAV_MAP_GAP] > 100).sum()) == 0
 
 
 def test_a_long_loop_draws_a_window_that_holds_the_clip_on_screen(thumb):
-    """The reported bug: a loop longer than the nav map could draw kept showing its
-    first cells, so once it advanced past them nothing was lit and the video playing
-    was not among the thumbnails at all.  The nav map now follows the loop."""
     rendered = HudRenderer("portrait").render(_loop_model(thumb, ("seed", 8)))
 
     drawn = [path for _rect, path in rendered.targets.click]
@@ -714,8 +631,6 @@ def test_a_long_loop_draws_a_window_that_holds_the_clip_on_screen(thumb):
 
 
 def test_a_loop_just_started_draws_the_clip_on_screen_in_the_corner(thumb):
-    """At the moment the loop starts, the video on screen is its head — so it is the
-    top-left cell, never somewhere in the middle of the row."""
     rendered = HudRenderer("portrait").render(_loop_model(thumb, ("corner", 0)))
 
     drawn = [path for _rect, path in rendered.targets.click]
@@ -723,8 +638,6 @@ def test_a_loop_just_started_draws_the_clip_on_screen_in_the_corner(thumb):
 
 
 def test_a_long_loop_lights_the_clip_on_screen_wherever_it_has_got_to(tmp_path: Path):
-    """The window is only worth having if the highlight lands on the right cell in
-    it: the video playing is drawn bright and its neighbors dim."""
     bright = tmp_path / "bright.jpg"
     Image.new("RGB", (40, 60), (240, 240, 240)).save(bright)
     rendered = HudRenderer("portrait").render(_loop_model(str(bright), ("seed", 8)))
@@ -742,8 +655,6 @@ def test_a_long_loop_lights_the_clip_on_screen_wherever_it_has_got_to(tmp_path: 
 
 
 def test_a_long_loop_marks_that_it_runs_on_past_the_nav_map(thumb):
-    """"…" at the end of the row says the loop holds more than is drawn — without it
-    a three-cell map of a thirty-video loop looks like the whole set."""
     renderer = HudRenderer("portrait")
     long_loop = renderer.render(_loop_model(thumb, ("corner", 0)))
     short_loop = renderer.render(_loop_model(thumb, ("corner", 0), count=1))
@@ -753,11 +664,6 @@ def test_a_long_loop_marks_that_it_runs_on_past_the_nav_map(thumb):
 
 
 def test_a_sliding_loop_window_never_shifts_the_nav_map(thumb):
-    """The nav map must hold still as the window slides — the ellipses appearing and
-    going is exactly when a shifting layout would be most distracting.  Two
-    mid-loop frames are the like-for-like pair: the one deliberate move — the
-    action column stepping out to hang under the lit cell — happens as the loop
-    leaves its head, not per advance."""
     renderer = HudRenderer("portrait")
     at_start = renderer.render(_loop_model(thumb, ("corner", 0)))
     midway = renderer.render(_loop_model(thumb, ("seed", 5)))
@@ -766,8 +672,6 @@ def test_a_sliding_loop_window_never_shifts_the_nav_map(thumb):
     assert [rect for rect, _p in midway.targets.click] == [rect for rect, _p in later.targets.click]
     assert midway.targets.loop == later.targets.loop
     assert midway.targets.expand == later.targets.expand
-    # The row itself never moves at all, head of the loop included; the action
-    # button is the one thing that follows the column out along it.
     assert at_start.targets.click[0][0] == midway.targets.click[0][0]
     assert at_start.targets.expand == midway.targets.expand
     seed_buttons = lambda t: [rect for rect, kind in t.loop if kind == "seed"]
@@ -775,8 +679,6 @@ def test_a_sliding_loop_window_never_shifts_the_nav_map(thumb):
 
 
 def test_the_action_column_stands_under_the_lit_cell_mid_loop(thumb):
-    """Mid-loop the drawn column is the playing seed's own acts, so it hangs under
-    the lit cell — left under the corner it would read as the corner seed's."""
     rendered = HudRenderer("portrait").render(_model(
         locked=False, title="Looping 13 seeds",
         corner=HudCell(path="c.mp4", thumb=thumb),
@@ -787,14 +689,11 @@ def test_the_action_column_stands_under_the_lit_cell_mid_loop(thumb):
 
     rects = {path: rect for rect, path in rendered.targets.click}
     corner_rect = rendered.targets.click[0][0]
-    assert rects["a0.mp4"][0] == rects["s5.mp4"][0]  # under the lit cell…
-    assert rects["a0.mp4"][0] != corner_rect[0]      # …not under the corner place
+    assert rects["a0.mp4"][0] == rects["s5.mp4"][0]
+    assert rects["a0.mp4"][0] != corner_rect[0]
 
 
 def test_the_nav_map_prints_how_big_each_axis_is(thumb):
-    """The nav map draws only the cells that fit, so its top-left corner carries the
-    counts — the only place the real size of each axis can be read.  They are always
-    there, loop or no loop."""
     renderer = HudRenderer("portrait")
 
     def corner_ink(**counts) -> int:
@@ -804,13 +703,10 @@ def test_the_nav_map_prints_how_big_each_axis_is(thumb):
         return int((block > 80).sum())
 
     assert corner_ink(seed_count=12, action_count=4) > 0
-    assert corner_ink() == 0  # nothing to say before the index has answered
+    assert corner_ink() == 0
 
 
 def test_the_filtered_actions_label_is_lit(thumb):
-    """A filter shows on the nav map, on the row it holds you to — so which act you are
-    filtered to is readable where you would act on it, beside the lit button that
-    lifts it."""
     renderer = HudRenderer("portrait")
 
     def gutter_ink(filter_query: str) -> int:
@@ -819,28 +715,15 @@ def test_the_filtered_actions_label_is_lit(thumb):
             actions=(HudCell(path="a1.mp4", thumb=thumb, label="gamma"),),
             current_action="alpha", filter_query=filter_query,
         ))
-        # The corner's own row label, in the gutter beside it — "alpha".  Past
-        # the filter button at the gutter's head: its funnel is drawn at full
-        # strength like every resting mark on this HUD, so counting from the
-        # gutter's left edge would count the button rather than the label.
         bar = _label_band(rendered)
-        # Near-white in all three channels: the strike under the act is drawn
-        # red, whose own red channel is as bright as a lit label's.
         return int(bar.sum())
 
     assert gutter_ink("alpha") > 0
     assert gutter_ink("") == 0
-    assert gutter_ink("gamma") == 0  # …that row's label lights, not this one
+    assert gutter_ink("gamma") == 0
 
 
 def _filter_button_fill(rendered, action: str) -> int:
-    """How much lit ground the *action* row's filter button carries.
-
-    The family's blue, which is what "in force" looks like on every HUD in the
-    room: green across these HUDs means the favorites and the funscripts, and a
-    filter is neither.  Only the lock keeps a color of its own.
-    """
-
     want = (colors.BLUE.red(), colors.BLUE.green(), colors.BLUE.blue())
     x, y, w, h = dict((name, rect) for rect, name in rendered.targets.filter)[action]
     rgb = _rgb(rendered.bgra)[y:y + h, x:x + w].astype(int)
@@ -848,9 +731,6 @@ def _filter_button_fill(rendered, action: str) -> int:
 
 
 def test_the_filter_button_lights_on_the_act_the_side_is_filtered_to(thumb):
-    """The filter button is the loop buttons' twin — lit while its row is one the
-    filter keeps, so the control that lifts a filter is the lit one that set it, and
-    a filter set any other way still shows on the row it holds you to."""
     renderer = HudRenderer("portrait")
 
     def lit_ink(filter_query: str) -> int:
@@ -862,14 +742,10 @@ def test_the_filter_button_lights_on_the_act_the_side_is_filtered_to(thumb):
 
     assert lit_ink("alpha") > 0
     assert lit_ink("") == 0
-    assert lit_ink("gamma") == 0  # …that row's button lights, not this one
+    assert lit_ink("gamma") == 0
 
 
 def test_a_row_the_filter_only_partly_matches_still_lights(thumb):
-    """fun_time keeps a "Side Gamma" video under a "gamma" filter, so its row stays
-    lit while it is on screen.  Lighting only an exact "gamma" put the mark out the
-    moment such a video came up and back on at the next exact one — the HUD saying
-    the filter had dropped while the playlist under it had not changed at all."""
     renderer = HudRenderer("portrait")
 
     def lit_ink(current_action: str) -> int:
@@ -879,42 +755,24 @@ def test_a_row_the_filter_only_partly_matches_still_lights(thumb):
         )), current_action)
 
     assert lit_ink("gamma") > 0
-    assert lit_ink("side gamma") > 0      # the query is one word of the act
-    assert lit_ink("gamma, theta") > 0    # one of the video's two acts
+    assert lit_ink("side gamma") > 0
+    assert lit_ink("gamma, theta") > 0
     assert lit_ink("alpha") == 0
 
 
 def _label_band(rendered):
-    """The corner row's act names as a near-white mask: the gutter between the
-    filter button at its head and the nav map beside it, down as far as the strike
-    that hangs under the words.
-
-    Bounded by the strike rather than by the row, because the words and the
-    strike are centered in the row together — so half the ROW is no longer the
-    seam between a two-act label's two acts.
-    """
     (cx, cy, _cw, ch), _path = rendered.targets.click[0]
     lower = rendered.targets.wrong_action[1] if rendered.targets.wrong_action else cy + ch
     return (_rgb(rendered.bgra)[cy:lower, PAD + FILTER_BTN + NAV_MAP_GAP:cx - NAV_MAP_GAP] > 200).all(axis=2)
 
 
 def _white_halves(rendered) -> tuple[int, int]:
-    """Near-white ink across the corner row's act names, split into the upper and
-    lower halves of the words — a row carrying two acts draws one in each.
-
-    Measured past the filter button at the head of the row: that button fills white
-    when it is lit, which is the same ink the labels use.
-    """
     bar = _label_band(rendered)
     half = bar.shape[0] // 2
     return int(bar[:half].sum()), int(bar[half:].sum())
 
 
 def test_only_the_act_the_filter_matched_is_lit_on_a_two_act_row(thumb):
-    """A video can carry two acts ("Gamma, Theta") and a one-act filter keeps it for
-    one of them, so only that one goes white — lighting the whole label named an act
-    the filter has nothing to do with.  The acts stack in order, so the lit one moves
-    between the halves of the row as the query changes."""
     renderer = HudRenderer("portrait")
 
     def halves(filter_query: str) -> tuple[int, int]:
@@ -934,9 +792,6 @@ def test_only_the_act_the_filter_matched_is_lit_on_a_two_act_row(thumb):
 
 
 def test_a_filter_set_from_a_two_act_clip_lights_both_of_its_acts(thumb):
-    """Pressing a two-act row's button filters to both acts, and fun_time keeps the
-    video for both — so both go white.  Neither did: the two-act query matched neither
-    act on its own, so the row you had just filtered to read as unfiltered."""
     rendered = HudRenderer("portrait").render(_model(
         corner=HudCell(path="c.mp4", thumb=thumb),
         current_action="gamma, theta motion", filter_query="gamma, theta motion",
@@ -950,14 +805,6 @@ def test_a_filter_set_from_a_two_act_clip_lights_both_of_its_acts(thumb):
 
 @pytest.mark.parametrize("camera", ["xyz", "side"])
 def test_a_leading_camera_word_stays_gray_when_its_act_is_filtered(camera, thumb):
-    """A camera word in front of an act is drawn as an act of its own: under a
-    "gamma" filter only "Gamma" is why the video is here, so the camera word stays
-    gray rather than reading as part of what was asked for.
-
-    Every word the source names, because Evolver's backfill scopes every act it
-    records by one of them — so reading only the first would leave every video
-    scoped by another lighting both of its words.
-    """
     renderer = HudRenderer("portrait")
 
     def halves(filter_query: str) -> tuple[int, int]:
@@ -970,27 +817,19 @@ def test_a_leading_camera_word_stays_gray_when_its_act_is_filtered(camera, thumb
 
     assert scope == 0
     assert gamma > 0
-    # …and a filter on the row itself names both, so both light.
     assert all(half > 0 for half in halves(f"{camera} gamma"))
 
 
 def test_the_filter_button_carries_a_funnel_and_not_an_empty_square(thumb):
-    """The funnel is drawn rather than typed — no face on the machine carries one —
-    so what has to hold is that there is a mark inside the button's border at all:
-    an empty square says nothing about what the button does."""
     rendered = HudRenderer("portrait").render(
         _model(corner=HudCell(path="c.mp4", thumb=thumb), current_action="alpha"))
 
     x, y, w, h = dict((name, rect) for rect, name in rendered.targets.filter)["alpha"]
-    # Inside the rounded border, so the square itself can't be what is counted.
     inside = _rgb(rendered.bgra)[y + 3:y + h - 3, x + 3:x + w - 3]
     assert (inside > 80).all(axis=2).sum() > 0
 
 
 def test_a_long_action_name_is_never_drawn_over_its_filter_button(thumb):
-    """The gutter holds the button and the name beside it, so the name is sized into
-    what is left rather than reaching back across the button — which would stamp a
-    funnel through the middle of the word."""
     renderer = HudRenderer("portrait")
 
     def button_pixels(action: str) -> np.ndarray:
@@ -1017,8 +856,6 @@ def test_the_nav_map_stands_in_the_same_place_whatever_its_acts_are_called(thumb
 
 
 def test_a_missing_thumbnail_still_draws_the_nav_map():
-    """A video whose thumbnail fun_time hasn't produced yet gets a placeholder, so
-    the nav map appears instantly instead of waiting on a frame grab."""
     rendered = HudRenderer("portrait").render(_model(corner=HudCell(path="c.mp4")))
 
     assert rendered.targets.click == [(rendered.targets.click[0][0], "c.mp4")]
@@ -1027,8 +864,6 @@ def test_a_missing_thumbnail_still_draws_the_nav_map():
 
 
 def test_hovering_a_button_draws_its_tooltip(thumb):
-    """The tooltip is drawn into the HUD — there is no native tooltip inside a
-    video frame — so hovering adds ink the un-hovered render doesn't have."""
     renderer = HudRenderer("portrait")
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb))
 
@@ -1051,17 +886,11 @@ def test_a_hud_with_no_clip_yet_still_names_the_button_under_the_pointer():
 
 
 def test_a_tooltip_longer_than_the_hud_is_wide_stays_on_the_hud(thumb):
-    """The reported bug: the trash button's tooltip wants more width than a
-    portrait HUD has, so it was drawn straight off the right edge and read
-    "…when it is not a favo".  It wraps now, which is funestra's job — this
-    guards that the satellite actually hands it the HUD's own bounds, since
-    passing anything wider would put the tooltip back over the edge."""
     renderer = HudRenderer("portrait")
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb))
     plain = _rgb(renderer.render(model).bgra)
 
     def tooltip_bounds(text: str) -> tuple[int, int, int]:
-        """(upper, lower, right) of what hovering with *text* added to the HUD."""
         tipped = _rgb(renderer.render(model, hover_tip=text, hover_pos=(33, 44)).bgra)
         rows, cols = np.nonzero((tipped != plain).any(axis=2))
         assert len(rows), f"hovering with {text!r} drew nothing"
@@ -1072,14 +901,11 @@ def test_a_tooltip_longer_than_the_hud_is_wide_stays_on_the_hud(thumb):
         " about again the next time it comes round")
     short_upper, short_lower, _ = tooltip_bounds("Bin")
 
-    assert right < plain.shape[1] - 1  # it stopped short of the far edge
-    assert lower - upper > short_lower - short_upper  # having wrapped to fit
+    assert right < plain.shape[1] - 1
+    assert lower - upper > short_lower - short_upper
 
 
 def test_the_reset_button_is_never_lit():
-    """The lock and F-mode are states the Funestra sits in, so they light while
-    they are on; a reset is over the moment it lands, and a button that stayed
-    lit would say the Funestra was sitting in one."""
     def rendered_with(**state):
         return HudRenderer("landscape").render(_model(
             funestra="landscape", title="Locked", rows=funestra_rows("landscape", **state)))
@@ -1088,7 +914,7 @@ def test_the_reset_button_is_never_lit():
     lit = rendered_with(locked=True, favorites=True)
     rects = _rects(lit)
 
-    assert _lit_ink(rects["lock"], lit)  # the states that do light are alight
+    assert _lit_ink(rects["lock"], lit)
     assert _lit_ink(rects["reset"], lit) == 0
     assert _lit_ink(rects["reset"], resting) == 0
 
@@ -1108,9 +934,6 @@ def test_column_labels_are_clipped_to_their_column(thumb):
 
 
 def test_the_mode_pair_renders_and_is_pressable(thumb):
-    # The satellite counterpart of the Main Funestra's HUD's Video/Genau row: with a
-    # session mode published, the pair is on the control bar with real hit
-    # targets, and a press posts the other mode's activation verbatim.
     rendered = HudRenderer("portrait").render(
         _model(corner=HudCell(path="c.mp4", thumb=thumb),
                rows=funestra_rows("portrait", mode="kino"))
@@ -1124,9 +947,6 @@ def test_the_mode_pair_renders_and_is_pressable(thumb):
 
 
 def test_the_mode_row_leads_and_minimize_rides_it(thumb):
-    """Like the Main Funestra's HUD: the mode pair gets a row of its own above the
-    controls, and minimize — being about the side's window, not the video —
-    rides that row rather than sitting among the transport."""
     rendered = HudRenderer("portrait").render(
         _model(corner=HudCell(path="c.mp4", thumb=thumb),
                rows=funestra_rows("portrait", mode="kino"))
@@ -1134,13 +954,10 @@ def test_the_mode_row_leads_and_minimize_rides_it(thumb):
 
     by_name = _rects(rendered)
     mode_y = by_name["satellites_kino_activate"][1]
-    # Minimize shares the mode row, to the right of the pair.
     assert by_name["minimize"][1] == mode_y
     assert by_name["minimize"][0] > by_name["origenerator_activate"][0]
-    # The rest of the controls sit on their own bar, one below.
     for name in ("prev", "next", "lock", "trash", "fmode"):
         assert by_name[name][1] == mode_y + CONTROL_ROW_H
-    # From its new home the button still posts the side's own command.
     clicks = HudClicks("portrait")
     rect = by_name["minimize"]
     assert clicks.press(rendered.targets, rect[0] + 2, rect[1] + 2,
@@ -1148,11 +965,6 @@ def test_the_mode_row_leads_and_minimize_rides_it(thumb):
 
 
 def test_a_mode_label_stays_white_on_its_blue(thumb):
-    """The mark reverses out of a LIGHT fill only.  Dark ink on the mode pair's
-    blue turned those labels black while the main HUD's stayed white for
-    the same state, which is the inconsistency the shared dressing exists to
-    prevent."""
-
     renderer = HudRenderer("portrait")
     rendered = renderer.render(_model(
         corner=HudCell(path="c.mp4", thumb=thumb),
@@ -1162,8 +974,8 @@ def test_a_mode_label_stays_white_on_its_blue(thumb):
     x, y, w, h = rect
     rgb = _rgb(rendered.bgra)[y:y + h, x:x + w].astype(int)
 
-    assert (abs(rgb - np.array(BLUE)).max(axis=2) <= 2).any()   # it is on blue
-    assert (abs(rgb - np.array(WHITE)).max(axis=2) <= 2).any()  # the word is white
+    assert (abs(rgb - np.array(BLUE)).max(axis=2) <= 2).any()
+    assert (abs(rgb - np.array(WHITE)).max(axis=2) <= 2).any()
 
 
 def test_the_unlit_mode_keeps_its_ordinary_ink(thumb):
@@ -1181,7 +993,6 @@ def test_the_unlit_mode_keeps_its_ordinary_ink(thumb):
 
 
 def _blue_ink(rect, rendered) -> int:
-    """How many pixels inside *rect* are the family's mode blue."""
     x, y, w, h = rect
     rgb = _rgb(rendered.bgra)[y:y + h, x:x + w].astype(int)
     blue = (rgb[:, :, 2] > 140) & (rgb[:, :, 2] > rgb[:, :, 0] + 40) & (
@@ -1196,23 +1007,16 @@ def _order_row(*, newest: bool | None = None, **overrides):
 
 
 def test_exactly_one_of_the_browse_order_pair_is_lit_and_it_lights_blue():
-    """Neither is ever off — the side browses in one order or the other — so the
-    light says which of the two you are in, and it says it in the family's mode
-    blue rather than in the active gray a plain toggle takes."""
     shuffled, newest = _order_row(newest=False), _order_row(newest=True)
     rects = _rects(newest)
 
     assert _blue_ink(rects["shuffle"], shuffled) > _blue_ink(rects["shuffle"], newest)
     assert _blue_ink(rects["latest"], newest) > _blue_ink(rects["latest"], shuffled)
-    # And never the favorites' green, which would say the wrong thing entirely.
     assert _lit_ink(rects["shuffle"], shuffled) == 0
     assert _lit_ink(rects["latest"], newest) == 0
 
 
 def test_the_hud_is_wide_enough_for_the_band_it_grew():
-    """The control bar is five groups now and outruns a portrait map on its own.
-    A row the HUD cannot hold clips away in silence — the buttons past the edge
-    are simply not drawn — so the HUD is measured around the bar."""
     rendered = _order_row(newest=False)
     width = rendered.bgra.shape[1]
     last = max(x + w for (x, _y, w, _h), _button in rendered.targets.buttons)
@@ -1251,7 +1055,6 @@ def test_the_speed_row_draws_its_buttons_and_reads_out_the_rate():
 
 
 def _yellow_ink(rect, rendered) -> int:
-    """How many pixels inside *rect* are the yellow an enhanced mark is drawn in."""
     x, y, w, h = rect
     rgb = _rgb(rendered.bgra)[y:y + h, x:x + w].astype(int)
     yellow = (rgb[:, :, 0] > 200) & (rgb[:, :, 1] > 150) & (rgb[:, :, 2] < 160) & (rgb[:, :, 1] < rgb[:, :, 0])
@@ -1259,10 +1062,6 @@ def _yellow_ink(rect, rendered) -> int:
 
 
 def test_the_enhanced_switch_wears_yellow_and_fills_with_it_when_on():
-    """Yellow is what an enhanced image is marked with across this family, so
-    the switch that keeps only those wears its mark in yellow at rest and its
-    whole ground in yellow while it is on — never the favorites' green, which
-    would say the wrong thing about what was kept."""
     def rendered_with(on: bool):
         return HudRenderer("landscape").render(_model(
             funestra="landscape", title="Unlocked",
@@ -1271,15 +1070,12 @@ def test_the_enhanced_switch_wears_yellow_and_fills_with_it_when_on():
     off, on = rendered_with(False), rendered_with(True)
     rect = _rects(on)["enhanced"]
 
-    assert _yellow_ink(rect, off) > 0                      # the mark itself, at rest
-    assert _yellow_ink(rect, on) > _yellow_ink(rect, off)   # the ground, when on
-    assert _lit_ink(rect, on) == 0                        # and no green anywhere in it
+    assert _yellow_ink(rect, off) > 0
+    assert _yellow_ink(rect, on) > _yellow_ink(rect, off)
+    assert _lit_ink(rect, on) == 0
 
 
 def test_the_enhanced_switch_keeps_its_place_under_a_mode_row(thumb):
-    """With the mode pair leading the HUD, the switch stays on the control bar
-    just ahead of reset, and the bar is measured with it — so a portrait HUD,
-    whose map is narrower than its controls, still holds the whole row."""
     rendered = HudRenderer("portrait").render(
         _model(corner=HudCell(path="c.mp4", thumb=thumb),
                rows=funestra_rows("portrait", mode="origenerator", enhanced=False)))
@@ -1292,23 +1088,12 @@ def test_the_enhanced_switch_keeps_its_place_under_a_mode_row(thumb):
 
 
 class TestTheDeviceOnAHostThatDrivesItself:
-    """A host that drives the OSR2 itself wears ONE HUD, not two.
-
-    Origenerator's shows floated this HUD for the set and the Main Funestra's HUD
-    underneath it for the device, which put two titles that disagreed
-    and two copies of prev/next/lock/trash on one screen.  So a source that
-    has a device to report says so on its own HUD: the same line and the
-    same visualizer the Main Funestra's HUD draws, from the same code.
-    """
-
     @staticmethod
     def _rendered(**extra):
         return HudRenderer("portrait").render(
             _model(title="Unlocked", **extra))
 
     def test_a_source_that_names_no_driver_grows_no_device_line(self):
-        """Every satellite is one: fun_time's Funestras report the set and
-        nothing about the OSR2, and their HUD must not change shape."""
         assert self._rendered().bgra.shape == self._rendered().bgra.shape
         assert (self._rendered(osr2=Osr2State.ROBOT_HAND).bgra.shape[0]
                 > self._rendered().bgra.shape[0])
@@ -1330,9 +1115,6 @@ class TestTheDeviceOnAHostThatDrivesItself:
         assert track_command(max_intensity, x + w - 1, y + h // 2) == "max_intensity_100"
 
     def test_a_hold_is_named_ahead_of_whoever_would_have_been_driving(self):
-        """The host says what the wire says AND what it is doing to the device,
-        the way the main HUD's source does, and the HUD resolves the two
-        the same way the Main Funestra's HUD resolves them."""
         driving = _rgb(self._rendered(osr2=Osr2State.FUNSCRIPT).bgra)
         parked = _rgb(self._rendered(osr2=Osr2State.FUNSCRIPT,
                                      osr2_control=OSR2_PARKED).bgra)
@@ -1480,9 +1262,6 @@ class TestTheVisualizerIsDrawnAsTheMainMainHudDrawsIt:
 
 
 class _Block:
-    """A source's own block: a slab of a fixed size in a color nothing else on
-    the HUD wears, with one control."""
-
     MARK = (3, 250, 7)
 
     def __init__(self, size: tuple[int, int] = (120, 30)) -> None:
@@ -1502,23 +1281,12 @@ class _Block:
 
 
 class TestTheBlockASourcePaintsAtTheFoot:
-    """A host that is more than a Funestra says the rest of it here.
-
-    Everything above is the HUD's own — the set, and the device on a host
-    that drives one — and a host with work of its own to report would need a
-    second HUD for it, which is the two-HUDs-on-one-screen this HUD grew
-    the device block to end.  So the HUD leaves room at its foot and the
-    source paints there, in the HUD's own look, with its controls pressed
-    and named like the HUD's own.
-    """
-
     @staticmethod
     def _rendered(block=None, **extra):
         return HudRenderer("portrait").render(
             _model(title="Unlocked", foot=block, **extra))
 
     def test_a_source_with_no_block_of_its_own_grows_none(self):
-        """Every satellite is one, and their HUDs must not change shape."""
         block = _Block()
         assert (self._rendered(block).bgra.shape[0]
                 > self._rendered().bgra.shape[0])
@@ -1578,7 +1346,7 @@ class TestTheBlockASourcePaintsAtTheFoot:
 
     def test_a_hovered_control_of_its_own_is_told_where_the_pointer_is(self):
         block = _Block()
-        self._rendered(block)  # no hover: the block is told there is none
+        self._rendered(block)
         assert block.pointer is None
 
         HudRenderer("portrait").render(_model(title="Unlocked", foot=block),
@@ -1586,7 +1354,6 @@ class TestTheBlockASourcePaintsAtTheFoot:
         assert block.pointer == (40, 300)
 
     def test_a_hud_with_no_nav_map_at_all_still_paints_it(self):
-        """A source can have work to report before it has anything to browse."""
         block = _Block()
         rendered = self._rendered(block, corner=None)
 
@@ -1595,9 +1362,6 @@ class TestTheBlockASourcePaintsAtTheFoot:
 
 
 class TestABlockASourceInAnotherProgramPainted:
-    """A source in a program of its own cannot hand its block over to be painted,
-    so it paints it to an image file and the HUD draws that image at its foot."""
-
     @staticmethod
     def _painted(tmp_path, color=_Block.MARK, size=(120, 30)):
         path = tmp_path / "portrait_foot.png"
@@ -1633,14 +1397,6 @@ class TestABlockASourceInAnotherProgramPainted:
 
 
 class TestTheRowTheHudCarriesForItsClip:
-    """Where in the video you are, and how loud it is, on the HUD rather than
-    along the lower edge of the item.
-
-    A row over the item is a second HUD on a screen that already carries
-    one -- and on a wrapped video it is smeared round the nadir, which is why
-    the headset put it on the Main Funestra's HUD first.
-    """
-
     @staticmethod
     def _rendered(row=None, **extra):
         return HudRenderer("portrait").render(
@@ -1793,8 +1549,6 @@ def _button_rect(rendered, command: str) -> Rect:
 
 
 def _drawn_columns(rendered, rows: range, *, leaving_out: Rect) -> list[int]:
-    """The columns of *rows* something is drawn in, other than the slab, its
-    border and the lines between its sections, and other than *leaving_out*."""
     rgba = rendered.bgra[:, :, [2, 1, 0, 3]].astype(int)
     width = rgba.shape[1]
     fill = rgba[rows.start + len(rows) // 2, 2]
@@ -1823,8 +1577,6 @@ def test_the_title_moves_over_for_the_minus_in_the_huds_corner(thumb, corner):
 @pytest.mark.parametrize("corner", [HudCorner.LOWER_LEFT, HudCorner.LOWER_RIGHT])
 @pytest.mark.parametrize("cells", [0, 1, NAV_MAP_CELLS])
 def test_in_a_lower_corner_the_minus_sits_in_room_the_nav_map_leaves_free(thumb, corner, cells):
-    """The nav map is the HUD's last block whether or not it has anything on it,
-    and nothing it draws reaches the corner the minus takes."""
     model = _model(
         hud_corner=corner, current_action="alpha",
         corner=HudCell(path="c.mp4", thumb=thumb) if cells else None,
@@ -1842,9 +1594,6 @@ def test_in_a_lower_corner_the_minus_sits_in_room_the_nav_map_leaves_free(thumb,
 
 
 def test_the_pointer_on_a_minimized_hud_names_what_the_plus_does(thumb):
-    """It is the one control on the HUD and every other control names itself
-    on hover, so the plus does too -- in the HUD's own bitmap, since a HUD
-    painted into a video has no tooltip to fall back on."""
     rendered = HudRenderer("portrait").render(
         _model(hud_minimized=True, corner=HudCell(path="c.mp4", thumb=thumb)),
         video="one.mp4", hover_tip=RESTORE_TOOLTIP, hover_pos=(CTRL_BTN // 2, CTRL_BTN // 2))
@@ -1922,8 +1671,6 @@ class TestEverySectionIsSetOffFromTheNextByALine:
 
 def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_its_buttons(
         thumb, monkeypatch):
-    # Drawn whole for every frame its row moved, the HUD kept the window of a
-    # slideshow in Standalone Origenerator busy three quarters of the time.
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb),
                    seeds=(HudCell(path="s1.mp4", thumb=thumb),))
     renderer = HudRenderer("portrait")
@@ -1944,8 +1691,6 @@ def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_it
 
 
 def test_a_hud_whose_osr2_visualizer_is_still_draws_only_its_row_again_too(thumb, monkeypatch):
-    # The Standalone slideshow's HUD carries the OSR2's visualizer, so leaving every
-    # HUD with one to the whole drawing left that slideshow drawing it whole.
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb), osr2=Osr2State.ROBOT_HAND,
                    drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND))
     renderer = HudRenderer("portrait")

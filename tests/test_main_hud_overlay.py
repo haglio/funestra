@@ -1,4 +1,3 @@
-"""The Main Funestra's HUD a Funestra keeps on its item: what the app published, read whole, drawn where the app put it, pressed."""
 from __future__ import annotations
 
 import json
@@ -473,8 +472,6 @@ class TestTheHostsControls:
 
 @pytest.mark.parametrize("corner", list(HudCorner))
 def test_the_minus_sits_where_the_plus_of_the_minimized_main_hud_sits(tmp_path, corner):
-    """So a click that minimizes the Main Funestra's HUD, made again without moving the
-    mouse, opens it again."""
     overlay = _published(tmp_path, corner)
     left, top, _bgra = overlay._engine.overlays[HUD_OVERLAY_ID]
     (x, y, w, h), = [rect for rect, b in overlay._painter.buttons

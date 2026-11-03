@@ -1,4 +1,3 @@
-"""The verbs a Funestra answers off its command file, declared once."""
 from __future__ import annotations
 
 import logging
@@ -52,9 +51,6 @@ SEEK_STEP_MS = 10_000
 
 @dataclass
 class FunestraControls:
-    """Everything one command may move; a collaborator this build did not wire
-    leaves its verbs refused rather than half-acted-on."""
-
     playback: Playback
     stop_event: threading.Event | None = None
     reload_playlist: Callable[[], None] | None = None

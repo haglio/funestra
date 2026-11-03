@@ -1,5 +1,3 @@
-"""A source's HUD rows, made up for the tests that draw them and press
-them: the shape a source's rows take, every state set here."""
 from __future__ import annotations
 
 from shared_ui.spacing import BUTTON_WORD_W
@@ -8,7 +6,6 @@ from funestra.hud_button import Button
 from funestra.hud_icons import FMODE_ICON, MINIMIZE_ICON, shared_icon
 from funestra.main_hud import ROW_LABEL_W, VALUE_W
 
-# Wider than any console is drawn, so a hover over its button has to wrap.
 LONG_TIP = ("Reset the browse: no filter, no lock, no loop, no F-Mode, and the "
             "whole library shuffled again from the top")
 
@@ -17,8 +14,6 @@ def main_hud_rows(mode: str = "kino", *, locked: bool = False, favorites: bool =
                  remembered: bool = False,
                  enhanced: bool | None = None,
                  recording: bool = False) -> tuple[tuple[Button, ...], ...]:
-    """The mode row with minimize riding it, the transport, and a named read-out
-    between two arrows -- the controls only a video has, only in kino mode."""
     kino = mode == "kino"
     pace = "main_player_speed" if kino else "genau_clip_seconds"
     return (

@@ -1,4 +1,3 @@
-"""The satellite's in-video lock HUD: model, geometry and hit-testing."""
 from __future__ import annotations
 
 import json
@@ -57,16 +56,11 @@ from funestra.satellite_hud import (
     thumbnail_rect,
 )
 
-# Fabricated: the words a source says the library writes in front of an act.
 CAMERA_WORDS = ("Side", "XYZ")
 
 
 def _squares(x: int, y: int, buttons) -> list:
-    """*buttons* laid out as a row of squares from ``(x, y)``."""
     return button_row_rects(x, y, buttons, [CTRL_BTN] * len(buttons))
-
-
-# --- the title ---------------------------------------------------------
 
 
 def test_the_hud_is_as_wide_as_its_nav_map_or_its_file_name_whichever_asks_for_more():
@@ -82,8 +76,6 @@ def test_a_text_naming_no_funestra_is_not_a_hud():
 
 
 def test_parse_hud_reads_whether_this_side_has_the_floor():
-    """Absent means idle: a satellite reading a HUD written before the flag
-    existed must not light its dot on a missing key."""
     assert parse_hud(json.dumps({"funestra": "portrait", "active": True})).active is True
     assert parse_hud(json.dumps({"funestra": "portrait", "active": False})).active is False
     assert parse_hud(json.dumps({"funestra": "portrait"})).active is False
@@ -117,15 +109,11 @@ def test_parse_hud_reads_the_hud_fun_time_published():
 
 
 def test_parse_hud_reads_whether_the_clip_is_a_favorite():
-    """What the dashboard's HUD said by turning green — now a mark on the HUD,
-    so it is read off the Funestra showing the video rather than off a schematic."""
     assert parse_hud(json.dumps({"funestra": "portrait", "is_favorite": True})).is_favorite is True
     assert parse_hud(json.dumps({"funestra": "portrait"})).is_favorite is False
 
 
 def test_parse_hud_defaults_an_empty_hud():
-    """A satellite with nothing to map (no video yet) still parses — it simply has
-    no corner, so nothing is drawn."""
     model = parse_hud(json.dumps({"funestra": "landscape", "locked": False, "title": "Unlocked"}))
 
     assert model is not None
@@ -136,15 +124,10 @@ def test_parse_hud_defaults_an_empty_hud():
 
 
 def test_parse_hud_rejects_garbage():
-    """A half-written file (fun_time writes it while the Funestra reads) must not
-    crash the Funestra — it just keeps the HUD it already had."""
     assert parse_hud('{"funestra": "portrait"') is None
     assert parse_hud("") is None
 
 
-# --- the window a long loop is drawn through ---------------------------------
-# The window is a count, not a measurement: MAP_CELLS of an axis however long, and
-# whatever shape the videos in it are.
 _LOOP = 12
 
 
@@ -157,8 +140,6 @@ def test_a_loop_short_enough_to_fit_is_drawn_whole():
 
 
 def test_a_loop_just_started_opens_on_the_clip_on_screen():
-    """The loop's head is the video it started on, so at that moment the window opens
-    there — the video you pressed loop on is drawn in the corner, never mid-row."""
     window = nav_map_window(_LOOP, playing=0)
 
     assert (window.start, window.count) == (0, NAV_MAP_CELLS)
@@ -167,12 +148,9 @@ def test_a_loop_just_started_opens_on_the_clip_on_screen():
 
 
 def test_a_loop_partway_through_keeps_the_clip_on_screen_in_the_middle():
-    """Once the loop has advanced past the first cells the window slides with it, so
-    the lit thumbnail stays in the middle instead of walking off the end of the nav map
-    and leaving nothing highlighted."""
     window = nav_map_window(_LOOP, playing=5)
 
-    assert (window.start, window.count) == (4, 3)  # 4, 5, 6 — the playing one centerd
+    assert (window.start, window.count) == (4, 3)
     assert window.more_before is True
     assert window.more_after is True
 
@@ -199,7 +177,6 @@ def test_an_empty_axis_has_no_window():
 
 
 def _filter_targets(*labels: str) -> HudTargets:
-    """Press targets for a gutter of filter buttons, stacked 20px apart."""
     return HudTargets(
         click=[], loop=[],
         filter=[((0, i * 20, 18, 20), label) for i, label in enumerate(labels)],
@@ -214,9 +191,6 @@ def test_pressing_a_rows_filter_button_filters_the_side_to_its_act():
 
 
 def test_pressing_the_lit_filter_button_turns_the_filter_off():
-    """The button is a toggle, as the loop buttons are: it filters to that act, and
-    pressing the lit one drops the filter — so the way out is the same control as
-    the way in."""
     clicks = HudClicks("portrait")
     clicks.active_filter = "alpha"
 
@@ -231,10 +205,6 @@ def test_pressing_another_rows_filter_button_while_filtered_moves_the_filter():
 
 
 def test_pressing_a_partly_matching_button_narrows_the_filter_before_lifting_it():
-    """A row the filter keeps without being exactly it ("Side Gamma" under "gamma") is
-    the act you reached for, so the first press moves the filter onto that whole row
-    and only a press on the row the filter already is turns it off.  Lifting on the
-    first press left no way to tighten a broad filter from the nav map."""
     clicks = HudClicks("portrait")
     clicks.active_filter = "gamma"
 
@@ -244,9 +214,6 @@ def test_pressing_a_partly_matching_button_narrows_the_filter_before_lifting_it(
 
 
 def test_pressing_a_two_act_rows_button_filters_to_both_of_its_acts():
-    """A video carrying two acts filters to the pair, which is the query fun_time
-    keeps videos having both under — and pressing it again lifts it, since that row is
-    now exactly the filter."""
     clicks = HudClicks("portrait")
 
     command = clicks.press(_filter_targets("Gamma, Theta Motion"), 5, 5, now=0.0)
@@ -338,8 +305,6 @@ def test_expand_button_sits_in_the_row_right_of_the_seed_loop_button():
 
 
 def test_build_and_hit_test_click_targets():
-    """Targets zip the drawn rects to their paths — corner=current, then each
-    seed, then each action — and a point resolves to the video it falls in."""
     corner = (10, 10, 20, 20)
     seeds = [(40, 10, 20, 20)]
     actions = [(10, 40, 20, 20)]
@@ -357,7 +322,7 @@ def test_build_and_hit_test_click_targets():
     assert hit_test_targets(targets, 15, 15) == "cur.mp4"
     assert hit_test_targets(targets, 45, 15) == "s1.mp4"
     assert hit_test_targets(targets, 15, 45) == "a1.mp4"
-    assert hit_test_targets(targets, 100, 100) == ""  # empty area hits nothing
+    assert hit_test_targets(targets, 100, 100) == ""
 
 
 def test_build_click_targets_skips_a_missing_corner():
@@ -365,9 +330,6 @@ def test_build_click_targets_skips_a_missing_corner():
 
 
 def test_filter_button_rects_puts_one_at_the_head_of_each_row():
-    """Each row gets a filter button at the gutter's left edge, as tall as the row
-    and left of its action name: the corner's is the current action, the rows below
-    their siblings.  A row with no act name gets none — nothing to filter to."""
     corner = (60, 50, 30, 54)
     actions = [(60, 110, 30, 54), (60, 170, 30, 54)]
 
@@ -381,27 +343,16 @@ def test_filter_button_rects_puts_one_at_the_head_of_each_row():
 
 
 def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it():
-    """fun_time keeps a video when the query is a substring of its metadata, so a row
-    it keeps has to light even when its label is not the query exactly — "Side Gamma"
-    and "Gamma, Theta" are both videos a "gamma" filter holds you to.
-
-    The cases below are the rule as this repo owns it.  That it still agrees with
-    fun_time's own matcher — the authority it mirrors — is pinned over THERE, in
-    fun_time's test_media_metadata, because only the wearer of this HUD can import
-    both sides; this suite runs with funestra alone on the path.  The empty query
-    is the one deliberate difference: it matches every video there, and lights no row
-    here.
-    """
     cases = [
-        ("Gamma", "gamma", True),               # the row that names it
-        ("Side Gamma", "gamma", True),          # the query is one act of the row
-        ("Side Gamma", "side gamma", True),     # the filter set from that very row
-        ("Gamma, Theta", "gamma", True),        # one of two acts on the video
-        ("Gamma   Theta", "gamma theta", True),  # whitespace collapsed on both sides
-        ("Gamma, Theta", "gamma, theta", True),  # the filter set from that very video
-        ("Gamma", "gamma, theta", False),       # …which does not keep a one-act video
+        ("Gamma", "gamma", True),
+        ("Side Gamma", "gamma", True),
+        ("Side Gamma", "side gamma", True),
+        ("Gamma, Theta", "gamma", True),
+        ("Gamma   Theta", "gamma theta", True),
+        ("Gamma, Theta", "gamma, theta", True),
+        ("Gamma", "gamma, theta", False),
         ("Alpha", "gamma", False),
-        ("Gam", "gamma", False),                # the label is not the longer query
+        ("Gam", "gamma", False),
     ]
     for label, query, expected in cases:
         assert label_is_filtered(label, query, CAMERA_WORDS) is expected, (label, query)
@@ -410,29 +361,22 @@ def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it():
 
 
 def test_act_is_filtered_picks_out_which_of_a_rows_acts_the_filter_named():
-    """The row says whether the video is here; this says which of its acts is why —
-    the rule that whitens one line of a label and leaves its neighbors gray."""
     def lit(act: str, filter_query: str) -> bool:
         return act_is_filtered(act, filter_query, CAMERA_WORDS)
 
     assert lit("Gamma", "gamma") is True
-    assert lit("XYZ", "gamma") is False        # a camera word is not the act
+    assert lit("XYZ", "gamma") is False
     assert lit("Side", "gamma") is False
-    assert lit("Theta Gamma", "gamma") is True  # an act the query is part of
-    # A filter set from a two-act video names both, so both of that row's acts light.
+    assert lit("Theta Gamma", "gamma") is True
     assert lit("Gamma", "gamma, theta") is True
     assert lit("Theta", "gamma, theta") is True
     assert lit("Alpha", "gamma, theta") is False
-    # And one set from a camera-scoped row names the camera word and the act apart.
     assert lit("Gamma", "xyz gamma") is True
     assert lit("XYZ", "xyz gamma") is True
     assert lit("Gamma", "") is False
 
 
 def test_button_tooltip_names_each_button():
-    """Every icon on the HUD is cryptic on purpose, so each one names itself on
-    hover — a declared button by the tooltip its source gave it, the nav map's own
-    chrome and the favorite mark by the words the HUD has for them."""
     targets = HudTargets(
         click=[],
         loop=[((0, 0, 20, 20), "action"), ((30, 0, 20, 20), "seed")],
@@ -446,8 +390,6 @@ def test_button_tooltip_names_each_button():
     assert button_tooltip(targets, 35, 5) == "Loop this seed row"
     assert button_tooltip(targets, 5, 105) == "Filter to this action"
     assert button_tooltip(targets, 35, 35) == "More seeds — widen the net"
-    # Probed off the rects the row was actually laid out at rather than off a
-    # fixed pitch: the bar breaks into groups, so a stride is not the answer.
     for (bx, by, _w, _h), button in targets.buttons:
         assert button_tooltip(targets, bx + 5, by + 5) == button.tooltip
     assert button_tooltip(targets, 305, 65) == "In the favorites"
@@ -476,9 +418,6 @@ def test_the_nav_map_s_own_controls_say_why_when_this_version_lacks_their_marks(
 
 
 def test_a_declared_row_is_laid_out_as_wide_as_each_button_says():
-    """A square is a square; a word button is as wide as the painter measured its
-    word, handed in here because this module is font-free; and the wider gap
-    opens before a button that says it starts a group."""
     rects = button_row_rects(10, 40, (
         Button("go_kino", "Kino", "Kino mode", width=0),
         Button("go_shows", "Origenerator", "Origenerator mode", width=0),
@@ -505,7 +444,6 @@ def test_the_speed_row_puts_slower_the_rate_and_faster_after_its_name():
 
 
 def test_the_speed_buttons_say_what_a_press_does_to_the_video():
-    """In the words the main HUD's own pair says it in."""
     buttons, _rate = speed_row("landscape", 0, 0, label_width=70)
     targets = _targets(buttons=buttons)
 
@@ -514,7 +452,6 @@ def test_the_speed_buttons_say_what_a_press_does_to_the_video():
 
 
 def test_the_speed_buttons_wear_the_familys_minus_and_plus():
-    """The marks the main HUD's own pair wears, drawn rather than typed."""
     buttons, _rate = speed_row("landscape", 0, 0, label_width=70)
 
     assert [button.icon for _rect, button in buttons] == [shared_icon("minus"), shared_icon("plus")]
@@ -524,7 +461,6 @@ _NOTE = "Enhancing…"
 
 
 def test_a_name_too_long_for_its_line_is_shortened_so_the_note_after_it_stays_whole():
-    """Shortened by the family's one cut, which keeps a space it lands just after."""
     font = load_font(SIZE_TINY)
     shortened = f"folder one … · {_NOTE}"
 
@@ -564,8 +500,6 @@ def test_a_title_that_fits_at_none_of_the_familys_sizes_takes_the_tiny_one():
 
 
 def test_action_label_blocks_separate_comma_joined_acts():
-    """Several acts on one video ("Alpha, Theta Motion") become one block each
-    (drawn with a gap between), commas dropped; one act is a single block."""
     assert action_label_blocks("alpha, theta motion", CAMERA_WORDS) == [["Alpha"], ["Theta", "Motion"]]
     assert action_label_blocks("", CAMERA_WORDS) == [["(unknown)"]]
     assert action_label_blocks("   ", CAMERA_WORDS) == [["(unknown)"]]
@@ -573,25 +507,16 @@ def test_action_label_blocks_separate_comma_joined_acts():
 
 
 def test_a_source_that_names_no_camera_words_has_a_rows_first_word_read_as_the_act():
-    """A hosted Origenerator's rows are folders the user named, not the library's
-    acts, so it names none and a row's first word is never set apart."""
     assert action_label_blocks("side gamma", ()) == [["Side", "Gamma"]]
     assert action_label_blocks("xyz gamma", ()) == [["Xyz", "Gamma"]]
 
 
 def test_action_label_blocks_split_a_leading_camera_word_into_its_own_act():
-    """A camera word in front of an act is not part of it, so it becomes its own
-    block — which is what lets a "gamma" filter light "Gamma" and leave the camera
-    word gray instead of whitening both.
-
-    Every camera word the source names, since Evolver's backfill scopes every act it
-    writes by one of them and never writes a bare act.
-    """
     assert action_label_blocks("xyz gamma", CAMERA_WORDS) == [["XYZ"], ["Gamma"]]
     assert action_label_blocks("side gamma", CAMERA_WORDS) == [["Side"], ["Gamma"]]
     assert action_label_blocks("side theta motion", CAMERA_WORDS) == [["Side"], ["Theta", "Motion"]]
-    assert action_label_blocks("xyz", CAMERA_WORDS) == [["XYZ"]]  # nothing to qualify: one act
-    assert action_label_blocks("theta motion", CAMERA_WORDS) == [["Theta", "Motion"]]  # not a camera word
+    assert action_label_blocks("xyz", CAMERA_WORDS) == [["XYZ"]]
+    assert action_label_blocks("theta motion", CAMERA_WORDS) == [["Theta", "Motion"]]
 
 
 def _targets(**overrides) -> HudTargets:
@@ -601,25 +526,20 @@ def _targets(**overrides) -> HudTargets:
 
 
 def test_single_click_switches_and_double_click_locks():
-    """A single click posts play_video once its double-click window lapses; a
-    second click inside that window cancels it and posts lock_video instead."""
     clicks = HudClicks("landscape")
     targets = _targets(click=[((0, 0, 30, 30), "C:/v/pick.mp4")])
 
-    assert clicks.press(targets, 10, 10, now=0.0) == ""      # deferred
-    assert clicks.due(now=0.1) == ""                          # still inside the window
+    assert clicks.press(targets, 10, 10, now=0.0) == ""
+    assert clicks.due(now=0.1) == ""
     assert clicks.due(now=1.0) == "landscape_play_video|C:/v/pick.mp4"
-    assert clicks.due(now=2.0) == ""                          # fired once
+    assert clicks.due(now=2.0) == ""
 
     assert clicks.press(targets, 10, 10, now=10.0) == ""
     assert clicks.press(targets, 10, 10, now=10.2) == "landscape_lock_video|C:/v/pick.mp4"
-    assert clicks.due(now=11.0) == ""                         # the single was canceled
+    assert clicks.due(now=11.0) == ""
 
 
 def test_a_second_click_past_the_window_is_another_single_click():
-    """The window is what makes the second press a double.  Past it, the same
-    cell pressed again is someone picking that video a second time — it defers
-    like any other single press rather than locking what it lands on."""
     clicks = HudClicks("landscape")
     targets = _targets(click=[((0, 0, 30, 30), "C:/v/pick.mp4")])
 
@@ -629,9 +549,6 @@ def test_a_second_click_past_the_window_is_another_single_click():
 
 
 def test_clicking_a_declared_button_posts_what_it_declares():
-    """Each button posts exactly the verb its source gave it — "portrait_prev",
-    "landscape_trash" — so the dispatch loop needs no new verbs for a button,
-    only for the thing it does."""
     for funestra in ("portrait", "landscape"):
         targets = _targets(buttons=_squares(0, 0, bar(funestra)))
 
@@ -642,8 +559,6 @@ def test_clicking_a_declared_button_posts_what_it_declares():
 
 
 def test_a_dimmed_button_posts_nothing_but_the_press_stays_on_the_hud():
-    """Dimmed is at the end of its range or with nothing to act on: the press
-    it would post is one nothing would answer, so nothing goes out."""
     targets = _targets(buttons=_squares(0, 0, (
         Button("portrait_step", "⏭", "Step", dim=True),)))
 
@@ -651,8 +566,6 @@ def test_a_dimmed_button_posts_nothing_but_the_press_stays_on_the_hud():
 
 
 def test_a_side_control_posts_at_once_rather_than_waiting_out_a_double_click():
-    """Only a thumbnail press is ambiguous (single switches, double locks).  A
-    button means one thing, so it fires on the press and leaves nothing pending."""
     clicks = HudClicks("portrait")
 
     assert clicks.press(_targets(buttons=_squares(0, 0, bar())), 5, 5, now=0.0) == "portrait_prev"
@@ -666,9 +579,6 @@ def test_clicking_empty_space_posts_nothing():
 
 
 def test_loop_buttons_toggle_and_are_mutually_exclusive():
-    """Clicking a loop button posts action_loop/seed_loop and marks it active; the
-    other going on turns it off (they cannot coexist); clicking the active one
-    again posts no_loop."""
     clicks = HudClicks("portrait")
     targets = _targets(loop=[((0, 0, 20, 20), "action"), ((30, 0, 20, 20), "seed")])
 
@@ -686,8 +596,6 @@ def test_clicking_the_expand_button_posts_more_seeds():
 
 
 def test_pressing_a_filter_button_filters_to_its_row_action():
-    """A press on a row's filter button posts filter_<side>_<action>, the same
-    command speaking "[side] gamma" would."""
     clicks = HudClicks("portrait")
     targets = _targets(filter=[((0, 0, FILTER_BTN, 20), "Gamma")])
 
@@ -695,8 +603,6 @@ def test_pressing_a_filter_button_filters_to_its_row_action():
 
 
 def test_pressing_the_filter_button_of_a_two_word_action_slugs_it():
-    """Multi-word acts carry an underscore in the command, as filter_vocab slugs
-    them ("beta gamma" -> beta_gamma)."""
     clicks = HudClicks("landscape")
     targets = _targets(filter=[((0, 0, FILTER_BTN, 20), "Beta Gamma")])
 
@@ -704,8 +610,6 @@ def test_pressing_the_filter_button_of_a_two_word_action_slugs_it():
 
 
 def test_a_funestra_less_command_is_posted_verbatim():
-    """The mode pair's commands belong to the whole satellite side, so they
-    carry no Funestra of their own and none is added."""
     mode_pair = funestra_rows(mode="kino")[0]
     targets = _targets(buttons=button_row_rects(0, 0, mode_pair, [60, 90, CTRL_BTN]))
 
@@ -713,10 +617,6 @@ def test_a_funestra_less_command_is_posted_verbatim():
 
 
 class TestThePublishedHudIsWrittenWhereItIsRead:
-    """A source publishes a HudModel as text and the Funestra parses it back; the
-    keys are spelled once, here, rather than by the writer in one repo and the
-    reader in another."""
-
     def test_every_field_survives_the_round_trip(self):
         model = HudModel(
             funestra="landscape", locked=True, title="Looping seeds · Locked · Latest",
@@ -759,8 +659,6 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
         assert parse_hud(hud_text(model)) == model
 
     def test_a_key_the_hud_no_longer_carries_is_passed_over(self):
-        """The switches a Funestra's bar was once lit from still come from a
-        publisher on an older release; the HUD reads the same without them."""
         parsed = parse_hud(json.dumps({
             "funestra": "portrait", "favorites_filter": True, "latest": False,
             "enhanced_filter": True, "satellites_mode": "video"}))
@@ -776,9 +674,6 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
         assert parsed.playing == ("corner", 0)
 
     def test_the_text_is_the_json_a_funestra_already_reads(self):
-        """A cell with nothing in its label carries no label key, and the playing
-        cell is a two-element list, exactly as the HUD was published before the
-        writer moved here -- a Funestra on either side of the move reads it."""
         raw = json.loads(hud_text(HudModel(
             funestra="portrait", corner=HudCell(path="C:/v/cur.mp4"),
             actions=(HudCell(path="C:/v/a1.mp4", label="gamma"),), playing=("action", 0))))

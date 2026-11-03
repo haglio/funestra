@@ -32,9 +32,6 @@ RESTORE_TOOLTIP = "Show this HUD again"
 
 FLASH_S = 3.0
 
-# Room beside the plus for its tooltip, which a HUD this small cannot hold:
-# wide enough for RESTORE_TOOLTIP on one line at the family's small size, and one
-# line tall.
 _TOOLTIP_ROOM_W = 118
 _TOOLTIP_ROOM_H = 26
 

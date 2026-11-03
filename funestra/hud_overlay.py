@@ -1,10 +1,3 @@
-"""The HUD kept on the item: taken from its source, rendered when it changes, composited, pressed.
-
-Two sources.  A session in another process publishes the HUD to a file and
-takes its presses back on the dashboard's command file; a window's own
-program -- a standalone Origenerator building its Slideshow's HUD -- hands
-the model over in-process and takes the presses itself.
-"""
 from __future__ import annotations
 
 import time
@@ -36,10 +29,6 @@ from .satellite_hud_paint import HudRenderer
 
 HUD_OVERLAY_ID = 10
 
-# What the HUD posts about the block its source paints at its foot: the
-# source placed it and knows what is drawn where, so a press, a drag, the
-# button coming up and the wheel go back to it with where they landed, in the
-# block's own pixels.
 FOOT_PRESS = "foot_press"
 FOOT_DRAG = "foot_drag"
 FOOT_RELEASE = "foot_release"
@@ -62,16 +51,12 @@ _ON_NO_CONTROL = _Hover("", "", None, None)
 
 
 class _PublishedHud:
-    """The HUD a session publishes to a file, and the file its presses go back on."""
-
     def __init__(self, hud_file: Path, command_file: Path) -> None:
         self._hud_file = Path(hud_file)
         self._command_file = Path(command_file)
         self._published = ""
 
     def next(self, shown: HudModel | None) -> tuple[HudModel | None, bool]:
-        """The HUD to show and whether it changed -- unchanged for a frame
-        that lost the race with the source replacing the file."""
         try:
             text = self._hud_file.read_text(encoding="utf-8")
         except FileNotFoundError:
@@ -88,8 +73,6 @@ class _PublishedHud:
 
 
 class _WindowsOwnHud:
-    """The HUD the window's own program hands over, and where its presses go."""
-
     def __init__(self, hud: Callable[[], HudModel | None],
                  post: Callable[[str], None]) -> None:
         self._hud = hud
@@ -141,7 +124,6 @@ class HudOverlay:
         self._playback_speed: float | None = None
         self._item_row: RowHud | None = None
         self._heatmap = None
-        # The HUD draws the item's row, so it places a press on it too.
         self._row = RowPress(seek=seek, seek_loop=seek_loop, set_volume=set_volume,
                              toggle_mute=toggle_mute)
         self._hover: PointerReading[_Hover] = PointerReading(_ON_NO_CONTROL)
@@ -225,9 +207,6 @@ class HudOverlay:
         return True
 
     def wheel(self, x: int, y: int, steps: int) -> bool:
-        """The wheel turned *steps* notches over the HUD: the block at the
-        foot takes it, and the rest of the HUD is a surface with nothing to
-        turn, which is still the HUD's and not the item's."""
         if self._clicks is None or not self.covers(x, y):
             return False
         self._pointer_at = self._local(x, y)
@@ -236,20 +215,14 @@ class HudOverlay:
         return True
 
     def _track_duration(self) -> float:
-        """How long the track spans -- the video, or the window a loop being
-        recorded has zoomed it to, which is what the row was drawn from."""
         return 0.0 if self._item_row is None else self._item_row.duration_ms
 
     @property
     def row(self) -> RowLayout | None:
-        """Where the row landed in this HUD and how it is laid out,
-        for a host measuring the track it is to fill."""
         return self.targets.row
 
     @property
     def row_track(self) -> tuple[int, int, int] | None:
-        """The row's track in the viewport's coordinates, for a host hanging the
-        loop's frames under it."""
         return track_on_screen(
             self.targets.row, origin=self._origin,
             hud_height=0 if self._hud_size is None else self._hud_size[1])
@@ -260,8 +233,6 @@ class HudOverlay:
             self._clicks is not None and self._clicks.holding)
 
     def drag_to(self, x: int, y: int) -> str:
-        """The pointer held down and moving: the row goes on being set, and past
-        the row, whatever the HUD itself took hold of."""
         self._pointer_at = self._local(x, y)
         if self._row.drag_to(*self._pointer_at, layout=self.targets.row,
                              duration_ms=self._track_duration()):
@@ -275,7 +246,6 @@ class HudOverlay:
         return command
 
     def release(self) -> None:
-        """Let go of whichever part of the row, of the foot, or of the HUD a press took."""
         self._row.release()
         if self._foot_held:
             self._foot_held = False

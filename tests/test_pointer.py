@@ -1,9 +1,3 @@
-"""Where a press on a Funestra's window lands: the HUD, or the item under it.
-
-The track, the time and the volume are a block of the HUD, which places a
-press on them itself (test_hud_overlay.py), so nothing over the item takes
-one any more.
-"""
 from __future__ import annotations
 
 from funestra.pointer import Pointer
@@ -13,12 +7,6 @@ LOWER_EDGE = (300, 476)
 
 
 class _StubHud:
-    """The lock HUD's half of the pointer's interface, and nothing else.
-
-    *takes* is whether its slab is under the press — the real HUD answers that
-    from the HUD it last drew, which is a question about a bitmap's size.
-    """
-
     def __init__(self, *, takes: bool = True) -> None:
         self._takes = takes
         self.presses: list[tuple[int, int]] = []
@@ -53,10 +41,6 @@ def _pointer(*, hud: bool = True, hud_takes: bool = True):
 
 
 class TestTheItem:
-    """A press the HUD does not take is a press on the item, which asks
-    whoever built the window -- the app, or the program running on it -- to
-    pause."""
-
     def test_a_press_the_hud_refused_asks_for_the_pause(self):
         pointer, hud, asked = _pointer(hud_takes=False)
 
@@ -80,7 +64,6 @@ class TestTheItem:
         assert asked == []
 
     def test_the_lower_edge_is_the_item_now_that_no_row_is_drawn_there(self):
-        """The track used to span it; a press there is a press on the item."""
         pointer, _hud, asked = _pointer(hud_takes=False)
 
         pointer.press(*LOWER_EDGE)
@@ -102,9 +85,6 @@ class TestTheItem:
 
 
 class TestDragging:
-    """Everything a held pointer can set is on the HUD, so this is only about
-    telling the HUD where the pointer went and letting go of what it took."""
-
     def test_the_hud_is_told_where_the_pointer_went_either_way(self):
         pointer, hud, _asked = _pointer()
 

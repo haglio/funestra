@@ -40,26 +40,16 @@ from .hud_placement import HudCorner, HudEdge
 from .modes import LengthMode, MainMode, Osr2State, read_mode
 from .robot_hand import WaveformShape
 
-VALUE_W = 22  # a value read-out between a pair of buttons (the playback rate)
-# The cell a word naming its row takes: "Playback speed", the longer of the
-# two names the family's HUDs carry, measures 80 at the tiny face, plus the
-# family's gap.  One width for every named row, so the pair beside the name
-# sits in the same place whichever row is up; the painter widens a name that
-# outgrows it rather than letting it run under the button beside it.
+VALUE_W = 22
 ROW_LABEL_W = 84
-GAP = BUTTON_GAP       # between buttons along a row
-ROW_GAP = BUTTON_ROW_GAP   # between rows
-GROUP_GAP = BUTTON_GROUP_GAP  # between groups of buttons that mean different things
+GAP = BUTTON_GAP
+ROW_GAP = BUTTON_ROW_GAP
+GROUP_GAP = BUTTON_GROUP_GAP
 
 _SHAPE_LABELS = {"rounded_square": "Square"}
 
 
 def shape_label(shape: str) -> str:
-    """The waveform's name, for the control that cycles it to say what it is on.
-
-    ``rounded_square`` is the one whose internal name reads badly spelled out;
-    the rest title-case.
-    """
     if shape in _SHAPE_LABELS:
         return _SHAPE_LABELS[shape]
     return " ".join(word.capitalize() for word in shape.split("_"))
@@ -67,19 +57,7 @@ def shape_label(shape: str) -> str:
 
 @dataclass(frozen=True)
 class ModeHud:
-    """What runs on a Funestra says about what it is playing — what only it knows.
-
-    *video* is the name of the video on screen, drawn as the muted line beneath
-    the status.  *length_mode* is the library's filter, empty when there is no
-    library backing the playlist; *compilation* is the volume holding the
-    playlist, with *position*/*total* placing the current video in it;
-    *scripted_filter* is Fun Time's F-mode over whichever of those runs.  All
-    empty in genau mode, where there is no Kino playlist to describe.
-    """
-
     video: str = ""
-    # None where there is no library backing the playlist, so no length is
-    # being asked for at all -- as against NONE, which asks for neither length.
     length_mode: LengthMode | None = None
     compilation: str = ""
     position: int = 0
@@ -87,19 +65,11 @@ class ModeHud:
     scripted_filter: bool = False
 
 
-# What this app is doing to the OSR2: driving it, or holding it still at one end
-# of its travel.  The Main Funestra's HUD's one switch is on while driving and off while
-# parked; retracted is a hold only Fun Time's relief pause puts the device in,
-# which the switch shows as off.
 OSR2_PARKED = "parked"
 OSR2_RETRACTED = "retracted"
 OSR2_DRIVING = "driving"
-# And an answer that is not a state: this host has no such switch.
 OSR2_CONTROL_UNANSWERED = ""
 
-# The press that puts the device in each of the switch's two positions.  Data,
-# so a consumer routing a press can read the state off the command rather than
-# spelling this out a second time.
 OSR2_CONTROL_BUTTONS: dict[str, str] = {
     OSR2_PARKED: "robot_hand_park",
     OSR2_DRIVING: "robot_hand_release",
@@ -161,52 +131,20 @@ def osr2_controls(*, broker_running: bool) -> tuple[Button, ...]:
 
 @dataclass(frozen=True)
 class MainHudModel:
-    """What Fun Time tells the Main Funestra about its place, so the Main Funestra's HUD can
-    draw it — none of which the Funestra can see for itself.
-
-    Everything here arrives published (``main_player_console.json``) except
-    ``playback_speed``, which is Kino's own and folded in by whoever is drawing.
-    """
-
     main_mode: MainMode = MainMode.KINO
     funestra: str = "main"
     hud_corner: HudCorner = HudCorner.UPPER_LEFT
     hud_edge: HudEdge = HudEdge.LOWER
     hud_minimized: bool = False
-    # The dot: whether a bare command naming no Funestra ("next", "lock") lands
-    # on the Main Funestra rather than on a satellite.
     active: bool = False
-    # What is driving the OSR2 right now.
     osr2: Osr2State = Osr2State.OFF
-    # And what this app is doing to it, which is a different question: driving,
-    # parked or retracted, or OSR2_CONTROL_UNANSWERED from a host that has no
-    # such switch.  Published like the rest of this, because the
-    # state is the orchestrator's and the Funestra drawing the Main Funestra's HUD is not
-    # always the one it is about.
     osr2_control: str = OSR2_CONTROL_UNANSWERED
     paused: bool = False
-    # Whether what runs on the Main Funestra is holding what is on screen rather
-    # than letting it move on -- Kino's video in kino mode, Genau's flick in
-    # genau.  On is where both open, so it is the default here
-    # too: a Main Funestra's HUD drawn before the first HUD arrives must not show the lock
-    # off when it is not.
     locked: bool = True
-    # Which browse order the title names: newest-first ("Latest") when
-    # set, shuffled when clear, and nothing at all for a host with no browse
-    # order to name -- Origenerator's motion panel, whose slides are a show's
-    # own set.
     latest: bool | None = None
     filters: tuple[str, ...] = ()
-    # Kino's video playback rate, shown while Kino is on screen.  Not published —
-    # Kino knows its own rate and folds it in; Genau leaves it at 1.
     playback_speed: float = 1.0
-    # Seconds an unlocked Genau leaves each flick on screen.  Also not published —
-    # Genau owns the pace and says it on the OSR2 visualizer, which whoever draws
-    # the Main Funestra's HUD folds in here.
     advance_interval: int = 0
-    # The buttons the source declares, row by row, and the controls it puts on
-    # the OSR2 line: what each posts, its face, its tooltip and its state.  The
-    # HUD draws nothing it was not handed.
     rows: tuple[tuple[Button, ...], ...] = ()
     osr2_rows: tuple[tuple[Button, ...], ...] = ()
     osr2_controls: tuple[Button, ...] = ()
@@ -215,23 +153,10 @@ class MainHudModel:
 
     @property
     def device_drives_itself(self) -> bool:
-        """Whether the OSR2 is in auto mode, running its own firmware.
-
-        Neither driver reaches it there: the broker stops forwarding the
-        script's T-Code and Genau is not sending.  So the drawing is the
-        device's own motion rather than a handoff between the two, which is
-        what every Funestra hanging this Main Funestra's HUD over a video asks before it
-        lets the gate fold a script in.
-        """
         return self.osr2 == Osr2State.AUTO
 
 
 def read_main_hud(path: Path) -> MainHudModel | None:
-    """The Main Funestra's HUD HUD Fun Time published, or None when there is not a whole one.
-
-    None means "keep the Main Funestra's HUD you have": Fun Time replaces this file while the
-    Funestra polls it, so a lost race must not empty the HUD for a frame.
-    """
     try:
         text = path.read_text(encoding="utf-8")
     except OSError:
@@ -240,11 +165,6 @@ def read_main_hud(path: Path) -> MainHudModel | None:
 
 
 def main_hud_text(model: MainHudModel) -> str:
-    """*model* as the text Fun Time publishes, and :func:`parse_main_hud` reads back.
-
-    Only what the app knows and the Funestra cannot see goes out; the rate and
-    the pace, which the drawing host folds in for itself, come back at rest.
-    """
     return json.dumps({
         "main_mode": model.main_mode,
         "funestra": model.funestra,
@@ -267,7 +187,6 @@ def main_hud_text(model: MainHudModel) -> str:
 
 
 def parse_main_hud(text: str) -> MainHudModel | None:
-    """The HUD *text* carries, or None when it is not a whole one."""
     try:
         raw = json.loads(text)
     except (ValueError, TypeError):
@@ -281,7 +200,6 @@ def parse_main_hud(text: str) -> MainHudModel | None:
         hud_edge=read_mode(HudEdge, raw.get("hud_edge"), HudEdge.LOWER),
         hud_minimized=bool(raw.get("hud_minimized", False)),
         active=bool(raw.get("active", False)),
-        # Absent is None -- no browse order to name -- rather than "shuffled".
         latest=(None if raw.get("latest") is None else bool(raw.get("latest"))),
         filters=_filters_from_raw(raw.get("filters")),
         osr2=read_mode(Osr2State, raw.get("osr2"), Osr2State.OFF),
@@ -310,18 +228,11 @@ def max_intensity_from_raw(raw) -> int | None:
 
 
 def kino_shows(main_mode: MainMode) -> bool:
-    """Whether Kino is what the Main Funestra shows."""
     return main_mode == MainMode.KINO
 
 
 def place_rows(rows: list[list[Button]], *, x: int, y: int,
                ends_at: int | None = None) -> list[tuple[Rect, Button]]:
-    """Each button's rect, rows stacked down from ``(x, y)``, or ending at
-    *ends_at* with each row's own order kept.
-
-    One placement feeds both the painting and the hit-testing, so what is drawn
-    and what is clickable cannot drift apart.
-    """
     placed: list[tuple[Rect, Button]] = []
     row_y = y
     for row in rows:
@@ -340,21 +251,14 @@ def one_row_width(row: list[Button]) -> int:
 
 
 def _row_width(rows: list[list[Button]]) -> int:
-    """How wide the widest row runs — what the HUD has to be to hold them."""
     return max((one_row_width(row) for row in rows), default=0)
 
 
 def rows_height(rows: list[list[Button]]) -> int:
-    """How tall the stack runs, with no trailing row gap."""
     return max(0, len(rows) * (BUTTON + ROW_GAP) - ROW_GAP)
 
 
 def hit_test(placed: list[tuple[Rect, Button]], px: int, py: int) -> str:
-    """The command for a press at ``(px, py)``, or "" over none of the buttons.
-
-    A dimmed control is skipped: it is at its limit or has nothing to act on, so
-    the press it would post is one Fun Time would ignore.
-    """
     for rect, button in placed:
         if button.dim or not button.command:
             continue
@@ -364,9 +268,6 @@ def hit_test(placed: list[tuple[Rect, Button]], px: int, py: int) -> str:
 
 
 def tooltip_at(placed: list[tuple[Rect, Button]], px: int, py: int) -> str:
-    """What the button under ``(px, py)`` is — every icon here is cryptic on
-    purpose, so each one names itself on hover.  A dimmed control still answers:
-    knowing why it cannot be pressed is the point."""
     for (bx, by, bw, bh), button in placed:
         if bx <= px < bx + bw and by <= py < by + bh:
             return button.tooltip_on_hover

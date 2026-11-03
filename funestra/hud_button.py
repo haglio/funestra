@@ -1,11 +1,3 @@
-"""A button a content source declares on a Funestra's HUD.
-
-The source says what each button posts, what face it wears and what state it is
-in; the Funestra lays the buttons out, draws them and posts the declared verb.
-The record and its published form live together so a source in another
-process (Fun Time, writing the HUD files) and one in the Funestra's own (a hosted
-Origenerator) spell a button the same way.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
@@ -15,32 +7,13 @@ from shared_ui.spacing import BUTTON_SIZE_HUD
 
 from .hud_icons import SHARED_ICON, shared_icon_name
 
-BUTTON = BUTTON_SIZE_HUD  # a square control; the wider ones say their own width
+BUTTON = BUTTON_SIZE_HUD
 
-# A word-carrying button asking the painter to size it to its word.
 FIT_THE_WORD = 0
 
 
 @dataclass(frozen=True)
 class Button:
-    """One item on a HUD: what it posts, what it looks like, how it is drawn.
-
-    ``lit``, ``warn`` and ``hold`` are the live states — the family's blue for
-    on, red for a live recording, blue for the loop that recording leaves
-    running.  ``favorite`` names a control whose on-state is green (the
-    favorites and the funscripts own that color); ``enhanced`` one whose mark
-    and on-state are yellow (an enhanced image's own).  ``dim`` is a control
-    at the end of its range or with nothing to act on: drawn faded and never a
-    hit target.  ``danger`` draws the mark red — a control that takes something
-    away.  ``remembered`` is a choice held but not applied, on the active gray.
-    ``group_break`` opens the wider gap before this button.
-
-    An empty ``command`` makes it a read-out: laid out in the row like anything
-    else, drawn as bare text with no button, and never a hit target.  A read-out
-    whose number only the drawing host knows names it in ``host_value``
-    ("playback_speed", "advance_interval") and the painter fills it in.
-    """
-
     command: str
     icon: str
     tooltip: str

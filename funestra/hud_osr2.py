@@ -1,17 +1,3 @@
-"""The device's own line: who has the OSR2, and the controls that aim it.
-
-Every HUD whose host drives the device draws this line, so the word for a
-parked OSR2 is the same word wherever it is read — the Main Funestra's HUD
-(:mod:`funestra.main_hud_painter`) and a HUD over a host that drives it itself
-(:mod:`funestra.satellite_hud_paint`) share this one rather than each
-spelling the states again.
-
-The controls sit together at the head of the line because they act on the
-device rather than on any Funestra: placed by hand rather than through the row
-layout, which would read them as different families and open a gap between
-them.  The label then hugs its pill, well clear of them, so "OSR2 Robot Hand"
-reads as one read-out instead of as another button.
-"""
 from __future__ import annotations
 
 import time
@@ -49,28 +35,18 @@ from .osr2_visualizer import (
 )
 from .robot_hand import FULL_INTENSITY, POSITION_MAX
 
-# Package-internal: the two HUDs that draw this line are both in here, and a
-# host says what its line shows through the model it already hands over
-# (:class:`funestra.main_hud.MainHudModel`,
-# :class:`funestra.satellite_hud.HudModel`) rather than by building one.
-
-# The line is as deep as the controls sharing it.
 HEIGHT = BUTTON
 LABEL = "OSR2"
-_LABEL_GAP = GAP_SMALL   # "OSR2" sits right up against the pill it names …
-_GROUP_GAP = BUTTON_GROUP_GAP  # … and well clear of the controls beside them
-_PILL_PAD = BUTTON_PAD_H_TIGHT   # the app the state word keeps either side of itself
+_LABEL_GAP = GAP_SMALL
+_GROUP_GAP = BUTTON_GROUP_GAP
+_PILL_PAD = BUTTON_PAD_H_TIGHT
 
 MAX_INTENSITY_LABEL = "Max intensity"
 MAX_INTENSITY_TIP = ("Max intensity: all the way up puts no limit on the OSR2; lower, "
                      "its motion gets shorter and slower; all the way down, it stops")
 _MAX_INTENSITY_W = 72
 
-# The pill's own word for a device that belongs to neither driver at the
-# playhead -- drawn, never published, so it is not one of the wire's states.
 BUFFER = "buffer"
-# The buffer pill wears the trace's own neutral gray, so the word and the line
-# under the dot are visibly the same state.
 _NEUTRAL_PILL = trace_ink(DRIVEN_BY_NEUTRAL)
 
 LABELS = {
@@ -83,15 +59,11 @@ COLORS = {
     Osr2State.FUNSCRIPT: GREEN, Osr2State.ROBOT_HAND: BLUE, Osr2State.AUTO: MAGENTA,
     Osr2State.OFF: TEXT_MUTED, Osr2State.UNPLUGGED: TEXT_MUTED, Osr2State.NO_ANSWER: TEXT_MUTED,
     BUFFER: _NEUTRAL_PILL,
-    # The held device's line is the handoff's gray -- nobody is moving it -- and
-    # the word beside it says so in the same ink.
     OSR2_PARKED: _NEUTRAL_PILL, OSR2_RETRACTED: _NEUTRAL_PILL,
 }
 
 
 def state_for(osr2: str, control: str, *, driving: str = "", paused: bool = False) -> str:
-    """Who the pill names, given what the wire says has the device (*osr2*) and
-    what this app is doing to it (*control*)."""
     if osr2 == Osr2State.AUTO or osr2 in UNHEARD:
         return osr2
     return _held_by(control, paused=paused) or driving or osr2
@@ -127,8 +99,6 @@ _DRIVEN_BY_OSR2 = {
 
 
 class VisualizerResolver:
-    """The visualizer under the line, drawn by the same precedence as the pill."""
-
     def __init__(self, *, clock: Callable[[], float] = time.monotonic) -> None:
         self._clock = clock
         self._still: tuple[tuple[float, ...], int, float, float | None] | None = None
@@ -140,20 +110,8 @@ class VisualizerResolver:
             self._still = None
             self._device = _DeviceDot()
             return None
-        # Genau cannot see the handoff, so whoever draws the visualizer tells it
-        # who has the device.  Anything but Genau dims every control on it:
-        # adjusting a motion Genau is not sending is what woke it against the
-        # funscript.
-        # Not where a composed trace already names who has the device at the
-        # playhead — set by the same function that drew the line under the dot —
-        # since the round trip lags the arbiter, and the arbiter itself decides
-        # seconds before the device is done riding the blue.
         unheard = osr2 in UNHEARD
         if osr2 == Osr2State.AUTO:
-            # The device is running its own firmware, and that wins over
-            # everything the app does to it: a hold, a handoff
-            # between two drivers.  None of those reaches it, so none is the
-            # drawing — one line, the device's own, in its own color.
             drive = replace(drive, driven=DRIVEN_BY_AUTO, segments=())
         elif unheard:
             drive = replace(drive, driven=DRIVEN_BY_NOTHING, segments=())
@@ -179,11 +137,6 @@ class VisualizerResolver:
 
 
 class _DeviceDot:
-    """Where the visualizer's dot puts the OSR2: on the line while the motion has
-    it, walking to the held end as a hold parks it, and back into the motion as
-    the motion takes it again.  The motion's own position stops being the
-    device's the moment it is held, so the walk is the device's."""
-
     def __init__(self) -> None:
         self._height: float | None = None
         self._held: str | None = None
@@ -214,29 +167,17 @@ class _DeviceDot:
 
 @dataclass(frozen=True)
 class Osr2Line:
-    """What the line says: which driver has the device, and the controls a
-    source put on it.
-
-    *state* is already resolved by whoever is drawing — one of
-    :class:`~funestra.modes.Osr2State`, :data:`BUFFER`, or one of the
-    control states — because what has the device is a different question on
-    every HUD and only the host can answer it.
-    """
-
     state: str = Osr2State.OFF
     controls: tuple[Button, ...] = ()
     max_intensity: int | None = None
 
 
 class Osr2Section:
-    """The line itself, drawn into whatever HUD is hosting it."""
-
     def __init__(self) -> None:
         self._tiny = load_font(SIZE_TINY)
         self._icon = load_font(SIZE_BODY, SYMBOL_FONT)
 
     def width(self, line: Osr2Line) -> int:
-        """How wide the line runs — a floor on the HUD holding it."""
         return (self._controls_width(line.controls)
                 + text_width(self._tiny, LABEL) + _LABEL_GAP
                 + self._widest_word + _PILL_PAD
@@ -245,8 +186,6 @@ class Osr2Section:
     def draw(self, image: Image.Image, draw: ImageDraw.ImageDraw, x: int, y: int,
              line: Osr2Line, *, hover: tuple[int, int] | None = None,
              ) -> list[tuple[Rect, Button]]:
-        """Paint the line with its top-left corner at ``(x, y)``, and hand back
-        where each control landed so a press finds exactly what was drawn."""
         placed: list[tuple[Rect, Button]] = []
         run_x = x
         for button in line.controls:
@@ -263,8 +202,6 @@ class Osr2Section:
         word = LABELS.get(line.state, line.state)
         color = COLORS.get(line.state, TEXT_PRIMARY)
         pill_x = label_x + text_width(self._tiny, LABEL) + _LABEL_GAP
-        # No frame around it: what has the device is a read-out, and an outlined
-        # word beside two real buttons reads as a third one you can press.
         draw.text((pill_x + _PILL_PAD // 2, y + HEIGHT / 2), word,
                   font=self._tiny, anchor="lm", fill=(*color, 255))
         for bar in self.bars(x, y, line):
@@ -285,8 +222,6 @@ class Osr2Section:
 
     @staticmethod
     def _controls_width(controls: tuple[Button, ...]) -> int:
-        """The controls' run and the gap after it -- nothing at all for a line
-        with no controls, whose label then starts where they would have."""
         if not controls:
             return 0
         return sum(b.width for b in controls) + GAP * (len(controls) - 1) + _GROUP_GAP

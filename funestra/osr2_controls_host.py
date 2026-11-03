@@ -1,5 +1,3 @@
-"""The OSR2 part of the Main Funestra's HUD -- its aim row, its OSR2 line and its visualizer --
-drawn by a host on a surface of its own, and pressed there."""
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -36,7 +34,6 @@ class Osr2ControlsHost:
 
 
 def _on_the_painter(x: int, y: int) -> tuple[int, int]:
-    """The painter places its panel at the inset it keeps from a Funestra's window."""
     left, top = hud_xy()
     return x + left, y + top
 

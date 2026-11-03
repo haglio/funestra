@@ -1,4 +1,3 @@
-"""The scrubber a Funestra draws: its colors, the zoom while a stretch is marked, the frames of a running A/B range."""
 from __future__ import annotations
 
 import numpy as np
@@ -27,9 +26,6 @@ TRACK_W = bar_track_x(WIN_W)[1] - bar_track_x(WIN_W)[0]
 
 class TestHeatmap:
     def test_a_track_nobody_has_measured_yet_gets_no_colors(self):
-        """A HUD is as wide as what is on it, so its host has no width to
-        offer until one has been drawn.  Nothing to measure across is not an
-        error; it is the first frame, and it goes up as a plain bar."""
         strip = Heatmap()
 
         strip.update("v0.mp4", _funscript(), 4000.0, track_w=0)
@@ -238,9 +234,6 @@ class TestLoopThumbCapture:
 
 
 class TestWhereTheLoopsTwoFramesGo:
-    """Each hangs at the y its host gives -- just under the HUD the track is
-    a block of -- lined up with its own mark along that track."""
-
     TRACK = (40, 868)
     WIN_W, TOP = 1000, 564
     FRAME_H, FRAME_W = 10, 20

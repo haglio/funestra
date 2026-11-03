@@ -124,11 +124,11 @@ from .satellite_hud import (
     wrong_action_rect,
 )
 
-_PLACEHOLDER = BG_TERTIARY  # a thumbnail fun_time has not produced yet
+_PLACEHOLDER = BG_TERTIARY
 
-_DIM = 0.5      # non-playing thumbnails; the one on screen stays full
-_BORDER_W = 2   # the lock ring around the held video
-_COUNT_LINE_H = 11  # line pitch of the axis counts in the nav map's top-left corner
+_DIM = 0.5
+_BORDER_W = 2
+_COUNT_LINE_H = 11
 
 _LOOP_ICON = shared_icon(LOOP_ICON)
 _EXPAND_ICON = shared_icon(EXPAND_ICON)
@@ -177,14 +177,6 @@ def _dashed_rect(draw: ImageDraw.ImageDraw, rect: Rect, color, dash: int = 4) ->
 
 
 class HudRenderer:
-    """Paints one satellite's HUD, reusing its fonts and decoded thumbnails.
-
-    A render happens whenever the published HUD changes (every few seconds, as
-    videos advance) or the cursor moves onto or off a button, so the thumbnails are
-    cached by path: fun_time's cache filenames fold in the video's mtime, so a path
-    that is still valid is still the right image.
-    """
-
     def __init__(self, funestra: str) -> None:
         self._funestra = funestra
         self._body = load_font(SIZE_BODY)
@@ -193,8 +185,6 @@ class HudRenderer:
         self._pointer: tuple[int, int] | None = None
         self._icon = load_font(SIZE_BODY, SYMBOL_FONT)
         self._thumbs: dict[str, Image.Image] = {}
-        # The main HUD's own two blocks, hosted here for a HUD whose
-        # Funestra has the OSR2 -- see HudModel.osr2.
         self._osr2 = Osr2Section()
         self._drive = DriveSection()
         self._visualizer = VisualizerResolver()
@@ -247,29 +237,6 @@ class HudRenderer:
         minus_on_the_hud: bool = True,
         flash: str = "",
     ) -> RenderedHud:
-        """The HUD as a BGRA bitmap plus the rects its controls occupy.
-
-        The current video anchors the nav map — its seed family runs right along the row
-        and distinct other actions run down the column, so stepping an action
-        moves down and the row reloads with that action's seeds.  The column hangs
-        under whichever row cell is playing (fun_time builds it from that seed's
-        own acts), the corner when the corner is.  A lock rings the cell being
-        held in white: the corner normally, or the video a loop had reached when
-        the lock was taken.
-
-        *item_row* is where the video on screen has got to and how loud it is, with
-        *heatmap* its funscript's colors for a host that has one: the row every
-        Funestra used to lay along the lower edge of its own item, drawn here
-        instead (:mod:`funestra.hud_row`).  Like *video* it comes from the
-        Funestra rather than from *model*, being what is decoding rather than what
-        the source published.
-
-        *video* is the file on screen, named under the title.  It comes from
-        the Funestra rather than from *model*: the published HUD is fun_time's answer
-        to what this side is browsing, and what is actually decoding is the Funestra's
-        own — the same split the Main Funestra draws, which names its file from its own
-        session and takes the rest of its Main Funestra's HUD off the wire.
-        """
         self._pointer = hover_pos
         if model.hud_minimized:
             bgra, buttons = collapsed_hud(
@@ -292,14 +259,8 @@ class HudRenderer:
         counts = self._count_lines(model)
         model, seed_win, action_win = self._window(model)
         corner_thumb, seed_thumbs, action_thumbs = self._nav_map_thumbnails(model)
-        # The bars' own demand: a row the HUD cannot hold clips away in
-        # silence — the buttons past the edge are simply not there, with nothing
-        # raised — so the HUD is measured around the widest row.
         rows = [list(row) for row in model.rows]
         widths = [[self._button_width(button) for button in row] for row in rows]
-        # The rows that aim the device are measured with the rest -- they are
-        # drawn in the device's own block, but a HUD too narrow for them videos
-        # them away just as silently.
         device_rows = [list(row) for row in model.osr2_rows]
         device_row_widths = [[self._button_width(b) for b in row] for row in device_rows]
         bar_width = max((
@@ -307,8 +268,6 @@ class HudRenderer:
             for row, row_widths in zip(rows + device_rows, widths + device_row_widths, strict=True)
             if row
         ), default=0)
-        # The device's own blocks, on a host that drives it: the OSR2 line and
-        # the visualizer ask for width the way the bars do, and for room under them.
         composed = (model.drive if model.drive_composed and model.drive is not None
                     and model.drive.segments else None)
         osr2_line = Osr2Line(
@@ -359,8 +318,6 @@ class HudRenderer:
                         icon_font=self._icon, word_font=self._tiny)
             buttons.append(minus)
 
-        # Laid out against the HUD rather than against the nav map: they act on the
-        # side and the video on screen, and are there whether or not there is a nav map.
         for row, row_widths in zip(rows, widths, strict=True):
             placed = button_row_rects(
                 self._block_x(model, width, button_row_width(row, row_widths)),
@@ -372,10 +329,6 @@ class HudRenderer:
             buttons.extend(placed)
             y += CONTROL_ROW_H
 
-        # The rate this side plays at, its own row under the bars -- drawn here
-        # rather than declared, since only the drawing Funestra knows the number.
-        # Its two buttons still register as declared buttons, so a press posts
-        # the side's speed verb and a hover names it like any other.
         if model.playback_speed is not None:
             label_width = text_width(self._tiny, PLAYBACK_SPEED_LABEL) + BUTTON_GROUP_GAP
             speed_x = self._block_x(model, width, speed_row_width(label_width))
@@ -513,16 +466,12 @@ class HudRenderer:
             y += OSR2_H + BLOCK_GAP
         if model.drive is not None:
             drive_x = self._block_x(model, width, section_size()[0])
-            # The HUD's image rather than its pen: the visualizer supersamples its
-            # trace and composites it back, which a pen cannot carry.
             self._drive.draw(image, drive_x, y, model.drive)
             drive_targets, bars = visualizer_targets(drive_x, y, model.drive)
             buttons.extend(drive_targets)
         return buttons, bars + max_intensity_bars
 
     def _button_width(self, button: Button) -> int:
-        """A declared button's width: its own, or -- asking to fit its word --
-        the word as this face draws it, padded either side."""
         return button.width or text_width(self._tiny, button.icon) + 2 * MODE_LABEL_PAD
 
     def _title_font(self, size: int) -> ImageFont.FreeTypeFont:
@@ -562,15 +511,6 @@ class HudRenderer:
     def _window(
         self, model: HudModel
     ) -> tuple[HudModel, NavMapWindow | None, NavMapWindow | None]:
-        """*model* narrowed to the cells actually drawn, plus each axis's window.
-
-        An axis can hold far more videos than the nav map draws — a loop's group
-        especially — so each axis is drawn through a window of MAP_CELLS that keeps
-        the playing cell near the middle, rather than drawing the first few and
-        leaving the video on screen off the nav map once playback moves past them.
-        Narrowing the model here means everything downstream — rects, labels, hit
-        targets and the bright cell — works off the drawn cells alone.
-        """
         if model.corner is None:
             return model, None, None
         bucket, index = model.playing
@@ -580,9 +520,6 @@ class HudRenderer:
         action_at = index + 1 if bucket == "action" else 0
         seed_win = nav_map_window(len(seed_strip), seed_at)
         action_win = nav_map_window(len(action_strip), action_at)
-        # The corner place belongs to whichever axis the video on screen sits on: that
-        # is the only axis whose window can have moved off the corner.  Both strips
-        # hold the corner, so both windows hold at least it.
         window = action_win if bucket == "action" else seed_win
         strip = action_strip if bucket == "action" else seed_strip
         corner = strip[window.start]
@@ -595,42 +532,22 @@ class HudRenderer:
             playing=("corner", 0) if lit <= 0 else (bucket, lit - 1),
         )
         if bucket == "action":
-            # A column window can open on a sibling act, so the corner's row label
-            # comes from the cell drawn there rather than the anchor's own action.
             narrowed = replace(narrowed, current_action=corner.label or model.current_action)
         return narrowed, seed_win, action_win
 
     @staticmethod
     def _count_lines(model: HudModel) -> tuple[str, ...]:
-        """"Seeds: n" / "Actions: n" — how many videos each axis stands for.
-
-        Empty until fun_time's index has answered, so a satellite still starting up
-        prints nothing rather than a confident "Seeds: 0".
-        """
         if not (model.seed_count or model.action_count):
             return ()
         return (f"Seeds: {model.seed_count}", f"Actions: {model.action_count}")
 
     def _draw_counts(self, draw, x: int, y: int, lines: tuple[str, ...]) -> None:
-        """The axis counts, in the corner left of the nav map and above its first row.
-
-        The nav map draws only MAP_CELLS of each axis — and a window can hide a whole
-        loop's worth — so this is the only place its real size can be read.  It sits
-        outside the nav map proper, in the gutter's own column, and is there whether or
-        not a loop is running.
-        """
         for line_no, text in enumerate(lines, start=1):
             draw.text((x, y + _COUNT_LINE_H * line_no), text, font=self._tiny,
                       anchor="ls", fill=(*TEXT_MUTED, 255))
 
     def _draw_ellipses(self, image, corner_rect, column_rect, seed_rects, action_rects,
                        axis, window) -> None:
-        """The family's three dots in the places kept at each end of *axis*, on
-        whichever side it runs on past what is drawn — along the row, down the
-        column.  They fall inside a running loop's rectangle, so they read as "more
-        of these are in the loop" rather than as something outside it, and a gap in
-        from its border, so they do not read as part of that border either.
-        """
         before, after = ellipsis_rects(corner_rect, seed_rects, action_rects, axis,
                                        column_rect=column_rect)
         for rect, show in ((before, window.more_before), (after, window.more_after)):
@@ -659,37 +576,18 @@ class HudRenderer:
 
     def _draw_labels(self, image, draw, model, x, y, corner_rect, seed_rects,
                      action_rects, *, seed_offset: int = 0) -> Rect | None:
-        """Column labels ("Seed N") in the header strip and action names down the
-        left gutter, drawn over the (possibly dimmed) thumbnails at full opacity.
-
-        Returns the strike's rect — the button under the current video's act that
-        says the act is wrong — or None where no act is named.
-        """
         def column(cx: int, cw: int, text: str) -> None:
-            # Clipped to its own column: a portrait map's columns are barely wider
-            # than the label, and neighboring "Seed N"s running together is
-            # illegible.  Drawn into a column-sized scratch, so the overflow is cut.
             strip = Image.new("RGBA", (cw, COL_LABEL_H), (0, 0, 0, 0))
             ImageDraw.Draw(strip).text((cw / 2, COL_LABEL_H / 2), text, font=self._tiny,
                                        anchor="mm", fill=(*TEXT_MUTED, 255))
             image.alpha_composite(strip, (cx, y))
 
         def row(row_y: int, row_h: int, text: str, *, extra: int = 0) -> int:
-            # One block of tight word-lines per act, with a bigger gap between
-            # acts, so a two-word act ("Motion" / "Bounce") wraps close but two acts
-            # ("Alpha" then "Theta Motion") are clearly separated.  Each act is lit
-            # on its own account, and only inside a row the filter actually keeps:
-            # the row says whether the video is here at all, the act says which of
-            # its acts is why.  Lighting a matching act inside a row the filter
-            # drops would mark a video that is not in the playlist.
             row_lit = label_is_filtered(text, model.filter_query, model.camera_words)
             ascent, descent = self._tiny.getmetrics()
             line_h = ascent + descent - 4
             blocks = action_label_blocks(text, model.camera_words)
             total = sum(len(block) for block in blocks) * line_h + (len(blocks) - 1) * ACT_GAP
-            # *extra* is room kept under the words — the corner row's strike.  The
-            # words and it are centered in the row together, so a two-act label
-            # cannot run down into the button.
             ty = label_stack_top(row_y, row_h, total, extra)
             words_end = ty + total
             for block in blocks:
@@ -704,11 +602,7 @@ class HudRenderer:
             return words_end
 
         cx, cy, cw, ch = corner_rect
-        # Offset by where a windowed loop opens, so the headers carry each seed's
-        # real place in the family instead of restarting at one every window.
         column(cx, cw, seed_column_label(seed_offset))
-        # Only the corner row keeps room for the strike: it is the video on screen
-        # whose act would be wrong, and the rows under it are other videos'.
         strike = WRONG_BTN + WRONG_GAP if model.current_action else 0
         words_end = row(cy, ch, model.current_action, extra=strike)
         wrong = (wrong_action_rect(x + ROW_LABEL_GUTTER - NAV_MAP_GAP, words_end)
@@ -722,52 +616,15 @@ class HudRenderer:
         return wrong
 
     def _pointer_is_on(self, rect: Rect) -> bool:
-        """Whether the pointer is inside *rect* in the frame being drawn.
-
-        Read off the hover the render was handed rather than passed down through
-        every button: the HUD is redrawn on every hover change anyway, and
-        threading a flag through six drawing helpers to say one thing is how the
-        lock ended up with three ways to be told it was on.
-        """
         return self._pointer is not None and contains(rect, *self._pointer)
 
     def _button_square(self, draw, rect: Rect, *, on: bool,
                        on_color=BLUE, ink=None) -> tuple[int, int, int, int]:
-        """The HUD's square button, and the color to draw its mark in — the
-        single button shape every control on this HUD is drawn with, so a new one
-        cannot invent its own look.
-
-        Off, the square sits on the family's own button ground -- an outline over
-        the slab and nothing else read as a gap cut in the HUD rather than as
-        the raised button every window here offers -- with an edge in the muted
-        gray the rest of the chrome uses, and the MARK is full-strength -- the same way the Main Funestra's HUD
-        draws its own.  Both were muted here, which left these HUDs reading as
-        dim and half-disabled beside the Main Funestra's HUD's, for controls that were
-        neither.  On, the square fills *on_color*: the family's ACTIVE ground, one
-        step up from the resting one, which is the step Origenerator's checked
-        buttons take and now the step every HUD here takes with them.  It used to
-        fill white, the loudest thing on the HUD for a control whose whole news
-        is that it is on.  The lock is the exception: green across this family
-        means favorites and the funscripts, and the lock is the gesture that
-        favorites a video, so it is the one control that earns the color.
-
-        *ink* overrides the off-state mark -- the bin takes red, the color
-        Origenerator's Delete wears, since it is the one control here that takes
-        something away.
-        """
         return button_ground(draw, rect, on_color if on else BG_BUTTON,
                              hovered=self._pointer_is_on(rect), rest_ink=ink)
 
     def _icon_button(self, image, draw, rect: Rect, icon: str, *, on: bool = False,
                       on_color=WHITE, ink=None) -> None:
-        """One of the HUD's square buttons, with a mark or a icon on it.
-
-        A mark the family draws is rendered from its geometry, so the bin here is
-        the bin on Origenerator's toolbar rather than whatever a symbol face had.
-        A typed icon is centered on its own ink instead: the padlock and the
-        transport arrows sit high in bounds that run to the descender, so the
-        font's own centering dropped every one of them toward its button's floor.
-        """
         ink = self._button_square(draw, rect, on=on, on_color=on_color, ink=ink)
         if icon.startswith(SHARED_ICON):
             draw_icon(image, shared_icon_name(icon), rect, ink)
@@ -776,30 +633,14 @@ class HudRenderer:
         draw_character(draw, bx + bw / 2, by + bh / 2, icon, self._icon, ink)
 
     def _filter_button(self, image, draw, rect: Rect, *, on: bool = False) -> None:
-        """The same square button wearing the family's filter, for the act filter."""
         draw_icon(image, "filter", rect, self._button_square(draw, rect, on=on))
 
     def _strike_button(self, image, draw, rect: Rect) -> None:
-        """The strike under the current video's act: the family's cross, drawn red.
-
-        Red because it takes something away — the same red the bin on the control
-        bar wears, and the one color on this HUD worth stopping at before
-        pressing.  Never lit: striking an act is a thing done, not a state the
-        side sits in, and the act is relabeled out from under it.
-        """
         self._button_square(draw, rect, on=False, ink=RED)
         draw_icon(image, WRONG_ACTION_ICON, rect, (*RED, 255))
 
     def _draw_filter_buttons(self, image, draw, rects: list[tuple[Rect, str]],
                              model: HudModel) -> None:
-        """The filter button at the head of each row, lit on every row the filter
-        keeps — which is more than the row that names it exactly, since fun_time
-        matches a query as a substring (see :func:`label_is_filtered`).
-
-        It lights off the published filter, exactly as the loop buttons light off
-        the published loop — so a filter set any other way (spoken, or from the
-        other side's map) shows here too, and pressing a lit one lifts it.
-        """
         for rect, name in rects:
             self._filter_button(image, draw, rect, on=label_is_filtered(
                 name, model.filter_query, model.camera_words))
@@ -807,10 +648,6 @@ class HudRenderer:
     def _draw_loop_controls(self, image, draw, corner_rect, column_rect, loop_action_rect,
                             loop_seed_rect, seed_rects, action_rects, active_loop,
                             hover_loop) -> None:
-        """The two loop buttons, and — while one is hovered or its loop is on — a
-        border around the videos it loops (dashed for a hover preview, solid once
-        on).  The border wraps the app kept for that axis's "…" marks, so the videos
-        they stand for read as part of the looped set."""
         rects = {
             kind: (
                 button,

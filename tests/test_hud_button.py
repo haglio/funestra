@@ -1,4 +1,3 @@
-"""A button a content source declares on a Funestra's HUD, and its published form."""
 from __future__ import annotations
 
 import json
@@ -52,8 +51,6 @@ def test_minimize_wears_the_familys_minus():
 
 
 def test_the_transport_and_the_lock_every_source_declares_wear_the_familys_marks():
-    """Fun Time and Origenerator both declare these on a Funestra, so they take
-    their faces from here rather than each typing its own."""
     faces = (PREVIOUS_ICON, BACK_ICON, FORWARD_ICON, NEXT_ICON, LOCK_ICON)
 
     assert faces == tuple(shared_icon(name) for name in

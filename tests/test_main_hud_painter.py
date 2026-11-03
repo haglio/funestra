@@ -1,4 +1,3 @@
-"""The Main Funestra's HUD painter: the top line, the controls, and the visualizer."""
 from __future__ import annotations
 
 from dataclasses import replace
@@ -66,14 +65,12 @@ MIXED, FULL, CLIPS = LengthMode.MIXED, LengthMode.FULL, LengthMode.CLIPS
 
 
 def _drive(offset: float = 0.0, **over) -> DriveHud:
-    """A visualizer whose trace has scrolled *offset* along, the way Genau's does."""
     return DriveHud(speed=50, amplitude=80, center=50, shape="sine",
                     waveform=tuple(0.5 + 0.4 * np.sin(i / 6 + offset) for i in range(80)),
                     **over)
 
 
 def _line(*, locked: bool = True, order_latest: bool = False, **modes) -> str:
-    """The title for a Main Funestra in *modes*, with that lock and order."""
     return MainHud(modes=ModeHud(**modes),
                       main_hud_model=MainHudModel(main_mode=MainMode.KINO, locked=locked,
                                            latest=order_latest)).title
@@ -91,21 +88,10 @@ def _over(painter: MainHudPainter, command: str) -> tuple[int, int]:
 
 class TestLine:
     def test_says_whether_the_main_funestra_is_holding_the_video_on_screen(self):
-        """Each satellite leads its line with this word, and the Main Funestra has the
-        same lock — one padlock, for whichever Funestra holds the place."""
         assert _line(locked=True) == "Locked · Shuffle"
         assert _line(locked=False) == "Unlocked · Shuffle"
 
     def test_says_which_length_mode_the_library_is_in_and_says_it_last(self):
-        """The length mode is what the satellites' act filter is — a narrowing of
-        what may play — so it takes the same place, at the end of the line.
-
-        "Mixed" is every length there is, so it narrows nothing and prints nothing,
-        exactly as a satellite prints nothing where its filter would go when it has
-        none.  It also no longer says enough to be worth the app: the library has
-        grown a third kind of thing, and one word for "some of each" cannot say
-        which.
-        """
         assert _line(length_mode=MIXED) == "Locked · Shuffle"
         assert _line(length_mode=FULL) == "Locked · Shuffle · Full"
         assert _line(length_mode=CLIPS) == "Locked · Shuffle · Clips"
@@ -124,18 +110,9 @@ class TestLine:
         assert hud.title == "Locked · Shuffle · Full"
 
     def test_claims_no_length_mode_without_a_library_backing_the_playlist(self):
-        """A playlist Fun Time drives has no length filter of its own to report, so
-        that place stays empty.  The lock is still said: it belongs to the Main Funestra
-        place whatever is feeding it."""
         assert _line(length_mode=None) == "Locked · Shuffle"
 
     def test_a_genau_primary_says_its_order_and_the_pace_it_moves_at(self):
-        """Genau has no library, no compilation and no filters.  What it has is the
-        same lock every Funestra has, the same two browse orders, and — while that
-        lock is off — the seconds it leaves each video up.  Order then pace, in the
-        place the satellites put theirs in: the order says which video is next, the
-        pace says when.  Held, there is no pace to report: the video stays until
-        something moves it."""
         def line(**over) -> str:
             return MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU, latest=False, **over),
                               drive=_drive(advance_interval=5)).title
@@ -144,9 +121,6 @@ class TestLine:
         assert line(locked=True) == "Locked · Shuffle"
 
     def test_a_genau_primary_says_which_order_it_was_put_in(self):
-        """Genau browses in the same two orders every other Funestra does, and asking
-        it for one used to leave the answer nowhere on screen: this place printed the
-        pace instead, so "latest" changed the videos and said nothing."""
         def line(**over) -> str:
             return MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU, **over),
                               drive=_drive(advance_interval=5)).title
@@ -155,28 +129,16 @@ class TestLine:
         assert line(locked=True, latest=True) == "Locked · Latest"
 
     def test_the_pace_belongs_to_genau_and_is_not_claimed_while_main_funestra_is_showing(self):
-        """Kino mode draws the visualizer, so the pace is there to read — but the Main Funestra is on
-        screen and an unlocked Main Funestra plays through its playlist rather than moving on
-        a timer, so saying seconds would describe the wrong Funestra."""
         assert MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, locked=False, latest=False),
                           drive=_drive(advance_interval=5)).title == "Unlocked · Shuffle"
 
     def test_a_host_with_no_browse_order_names_none(self):
-        """Origenerator's motion panel draws this Main Funestra's HUD over a show's own set —
-        a fixed run, not a browse — so there is no order to name and that place
-        stays empty.  The pace it does have still prints."""
         assert MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU, locked=True)).title == (
             "Locked")
         assert MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU, locked=False),
                           drive=_drive(advance_interval=5)).title == "Unlocked · 5s"
 
     def test_names_the_compilation_and_where_you_are_in_it(self):
-        """A compilation is the Main Funestra's loop — a fixed set it plays through
-        rather than the browse it came from — so it leads the line the way a
-        satellite's loop does, and displaces "Unlocked" there for the same reason:
-        a loop is repeat-all, and nothing is being held.  "Locked" still joins it,
-        being a hold at one place inside the set.  The length mode stays on beneath
-        it, since ending the compilation drops you back into it."""
         def line(**over) -> str:
             return _line(compilation="Vol6", position=9, total=20, **over)
 
@@ -185,18 +147,12 @@ class TestLine:
         assert line(locked=False, length_mode=CLIPS) == "Vol6 · 9/20 · Shuffle · Clips"
 
     def test_says_which_browse_order_the_main_funestra_is_in(self):
-        """The satellites have said Latest/Shuffle all along and the Main Funestra
-        does now too, in the same place — between the lock and the filters, since it
-        is how the set advances rather than what is in it."""
         assert _line(order_latest=True) == "Locked · Latest"
         assert _line(order_latest=False) == "Locked · Shuffle"
         assert _line(order_latest=True, length_mode=CLIPS) == (
             "Locked · Latest · Clips")
 
     def test_says_when_fun_time_has_narrowed_to_f_mode(self):
-        """Between the lock and the length, where each satellite puts it: F-mode
-        cuts the whole library to the funscripted videos and the length mode then
-        narrows what is left, so the coarser filter is named first."""
         assert _line(scripted_filter=True) == "Locked · Shuffle · F-Mode"
         assert _line(length_mode=CLIPS, scripted_filter=True) == (
             "Locked · Shuffle · F-Mode · Clips")
@@ -214,10 +170,6 @@ class TestCompilationLabel:
 
 class TestPainter:
     def test_held_to_a_width_it_paints_every_mode_that_wide(self):
-        """A console hanging in a scene as a screen of its own (FunTimeVR's) must
-        not change size with what is on it: the genau-mode rows are narrower
-        than the kino-mode ones, and sized to its contents the screen jumped
-        between the modes."""
         painter = MainHudPainter(width=600)
 
         widths = {
@@ -232,10 +184,6 @@ class TestPainter:
         assert widths == {MainMode.KINO: 600, MainMode.GENAU: 600}
 
     def test_held_to_a_width_it_keeps_one_width_whatever_row_it_carries(self):
-        """The rows a held console carries come and go: a flick's, a video's,
-        and none while an image is up.  A screen in a scene that changes size
-        is a screen that moves, so it is as wide as the widest row would make
-        it whichever it carries."""
         painter = MainHudPainter(width=300)
         flick = RowHud(position_ms=4_000, duration_ms=10_000,
                        playhead=video_playhead(4_000, 10_000, 0.0), loop=(6, 238))
@@ -262,7 +210,6 @@ class TestPainter:
         assert width == 600
 
     def test_a_width_its_own_parts_cannot_fit_in_is_widened_not_clipped(self):
-        """The rows, the visualizer and the OSR2 line are not text that can give way."""
         hud = MainHud(modes=ModeHud(video="scene one"),
                          main_hud_model=MainHudModel(main_mode=MainMode.GENAU, locked=False), drive=_drive())
 
@@ -272,14 +219,10 @@ class TestPainter:
         assert held >= natural
 
     def test_a_tooltip_longer_than_the_hud_is_wide_stays_on_the_hud(self):
-        """The widest tooltip on the Main Funestra's HUD wants to be wider than the Main Funestra's HUD
-        itself, so it was drawn straight off the right edge and lost its tail.
-        Fitting it is funestra's job — this guards that the Main Funestra's HUD hands it the
-        HUD's own bounds, since anything wider puts the tooltip back over the edge."""
         painter = MainHudPainter()
         hud = MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, locked=False,
                                               rows=main_hud_rows()))
-        plain = _rgb(painter.bgra(hud))  # also lays the buttons out, so one can be hovered
+        plain = _rgb(painter.bgra(hud))
         tiny = load_font(8)
         (x, y, w, h), _button = max(
             ((rect, button) for rect, button in painter.buttons if button.tooltip),
@@ -289,27 +232,20 @@ class TestPainter:
         rows, cols = np.nonzero((tipped != plain).any(axis=2))
         one_line_height = sum(tiny.getmetrics()) + 2 * TOOLTIP_PAD
 
-        assert len(cols)  # it drew something
-        assert cols.max() < plain.shape[1] - 1  # and stopped short of the far edge
-        assert rows.max() - rows.min() + 1 > one_line_height  # having wrapped to fit
+        assert len(cols)
+        assert cols.max() < plain.shape[1] - 1
+        assert rows.max() - rows.min() + 1 > one_line_height
 
     def test_the_top_line_sits_tight_to_the_top(self):
-        """The old console left a tall empty bar above its first line; the status
-        line now heads the Main Funestra's HUD within a body line-height of the slab's top, the
-        way each satellite's does."""
         painter = MainHudPainter()
         bgra = painter.bgra(MainHud(modes=ModeHud(length_mode=FULL)))
         rgb = _rgb(bgra)
 
-        # There is ink (the title) within the first line-height below the pad.
         line_h = sum(load_font(11).getmetrics())
         bar = rgb[PAD:PAD + line_h, :, :]
         assert (bar > 200).any()
 
     def test_the_status_leads_and_the_file_name_is_the_muted_line_under_it(self):
-        """The satellites lead with what they are showing, not with a file name, so
-        the Main Funestra does too: the length mode or compilation in the body face, the
-        file beneath it in the muted one."""
         painter = MainHudPainter()
         bgra = painter.bgra(MainHud(modes=ModeHud(
             video="Some Video Name", length_mode=MIXED)))
@@ -320,16 +256,10 @@ class TestPainter:
         muted = (rgb[:, :, 0] > 100) & (rgb[:, :, 0] < 160)
         muted_rows = np.nonzero(muted.any(axis=1))[0]
 
-        assert bright_rows.min() < PAD + body_h          # the status is on top …
-        assert muted_rows.max() > bright_rows.min()      # … the file name below it
+        assert bright_rows.min() < PAD + body_h
+        assert muted_rows.max() > bright_rows.min()
 
     def test_a_longer_file_name_widens_the_hud(self):
-        """It is drawn, not truncated, so the slab grows to hold it.
-
-        Both names have to outrun the button row for this to be measuring the
-        name at all: the HUD is the widest of its parts, so a name shorter than
-        the buttons is held by the buttons and every such name gives one width.
-        """
         narrow = MainHudPainter().bgra(MainHud(modes=ModeHud(
             video="A Much Much Longer Video Name Indeed")))
         wide = MainHudPainter().bgra(MainHud(modes=ModeHud(
@@ -350,16 +280,13 @@ class TestPainter:
             bgra = MainHudPainter().bgra(
                 MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, active=active)))
             body = sum(load_font(11).getmetrics())
-            cx, cy = PAD + MINUS_ROOM + 5, PAD + body // 2  # the dot's own center
+            cx, cy = PAD + MINUS_ROOM + 5, PAD + body // 2
             return tuple(int(v) for v in _rgb(bgra)[cy, cx])
 
         assert np.allclose(dot(True), WHITE, atol=45)
         assert np.allclose(dot(False), TEXT_MUTED, atol=45)
 
     def test_the_dot_does_not_shift_the_words_around(self):
-        """The dot is always in the same place and the same size — active only
-        recolors it — so the line beside it cannot jump when the floor moves to
-        another Funestra."""
         painter = MainHudPainter()
 
         lit = painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, active=True)))
@@ -374,9 +301,6 @@ class TestPainter:
         assert painter.bgra(hud) is painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO)))
 
     def test_the_visualizers_arrows_are_hit_targets_even_though_it_draws_them(self):
-        """The visualizer paints its own amplitude/center/speed arrows; the Main Funestra's HUD
-        adds them to its hit targets so a press on the trace's controls posts what
-        is drawn there."""
         painter = MainHudPainter()
         painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO), drive=_drive()))
 
@@ -385,13 +309,10 @@ class TestPainter:
             assert action in actions
 
     def test_the_osr2_state_is_shown(self):
-        """A framed word, lower in the HUD — a read-out of what has the device, not
-        a line jammed in with the mode."""
         painter = MainHudPainter()
         bgra = painter.bgra(MainHud(
             main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.FUNSCRIPT)))
         rgb = _rgb(bgra)
-        # FunScript is drawn green; there is green ink somewhere below the top line.
         green = (rgb[:, :, 1] > 130) & (rgb[:, :, 0] < 110) & (rgb[:, :, 2] < 110)
         assert green.any()
 
@@ -404,15 +325,6 @@ class TestPainter:
         return tuple(shades[counts.argmax()]), pixels
 
     def test_the_mode_you_are_in_lights_blue(self):
-        """Every button carries a lit ground now, so one shade lighter was too
-        small a difference to find the selected mode at a glance.  Blue — the
-        one the broker wears — and the satellite HUD's Funestra/Origenerator pair
-        lights the same, because it is the same question about the other half
-        of the app.
-
-        Not green: green means the favorites and the funscripts everywhere in
-        this family, and the mode you are in is neither."""
-
         shade, pixels = self._busiest_shade(
             "main_kino_activate",
             MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows("kino")))
@@ -422,11 +334,6 @@ class TestPainter:
         assert not green.any()
 
     def test_an_ordinary_toggle_that_is_on_fills_the_familys_blue(self):
-        """One color for "this is in force", across every HUD in the app.  The
-        active gray it used to take was a step up from the resting ground and
-        little more — at a glance a lit control and a dark one were the same
-        button."""
-
         blue = BLUE
         shade, _pixels = self._busiest_shade(
             "robot_hand_toggle_learned",
@@ -436,11 +343,6 @@ class TestPainter:
         assert shade == blue
 
     def test_a_choice_the_funestra_is_holding_but_not_applying_fills_the_gray(self):
-        """A compilation replaces the browse order and the length filter while it
-        plays and gives them back on the way out, so those buttons say "set, not
-        in force" — the family's active gray, which is neither the blue of
-        something running nor the ground of something off."""
-
         gray = (colors.BG_BUTTON_ACTIVE.red(), colors.BG_BUTTON_ACTIVE.green(),
                 colors.BG_BUTTON_ACTIVE.blue())
         shade, _pixels = self._busiest_shade(
@@ -452,10 +354,6 @@ class TestPainter:
         assert shade == gray
 
     def test_a_control_at_rest_still_carries_the_familys_thin_edge(self):
-        """The edge used to be the resting fill's own color, which is no edge at
-        all — the satellite HUDs beside this one draw theirs in the muted gray the
-        rest of the chrome uses, and the Main Funestra's HUD read as borderless slabs."""
-
         painter = MainHudPainter()
         rgb = _rgb(painter.bgra(MainHud(
             main_hud_model=MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows()))))
@@ -465,14 +363,10 @@ class TestPainter:
         pixels = rgb[by:by + bh, bx:bx + bw].astype(int)
         muted = TEXT_MUTED
 
-        # Along the top edge, between the rounded corners.
         edge = pixels[0, 4:bw - 4]
         assert (abs(edge - np.array(muted)).max(axis=1) <= 2).any()
 
     def test_the_broker_wears_the_face_it_had_on_the_dashboard(self):
-        """Its own magenta mark on blue while the service is up and red while it is
-        down — the broker acts on the app's own service rather than on a Funestra,
-        so it does not take the on/off colors the controls beside it use."""
         for broker, fill in ((True, (48, 128, 224)), (False, (255, 60, 60))):
             pixels = self._broker_pixels(broker)
 
@@ -480,10 +374,6 @@ class TestPainter:
             assert (pixels == np.array((200, 80, 160), dtype=pixels.dtype)).all(axis=2).any()
 
     def test_a_control_that_stands_for_an_app_wears_that_apps_mark(self):
-        """`broker_icon.ico` and `fmode_icon.ico` are five-by-five letters, and one
-        set in the body face is a thin thing beside them.  What has to hold is the
-        shape: the grid the .ico carries, in its magenta, whatever the button is
-        doing underneath it."""
         for action, grid in (("broker_panel", LETTERS["B"]),
                              ("main_fmode", LETTERS["F"])):
             pixels = self._button_pixels(action, MainHudModel(
@@ -508,9 +398,6 @@ class TestPainter:
         wider than it is tall."""
         pixels = self._button_pixels(
             "main_minimize", MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows()))
-        # The button's own rounded outline is its border, so only the interior
-        # holds the mark -- and the interior is the button's ground now, which is
-        # itself gray, so the mark is what is BRIGHTER than that ground.
         inside = pixels[2:-2, 2:-2]
         ys, xs = np.nonzero((inside > 150).all(axis=2))
 
@@ -529,8 +416,6 @@ class TestPainter:
             main_mode=MainMode.KINO, osr2_controls=osr2_controls(broker_running=broker)))
 
     def test_f_mode_is_the_one_lit_control_that_stays_green(self):
-        """It narrows the playlist to the videos that have a funscript, and green
-        is what the funscripts and the favorites own."""
         pixels = self._button_pixels(
             "main_fmode",
             MainHudModel(main_mode=MainMode.KINO,
@@ -540,39 +425,28 @@ class TestPainter:
         assert tuple(shades[counts.argmax()]) == (48, 160, 48)
 
     def test_the_enhanced_filter_wears_yellow_off_and_on(self):
-        """An enhanced image wears a yellow plus in its corner, so the switch
-        that keeps only those is yellow wherever you find it: the mark at rest,
-        and the whole button once it is on."""
         yellow = (255, 200, 120)
         off = self._button_pixels("genau_filter_enhanced", MainHudModel(
             main_mode=MainMode.GENAU, rows=main_hud_rows("genau", enhanced=False)))
         on = self._button_pixels("genau_filter_enhanced", MainHudModel(
             main_mode=MainMode.GENAU, rows=main_hud_rows("genau", enhanced=True)))
 
-        assert (np.abs(off.astype(int) - yellow).sum(axis=2) < 30).any()  # the mark
+        assert (np.abs(off.astype(int) - yellow).sum(axis=2) < 30).any()
         shades, counts = np.unique(on.astype(int).reshape(-1, 3), axis=0,
                                    return_counts=True)
-        assert tuple(shades[counts.argmax()]) == yellow                  # the fill
+        assert tuple(shades[counts.argmax()]) == yellow
 
     def test_the_slab_is_the_canvas_gray_unless_a_host_asks_for_another(self):
-        """Floating over a video the HUD reads against the item beneath it,
-        so it is the canvas color. A host drawing it on its own chrome has no
-        item beneath it — on a window painted that very gray the slab is
-        invisible and only its border shows — so it says which gray it wants."""
-
         default = _rgb(MainHudPainter().bgra(
             MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU))))
         asked = _rgb(MainHudPainter().bgra(
             MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU), ground=(40, 40, 40))))
 
-        # A pixel of bare slab: just inside the border, clear of every control.
         assert tuple(default[3, 3]) == BG_PRIMARY
         assert tuple(asked[3, 3]) != BG_PRIMARY
         assert asked[3, 3].min() > default[3, 3].min()
 
     def test_the_ground_is_part_of_what_the_repaint_cache_compares(self):
-        """Everything else on this HUD is; a ground that slipped past it would
-        leave the old slab on screen until something else moved."""
         painter = MainHudPainter()
         first = _rgb(painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU))))[3, 3]
         second = _rgb(painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU),
@@ -581,9 +455,6 @@ class TestPainter:
         assert tuple(first) != tuple(second)
 
     def test_a_lit_marks_ink_stays_white_over_a_colored_fill(self):
-        """The Dash's mic keeps its white icon while the HUD under it goes
-        blue.  A record button whose circle went dark while it recorded read as a
-        different button rather than as the same one recording."""
         painter = MainHudPainter()
         rgb = _rgb(painter.bgra(
             MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO,
@@ -591,8 +462,8 @@ class TestPainter:
         bx, by, bw, bh = _rect_of(painter, "main_player_record_tap")
         pixels = rgb[by:by + bh, bx:bx + bw].astype(int)
 
-        assert tuple(pixels[bh // 2, 2]) == (255, 60, 60)   # the fill went red …
-        assert (pixels > 240).all(axis=2).any()             # … and the circle did not
+        assert tuple(pixels[bh // 2, 2]) == (255, 60, 60)
+        assert (pixels > 240).all(axis=2).any()
 
 
 class TestPresses:
@@ -648,9 +519,6 @@ class TestPresses:
         assert painter.press_at(*_over(painter, "robot_hand_amplitude_up")) == "robot_hand_amplitude_up"
 
     def test_the_visualizers_controls_are_dead_while_a_funscript_has_the_device(self):
-        """Genau is paused through a funscript's stretch, so a motion it is not
-        sending cannot be adjusted — pressing one woke Genau onto a device the
-        funscript was already driving, and the two fought over it."""
         painter = MainHudPainter()
         painter.bgra(MainHud(
             main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.FUNSCRIPT), drive=_drive()))
@@ -676,10 +544,6 @@ class TestPresses:
 
 
 class TestThePointer:
-    """The Main Funestra's HUD follows the pointer itself, so every window that draws one -- a
-    Funestra's, and Origenerator's own at its top left -- lights the button under
-    it the same way."""
-
     @staticmethod
     def _hud(corner: HudCorner = HudCorner.UPPER_LEFT) -> MainHud:
         return MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, hud_corner=corner,
@@ -731,9 +595,6 @@ class TestThePointer:
 
 
 class TestDrags:
-    """The visualizer's bars are set by pressing in them and dragging along them, so
-    a level is reached in one gesture rather than by walking a mark to it."""
-
     @staticmethod
     def _painted(osr2: Osr2State = Osr2State.ROBOT_HAND) -> MainHudPainter:
         painter = MainHudPainter()
@@ -749,11 +610,6 @@ class TestDrags:
 
     @staticmethod
     def _at(track, along: float) -> tuple[int, int]:
-        """A window point that fraction of the way up (or along) *track*.
-
-        Only speed runs left to right; the trace and the amplitude bar are both
-        read as heights, the trace despite being the wider of the two.
-        """
         x, y, w, h = track.rect
         left, top = hud_xy()
         if track.axis in (SPEED, MAX_INTENSITY):
@@ -779,8 +635,6 @@ class TestDrags:
         assert painter.press_at(*point) == "robot_hand_amp_100"
 
     def test_the_bar_a_press_took_hold_of_keeps_the_drag(self):
-        """A press latches its bar, so a drag that wanders off it — past its end,
-        or out over another one — goes on setting the level it started on."""
         painter = self._painted()
         speed = self._bar(painter, SPEED)
         painter.press_at(*self._at(speed, 1.0))
@@ -791,8 +645,6 @@ class TestDrags:
         assert painter.drag_to(*self._at(speed, 1.0)) == "robot_hand_speed_100"
 
     def test_a_drag_says_nothing_while_the_level_under_it_has_not_moved(self):
-        """Every mouse motion fires, and each one that repeats the level is a line
-        in the command file for Fun Time to route to where Genau already is."""
         painter = self._painted()
         speed = self._bar(painter, SPEED)
         painter.press_at(*self._at(speed, 1.0))
@@ -809,8 +661,6 @@ class TestDrags:
         assert painter.drag_to(*self._at(self._bar(painter, SPEED), 1.0)) == ""
 
     def test_a_press_on_a_button_leaves_no_bar_still_latched(self):
-        """Otherwise the bar a previous press held would keep taking the pointer
-        long after the gesture that grabbed it was over."""
         painter = self._painted()
         painter.press_at(*self._at(self._bar(painter, SPEED), 0.0))
 
@@ -819,8 +669,6 @@ class TestDrags:
         assert painter.holding is False
 
     def test_the_bars_are_dead_while_a_funscript_has_the_device(self):
-        """The whole visualizer is dimmed through a funscript's stretch — a motion
-        Genau is not sending cannot be dragged any more than it can be stepped."""
         painter = self._painted(osr2=Osr2State.FUNSCRIPT)
 
         point = self._at(self._bar(painter, SPEED), 1.0)
@@ -839,15 +687,12 @@ class TestDrags:
         assert painter.drag_to(*self._at(max_intensity, 0.0)) == "max_intensity_0"
 
     def test_there_are_no_bars_at_all_where_nothing_is_driving(self):
-        """With nothing driving, the visualizer is not drawn, so its bars must not linger as
-        targets over whatever the Main Funestra's HUD puts in that space instead."""
         painter = MainHudPainter()
         painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO)))
 
         assert painter.tracks == []
 
     def test_each_bar_names_what_it_sets_on_hover(self):
-        """Nothing else on a HUD drawn into the video says a bar can be dragged."""
         painter = self._painted()
         left, top = hud_xy()
 
@@ -858,9 +703,6 @@ class TestDrags:
 
 class TestDeclaredRows:
     def test_the_rows_a_source_declares_are_what_is_drawn(self):
-        """A HUD carrying its own buttons is drawn from them and nothing else:
-        the rows in their order, then the OSR2 line's controls, each a hit
-        target posting what the source said."""
         painter = MainHudPainter()
         painter.bgra(MainHud(main_hud_model=MainHudModel(
             rows=((Button("go_on", "⏭", "On to the next"),),
@@ -885,17 +727,12 @@ class TestDeclaredRows:
                 < _button_rect(painter, "broker_panel")[1])
 
     def test_a_hud_that_declares_no_buttons_draws_none(self):
-        """The buttons are the source's to declare; a HUD naming none is the
-        title and the OSR2 line, with no row held open for buttons nobody
-        asked for."""
         painter = MainHudPainter()
         painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO)))
 
         assert _declared(painter) == []
 
     def test_with_no_controls_on_its_line_the_osr2_label_starts_the_line(self):
-        """No gap is held open before the label for controls that are not there."""
-
         rgb = _rgb(MainHudPainter().bgra(MainHud(
             main_hud_model=MainHudModel(main_mode=MainMode.GENAU))))
         height = rgb.shape[0]
@@ -933,16 +770,11 @@ class TestAConsoleAnotherFunestraTookTheOsr2From:
 
 class TestPlaybackSpeed:
     def test_the_drawing_funestra_folds_in_its_own_rate(self):
-        """Fun Time does not publish the Main Funestra's video rate — the Main Funestra knows it and adds it
-        at draw time, so the Main Funestra's HUD shows the rate the video is really playing."""
         main_hud_model = with_playback_speed(MainHudModel(main_mode=MainMode.KINO), 1.75)
 
         assert main_hud_model.playback_speed == 1.75
 
     def test_the_painter_writes_the_hosts_numbers_into_the_read_outs_that_name_them(self):
-        """The row names the number ("playback_speed", "advance_interval") and
-        the painter fills it from whoever is drawing: the Main Funestra's rate
-        under a video, Genau's pace off its visualizer in genau mode."""
         def visualizers(hud: MainHud) -> list[str]:
             painter = MainHudPainter()
             painter.bgra(hud)
@@ -965,9 +797,6 @@ def _rgb(bgra: np.ndarray) -> np.ndarray:
 
 
 class TestTraceSources:
-    """The trace is on the Main Funestra's HUD in every mode, because in every mode something
-    may be driving the device — and what it is a drawing of is whoever that is."""
-
     @staticmethod
     def _painted(mode: MainMode, osr2: Osr2State, drive: DriveHud | None = None) -> MainHudPainter:
         painter = MainHudPainter()
@@ -977,7 +806,6 @@ class TestTraceSources:
 
     @staticmethod
     def _drawn(mode: str, osr2: str, drive: DriveHud | None = None):
-        """The painted HUD and the colors in it, for a line's own color."""
         painter = MainHudPainter()
         rgb = _rgb(painter.bgra(MainHud(
             main_hud_model=MainHudModel(main_mode=mode, osr2=osr2),
@@ -991,17 +819,12 @@ class TestTraceSources:
         assert not any(t.dim for t in painter.tracks)
 
     def test_a_funscript_driving_dims_every_control_but_keeps_the_trace(self):
-        """A motion Genau is not sending cannot be adjusted; the drawing of the
-        one that *is* being sent is still worth drawing."""
         painter = self._painted(MainMode.KINO, Osr2State.FUNSCRIPT)
 
         assert all(t.dim for t in painter.tracks)
         assert painter.tracks
 
     def test_the_device_running_itself_draws_its_own_swing_and_names_it(self):
-        """Auto mode is the device's own: the line is neither driver's color and
-        the word says so, while the controls that would move a motion nobody
-        here is sending go dim."""
         painter, colors = self._drawn("genau", "auto")
 
         assert painter._osr2_state(MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.AUTO)) == "auto"
@@ -1009,9 +832,6 @@ class TestTraceSources:
         assert MAGENTA in colors
 
     def test_the_device_running_itself_wins_over_a_composed_handoff(self):
-        """In kino mode the Main Funestra's HUD composes the funscript's plan over Genau's
-        motion -- but under auto neither of them reaches the device, so a plan
-        drawn in their two colors describes drivers that do not have it."""
         painter, colors = self._drawn(
             "kino", "auto",
             drive=_drive(segments=((0, "robot_hand"), (40, "funscript"))))
@@ -1020,9 +840,6 @@ class TestTraceSources:
         assert MAGENTA in colors
 
     def test_the_hud_keeps_its_size_whoever_has_the_device(self):
-        """The controls dim for a funscript's turn rather than leave: removing
-        them resized the HUD, so the trace shifted at every handoff and the
-        position marker jumped with it."""
         genau_turn = self._painted(MainMode.KINO, Osr2State.ROBOT_HAND)
         funscript_turn = self._painted(MainMode.KINO, Osr2State.FUNSCRIPT)
 
@@ -1030,15 +847,6 @@ class TestTraceSources:
 
 
 class TestEveryMainHudPaints:
-    """One paint per (mode x driver) with a composed trace on the HUD.
-
-    The pill's Buffer state shipped referencing a name this module never
-    imported, and no test painted a kino-mode console with a composed drive — so
-    every suite was green while the real Main Funestra crashed on its first console
-    frame and the session came up with no Main Funestra at all.  A paint smoke
-    over the whole grid makes that class of crash impossible to ship quietly.
-    """
-
     def test_every_mode_and_driver_combination_paints(self):
         wave = tuple(0.5 for _ in range(len(DriveHud().waveform) or 80))
         segments = ((0, "robot_hand"), (30, "neutral"), (50, "funscript"))
@@ -1054,8 +862,6 @@ class TestEveryMainHudPaints:
                 MainHudPainter().rgba(hud)
 
     def test_the_buffer_pill_is_wider_than_nothing(self):
-        """The Buffer word really reaches the pill: its width is computed from
-        the same state the paint will draw."""
         wave = tuple(0.5 for _ in range(80))
         painter = MainHudPainter()
         hud = MainHud(
@@ -1069,10 +875,6 @@ class TestEveryMainHudPaints:
 
 
 class TestHolds:
-    """Parked and retracted are the device held still at one end of its travel,
-    by this app.  The pill names the hold, and the visualizer is what driving would
-    draw, in gray."""
-
     @staticmethod
     def _hud(mode: str, osr2: str, control: str) -> MainHud:
         wave = tuple(0.5 for _ in range(80))
@@ -1122,8 +924,6 @@ class TestHolds:
                                   first), control
 
     def test_a_held_visualizer_cannot_be_pressed(self):
-        """Nudging a level under a hold is what would move the device while the
-        pill still said it was held."""
         for control in (OSR2_PARKED, OSR2_RETRACTED):
             painter = MainHudPainter()
             painter.rgba(self._hud("genau", "robot_hand", control))
@@ -1132,8 +932,6 @@ class TestHolds:
             assert painter._painted[0].drive.live is True
 
     def test_the_held_pill_wears_the_held_lines_gray(self):
-        """The line and the word beside it describe one state, so they are one
-        color -- the handoff's gray, since nobody is moving the device."""
         for control in (OSR2_PARKED, OSR2_RETRACTED):
             assert _OSR2_COLORS[control] == trace_ink(DRIVEN_BY_NEUTRAL)
 
@@ -1166,9 +964,6 @@ class TestAPausedRoom:
 
 
 class TestTheDotIsWhereTheDeviceIs:
-    """The white dot is the OSR2's own position: held, it waits out the broker's
-    second and slides to the held end as the device settles there."""
-
     @staticmethod
     def _hud(control: str, *, osr2: str = Osr2State.ROBOT_HAND,
              paused: bool = False) -> MainHud:
@@ -1240,10 +1035,6 @@ class TestTheDotIsWhereTheDeviceIs:
 
 
 class TestNothingDriving:
-    """With the OSR2 switched off nothing reaches it, so there is no motion to
-    trace — and a trace scrolling on in the middle of a visualizer whose every
-    control is dead is the one part still claiming to be live."""
-
     _HANDOFF = ((0, "funscript"), (40, "robot_hand"))
 
     @staticmethod
@@ -1315,11 +1106,6 @@ class TestNothingDriving:
 
 
 class TestTheDeviceRunningItselfKeepsMoving:
-    """The visualizer holds still only when the device is not moving.  In auto mode
-    it is -- to its own firmware, on the beat the broker reports -- so the line
-    must scroll, which is the whole of what he asked the visualizer to show there.
-    """
-
     def test_the_trace_scrolls_on_its_own_beat(self):
         painter = MainHudPainter()
         first = painter.bgra(MainHud(
@@ -1332,9 +1118,6 @@ class TestTheDeviceRunningItselfKeepsMoving:
 
     @pytest.mark.parametrize("control", [OSR2_PARKED, OSR2_RETRACTED])
     def test_it_wins_over_whatever_the_room_is_doing_to_the_device(self, control):
-        """Auto wins over everything the app might be doing, a hold included:
-        none of those reaches a device running its own firmware, so the
-        word and the moving line are the device's own."""
         painter = MainHudPainter()
         main_hud_model = MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.AUTO, osr2_control=control)
         first = painter.bgra(MainHud(main_hud_model=main_hud_model, drive=_drive(0.0))).copy()
@@ -1346,12 +1129,6 @@ class TestTheDeviceRunningItselfKeepsMoving:
 
 
 class TestTheHandoffKeepsMoving:
-    """In kino mode the visualizer draws the device changing hands, with a gap
-    between the two drivers where nothing is being sent at all.  Held still
-    there, the whole trace froze into one flat gray at every handoff and came
-    back only once something was driving again, which is what he kept watching
-    happen as the funscript's turn came up."""
-
     _GAP = ((0, "robot_hand"), (40, "neutral"))
 
     def _in_the_gap(self, offset: float) -> MainHud:
@@ -1368,16 +1145,10 @@ class TestTheHandoffKeepsMoving:
         assert not np.array_equal(later, first)
 
     def test_the_line_keeps_the_colors_the_model_gave_it(self):
-        """Blanked segments fall back to one flat color for the whole line —
-        the gray he saw.  The model says where the device changes hands, and
-        that has to survive the gap."""
         assert MainHudPainter()._resolve(self._in_the_gap(0.0)).drive.segments == self._GAP
 
 
 class TestTheLockIsGreen:
-    """A lock puts the video in the favorites, so it wears the color this family
-    spends on them — the same green the satellite HUDs' lock has always lit."""
-
     def test_a_held_clip_lights_the_lock_green(self):
 
         painter = MainHudPainter()
@@ -1403,15 +1174,6 @@ class TestTheLockIsGreen:
 
 
 class TestARowsNameLinesUpWithItsControls:
-    """A word naming its row starts on the same left edge as every button below
-    it, and its cell is wide enough to hold it.
-
-    Both halves are one bug.  The cell was a fixed 66px while "Playback speed"
-    measures 80, so centered the word began 7px LEFT of that column -- the
-    "missing margin" -- and left-aligned it ran PAST its cell, putting the "d"
-    of "speed" under the minus button beside it.
-    """
-
     def _rows(self, mode: str):
         painter = MainHudPainter()
         painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=mode,
@@ -1427,7 +1189,7 @@ class TestARowsNameLinesUpWithItsControls:
             _painter, rows = self._rows(mode)
             for items in rows.values():
                 x, _w, _button = items[0]
-                assert x == _PAD          # every row opens on the one column
+                assert x == _PAD
 
     def test_the_name_does_not_run_under_the_button_beside_it(self):
 
@@ -1451,8 +1213,6 @@ class TestARowsNameLinesUpWithItsControls:
         assert name[0] + name[2] <= slower[0]
 
     def test_both_named_rows_take_the_same_cell_so_they_line_up(self):
-        """The pair beside the name sits in the same place whichever row is up,
-        so a flip between the modes moves nothing under the pointer."""
         kino, _rows = self._rows("kino")
         genau, _rows = self._rows("genau")
 
@@ -1461,10 +1221,6 @@ class TestARowsNameLinesUpWithItsControls:
 
 
 class TestTheRowTheMainHudCarriesForItsVideo:
-    """Where the video is and how loud it is, on the Main Funestra's HUD rather than along
-    the lower edge of the item — the row the headset already draws here for a
-    wrapped video, drawn here for every video."""
-
     @staticmethod
     def _hud() -> MainHud:
         return MainHud(modes=ModeHud(video="scene one"),
@@ -1480,8 +1236,6 @@ class TestTheRowTheMainHudCarriesForItsVideo:
         assert with_row > without
 
     def test_the_clip_s_funscript_colors_fill_that_track(self):
-        """The Main Funestra laid its heatmap along the lower edge of the video;
-        on the Main Funestra's HUD it is the track's own fill, as it is on a show's HUD."""
         painter = MainHudPainter()
         row = RowHud(position_ms=0, duration_ms=60_000)
         plain = painter.rgba(self._hud(), item_row=row)[0]
@@ -1507,9 +1261,6 @@ class TestTheRowTheMainHudCarriesForItsVideo:
 
 
 class TestTheHostsControls:
-    """A list and a bar only one host has -- the headset's projection list and
-    Angle bar -- drawn at the Main Funestra's HUD's foot, inside the one HUD."""
-
     @staticmethod
     def _hud() -> MainHud:
         return MainHud(modes=ModeHud(video="scene one"),
@@ -1562,7 +1313,6 @@ class TestTheHostsControls:
 
 
 def _declared(painter) -> list:
-    """The buttons the source declared, without the HUD's own minimize."""
     return [(rect, button) for rect, button in painter.buttons
             if button.command != minimize_command(button.command.split("_")[0])]
 
@@ -1574,8 +1324,6 @@ def _button_rect(painter, command: str) -> Rect:
 
 
 class TestWhereTheMainHudSits:
-    """The corner the app moved this HUD to, and what that moves with it."""
-
     @staticmethod
     def _hud(corner, **main_hud_model) -> MainHud:
         return MainHud(
@@ -1590,10 +1338,6 @@ class TestWhereTheMainHudSits:
 
     @staticmethod
     def _declared_bands(painter) -> dict[int, tuple[int, int]]:
-        """Each row of the source's own buttons, by its top: where it starts and ends.
-
-        The device line's controls sit inside that line rather than along the
-        HUD's edge, so they are not one of these rows."""
         on_the_line = {button.command for button in osr2_controls(broker_running=True)}
         bars: dict[int, tuple[int, int]] = {}
         for (x, y, w, _h), button in _declared(painter):
@@ -1690,9 +1434,6 @@ class TestWhereTheMainHudSits:
         assert MainHudPainter().hud_place is None
 
     def test_a_minimized_main_hud_keeps_the_plus_in_its_own_corner(self):
-        """the app's corner still pins it, so the plus is where the HUD was:
-        the bitmap holds room for the tooltip beside it, and the plus sits at
-        the corner of that room the HUD is justified to."""
         painter = self._painted(HudCorner.LOWER_LEFT, hud_minimized=True)
         (x, y, _w, _h), _button = painter.buttons[0]
         width, height = painter._image.size

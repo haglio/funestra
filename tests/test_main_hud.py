@@ -1,5 +1,3 @@
-"""The Main Funestra's HUD: the HUD whichever Funestra holds the place draws, and where
-a press on it lands."""
 from __future__ import annotations
 
 import json
@@ -45,8 +43,6 @@ from funestra.main_hud import (
 from funestra.modes import MainMode, Osr2State
 from funestra.robot_hand import WaveformShape
 
-# A source's rows, made up: a mode pair with minimize standing apart, and a
-# named read-out between two arrows.
 ROWS = (
     (Button("go_kino", "Kino", "Kino mode", width=40, lit=True),
      Button("go_other", "Other", "The other mode", width=40),
@@ -68,9 +64,6 @@ def _rect(command: str):
 
 
 class TestShapeLabel:
-    """The control that cycles the waveform names it on hover, so the name lives
-    with the Main Funestra's HUD rather than with the visualizer that no longer prints it."""
-
     def test_names_the_waveform_instead_of_leaving_it_to_the_curve(self):
         assert shape_label("sine") == "Sine"
         assert shape_label("rounded_square") == "Square"
@@ -174,8 +167,6 @@ class TestTheRowThatAimsTheDevice:
 
 
 class TestTheBrokerButton:
-    """The device's own control: the Broker that talks to the OSR2 at all."""
-
     def test_it_says_which_way_a_press_goes(self):
         (running,), (down,) = (osr2_controls(broker_running=True),
                                osr2_controls(broker_running=False))
@@ -196,11 +187,6 @@ class TestTheBrokerButton:
 
 
 class TestTheDeviceRunningItself:
-    """Auto mode is the OSR2 on its own firmware: the broker stops forwarding
-    the script's T-Code and Genau is not sending either.  Asked of the model
-    rather than compared against the word, because two apps outside this
-    package draw a drawing that depends on the answer."""
-
     def test_auto_is_the_device_driving_itself(self):
         assert MainHudModel(osr2=Osr2State.AUTO).device_drives_itself is True
 
@@ -232,8 +218,6 @@ class TestReadMainHud:
                                      latest=True)
 
     def test_a_hud_that_says_nothing_about_the_lock_reads_as_locked(self, tmp_path: Path):
-        """Which is where both Funestras open, and what a Fun Time too old to
-        publish the flag is still describing."""
         path = tmp_path / "main_player_main_hud.json"
         path.write_text(json.dumps({"main_mode": MainMode.KINO}), encoding="utf-8")
 
@@ -241,8 +225,6 @@ class TestReadMainHud:
         assert MainHudModel().locked is True
 
     def test_a_hud_that_says_nothing_about_the_order_names_none(self, tmp_path: Path):
-        """Fun Time publishes the flag every tick; a file that says nothing
-        about it is from a host with no browse order to name."""
         path = tmp_path / "main_player_main_hud.json"
         path.write_text(json.dumps({"main_mode": MainMode.KINO}), encoding="utf-8")
 
@@ -252,9 +234,6 @@ class TestReadMainHud:
         assert parse_main_hud(json.dumps({"main_mode": "video"})).main_mode is MainMode.KINO
 
     def test_a_key_the_hud_no_longer_carries_is_passed_over(self):
-        """The switches the Main Funestra's HUD's buttons were once lit from still come
-        from a publisher on an older release; the HUD reads the same without
-        them."""
         parsed = parse_main_hud(json.dumps({
             "main_mode": MainMode.GENAU, "scripted_filter": True, "broker": True,
             "loop_state": "looping", "cruise": True, "learned": True,
@@ -299,7 +278,6 @@ class TestLayout:
         assert hit_test(_placed(), rect[0] + 1, rect[1] + 1) == ""
 
     def test_a_dimmed_button_posts_nothing_but_still_names_itself(self):
-        """Knowing why it cannot be pressed is the point of hovering it."""
         x, y, _w, _h = _rect("spent")
 
         assert hit_test(_placed(), x + 1, y + 1) == ""
@@ -313,9 +291,6 @@ class TestLayout:
 
 
 class TestThePublishedMainHudIsWrittenWhereItIsRead:
-    """Fun Time publishes a MainHudModel as text and the Main Funestra parses it
-    back; the keys are spelled once, here."""
-
     def test_every_published_field_survives_the_round_trip(self):
         model = MainHudModel(
             main_mode=MainMode.GENAU, active=True, osr2=Osr2State.AUTO,
@@ -325,9 +300,6 @@ class TestThePublishedMainHudIsWrittenWhereItIsRead:
         assert parse_main_hud(main_hud_text(model)) == model
 
     def test_the_rows_a_source_declares_survive_it_too(self):
-        """The buttons themselves ride the HUD: what each posts, its face,
-        its tooltip and its state, row by row, and the controls on the OSR2
-        line beside them."""
         model = MainHudModel(
             rows=ROWS,
             osr2_controls=(Button("broker_panel", BROKER_ICON, "Broker", warn=True),),
@@ -344,9 +316,6 @@ class TestThePublishedMainHudIsWrittenWhereItIsRead:
         assert (parsed.rows, parsed.osr2_rows) == (ROWS, aim)
 
     def test_what_the_drawing_funestra_folds_in_is_not_published(self):
-        """The playback rate and the video pace are the drawing host's own --
-        Fun Time neither sets them nor hears about them -- so the text does not
-        carry them and they come back at rest."""
         model = MainHudModel(playback_speed=1.5, advance_interval=12)
 
         parsed = parse_main_hud(main_hud_text(model))
@@ -397,8 +366,6 @@ def test_the_published_main_hud_carries_where_it_sits_and_whether_it_is_minimize
 
 
 def test_the_osr2_switch_says_its_sentences_one_space_apart():
-    """The family's wrapper shows a tooltip's spaces as they are written, so
-    these say theirs with the one space they have always shown."""
     for control in (OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED, "an unknown control"):
         for button in _aim_row(control=control):
             assert "  " not in button.tooltip, (control, button.tooltip)
