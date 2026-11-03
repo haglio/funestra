@@ -1,5 +1,3 @@
-"""A flick's frames, as RGB arrays, decoded whole with ffmpeg: Genau scrubs
-rather than plays, so it has to be able to show any frame at any moment."""
 from __future__ import annotations
 
 import subprocess

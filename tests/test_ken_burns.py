@@ -317,10 +317,8 @@ def test_a_view_reaches_mpv_as_its_zoom_and_how_far_it_leans_each_way():
     assert View(ZOOMED_IN, 1.0, -0.5).placement() == (math.log2(ZOOMED_IN), 1.0, -0.5)
 
 
-# mpv's own arithmetic for where an image is drawn: aspect_calc_panscan and
-# src_dst_split_scaling in video/out/aspect.c at the build the engines load
-# (v0.41.0-724-g71ebd0840), with video-recenter on, single precision and
-# truncated to whole pixels as mpv does it.
+# mpv's aspect_calc_panscan and src_dst_split_scaling (video/out/aspect.c, v0.41.0-724-g71ebd0840),
+# single precision, truncated to whole pixels.
 F32 = np.float32
 
 

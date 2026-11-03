@@ -28,18 +28,12 @@ def test_the_machine_wide_copy_is_looked_in_after_it():
 
 
 def test_the_machine_wide_copy_is_in_the_user_folder_and_not_under_app_data():
-    """AppData's Local, Roaming and LocalLow are private per packaged app -- the
-    Claude app every agent's shell runs inside -- so a DLL an agent fetches there
-    is found by every suite and by nothing the user launches (measured 2026-09-26)."""
     assert machine_libmpv_dir() == user_folder() / ".haglio" / "libmpv"
     assert "AppData" not in machine_libmpv_dir().parts
 
 
 @windows_only
 def test_a_wrong_user_folder_variable_does_not_move_the_engine(monkeypatch, tmp_path: Path):
-    """The Funestras Fun Time launches inherited a folder variable that was not the
-    real folder, looked for the engine there, and every one of them died on its
-    first launch; the folder Windows keeps for the user is the one to ask."""
     real = machine_libmpv_dir()
     monkeypatch.setenv("USERPROFILE", str(tmp_path))
 
@@ -87,10 +81,6 @@ def test_the_engine_is_imported_once_the_folder_is_on_the_path():
 
 
 def test_a_path_taken_out_from_under_it_is_put_back_and_the_import_retried():
-    """PATH is shared, and other libraries prepend themselves to it with a read
-    then a write -- vosk does exactly that, on the thread a voice app listens
-    on. A write built from a read taken before ours puts the folder back out,
-    and the engine is looked for by walking PATH."""
     tries = []
 
     def load(name):

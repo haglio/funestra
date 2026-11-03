@@ -549,9 +549,6 @@ class TestTheOsr2:
         assert tcode.resets == before + 1
 
     def test_resuming_holds_the_device_until_the_video_moves(self, tmp_path):
-        """Un-pausing is a request, not what is on screen: mpv takes frames to start
-        presenting, and the device led the video by that much on every reveal
-        -- which is what he felt as the OSR2 starting before the video."""
         playback, engine, tcode = _driving(tmp_path)
         playback.set_tcode_enabled(True)
         playback.set_paused(True)
@@ -566,8 +563,6 @@ class TestTheOsr2:
         assert tcode.updates or tcode.parks
 
     def test_resuming_on_a_still_drives_the_device_at_once(self, tmp_path):
-        """A still never moves: mpv reports its position as 0 for as long as
-        it is shown, so it is on screen the moment it is unpaused."""
         playback, engine, tcode = _driving(tmp_path, scripted=())
         playback.set_tcode_enabled(True)
         engine.showing_image = True
@@ -815,8 +810,6 @@ class TestWhereAClipWasLeft:
         assert engine.seeks[-1] == 2_000
 
     def test_a_spot_mpv_will_not_take_yet_is_asked_for_again(self, tmp_path):
-        """mpv refuses a seek until the video it is opening plays, which a known
-        duration does not prove -- and the refusal used to end the engine."""
         file = tmp_path / "points.json"
         playback, engine = _make_playback(tmp_path, entries=2, play_points=PlayPoints(file))
         _watch_to(playback, engine, 2_000)
@@ -1083,9 +1076,6 @@ class TestTheScriptNamedForEachItem:
 
 
 class TestASeekOverAFileOpen:
-    """mpv opens a file asynchronously and reports no duration for a tick or two,
-    and refuses a seek until the file plays.  A seek asked for in that window is
-    owed rather than dropped or clamped against a zero-length item."""
 
     def test_a_seek_before_the_duration_is_known_waits(self, tmp_path):
         playback, engine = _make_playback(tmp_path, duration_ms=0.0)
@@ -1176,8 +1166,6 @@ class TestAStretchBeingMarked:
 
 
 class TestAStretchRepeated:
-    """An A/B range mpv goes round: the script of the item comes round with it,
-    and the range belongs to the item, so opening another item ends it."""
 
     def test_the_range_reaches_the_engine_and_closes_the_mark(self, tmp_path):
         playback, engine = _make_playback(tmp_path, duration_ms=60_000.0)
@@ -1268,9 +1256,6 @@ class TestTakingUpAListFromItsTop:
 
 
 def test_letting_go_of_the_item_leaves_the_engine_holding_nothing(tmp_path):
-    """A host about to move or delete what it was showing lets go first: the
-    engine holds an open handle on it, and Windows refuses to move a file out
-    from under one."""
     playback, engine = _make_playback(tmp_path, entries=2)
 
     playback.let_go()

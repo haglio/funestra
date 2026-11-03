@@ -1,10 +1,3 @@
-"""Every module imports in an interpreter whose ctypes has no Windows half.
-
-The apps import Funestra in their own checks of exactly this (fun_time's
-test_win32_loader strips those names before importing every module it has),
-so a module that binds a DLL while it is being imported takes their suites
-down with it.  Binding one when it is first called keeps the import clean.
-"""
 from __future__ import annotations
 
 import os

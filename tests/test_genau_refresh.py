@@ -131,9 +131,6 @@ class FakeTCodeSender:
         self.closed = True
 
 
-# Where a controller built without a command file keeps one: each test's own
-# tmp_path, which pytest takes away again.  A mkdtemp dir used to be made for
-# every controller built, and nothing removed any of them.
 _COMMAND_DIR: Path | None = None
 
 
@@ -200,8 +197,6 @@ def _build_controller(
         notifier=notifier,
         renderer=renderer,
         selection=selection,
-        # Absolute scratch paths: the controller writes genau_status.txt next
-        # to the command file, so a relative path would pollute pytest's CWD.
         command_file=command_file or _COMMAND_DIR / "command.txt",
         status_file=status_file,
         paused_file=Path("paused.txt"),

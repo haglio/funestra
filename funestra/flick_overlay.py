@@ -1,12 +1,3 @@
-"""The frames a User chose, put up over the video: the Funestra's second way of playing.
-
-Genau scrubs a flick frame by frame to wherever the OSR2 is, so what it has to
-show is a frame it decoded itself rather than a file mpv could open.  mpv owns
-the window's pixels, so the frame rides the overlay channel the HUD already
-does: a black backdrop over the paused video, then the frame scaled to the
-window's height and tiled across it the way a portrait video is, under every id
-the HUD and the loop's frames draw with.
-"""
 from __future__ import annotations
 
 from collections import OrderedDict

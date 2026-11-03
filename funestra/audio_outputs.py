@@ -1,14 +1,3 @@
-"""Which sound output a Funestra takes when a session names its device.
-
-A session names the device it wants by a fragment of its name ("Pimax") rather
-than by an id, because Windows reissues endpoint ids whenever a device is
-re-enumerated.  The catch is that a headset's own software installs outputs
-that carry the maker's name too -- a wireless streaming driver, most of them --
-so the fragment can name two outputs at once, and taking the first one lands
-the sound on the one nothing is listening to.  So the output a real device
-answers wins over a driver that answers nothing, and the streaming output is
-still taken when it is the only one named.
-"""
 from __future__ import annotations
 
 from typing import NamedTuple
@@ -28,7 +17,6 @@ class Output(NamedTuple):
 
 
 class Endpoint(NamedTuple):
-    """One of Windows' own render endpoints, read from where it records them."""
 
     active: bool
     description: str
