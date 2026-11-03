@@ -9,7 +9,6 @@ from funestra.descent_latch import DescentLatch
 from funestra.drive_gate import next_handoff_touch
 from funestra.drive_trace import Playhead, osr2_visualizer
 from funestra.funscript import HANDOFF_RAMP_MS, Funscript
-from funestra.trace_grid import on_the_grid
 from funestra.osr2_visualizer import (
     DRIVEN_BY_FUNSCRIPT,
     DRIVEN_BY_NEUTRAL,
@@ -20,6 +19,7 @@ from funestra.osr2_visualizer import (
     DriveHud,
 )
 from funestra.playback_rate import MAX_RATE
+from funestra.trace_grid import on_the_grid
 
 SPAN_S = 7.9
 STEP_MS = 100
