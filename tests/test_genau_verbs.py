@@ -535,6 +535,12 @@ class TestFlickAdvanceCommands:
         assert aa.interval == 30
         assert aa.locked is True
 
+    def test_seconds_that_are_not_a_whole_number_are_refused_and_change_nothing(self):
+        aa = FlickAdvanceState(interval=10, locked=True)
+        for bad in ("FLICK_SECONDS thirty", "FLICK_SECONDS 7.5"):
+            assert self._apply(bad, aa) is False
+        assert (aa.interval, aa.locked) == (10, True)
+
     def test_a_named_pace_is_clamped_to_the_usable_range(self):
         aa = FlickAdvanceState()
         self._apply("FLICK_SECONDS 0", aa)

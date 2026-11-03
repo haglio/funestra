@@ -272,3 +272,7 @@ class TestSeveralFoldersBrowsedAsOne:
 
         assert scan_flicks(vr, shuffle_on_load=False) == scan_flicks((vr,), shuffle_on_load=False)
 
+
+
+def test_a_flick_that_cannot_be_read_sorts_oldest():
+    assert _modified_at(Path("no") / "such" / "flick.mp4") == 0.0

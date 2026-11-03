@@ -432,6 +432,25 @@ class TestDepthAtSpeed:
         assert fs.paced_position_at(0, 2.0) == 10
         assert fs.paced_position_at(100, 2.0) == 50
 
+    def test_a_script_with_no_actions_rests_at_the_park_at_any_speed(self):
+        assert Funscript(actions=[]).position_at(500) == 0.0
+        assert Funscript(actions=[]).paced_position_at(500, 2.0) == 0.0
+
+    def test_a_stretch_with_no_travel_keeps_its_depth_when_sped_up(self):
+        fs = Funscript(actions=[(0, 100), (1000, 100), (2000, 100)])
+
+        assert fs.paced_position_at(1000, 4.0) == 100
+
+    def test_before_the_first_action_the_depth_is_what_the_first_action_asks(self):
+        fs = Funscript(actions=[(1000, 20), (1100, 100), (1200, 20), (1300, 100)])
+
+        assert fs.paced_position_at(0, 2.0) == 10
+
+    def test_past_the_last_action_the_depth_is_what_the_last_action_asks(self):
+        fs = Funscript(actions=[(0, 20), (100, 100), (200, 20), (300, 100)])
+
+        assert fs.paced_position_at(9000, 2.0) == 50
+
     def test_the_drawn_plan_gives_up_the_same_depth_the_device_is_given(self):
         fs = self._fast()
 
