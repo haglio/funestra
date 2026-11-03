@@ -1,28 +1,38 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from funestra.hud_button import FIT_THE_WORD, Button
 from funestra.hud_icons import FMODE_ICON, MINIMIZE_ICON, shared_icon
 
 
-def bar(funestra: str = "portrait", *, locked: bool = False, favorites: bool = False,
-         enhanced: bool | None = None, newest: bool | None = None,
-         minimize: bool = True) -> tuple[Button, ...]:
+@dataclass(frozen=True)
+class _Lit:
+    locked: bool = False
+    favorites: bool = False
+    enhanced: bool | None = None
+    newest: bool | None = None
+
+
+def bar(funestra: str = "portrait", *, minimize: bool = True, **state) -> tuple[Button, ...]:
+    lit = _Lit(**state)
+
     def own(name: str, face: str, **state) -> Button:
         return Button(f"{funestra}_{name}", face, f"{name} tip", **state)
 
     return (
         own("prev", "⏮"),
         own("next", "⏭"),
-        own("lock", "🔒", lit=locked, favorite=True, group_break=True),
+        own("lock", "🔒", lit=lit.locked, favorite=True, group_break=True),
         own("trash", shared_icon("trash"), danger=True),
-        own("fmode", FMODE_ICON, lit=favorites, favorite=True),
-        *(() if enhanced is None else (
-            own("enhanced", shared_icon("enhance_filter"), lit=enhanced,
+        own("fmode", FMODE_ICON, lit=lit.favorites, favorite=True),
+        *(() if lit.enhanced is None else (
+            own("enhanced", shared_icon("enhance_filter"), lit=lit.enhanced,
                 enhanced=True, group_break=True),)),
-        own("reset", shared_icon("reset"), group_break=enhanced is None),
-        *(() if newest is None else (
-            own("shuffle", shared_icon("shuffle"), lit=not newest, group_break=True),
-            own("latest", shared_icon("latest"), lit=newest))),
+        own("reset", shared_icon("reset"), group_break=lit.enhanced is None),
+        *(() if lit.newest is None else (
+            own("shuffle", shared_icon("shuffle"), lit=not lit.newest, group_break=True),
+            own("latest", shared_icon("latest"), lit=lit.newest))),
         *((own("minimize", MINIMIZE_ICON, group_break=True),) if minimize else ()),
     )
 

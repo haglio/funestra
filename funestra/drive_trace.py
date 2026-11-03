@@ -45,130 +45,139 @@ class _Reading:
         self.span_ms = round(base.trace_seconds * 1000 * self.speed)
         self.step = self.span_ms / max(1, TRACE_SAMPLES - 1)
         self.ramp_ms = round(HANDOFF_RAMP_MS * self.speed)
-        self.motion = None
+        motion = None
         if len(base.waveform) == TRACE_SAMPLES:
-            self.motion = base.waveform + ((base.edge,) if base.edge is not None else ())
+            motion = base.waveform + ((base.edge,) if base.edge is not None else ())
+        self.motion = motion
         self.resume_base = 0.0
-        if self.motion is not None and base.let_go is None:
-            self.resume_base = float(
-                min(range(TRACE_SAMPLES), key=self.motion.__getitem__))
+        if motion is not None and base.let_go is None:
+            self.resume_base = float(min(range(TRACE_SAMPLES), key=motion.__getitem__))
         self.climb_ms = 0
-        if self.motion is not None and self.motion_at(self.resume_base) > _PARK_EPSILON:
+        if motion is not None and _motion_at(self, self.resume_base) > _PARK_EPSILON:
             self.climb_ms = self.ramp_ms
 
-    def planned_window(self) -> tuple[list[float], float]:
-        return self.script.planned_trace_window(
-            self.position_ms, self.span_ms, TRACE_SAMPLES, self.speed,
-            max_intensity=self.max_intensity)
 
-    def planned_position(self) -> float:
-        return self.script.planned_position_at(
-            self.position_ms, self.speed, max_intensity=self.max_intensity) / 100
+def _planned_window(r: _Reading) -> tuple[list[float], float]:
+    return r.script.planned_trace_window(
+        r.position_ms, r.span_ms, TRACE_SAMPLES, r.speed,
+        max_intensity=r.max_intensity)
 
-    def motion_at(self, index: float) -> float:
-        motion = self.motion
-        last = len(motion) - 1
-        if index <= 0:
-            return motion[0]
-        if index >= last:
-            return motion[last]
-        whole = int(index)
-        frac = index - whole
-        if not frac:
-            return motion[whole]
-        return motion[whole] * (1 - frac) + motion[whole + 1] * frac
 
-    def genau_height(self, sample_ms: int, began: int | None) -> float:
-        if self.motion is None:
-            return 0.0
-        if began is None or began + self.climb_ms <= self.position_ms:
-            return self.motion_at((sample_ms - self.position_ms) / self.step + self.base.slide)
-        return self.motion_at(self.resume_base + (sample_ms - began - self.climb_ms) / self.step)
+def _planned_position(r: _Reading) -> float:
+    return r.script.planned_position_at(
+        r.position_ms, r.speed, max_intensity=r.max_intensity) / 100
 
-    def park_touch_after(self, turn_start: int, began: int | None) -> int | None:
-        if self.motion is None or min(self.motion) > _PARK_EPSILON:
-            return None
-        scan_from = turn_start + round(_TOUCH_LAG_MS * self.speed)
-        scan_to = scan_from + round(PARK_TOUCH_WAIT_CAP_MS * self.speed)
-        if scan_to > self.position_ms + self.span_ms:
-            return turn_start
-        at_ms = float(scan_from)
-        while at_ms <= scan_to:
-            if self.genau_height(round(at_ms), began) <= _PARK_EPSILON:
-                return round(at_ms)
-            at_ms += self.step / 4
+
+def _motion_at(r: _Reading, index: float) -> float:
+    motion = r.motion
+    last = len(motion) - 1
+    if index <= 0:
+        return motion[0]
+    if index >= last:
+        return motion[last]
+    whole = int(index)
+    frac = index - whole
+    if not frac:
+        return motion[whole]
+    return motion[whole] * (1 - frac) + motion[whole + 1] * frac
+
+
+def _genau_height(r: _Reading, sample_ms: int, began: int | None) -> float:
+    if r.motion is None:
+        return 0.0
+    if began is None or began + r.climb_ms <= r.position_ms:
+        return _motion_at(r, (sample_ms - r.position_ms) / r.step + r.base.slide)
+    return _motion_at(r, r.resume_base + (sample_ms - began - r.climb_ms) / r.step)
+
+
+def _park_touch_after(r: _Reading, turn_start: int, began: int | None) -> int | None:
+    if r.motion is None or min(r.motion) > _PARK_EPSILON:
         return None
+    scan_from = turn_start + round(_TOUCH_LAG_MS * r.speed)
+    scan_to = scan_from + round(PARK_TOUCH_WAIT_CAP_MS * r.speed)
+    if scan_to > r.position_ms + r.span_ms:
+        return turn_start
+    at_ms = float(scan_from)
+    while at_ms <= scan_to:
+        if _genau_height(r, round(at_ms), began) <= _PARK_EPSILON:
+            return round(at_ms)
+        at_ms += r.step / 4
+    return None
 
-    def descent_entry(self, turn_start: int) -> tuple[float, int | None]:
-        base = self.base
-        latched = self.latch.choice_for(turn_start) if self.latch is not None else None
-        key = DriveKey.cut_from(base)
-        if latched is not None and latched.key == key:
-            return latched.top, latched.touch
-        prev_began, _ = self.script.turn_bounds_at(max(turn_start - 1, 0))
-        if base.let_go is not None and self.position_ms >= turn_start:
-            top = base.let_go
-        else:
-            top = self.genau_height(turn_start, prev_began)
-        if (latched is not None and latched.key.let_go is None
-                and base.let_go is not None):
-            touch = latched.touch
-        else:
-            touch = self.park_touch_after(turn_start, prev_began)
-        frozen = (self.position_ms >= turn_start - round(_TOUCH_FREEZE_AHEAD_MS * self.speed)
-                  and (base.let_go is None or self.position_ms >= turn_start))
-        if self.latch is not None and (frozen or latched is not None):
-            horizon = round((PARK_TOUCH_WAIT_CAP_MS + _TOUCH_LAG_MS) * self.speed)
-            self.latch.remember(turn_start, DescentChoice(key, top, touch),
-                                stale_before=self.position_ms - horizon)
-        return top, touch
 
-    def at(self, sample_ms: int, planned: float) -> tuple[float, str]:
-        if self.script.is_resting_at(sample_ms):
-            return self._resting_at(sample_ms)
-        turn_start, _turn_end = self.script.turn_bounds_at(sample_ms)
-        if turn_start is not None and self.motion is not None:
-            coming_down = self._coming_down_at(sample_ms, turn_start)
-            if coming_down is not None:
-                return coming_down
-        who = (DRIVEN_BY_NEUTRAL if self.script.is_parked_at(sample_ms)
-               else DRIVEN_BY_FUNSCRIPT)
-        return planned, who
+def _descent_entry(r: _Reading, turn_start: int) -> tuple[float, int | None]:
+    base = r.base
+    latched = r.latch.choice_for(turn_start) if r.latch is not None else None
+    key = DriveKey.cut_from(base)
+    if latched is not None and latched.key == key:
+        return latched.top, latched.touch
+    prev_began, _ = r.script.turn_bounds_at(max(turn_start - 1, 0))
+    if base.let_go is not None and r.position_ms >= turn_start:
+        top = base.let_go
+    else:
+        top = _genau_height(r, turn_start, prev_began)
+    if (latched is not None and latched.key.let_go is None
+            and base.let_go is not None):
+        touch = latched.touch
+    else:
+        touch = _park_touch_after(r, turn_start, prev_began)
+    frozen = (r.position_ms >= turn_start - round(_TOUCH_FREEZE_AHEAD_MS * r.speed)
+              and (base.let_go is None or r.position_ms >= turn_start))
+    if r.latch is not None and (frozen or latched is not None):
+        horizon = round((PARK_TOUCH_WAIT_CAP_MS + _TOUCH_LAG_MS) * r.speed)
+        r.latch.remember(turn_start, DescentChoice(key, top, touch),
+                            stale_before=r.position_ms - horizon)
+    return top, touch
 
-    def _resting_at(self, sample_ms: int) -> tuple[float, str]:
-        if self.motion is None:
-            return 0.0, DRIVEN_BY_NOTHING
-        began, ends_at = self.script.turn_bounds_at(sample_ms)
-        if began is not None and self.climb_ms:
-            since = sample_ms - began
-            if since < self.climb_ms:
-                top = self.motion_at(self.resume_base)
-                return top * max(0, since) / self.climb_ms, DRIVEN_BY_NEUTRAL
-        value = self.genau_height(sample_ms, began)
-        feather_ms = round(_SEAM_FEATHER_MS * self.speed)
-        if ends_at is not None and ends_at - sample_ms < feather_ms:
-            seam_top, seam_touch = self.descent_entry(ends_at)
-            if seam_touch is None:
-                weight = 1 - (ends_at - sample_ms) / feather_ms
-                value = value * (1 - weight) + seam_top * weight
+
+def _at(r: _Reading, sample_ms: int, planned: float) -> tuple[float, str]:
+    if r.script.is_resting_at(sample_ms):
+        return _resting_at(r, sample_ms)
+    turn_start, _turn_end = r.script.turn_bounds_at(sample_ms)
+    if turn_start is not None and r.motion is not None:
+        coming_down = _coming_down_at(r, sample_ms, turn_start)
+        if coming_down is not None:
+            return coming_down
+    who = (DRIVEN_BY_NEUTRAL if r.script.is_parked_at(sample_ms)
+           else DRIVEN_BY_FUNSCRIPT)
+    return planned, who
+
+
+def _resting_at(r: _Reading, sample_ms: int) -> tuple[float, str]:
+    if r.motion is None:
+        return 0.0, DRIVEN_BY_NOTHING
+    began, ends_at = r.script.turn_bounds_at(sample_ms)
+    if began is not None and r.climb_ms:
+        since = sample_ms - began
+        if since < r.climb_ms:
+            top = _motion_at(r, r.resume_base)
+            return top * max(0, since) / r.climb_ms, DRIVEN_BY_NEUTRAL
+    value = _genau_height(r, sample_ms, began)
+    feather_ms = round(_SEAM_FEATHER_MS * r.speed)
+    if ends_at is not None and ends_at - sample_ms < feather_ms:
+        seam_top, seam_touch = _descent_entry(r, ends_at)
+        if seam_touch is None:
+            weight = 1 - (ends_at - sample_ms) / feather_ms
+            value = value * (1 - weight) + seam_top * weight
+    return value, DRIVEN_BY_ROBOT_HAND
+
+
+def _coming_down_at(r: _Reading, sample_ms: int, turn_start: int) -> tuple[float, str] | None:
+    top, touch = _descent_entry(r, turn_start)
+    if touch is None:
+        since = sample_ms - turn_start
+        if since < r.ramp_ms:
+            return top * (1 - max(0, since) / r.ramp_ms), DRIVEN_BY_NEUTRAL
+        return None
+    if sample_ms <= touch and r.base.let_go is None:
+        prev_began, _ = r.script.turn_bounds_at(max(turn_start - 1, 0))
+        value = _genau_height(r, sample_ms, prev_began)
+        feather_ms = round(_SEAM_FEATHER_MS * r.speed)
+        if touch - sample_ms < feather_ms:
+            weight = 1 - (touch - sample_ms) / feather_ms
+            value = value * (1 - weight)
         return value, DRIVEN_BY_ROBOT_HAND
-
-    def _coming_down_at(self, sample_ms: int, turn_start: int) -> tuple[float, str] | None:
-        top, touch = self.descent_entry(turn_start)
-        if touch is None:
-            since = sample_ms - turn_start
-            if since < self.ramp_ms:
-                return top * (1 - max(0, since) / self.ramp_ms), DRIVEN_BY_NEUTRAL
-            return None
-        if sample_ms <= touch and self.base.let_go is None:
-            prev_began, _ = self.script.turn_bounds_at(max(turn_start - 1, 0))
-            value = self.genau_height(sample_ms, prev_began)
-            feather_ms = round(_SEAM_FEATHER_MS * self.speed)
-            if touch - sample_ms < feather_ms:
-                weight = 1 - (touch - sample_ms) / feather_ms
-                value = value * (1 - weight)
-            return value, DRIVEN_BY_ROBOT_HAND
-        return None
+    return None
 
 
 def _driver_runs(whos: list[str]) -> tuple[tuple[int, str], ...]:
@@ -190,20 +199,21 @@ def osr2_visualizer(
     if script is None:
         return base
     reading = _Reading(base, script, playhead, latch)
-    scripted, slide = reading.planned_window()
+    scripted, slide = _planned_window(reading)
     if len(scripted) != TRACE_SAMPLES + 1:
         return base
     anchor_ms = reading.position_ms - slide * reading.step
     values: list[float] = []
     whos: list[str] = []
     for index in range(TRACE_SAMPLES):
-        value, who = reading.at(round(anchor_ms + index * reading.step), scripted[index])
+        value, who = _at(reading, round(anchor_ms + index * reading.step), scripted[index])
         values.append(value)
         whos.append(who)
 
-    edge, _who = reading.at(
+    edge, _who = _at(
+        reading,
         round(anchor_ms + TRACE_SAMPLES * reading.step), scripted[TRACE_SAMPLES])
-    height, who_now = reading.at(reading.position_ms, reading.planned_position())
+    height, who_now = _at(reading, reading.position_ms, _planned_position(reading))
     marker = (base.position if who_now == DRIVEN_BY_ROBOT_HAND
               else round(height * POSITION_MAX))
     return replace(

@@ -11,6 +11,7 @@ import time
 import urllib.error
 import urllib.request
 from collections.abc import Callable
+from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
 
@@ -69,19 +70,25 @@ def file_addresses(short_url: str) -> list[str]:
     ]
 
 
+@dataclass(frozen=True)
+class Pacing:
+    pace_s: float = 1.0
+    sleep: Callable[[float], None] = time.sleep
+    clock: Callable[[], float] = time.monotonic
+
+
 class Forum:
     def __init__(self, base_url: str, headers: dict[str, str], *,
                  opener: Callable = urllib.request.urlopen,
-                 sleep: Callable[[float], None] = time.sleep,
-                 clock: Callable[[], float] = time.monotonic,
-                 pace_s: float = 1.0,
+                 pacing: Pacing | None = None,
                  log: logging.Logger = logger) -> None:
         self._base_url = base_url.rstrip("/")
         self._headers = headers
         self._opener = opener
-        self._sleep = sleep
-        self._clock = clock
-        self._pace_s = pace_s
+        pacing = pacing or Pacing()
+        self._sleep = pacing.sleep
+        self._clock = pacing.clock
+        self._pace_s = pacing.pace_s
         self._log = log
         self._last_request: float | None = None
 
@@ -255,7 +262,7 @@ def _tag_names(tags: list) -> list[str]:
 
 
 class _NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self, req, fp, code, msg, headers, newurl):
+    def redirect_request(self, *_request_parts):
         return None
 
 
@@ -268,7 +275,7 @@ def _forum_for(corpus: Path, pace_s: float) -> Forum:
         "Accept": "application/json",
     }
     return Forum(FORUM, headers, opener=urllib.request.build_opener(_NoRedirect()).open,
-                 pace_s=pace_s)
+                 pacing=Pacing(pace_s))
 
 
 def parse_arguments(argv: list[str] | None) -> argparse.Namespace:

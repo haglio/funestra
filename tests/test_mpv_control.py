@@ -12,7 +12,7 @@ import pytest
 from dealt_moves import DRIFT, Deals
 
 from funestra import audio_outputs, mpv_engine
-from funestra.ken_burns import Fit, Move, zoom_in
+from funestra.ken_burns import Fit, zoom_in
 from funestra.mpv_engine import (
     TILES_SHADER,
     MpvEngine,
@@ -83,10 +83,9 @@ CREEP = zoom_in(0.0, 0.0)
 
 class Control(_MpvControl):
 
-    def __init__(self, mpv, now: float = 0.0, move: Move = CREEP,
-                 viewport: tuple[int, int] = (0, 0), deals: Deals | None = None,
-                 looping: bool = False) -> None:
-        super().__init__(deals or Deals(move), looping=looping)
+    def __init__(self, mpv, now: float = 0.0, viewport: tuple[int, int] = (0, 0),
+                 deals: Deals | None = None, looping: bool = False) -> None:
+        super().__init__(deals or Deals(CREEP), looping=looping)
         self.now = now
         self._viewport = viewport
         self._adopt(mpv)
@@ -488,7 +487,7 @@ def test_an_image_is_drawn_closer_as_its_hold_runs_out():
 
 def test_a_clip_after_an_image_is_drawn_as_it_comes():
     mpv = FakeMpv()
-    control = Control(mpv, now=100.0, move=DRIFT)
+    control = Control(mpv, now=100.0, deals=Deals(DRIFT))
     control.set_pace(4.0)
     show_an_image(control, mpv)
     control.now = 101.0
@@ -517,7 +516,7 @@ def test_a_frozen_room_holds_the_image_where_its_move_had_got_to():
 
 def test_a_pan_reaches_mpv_as_how_far_the_image_leans_each_way():
     mpv = FakeMpv()
-    control = Control(mpv, now=100.0, move=DRIFT)
+    control = Control(mpv, now=100.0, deals=Deals(DRIFT))
     control.set_pace(4.0)
     show_an_image(control, mpv)
 
@@ -580,7 +579,7 @@ def test_a_zoom_about_the_middle_asks_mpv_for_the_zoom_alone():
 
 def test_an_image_that_has_not_moved_since_the_last_frame_asks_mpv_for_nothing():
     mpv = FakeMpv()
-    control = Control(mpv, now=100.0, move=DRIFT)
+    control = Control(mpv, now=100.0, deals=Deals(DRIFT))
     control.set_pace(4.0)
     show_an_image(control, mpv)
     control.push_still()
@@ -961,7 +960,7 @@ def test_unlocking_an_image_has_it_finish_the_move_it_is_making():
 
 def test_between_two_files_a_still_is_left_where_its_move_had_got_to():
     mpv = FakeMpv()
-    control = Control(mpv, now=100.0, move=DRIFT)
+    control = Control(mpv, now=100.0, deals=Deals(DRIFT))
     control.set_pace(4.0)
     show_an_image(control, mpv)
     control.now = 101.0

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import random
+from dataclasses import dataclass
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -139,43 +140,66 @@ def _commands_in_the_tests_own_scratch(tmp_path, monkeypatch):
     monkeypatch.setitem(globals(), "_COMMAND_DIR", tmp_path)
 
 
-def _build_controller(
-    *,
-    broker: BrokerFeed | None = None,
-    loading: bool = False,
-    path: str | None = "demo.mp4",
-    entry=None,
-    current_frame_index: int | None = None,
-    command: str | None = None,
-    commands: list[str] | None = None,
-    paused_state: bool = False,
-    pending_flick_name: str | None = None,
-    robot_hand: RobotHandState | None = None,
-    tcode_sender: FakeTCodeSender | None = None,
-    learned: LearnedMotionState | None = None,
-    flick_advance: FlickAdvanceState | None = None,
-    hud: Flag | None = None,
-    command_file: Path | None = None,
-    status_file: Path | None = None,
-    drive_file: Path | None = None,
-    now_source=None,
-    flick_flip: FlickFlip | None = None,
-):
+@dataclass(frozen=True)
+class _OnScreen:
+    loading: bool = False
+    path: str | None = "demo.mp4"
+    entry: object = None
+    current_frame_index: int | None = None
+    pending_flick_name: str | None = None
+
+
+@dataclass(frozen=True)
+class _Commands:
+    command: str | None = None
+    commands: list[str] | None = None
+    paused_state: bool = False
+
+
+@dataclass(frozen=True)
+class _HandsOn:
+    robot_hand: RobotHandState | None = None
+    learned: LearnedMotionState | None = None
+    flick_advance: FlickAdvanceState | None = None
+    hud: Flag | None = None
+    flick_flip: FlickFlip | None = None
+
+
+@dataclass(frozen=True)
+class _Files:
+    command_file: Path | None = None
+    status_file: Path | None = None
+    drive_file: Path | None = None
+
+
+def _taken(kind, choices):
+    return kind(**{name: choices.pop(name) for name in kind.__dataclass_fields__
+                   if name in choices})
+
+
+def _build_controller(*, broker: BrokerFeed | None = None,
+                      tcode_sender: FakeTCodeSender | None = None, now_source=None, **choices):
+    screen = _taken(_OnScreen, choices)
+    said = _taken(_Commands, choices)
+    hands = _taken(_HandsOn, choices)
+    files = _taken(_Files, choices)
+    assert not choices, choices
     loading_texts: list[str | None] = []
     drained_from: list[Path] = []
 
     def consume(path, logger=None):
         drained_from.append(path)
-        return commands if commands is not None else ([command] if command else [])
+        return (said.commands if said.commands is not None
+                else ([said.command] if said.command else []))
 
-    loader = FakeLoader(loading=loading)
+    loader = FakeLoader(loading=screen.loading)
     notifier = FakeNotifier()
     renderer = FakeRenderer(
-        path=Path(path) if path is not None else None,
-        entry=entry,
-        current_frame_index=current_frame_index,
+        path=Path(screen.path) if screen.path is not None else None,
+        entry=screen.entry,
+        current_frame_index=screen.current_frame_index,
     )
-    selection = FakeSelection(pending_flick_name=pending_flick_name)
+    selection = FakeSelection(pending_flick_name=screen.pending_flick_name)
     engine = BeatEngine(phase=0.25, last_tick=5.0)
     logger = MagicMock()
     controls = GenauControls(
@@ -183,12 +207,12 @@ def _build_controller(
         paused=Flag(),
         step_flick=selection.step,
         condemn_flick=selection.condemn_current,
-        robot_hand=robot_hand if robot_hand is not None else RobotHandState(),
-        learned_motion_state=learned,
-        flick_advance_state=flick_advance,
-        hud=hud,
+        robot_hand=hands.robot_hand if hands.robot_hand is not None else RobotHandState(),
+        learned_motion_state=hands.learned,
+        flick_advance_state=hands.flick_advance,
+        hud=hands.hud,
         set_volume=lambda _level, _muted: None,
-        flick_flip=flick_flip if flick_flip is not None else FlickFlip(),
+        flick_flip=hands.flick_flip if hands.flick_flip is not None else FlickFlip(),
     )
     controller = GenauRefreshController(
         controls=controls,
@@ -197,8 +221,8 @@ def _build_controller(
         notifier=notifier,
         renderer=renderer,
         selection=selection,
-        command_file=command_file or _COMMAND_DIR / "command.txt",
-        status_file=status_file,
+        command_file=files.command_file or _COMMAND_DIR / "command.txt",
+        status_file=files.status_file,
         paused_file=Path("paused.txt"),
         beats_per_loop=4.0,
         bpm_smoothing=0.5,
@@ -207,9 +231,9 @@ def _build_controller(
         logger=logger,
         now_source=now_source or (lambda: 5.0),
         consume_command=consume,
-        read_paused_state=lambda _path, logger=None: paused_state,
+        read_paused_state=lambda _path, logger=None: said.paused_state,
         tcode_sender=tcode_sender,
-        drive_file=drive_file,
+        drive_file=files.drive_file,
     )
     return {
         "drained_from": drained_from,

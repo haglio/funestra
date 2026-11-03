@@ -13,27 +13,29 @@ from funestra.flick_advance import (
     tick_flick_advance,
 )
 
+_TICK_S = 0.1
 
-def _run(state, *, playing=True, seconds=30.0, step=0.1, start=0.0, on_screen="flick"):
+
+def _run(state, *, playing=True, seconds=30.0, start=0.0, on_screen="flick"):
     calls: list[int] = []
     tick_flick_advance(
         state, start, playing=playing, on_screen_flick=on_screen, step_flick=calls.append,
     )
-    for i in range(int(seconds / step)):
+    for i in range(int(seconds / _TICK_S)):
         tick_flick_advance(
-            state, start + step * (i + 1),
+            state, start + _TICK_S * (i + 1),
             playing=playing, on_screen_flick=on_screen, step_flick=calls.append,
         )
     return calls
 
 
-def _series(state, start, stop, on_screen, *, playing=True, step=0.1):
+def _series(state, start, stop, on_screen):
     fires: list[float] = []
-    n = round((stop - start) / step)
+    n = round((stop - start) / _TICK_S)
     for i in range(n + 1):
-        now = round(start + step * i, 3)
+        now = round(start + _TICK_S * i, 3)
         tick_flick_advance(
-            state, now, playing=playing, on_screen_flick=on_screen,
+            state, now, playing=True, on_screen_flick=on_screen,
             step_flick=lambda _delta, _now=now: fires.append(_now),
         )
     return fires

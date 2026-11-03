@@ -33,8 +33,8 @@ class FakeTCode:
         self.closed = True
 
 
-def make_playback(tmp_path, *, entries=1, start_paused=False, duration_ms=5_000.0, locked=False,
-                  play_points=None, funscripts=None, points_of_interest=None, tcode=None):
+def make_playback(tmp_path, *, entries=1, duration_ms=5_000.0, funscripts=None,
+                  points_of_interest=None, **playback):
     playlist = []
     for i in range(entries):
         vid = tmp_path / f"v{i}.mp4"
@@ -42,9 +42,9 @@ def make_playback(tmp_path, *, entries=1, start_paused=False, duration_ms=5_000.
         playlist.append(vid)
     engine = FakeEngine(duration_ms=duration_ms)
     return Playback(
-        playlist, engine=engine, start_paused=start_paused, locked=locked, play_points=play_points,
+        playlist, engine=engine,
         funscripts={playlist[index]: script for index, script in (funscripts or {}).items()},
         points_of_interest={playlist[index]: points
                             for index, points in (points_of_interest or {}).items()},
-        tcode=tcode,
+        **playback,
     ), engine
