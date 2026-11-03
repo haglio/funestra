@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 import funestra.playlist
+from funestra.up_next import put_up_next
 from funestra.playlist import (
     PlaylistItem,
     item_from_line,
@@ -167,3 +168,31 @@ def _held_open_for(path: Path, seconds: float):
         yield
     finally:
         release.join()
+
+
+class TestPutUpNext:
+    def test_a_new_item_goes_right_after_the_one_up_and_the_one_up_stays(self):
+        items = ["a", "b", "c"]
+
+        assert put_up_next(items, 0, "x", None) == 0
+        assert items == ["a", "x", "b", "c"]
+
+    def test_an_item_listed_after_the_one_up_is_moved_there(self):
+        items = ["a", "b", "c", "d"]
+
+        assert put_up_next(items, 0, "d", 3) == 0
+        assert items == ["a", "d", "b", "c"]
+
+    def test_an_item_listed_before_the_one_up_is_moved_and_the_one_up_stays_up(self):
+        items = ["a", "b", "c", "d"]
+
+        up = put_up_next(items, 2, "a", 0)
+
+        assert items[up] == "c"
+        assert items == ["b", "c", "a", "d"]
+
+    def test_the_item_already_up_is_left_where_it_is(self):
+        items = ["a", "b", "c"]
+
+        assert put_up_next(items, 1, "b", 1) == 1
+        assert items == ["a", "b", "c"]

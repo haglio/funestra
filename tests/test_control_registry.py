@@ -41,3 +41,28 @@ def test_surrounding_space_and_a_bare_line_are_no_command():
     assert look_up("   ", VERBS, controls) is False
 
     assert controls.steps == 1
+
+
+def test_a_control_this_build_did_not_wire_runs_nothing():
+    controls = _Controls()
+    unwired = bind((
+        Control("playlist_position", verbs=(Verb("NEXT", _step),), needs=("deck",)),
+    ))
+    controls.deck = None
+
+    assert look_up("NEXT", unwired, controls) is False
+    assert controls.steps == 0
+
+
+def test_a_value_on_a_verb_that_takes_none_runs_nothing():
+    controls = _Controls()
+
+    assert look_up("NEXT now", VERBS, controls) is False
+    assert controls.steps == 0
+
+
+def test_no_value_on_a_verb_that_wants_one_runs_nothing():
+    controls = _Controls()
+
+    assert look_up("PLAY_FILE", VERBS, controls) is False
+    assert controls.opened == []

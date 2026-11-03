@@ -9,6 +9,7 @@ from funestra.descent_latch import DescentLatch
 from funestra.drive_gate import next_handoff_touch
 from funestra.drive_trace import Playhead, osr2_visualizer
 from funestra.funscript import HANDOFF_RAMP_MS, Funscript
+from funestra.trace_grid import on_the_grid
 from funestra.osr2_visualizer import (
     DRIVEN_BY_FUNSCRIPT,
     DRIVEN_BY_NEUTRAL,
@@ -571,3 +572,7 @@ class TestNothingToFoldIn:
         script = _script(until_ms=120_000)
 
         assert _read(script, at=0) == _read(script, at=0)
+
+
+def test_a_playhead_is_read_on_the_forty_millisecond_grid_snapped_down():
+    assert [on_the_grid(ms) for ms in (0, 39, 40, 79, 81)] == [0, 0, 40, 40, 80]

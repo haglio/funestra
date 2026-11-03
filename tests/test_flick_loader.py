@@ -128,3 +128,27 @@ def test_a_flick_switched_to_while_it_was_decoding_ahead_goes_up_when_that_decod
     assert flick_store.flick_cache[path]["frames"] == ["f0", "f1"]
     assert path not in flick_store.decoded_frame_cache
     assert active_loaded == ["ready"]
+
+
+def test_a_flick_already_up_to_date_in_the_cache_is_ready_and_starts_no_job():
+    path = Path("demo.mp4")
+    controller, flick_store, _load_state, _prefetch_state, starter, _logger, _active_loaded = _make_loader()
+    flick_store.cache_flick(path, ["f0"])
+
+    assert controller.frames_ready(path) is True
+    controller.request_flick_load(path)
+
+    assert starter.calls == []
+
+
+def test_taking_up_a_prefetched_flick_never_trims_out_the_flick_on_screen():
+    on_screen, older, adopted = Path("a.mp4"), Path("b.mp4"), Path("c.mp4")
+    controller, flick_store, _load_state, _prefetch_state, _starter, _logger, _active_loaded = _make_loader(
+        current_flick_path=on_screen)
+    flick_store.cache_flick(on_screen, ["f0"])
+    flick_store.cache_flick(older, ["f0"])
+    flick_store.decoded_frame_cache[adopted] = ["f0"]
+
+    assert controller.frames_ready(adopted) is True
+
+    assert on_screen in flick_store.flick_cache
