@@ -8,6 +8,7 @@ from funestra.hud_title import (
     SHUFFLE_LABEL,
     UNLOCKED_LABEL,
     hud_title,
+    looping_label,
 )
 
 
@@ -44,3 +45,8 @@ def test_the_enhanced_narrowing_has_a_slot_of_its_own_after_f_mode():
     assert hud_title(locked=True, f_mode=True, enhanced=True, filters=("alpha",)) == (
         f"{LOCKED_LABEL} · {F_MODE_LABEL} · {ENHANCED_LABEL} · alpha")
     assert hud_title(locked=True, enhanced=False) == LOCKED_LABEL
+
+
+def test_a_loop_on_an_axis_is_named_looping_that_axis_in_the_plural():
+    assert looping_label("seed") == "Looping seeds"
+    assert looping_label("action") == "Looping actions"

@@ -53,6 +53,10 @@ class TestTheNativePace:
         assert learned_model.measure_native_cycle_ms(model) == 800.0
 
 
+    def test_a_model_with_no_phrases_keeps_the_default_cycle(self):
+        assert learned_model.measure_native_cycle_ms(LearnedModel()) == 600.0
+
+
 class TestDrawingWhatComesNext:
     def test_what_follows_a_class_is_what_followed_it_in_the_scripts(self):
         model = _model()

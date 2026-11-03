@@ -602,6 +602,12 @@ class TestTheWaveTracedOnKnots:
         assert later == pytest.approx(at_knot, abs=1e-9)
         assert slide == pytest.approx(0.4)
 
+    def test_a_wave_that_is_not_moving_is_drawn_flat_at_where_it_stands(self):
+        heights, slide = trace_window(
+            WaveformShape.SINE, 100, 50, phase=0.5, bpm=0.0, samples=3, span_s=1.0)
+
+        assert (heights, slide) == pytest.approx(([1.0] * 4, 0.0))
+
     def test_crossing_a_knot_moves_the_window_on_by_one(self):
         at_knot, _ = trace_window(
             WaveformShape.SINE, 100, 50, phase=3.0, bpm=60.0, samples=5, span_s=1.0)
