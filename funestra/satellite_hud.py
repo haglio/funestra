@@ -57,21 +57,19 @@ if TYPE_CHECKING:
     from .hud_row import RowLayout
 
 
-# --- layout constants (px) ---------------------------------------------------
-# Inset of the HUD from the Funestra's top-left corner.
 MARGIN = MARGIN_DIALOG
 
 PAD = MARGIN_STANDARD
 BLOCK_GAP = GAP_MEDIUM
 MAP_THUMB_H = 54
 NAV_MAP_GAP = GAP_SMALL
-ROW_GAP = GAP_DIALOG        # vertical gap between action rows — roomier than the seed gap
-ACT_GAP = GAP_MEDIUM         # gap between two acts stacked in one row label
-COL_LABEL_H = 13    # header strip above the nav map for the "Seed N" column labels
-COL_LABEL_GAP = GAP_SMALL   # breathing room between a column label and its thumbnail
+ROW_GAP = GAP_DIALOG
+ACT_GAP = GAP_MEDIUM
+COL_LABEL_H = 13
+COL_LABEL_GAP = GAP_SMALL
 ROW_LABEL_GUTTER = 100
-LOOP_BTN = 18       # loop-button thickness: below the action column, right of the row
-FILTER_BTN = 18     # act-filter button: at the head of each row, in the gutter
+LOOP_BTN = 18
+FILTER_BTN = 18
 
 NAV_MAP_RIGHT_RESERVE = 2 * (LOOP_BTN + NAV_MAP_GAP)
 NAV_MAP_LOWER_RESERVE = LOOP_BTN + NAV_MAP_GAP
@@ -79,34 +77,22 @@ NAV_MAP_LOWER_RESERVE = LOOP_BTN + NAV_MAP_GAP
 NAV_MAP_CELLS = 3
 WIDEST_FULL_HEIGHT_SHAPE = {"portrait": (4, 5), "landscape": (16, 9)}
 
-TITLE_ROW_H = 24        # the bar the title sits in — one line deep, always
-TITLE_X = PAD + ACTIVE_DOT + 8  # where the title starts, clear of the active-Funestra dot
-TITLE_BASELINE = 11      # the title's baseline, down from the bar's top
-# The file on screen, muted under the title — the same second line the Main
-# Funestra's console carries, so the two HUDs answer "what am I playing?" in the
-# same corner and the same shape.  Its own height comes from the paint module,
-# which has the face; this is only the gap between the two lines.
+TITLE_ROW_H = 24
+TITLE_X = PAD + ACTIVE_DOT + 8
+TITLE_BASELINE = 11
 SUBTITLE_GAP = GAP_SMALL
 
-Cell = tuple[str, int]            # ("corner", 0) | ("seed", i) | ("action", i)
+Cell = tuple[str, int]
 
 
 @dataclass(frozen=True)
 class HudCell:
-    """One video drawn on the nav map: its path, its cached thumbnail, its row label.
-
-    ``thumb`` is "" while fun_time's background prewarm has not produced the
-    frame yet — the nav map draws a placeholder there rather than waiting.
-    """
-
     path: str
     thumb: str = ""
     label: str = ""
 
 
 class HudSection(Protocol):
-    """A block the source paints into the HUD itself, at its very foot."""
-
     def size(self) -> tuple[int, int]: ...
 
     def paint(self, image: Image.Image, x: int, y: int, width: int,
@@ -156,88 +142,40 @@ def _painted_at(path: str, _stamp: str) -> Image.Image:
 
 @dataclass(frozen=True)
 class HudModel:
-    """One satellite's HUD contents, exactly as fun_time published them."""
-
-    # Which Funestra this is: "portrait" or "landscape".
     funestra: str
     hud_corner: HudCorner = HudCorner.UPPER_LEFT
     hud_edge: HudEdge = HudEdge.LOWER
     hud_minimized: bool = False
     locked: bool = False
     title: str = ""
-    # Whether a bare command naming no Funestra lands here — the Funestra addressed
-    # most recently.  Drawn as the dot beside the title, and the only thing on
-    # any HUD that says where those words are going.
     active: bool = False
 
-    # Whether the video on screen is one of the favorites — marked in the control
-    # bar, beside the buttons that act on that video.
     is_favorite: bool = False
     item_note: str = ""
     corner: HudCell | None = None
     seeds: tuple[HudCell, ...] = ()
     actions: tuple[HudCell, ...] = ()
     current_action: str = ""
-    # The act(s) this Funestra is filtered to, if any: the nav map lights every row the
-    # filter keeps and, within a row, the acts the filter actually names.  Pressing
-    # a row's button moves the filter onto that row, or lifts it when the filter is
-    # already exactly that row.
     filter_query: str = ""
-    # The words the library writes in front of an act to say how the video was
-    # shot, as it writes them.  The source names them because they are library
-    # vocabulary; a row sets a leading one apart as an act of its own.
     camera_words: tuple[str, ...] = ()
     active_loop: str = ""
-    # How many videos each axis stands for, the video on screen included.  The nav map
-    # draws only MAP_CELLS of them, so it prints these in its top-left corner —
-    # the only place the real size of each axis can be read.
     seed_count: int = 0
     action_count: int = 0
-    # The nav nav map cell actually on screen — the corner normally, or another cell
-    # while a loop plays a non-anchor video of the group.  Drawn bright; the
-    # rest dim.
     playing: Cell = ("corner", 0)
-    # The rate this Funestra plays at, folded into its own HUD so the painter draws
-    # the speed row under the bars; None for a surface with no rate to show.
     playback_speed: float | None = None
-    # The buttons the source declares for this Funestra, in the bars the HUD
-    # draws them in: what each posts, its face, its tooltip and its state.  The
-    # HUD draws nothing it was not handed.
     rows: tuple[tuple[Button, ...], ...] = ()
 
-    # --- the device, for a HUD whose Funestra has the OSR2 ----------------
-    # Which driver has the OSR2, and the controls that aim it: the same line the
-    # Main Funestra's HUD draws (:mod:`funestra.hud_osr2`), grown here because a host
-    # can be both the thing browsing a set AND the thing driving the device.
-    # Origenerator's shows are: they floated this HUD for the set and the whole
-    # console underneath it for the device, which is two titles that
-    # disagree and two copies of every transport button.
     osr2: str = ""
-    # The rows that AIM the device -- the hands-free switches, the waveform, the
-    # four control states.  They sit in the device's own block rather than among
-    # the rows above, because they are the OSR2's and the reader looks for them
-    # beside the line naming who has it: on the Main Funestra's HUD those rows happen to
-    # be the last ones before that line, so nothing showed, and on a HUD with a
-    # map between them they came out as one group of OSR2 controls split in two.
     osr2_rows: tuple[tuple[Button, ...], ...] = ()
-    # And what the host is doing to the device, which is a different question:
-    # driving, parked or retracted, or empty from a host with no such switch.
-    # The HUD resolves the two into one word exactly as the Main Funestra's HUD does
-    # (:func:`funestra.hud_osr2.state_for`).
     osr2_control: str = ""
     osr2_controls: tuple[Button, ...] = ()
     max_intensity: int | None = None
     paused: bool = False
-    # The motion being sent, drawn under that line — the main HUD's visualizer
-    # (:mod:`funestra.osr2_visualizer`), hosted here rather than on a HUD of
-    # its own.  None wherever there is nothing to report.
     drive: DriveHud | None = None
     drive_composed: bool = False
 
     foot: HudSection | None = None
 
-
-# --- map geometry ------------------------------------------------------------
 
 ELLIPSIS = 12
 ELLIPSIS_ROOM = ELLIPSIS + 2 * NAV_MAP_GAP
@@ -295,8 +233,6 @@ def hud_layout(*, title_h: int, bars: int = 0, speed: bool = False,
 
 @dataclass(frozen=True)
 class NavMapWindow:
-    """Which run of an axis is drawn, and whether it runs on past either end."""
-
     start: int
     count: int
     more_before: bool
@@ -304,23 +240,11 @@ class NavMapWindow:
 
 
 def nav_map_window(total: int, playing: int, limit: int = NAV_MAP_CELLS) -> NavMapWindow:
-    """The run of at most *limit* cells to draw from an axis of *total*, keeping
-    *playing* near its middle.
-
-    The run always holds *playing* and grows outward from it, alternating sides and
-    taking the right first: an axis whose head is on screen therefore fills away
-    from the corner, while one whose playing cell has moved along keeps that cell in
-    the middle — which is what stops the lit cell walking off the end of the nav map and
-    leaving nothing highlighted at all.
-    """
     if total <= 0 or limit <= 0:
         return NavMapWindow(0, 0, False, False)
     playing = max(0, min(playing, total - 1))
     start, end = playing, playing + 1
     while end - start < min(limit, total):
-        # Take from whichever side has been given fewer cells so far — that is what
-        # centers *playing* — with the right winning ties so a fresh loop reads left
-        # to right.  A side that has run out defers to the other.
         if end < total and (start == 0 or end - playing - 1 <= playing - start):
             end += 1
         else:
@@ -329,13 +253,6 @@ def nav_map_window(total: int, playing: int, limit: int = NAV_MAP_CELLS) -> NavM
 
 
 def column_anchor_rect(playing: Cell, corner_rect: Rect, seed_rects: list[Rect]) -> Rect:
-    """The seed-row cell the action column hangs under: the playing cell while it
-    is out along the row, the corner otherwise.
-
-    fun_time builds the column as the playing seed's other acts, so it has to
-    hang under the cell it belongs to — under the corner it would read as the
-    corner seed's acts, which mid-loop it no longer is.
-    """
     bucket, index = playing
     if bucket == "seed" and 0 <= index < len(seed_rects):
         return seed_rects[index]
@@ -369,13 +286,6 @@ def thumbnail_rect(place: Rect, size: tuple[int, int]) -> Rect:
 def playing_rect(
     playing: Cell, corner_rect: Rect, seed_rects: list[Rect], action_rects: list[Rect]
 ) -> Rect | None:
-    """The rect of the cell holding the video on screen, or None when that cell was
-    not drawn (its axis's window closed before reaching it).
-
-    Usually the corner — but a lock taken inside a running loop holds a video the
-    map is not anchored on, and the ring saying "this is the video being held" has to
-    land on the cell that video is actually drawn in, not on the loop's anchor.
-    """
     bucket, index = playing
     if bucket == "corner":
         return corner_rect
@@ -414,11 +324,6 @@ def looped_group_rect(
     corner_rect: Rect, seed_rects: list[Rect], action_rects: list[Rect], axis: str,
     *, reserve: int = 0, column_rect: Rect | None = None,
 ) -> Rect:
-    """The rectangle drawn around the videos an *axis* loop is cycling — the row for
-    "seed", the column for "action" — grown by *reserve* at each end so the loop's
-    "…" marks fall inside it, saying those videos are in the loop too.  The column's
-    rect stands on *column_rect*, the row cell the column hangs under
-    (:func:`column_anchor_rect`); it defaults to the corner."""
     cx, cy, cw, ch = corner_rect
     if axis == "seed":
         row_right = _row_right(corner_rect, seed_rects)
@@ -432,11 +337,6 @@ def ellipsis_rects(
     corner_rect: Rect, seed_rects: list[Rect], action_rects: list[Rect], axis: str,
     *, column_rect: Rect | None = None,
 ) -> tuple[Rect, Rect]:
-    """The two places an axis keeps for the "…" marks that say it runs on past what is
-    drawn: flanking the seed row left and right, or the action column above and
-    below.  Each sits a gap in from the loop rectangle, so a mark never reads as part
-    of that border.  The column's places stand on *column_rect*, the row cell the
-    column hangs under (:func:`column_anchor_rect`); it defaults to the corner."""
     cx, cy, cw, ch = corner_rect
     if axis == "seed":
         return ((cx - NAV_MAP_GAP - ELLIPSIS, cy, ELLIPSIS, ch),
@@ -446,15 +346,9 @@ def ellipsis_rects(
             (col_x, _col_lower(corner_rect, action_rects) + NAV_MAP_GAP, col_w, ELLIPSIS))
 
 
-# --- the Funestra's own buttons ------------------------------------------------
-# What a source declares for this Funestra, drawn in bars between the title
-# and the nav map: each row of ``HudModel.rows`` is one bar, a square per button, a
-# word button as wide as its word (the painter measures it), and the wider gap
-# before a button that starts a group -- the way the Main Funestra's HUD's rows break.
 CTRL_BTN = BUTTON_SIZE_HUD
 MINUS_INSET = (PAD, PAD + (TITLE_ROW_H - CTRL_BTN) // 2)
 CONTROL_ROW_H = CTRL_BTN + BLOCK_GAP
-# Inside a word button, the app either side of its word.
 MODE_LABEL_PAD = BUTTON_PAD_H_TIGHT
 
 
@@ -468,9 +362,6 @@ def button_row_width(buttons: Sequence[Button], widths: Sequence[int]) -> int:
 
 def button_row_rects(x: int, y: int, buttons: Sequence[Button],
                      widths: Sequence[int]) -> list[tuple[Rect, Button]]:
-    """Each button's ``(rect, button)`` along a row running right from ``(x, y)``,
-    *widths* being each one's width as the painter measured it -- this module
-    is font-free."""
     rects: list[tuple[Rect, Button]] = []
     for button, width in zip(buttons, widths, strict=True):
         if rects:
@@ -480,8 +371,6 @@ def button_row_rects(x: int, y: int, buttons: Sequence[Button],
     return rects
 
 
-# The speed row's two buttons, drawn by the Funestra rather than declared by the
-# source, since only the drawing Funestra knows the rate that sits between them.
 _SPEED_BUTTONS = (
     ("speed_down", shared_icon("minus"), "Play the video slower"),
     ("speed_up", shared_icon("plus"), "Play the video faster"),
@@ -494,8 +383,6 @@ def speed_row_width(label_width: int) -> int:
 
 def speed_row(funestra: str, x: int, y: int, *,
               label_width: int) -> tuple[list[tuple[Rect, Button]], Rect]:
-    """*funestra*'s slower and faster buttons after a name *label_width* wide, and
-    the cell between them the rate is written in."""
     down_x = x + label_width
     rate_x = down_x + CTRL_BTN + NAV_MAP_GAP
     up_x = rate_x + VALUE_W + NAV_MAP_GAP
@@ -510,17 +397,6 @@ TITLE_INDENT = TITLE_X - PAD
 
 
 def favorite_icon_rect(x: int, y: int, line_h: int) -> Rect:
-    """The favorite mark: at the head of the file-name line, under the dot.
-
-    A visualizer, not a button, so it belongs where the HUD keeps visualizers and
-    not in the control bar: the one column already used for "what is true of
-    this Funestra" — the active dot is directly above it — and immediately left of
-    the name of the very video it is answering about.
-
-    *y* is the file-name line's top and *line_h* its height, and the mark is as
-    tall as that line: a mark beside words wants to be the size of the words,
-    and anything smaller reads as a speck rather than as a state.
-    """
     return (x + (ACTIVE_DOT + 1 - line_h) // 2, y, line_h, line_h)
 
 
@@ -538,37 +414,19 @@ def largest_size_that_fits(largest: int, room: int, width_at: Callable[[int], in
     return next((size for size in sizes if width_at(size) <= room), sizes[-1])
 
 
-# The strike under the current video's act: this act is wrong, ask about it again.
-# Smaller than a control button and in the gutter rather than on the bar,
-# because it is about the words above it rather than about the Funestra — the one
-# place on the HUD where that act is named is the only place the strike can
-# say which act it means.
 WRONG_BTN = 14
-WRONG_GAP = GAP_SMALL   # between the act's last line and the strike under it
+WRONG_GAP = GAP_SMALL
 
 
 def label_stack_top(row_y: int, row_h: int, label_h: int, extra: int = 0) -> int:
-    """Where a gutter row's label starts, centered in its row with *extra* room
-    kept under it.
-
-    The corner row keeps that room for the strike; every other row asks for none
-    and centers the words alone, exactly as before.
-    """
     return row_y + (row_h - label_h - extra) // 2
 
 
 def wrong_action_rect(gutter_right: int, label_bottom: int) -> Rect:
-    """The strike, under the act it strikes and right-aligned with it."""
     return (gutter_right - WRONG_BTN, label_bottom + WRONG_GAP, WRONG_BTN, WRONG_BTN)
 
 
 def seed_column_label(index: int) -> str:
-    """The header over a seed column: its place in the family, counting from one.
-
-    A window can open partway along the family, so the headers carry the real
-    ordinals — "Seed 7" over the seventh seed — rather than restarting at one and
-    hiding how far along the row has got.
-    """
     return f"Seed {index + 1}"
 
 
@@ -579,31 +437,17 @@ def expand_button_rect(loop_seed_rect: Rect | None) -> Rect | None:
     return (sx + sw + NAV_MAP_GAP, sy, LOOP_BTN, sh)
 
 
-# --- hit-testing -------------------------------------------------------------
-
-
 @dataclass
 class HudTargets:
-    """What the last render put where — the rects a press is tested against."""
-
     click: list[tuple[Rect, str]]
     loop: list[tuple[Rect, str]]
     filter: list[tuple[Rect, str]]
     expand: Rect | None
-    # The declared buttons, each with what it posts and what it is called.
     buttons: list[tuple[Rect, Button]] = field(default_factory=list)
-    # The favorite mark is a visualizer, so it is here only to carry its tooltip.
     favorite: Rect | None = None
-    # The strike under the current video's act, or None where no act is named.
     wrong_action: Rect | None = None
-    # The OSR2 visualizer's three bars, on a host that draws one: pressed to set
-    # a level outright, and held while the pointer drags along them.
     tracks: list[DriveTrack] = field(default_factory=list)
-    # Where the item's own row landed and how it is laid out, for a press to
-    # be placed on it (:class:`funestra.hud_row.RowPress`).
     row: RowLayout | None = None
-    # Where the block the source paints at the foot landed: its presses and
-    # the wheel go back to the source in that block's own pixels.
     foot: Rect | None = None
 
 
@@ -615,8 +459,6 @@ def build_click_targets(
     seeds: list[HudCell] | tuple[HudCell, ...],
     actions: list[HudCell] | tuple[HudCell, ...],
 ) -> list[tuple[Rect, str]]:
-    """(rect, video_path) for every clickable thumbnail: the corner is the current
-    video, then each drawn seed and action zipped to its path."""
     targets: list[tuple[Rect, str]] = []
     if corner_rect is not None and corner is not None and corner.path:
         targets.append((corner_rect, corner.path))
@@ -626,8 +468,6 @@ def build_click_targets(
 
 
 def hit_test_targets(targets: list[tuple[Rect, str]], px: int, py: int) -> str:
-    """The value whose rect contains ``(px, py)``, or "" if none does — used for
-    the thumbnail (path), loop-button (axis) and action-label (action) targets."""
     for (x, y, w, h), value in targets:
         if x <= px < x + w and y <= py < y + h:
             return value
@@ -648,17 +488,6 @@ def filter_button_rects(
     current_action: str,
     action_labels: list[str] | tuple[str, ...],
 ) -> list[tuple[Rect, str]]:
-    """(rect, action_name) for the filter button at the head of each map row — the
-    corner's row is the current action, the rows below are the sibling actions.
-    Pressing one filters the satellite to that action.
-
-    One button per row, at the gutter's left edge and as tall as its row: the same
-    shape the seed-loop button has beside the seed row, because it stands to its row
-    the same way.  The button is the whole affordance; the name beside it is only a
-    label.
-
-    A row with no action name gets no button: there is nothing to filter to.
-    """
     rects: list[tuple[Rect, str]] = []
     if corner_rect is not None and current_action:
         _cx, cy, _cw, ch = corner_rect
@@ -670,38 +499,14 @@ def filter_button_rects(
 
 
 def _acts(text: str, camera_words: Sequence[str]) -> list[str]:
-    """*text* as its separate acts, normalized — for a row label or for a filter
-    query, which is set from one and so is shaped like one."""
     return [act for act in (normalized_text(part) for part in split_acts(text, camera_words)) if act]
 
 
 def act_is_filtered(act: str, filter_query: str, camera_words: Sequence[str]) -> bool:
-    """Whether *act* is one of the acts the filter names — what decides which of a
-    row's acts is drawn lit.
-
-    A filter for one act lights that act alone: on a "Side / Gamma" row a "gamma"
-    filter whitens "Gamma" and leaves "Side" gray, which is what says *why* the video
-    is here.  A filter set from a video carrying two acts names both, so both light.
-    """
     return any(filter_keeps(act, query) for query in _acts(filter_query, camera_words))
 
 
 def label_is_filtered(label: str, filter_query: str, camera_words: Sequence[str]) -> bool:
-    """Whether the filter keeps a row labeled *label* — its button's lit state, and
-    what the press reads to decide between narrowing and lifting.
-
-    fun_time keeps a video when the query appears as a *contiguous substring* of its
-    recorded act (``media_metadata.matches_query``), so every act the query names has
-    to be one of the row's: filtered to "gamma", both a "Side Gamma" row and a "Gamma,
-    Theta" row are videos it keeps, while a plain "Alpha" row is *not* kept by an
-    "alpha, beta" filter and must not read as though it were.
-    Within a row an act still matches on a substring ("gamma" catching "theta
-    gamma") — the same rule fun_time uses, one act down.
-
-    One rule for the whole row, used by the nav map to light its button and by the press
-    to know whether it is already exactly this row, so what looks on and what turns
-    off cannot disagree.
-    """
     acts, query = _acts(label, camera_words), _acts(filter_query, camera_words)
     return bool(acts) and bool(query) and all(
         any(filter_keeps(act, part) for act in acts) for part in query)
@@ -723,12 +528,6 @@ def _in(rect: Rect | None, px: int, py: int) -> bool:
 
 
 def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
-    """What the HUD control under ``(px, py)`` is, or "" over none of them.
-
-    Every icon on this HUD is cryptic on purpose — it is read over moving video
-    — so each one names itself on hover: a declared button by the tooltip its
-    source gave it, the nav map's own chrome by the words here.
-    """
     button = button_under(targets, px, py)
     if button is not None:
         return button.tooltip_on_hover
@@ -746,8 +545,6 @@ def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
     return ""
 
 
-# --- clicks ------------------------------------------------------------------
-
 # Windows' default double-click time.  A click that turns out to be the first
 # half of a double-click must not also post a switch, so a lone click waits this
 # long before it is posted.  Erring short is safe: a slow double-click simply
@@ -756,59 +553,30 @@ DOUBLE_CLICK_S = 0.5
 
 
 class HudClicks:
-    """Turns presses on the HUD into the fun_time commands they stand for.
-
-    A press on a thumbnail is ambiguous until the double-click window passes —
-    single switches to the video, double locks it — so :meth:`press` defers it and
-    :meth:`due` posts it once no second click has arrived.  Every other press
-    (loop buttons, expand, filter buttons) is unambiguous and posts immediately.
-
-    A press inside one of the OSR2 visualizer's bars, on a host that draws one,
-    takes hold of it as well as posting: :meth:`drag_to` then goes on setting
-    that level as the pointer moves, so a bar can be dragged and not only
-    clicked.
-    """
-
     def __init__(self, funestra: str, *, double_click_s: float = DOUBLE_CLICK_S) -> None:
         self._funestra = funestra
         self._double_click_s = double_click_s
         self._pending_path = ""
         self._pending_at = 0.0
         self._grip = TrackGrip()
-        # Which axis is looping, and which act the Funestra is filtered to.  Both are
-        # mirrored from the published HUD on every refresh, and set optimistically
-        # on a click so the control lights up before fun_time's answer comes back.
         self.active_loop = ""
         self.active_filter = ""
 
     @property
     def holding(self) -> bool:
-        """Whether a press took hold of a visualizer bar and has not let go."""
         return self._grip.holding
 
     def drag_to(self, px: int, py: int) -> str:
-        """The command the pointer posts while a bar is held; "" while none is."""
         return self._grip.drag_to(px, py)
 
     def release(self) -> None:
-        """Let go of whichever bar a press took hold of."""
         self._grip.release()
 
     def press(self, targets: HudTargets, px: int, py: int, *, now: float) -> str:
-        """The command for a press at ``(px, py)``, or "" when it posts nothing
-        yet (a first thumbnail click, or empty space).
-
-        Anything already held is let go first, so a press on an ordinary button
-        never leaves a bar still latched.
-        """
         self.release()
         button = button_under(targets, px, py)
         if button is not None and button.command:
-            # Verbatim: the source said what a press posts.  A dimmed one is at
-            # the end of its range or has nothing to act on, and posts nothing.
             return "" if button.dim else button.command
-        # A target with nothing to post is a visualizer bar, there only to name
-        # itself on hover; the press belongs to the bar under it.
         grabbed = self._grip.grab(targets.tracks, px, py)
         if grabbed:
             return grabbed
@@ -817,16 +585,10 @@ class HudClicks:
             return self._toggle_loop(loop)
         if _in(targets.expand, px, py):
             return f"{self._funestra}_more_seeds"
-        # Tested before the row's filter button: the strike sits inside the
-        # corner row's own bar, and the filter button spans that whole bar.
         if _in(targets.wrong_action, px, py):
             return f"{self._funestra}_wrong_action"
         action = hit_test_targets(targets.filter, px, py)
         if action:
-            # Narrow before you lift: a press on a row the filter only partly keeps
-            # ("Side Gamma" under "gamma") moves the filter onto that whole row, and
-            # only a press on the row the filter already *is* turns it off, so a
-            # broad filter can be tightened from the nav map.
             query = normalized_text(action)
             if query == normalized_text(self.active_filter):
                 self.active_filter = ""
@@ -844,16 +606,12 @@ class HudClicks:
         return ""
 
     def due(self, *, now: float) -> str:
-        """The deferred single-click switch, once its double-click window lapsed."""
         if not self._pending_path or now - self._pending_at <= self._double_click_s:
             return ""
         path, self._pending_path = self._pending_path, ""
         return f"{self._funestra}_play_video|{path}"
 
     def _toggle_loop(self, kind: str) -> str:
-        """Turn *kind*'s loop on, or — if it is already on — off.  Turning one on
-        turns the other off: the two loops cannot coexist, matching the command
-        the dispatch loop runs."""
         if self.active_loop == kind:
             self.active_loop = ""
             return f"{self._funestra}_no_loop"
@@ -861,19 +619,11 @@ class HudClicks:
         return f"{self._funestra}_{kind}_loop"
 
 
-# --- action labels -----------------------------------------------------------
-
 def _titlecase_word(word: str) -> str:
     return word[:1].upper() + word[1:].lower()
 
 
 def split_acts(name: str, camera_words: Sequence[str]) -> list[str]:
-    """*name* as the separate acts it carries, in order and unnormalized.
-
-    Commas separate acts ("Alpha, Theta Motion"), and a leading camera word is an
-    act of its own.  The single split backing both the drawing and the filter comparisons,
-    so a row cannot be lit act by act along one seam and drawn along another.
-    """
     cameras = {word.lower() for word in camera_words}
     acts: list[str] = []
     for part in str(name or "").split(","):
@@ -887,14 +637,6 @@ def split_acts(name: str, camera_words: Sequence[str]) -> list[str]:
 
 
 def action_label_blocks(name: str, camera_words: Sequence[str]) -> list[list[str]]:
-    """A video's action(s) drawn nicely, as one block of word-lines per action.
-
-    A video can carry several acts ("Alpha, Theta Motion", "Side Gamma") — each becomes
-    its own block, so they can be drawn with a gap between the acts but tight
-    wrapping within one, and each can be lit on its own.  A camera word is drawn as
-    the source writes it, which plain title case would get wrong for an initialism.
-    "(unknown)" when there is no action metadata.
-    """
     as_written = {word.lower(): word for word in camera_words}
     blocks = [[as_written.get(word.lower()) or _titlecase_word(word) for word in act.split()]
               for act in split_acts(name, camera_words)]
@@ -919,13 +661,6 @@ def _cell_raw(cell: HudCell) -> dict[str, str]:
 
 
 def hud_text(model: HudModel) -> str:
-    """*model* as the text a source publishes, and :func:`parse_hud` reads back.
-
-    The two are one module so the keys are spelled once: a source in another
-    process (Fun Time, for its satellites) writes this into the Funestra's HUD
-    file, and a source in the Funestra's own (a hosted Origenerator) hands the
-    model over without it.
-    """
     return json.dumps({
         "funestra": model.funestra,
         "hud_corner": model.hud_corner,
@@ -958,11 +693,6 @@ def hud_text(model: HudModel) -> str:
 
 
 def parse_hud(text: str) -> HudModel | None:
-    """The published HUD, or None when *text* is not a complete HUD.
-
-    fun_time rewrites the file in place while the Funestra is reading it, so a
-    torn or empty read is expected and simply means "keep the HUD you have".
-    """
     try:
         raw = json.loads(text)
     except (ValueError, TypeError):

@@ -1,21 +1,3 @@
-"""The scrubber, the volume control, the time and a flick's loop dial, drawn on a HUD.
-
-Every Funestra here laid this row along the lower edge of its own video, which is
-where a video player has always put it — and where, in this family, it keeps
-turning out to be the wrong place.  A wrapped video smears it into a ring round
-the nadir, out of the controller's reach, so the headset draws it on the Main Funestra's HUD
-instead.  Everything else has the same defect in slower form: a row over the
-item is a second HUD, on a screen that already carries one.
-
-So the row is a block a HUD hosts, the way the device line and the drive
-visualizer are: one line, laid out from what is on it against the block's own
-width rather than the window's.  The track is what the app is for -- the
-heatmap and a seek need it wide -- so everything else takes only what it
-must: the time of the frame and the time at the left end, after a
-flick's dial; the volume control flush with the right end.  A flick's track has no
-heatmap and nothing to find along it, so it stays short and no HUD widens
-for it.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -44,9 +26,6 @@ from .volume import (
     volume_control_xy,
 )
 
-# What a press on the row is on.  The volume control's two halves are named apart because
-# they do different things to the same control: the speaker mutes, the slider
-# sets the level.
 SCRUBBER = "scrubber"
 TIME_TEXT = "readout"
 MUTE = "mute"
@@ -56,44 +35,29 @@ DIAL = "dial"
 _CHIP_PARTS = {"mute": MUTE, "track": VOLUME}
 
 ROW_H = SCRUBBER_HEIGHT
-# The time, the dial and the volume control are as tall as each other, centered in the row.
 PARTS_Y = (ROW_H - VOLUME_CONTROL_H) // 2
-# Between a visualizer and the control it reads out.
 GAP = GAP_SMALL
 
-# The least track worth pressing, and how long a flick's track is.
 LEAST_TRACK = 60
 FLICK_TRACK_W = 96
 
-# Between the HUD's lower edge and the loop's two frames hanging under it.
 UNDER_THE_HUD_GAP = GAP_SMALL
 
-# The visualizers a HUD is held wide enough for, so it keeps one width from one
-# flick or video to the next instead of moving with the digits of each: a flick
-# of up to 999 frames shown for under ten minutes, and a video of under an hour
-# at up to 60 frames a second.
 _HELD_FLICK_TIME_TEXT = framed_playhead(999, 999, 599_000, 599_000)
 _HELD_VIDEO_TIME_TEXT = video_playhead(3_599_000, 3_599_000, 60.0)
 
 
 @dataclass(frozen=True)
 class RowHud:
-    """What the row says: where the video is, how long it runs, how loud it is,
-    and the ends of the loop it is playing — the in point red while that loop is
-    still being recorded."""
-
     position_ms: float = 0.0
     duration_ms: float = 0.0
     volume: VolumeHud | None = None
     playhead: PlayheadHud | None = None
     loop_bounds: tuple[float, float] | None = None
     record_in_ms: float | None = None
-    # A flick's loop: how many of its frames have played, of how many, which
-    # the dial goes round with; None on a video's row, which has no dial.
     loop: tuple[int, int] | None = None
 
 
-# The widest rows a HUD carries, each with the longest visualizers it is held for.
 _WIDEST_ROWS = (
     RowHud(playhead=_HELD_FLICK_TIME_TEXT, loop=(0, 999)),
     RowHud(playhead=_HELD_VIDEO_TIME_TEXT),
@@ -102,13 +66,10 @@ _WIDEST_ROWS = (
 
 @dataclass(frozen=True)
 class RowLayout:
-    """Where the row lies in its HUD, and where each part lands across it,
-    left to right: a flick's dial, the time, the track, and the volume control."""
-
     rect: tuple[int, int, int, int]
-    time_text: tuple[int, int] | None  # its x and width, in the row's own pixels
-    dial: int | None                  # the dial's x
-    track: tuple[int, int]            # the track's two ends
+    time_text: tuple[int, int] | None
+    dial: int | None
+    track: tuple[int, int]
 
     @property
     def width(self) -> int:
@@ -124,9 +85,6 @@ class RowLayout:
 
 def _before_the_track(row: RowHud, *, held: bool = False) -> tuple[
         tuple[int, int] | None, int | None, int]:
-    """The time's place and the dial's, and where the track starts after
-    them, from the row's own left edge; *held*, with the time as wide as the
-    widest a HUD is held for."""
     x = 0
     time_text = dial = None
     if row.loop is not None:
@@ -156,8 +114,6 @@ def row_layout(row: RowHud, *, rect: tuple[int, int, int, int]) -> RowLayout:
 
 
 class RowSection:
-    """The row itself, drawn into whatever HUD is hosting it."""
-
     def __init__(self) -> None:
         self._volume = VolumeHudPainter()
         self._time_text = PlayheadHudPainter()
@@ -165,10 +121,6 @@ class RowSection:
 
     @staticmethod
     def least_width(row: RowHud) -> int:
-        """The narrowest HUD the row can be laid out in: for a video's, one
-        that leaves the track no shorter than everything else on the line,
-        since the heatmap and a seek are what the row is for; for a flick's,
-        one that leaves its track the room to be pressed."""
         before = _before_the_track(row, held=True)[2]
         if row.loop is not None:
             return before + LEAST_TRACK + PLACE_W
@@ -176,17 +128,10 @@ class RowSection:
 
     @staticmethod
     def least_width_for_any_row() -> int:
-        """The narrowest HUD every row a HUD can carry fits in."""
         return max(RowSection.least_width(row) for row in _WIDEST_ROWS)
 
     def draw(self, image: Image.Image, layout: RowLayout, row: RowHud,
              *, heatmap: np.ndarray | None = None) -> None:
-        """Paint the row where *layout* put it in *image*.
-
-        *heatmap* is the funscript's colors across the track; without it, or
-        with colors measured across some other width, the track is the plain
-        bar.
-        """
         x, y, width, _height = layout.rect
         bar = progress_bar_bgra(row.position_ms, row.duration_ms, row.loop_bounds,
                                 width, record_in_ms=row.record_in_ms,
@@ -206,15 +151,6 @@ class RowSection:
 
 
 def fitting(heatmap, track: tuple[int, int]):
-    """The colors if they were measured across *track*, else None.
-
-    A HUD is as wide as what is on it, so how wide its track came out is an
-    answer only a render gives: a host measures one HUD and fills the next.
-    Between those two the HUD can change width, and a fill of the wrong
-    length raises out of the track painter rather than stretching -- which
-    takes the window's drawing down with it and leaves it showing no item at
-    all.  Dropping the stale fill costs one frame of plain track instead.
-    """
     if heatmap is None or not len(heatmap):
         return None
     x0, x1 = track
@@ -223,10 +159,6 @@ def fitting(heatmap, track: tuple[int, int]):
 
 def track_on_screen(layout: RowLayout | None, *, origin: tuple[int, int],
                     hud_height: int) -> tuple[int, int, int] | None:
-    """Where the row's track runs in the window's own coordinates: its two ends
-    and the y just under the HUD, or None where no row is drawn.  A window
-    hangs its loop's frames there, below their own marks on the track.
-    """
     if layout is None:
         return None
     left, top = origin
@@ -236,7 +168,6 @@ def track_on_screen(layout: RowLayout | None, *, origin: tuple[int, int],
 
 
 def _rgba(bgra: np.ndarray) -> Image.Image:
-    """One of this package's BGRA bitmaps as an image a HUD can composite."""
     return Image.fromarray(np.ascontiguousarray(bgra[:, :, [2, 1, 0, 3]]), "RGBA")
 
 
@@ -245,13 +176,6 @@ def _offset(origin: tuple[int, int], place: tuple[int, int]) -> tuple[int, int]:
 
 
 def row_part(px: int, py: int, layout: RowLayout) -> str:
-    """Which control a press at the row's own ``(px, py)`` is on, or "" for none.
-
-    The row is a video's last rows drawn somewhere else, so it is hit-tested as
-    one: the same chip placement, against the row's width and its own height
-    rather than a window's, and the dial and the time where the layout put
-    them.
-    """
     if not 0 <= py < ROW_H:
         return ""
     part = hit_part(*volume_control_local(px, py, viewport_w=layout.width, viewport_h=ROW_H, timeline_h=ROW_H))
@@ -263,15 +187,6 @@ def row_part(px: int, py: int, layout: RowLayout) -> str:
 
 
 class RowPress:
-    """What a press on the item's row asks of the window that draws it.
-
-    The Funestra's own overlays place a press on the row with this, so the
-    track, the dial, the slider and the speaker answer the same way on each of
-    them.  *layout* is where the row landed in the HUD's own coordinates,
-    and *duration_ms* how long the track spans -- the video, or the window a
-    loop being recorded has zoomed it to.
-    """
-
     def __init__(self, *, seek=None, seek_loop=None, set_volume=None, toggle_mute=None) -> None:
         self._seek = seek
         self._seek_loop = seek_loop
@@ -284,9 +199,6 @@ class RowPress:
         return bool(self._holding)
 
     def press(self, px: int, py: int, *, layout: RowLayout | None, duration_ms: float) -> bool:
-        """Whether this press landed on a control of the row, and if it did,
-        what it asked: the track runs the video there, the dial turns its loop,
-        the slider sets the level, the speaker mutes."""
         if layout is None or not layout.inside(px, py):
             return False
         self._holding = row_part(*layout.local(px, py), layout)
@@ -296,9 +208,6 @@ class RowPress:
         return True
 
     def drag_to(self, px: int, py: int, *, layout: RowLayout | None, duration_ms: float) -> bool:
-        """The track, the dial and the slider go on being set while the pointer
-        is held down.  The speaker does not: the mute is a press, so a pointer
-        crossing it on its way along the slider must not flip it."""
         if layout is None or self._holding not in (SCRUBBER, DIAL, VOLUME):
             return False
         self._act(px, py, layout=layout, duration_ms=duration_ms)
@@ -320,16 +229,13 @@ class RowPress:
 
 
 def scrub_to(px: int, layout: RowLayout, *, duration_ms: float) -> float:
-    """The time a press along the track asks for, saturating past either end."""
     x0, x1 = layout.track
     return min(1.0, max(0.0, (px - x0) / max(1, x1 - x0))) * duration_ms
 
 
 def volume_to(px: int, py: int, layout: RowLayout) -> int:
-    """The level a press along the slider asks for."""
     return volume_at(volume_control_local(px, py, viewport_w=layout.width, viewport_h=ROW_H, timeline_h=ROW_H)[0])
 
 
 def turn_to(px: int, py: int, layout: RowLayout) -> float:
-    """The turn a press round the dial asks for, clockwise from twelve o'clock."""
     return turn_at(px, py, at=(layout.dial, PARTS_Y))

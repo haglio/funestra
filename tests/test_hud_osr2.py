@@ -1,4 +1,3 @@
-"""The device's own line, drawn the same wherever a HUD says who has the OSR2."""
 from __future__ import annotations
 
 import numpy as np
@@ -157,11 +156,6 @@ def _park() -> Button:
 
 
 class TestWhoTheLineNames:
-    """One precedence, wherever the line is drawn: the device running itself or
-    switched off beats anything the app is doing to it, a hold beats whoever
-    would otherwise be driving, and only then does the driver get
-    named."""
-
     def test_the_driver_is_named_when_nothing_is_holding_the_device(self):
         assert state_for(Osr2State.ROBOT_HAND, "") == Osr2State.ROBOT_HAND
 

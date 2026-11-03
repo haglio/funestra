@@ -68,9 +68,6 @@ class Heatmap:
         mark_in_ms: float | None = None,
         position_ms: float = 0.0,
     ) -> None:
-        """The colors across a track *track_w* pixels wide, for *video_key*'s
-        *funscript*; 0 while no host has measured a track yet, which leaves
-        the first row plain."""
         if mark_in_ms is not None and funscript is not None:
             if self._zoom is None:
                 self._zoom = ZoomWindow(in_ms=mark_in_ms)
@@ -148,11 +145,6 @@ def loop_thumbnail_xys(
     viewport_w: int,
     top: int,
 ) -> tuple[tuple[int, int] | None, tuple[int, int] | None]:
-    """Where the loop's in and out frames go: ``(in_xy, out_xy)``, either None
-    until that frame has been grabbed.  Each hangs at *top*, lined up with its
-    own mark on the inset *track*, kept on screen and stepped apart where they
-    would overlap.
-    """
     start_ms, end_ms = heatmap.window
     tx0, tx1 = track
     track_w = tx1 - tx0

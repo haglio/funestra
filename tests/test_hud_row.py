@@ -1,4 +1,3 @@
-"""The scrubber, the volume control, the time and a flick's dial, laid out on one line of a HUD."""
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -60,10 +59,6 @@ def _layout(row: RowHud, width: int = WIDTH, at: tuple[int, int] = (0, 0)):
 
 
 class TestHowTheRowIsLaidOut:
-    """One line, laid out from what is on it: the time at the row's left
-    end, after the dial on a flick's row, then the track, and the volume control at its
-    right end."""
-
     def test_a_videos_row_is_its_time_text_then_the_track_then_the_volume_control(self):
         layout = _layout(VIDEO)
 
@@ -73,8 +68,6 @@ class TestHowTheRowIsLaidOut:
         assert layout.track == (width + GAP, WIDTH - PLACE_W)
 
     def test_a_flicks_row_is_its_dial_then_the_time_text_a_videos_row_carries(self):
-        """Its frame and then its time, the frames beside the dial and the time
-        beside the scrubber, so the two rows differ by the dial alone."""
         layout = _layout(FLICK)
 
         assert layout.dial == 0
@@ -189,7 +182,6 @@ def test_colors_measured_across_some_other_track_leave_it_plain():
 
 
 def _marks(painted, color) -> list[int]:
-    """The middle of each mark the track carries in *color*, left to right."""
     pixels = painted[ROW_H // 2]
     columns = [x for x, pixel in enumerate(pixels.tolist())
                if tuple(pixel[:3]) == tuple(color[:3])]
@@ -203,8 +195,6 @@ def _marks(painted, color) -> list[int]:
 
 
 def test_a_loop_being_played_shows_its_ends_on_the_track():
-    """The row is the lower edge of a Funestra's video, and the Funestra marks a
-    loop's in and out there — so the HUD does too."""
     row = RowHud(position_ms=0, duration_ms=60_000, loop_bounds=(15_000, 45_000))
 
     painted, layout = _painted(row)
@@ -224,9 +214,6 @@ def test_a_loop_still_being_recorded_shows_its_in_point_in_red():
 
 
 class TestWhatAPressOnTheRowIsOn:
-    """The row is pressed where it is drawn: a HUD hands it the press in its
-    own coordinates and it says which control was under it."""
-
     LAYOUT = _layout(VIDEO)
 
     def _part(self, px, py):
@@ -242,8 +229,6 @@ class TestWhatAPressOnTheRowIsOn:
         assert self._part(volume_control_x + VOLUME_CONTROL_W - 6, volume_control_y + VOLUME_CONTROL_H // 2) == VOLUME
 
     def test_left_of_the_track_is_the_time_text(self):
-        """Saturated like a margin, a press on the time would throw the flick
-        back to its start, so it is its own part and does nothing."""
         assert self._part(self.LAYOUT.track[0] - 1, ROW_H // 2) == TIME_TEXT
         assert self._part(self.LAYOUT.time_text[0] + 3, ROW_H // 2) == TIME_TEXT
 
@@ -266,9 +251,6 @@ class TestWhatAPressOnTheRowIsOn:
 
 
 class TestWhatAPressOnTheRowAsksFor:
-    """One placement for every HUD that hosts the row, so the track, the
-    slider and the speaker answer the same way wherever the row is drawn."""
-
     LAYOUT = _layout(VIDEO, at=(10, 40))
     DURATION_MS = 10_000.0
 
@@ -329,8 +311,6 @@ class TestWhatAPressOnTheRowAsksFor:
         assert asked.seeks[-1] == pytest.approx(self.DURATION_MS / 2, abs=200)
 
     def test_a_drag_across_the_speaker_does_not_flip_the_mute(self):
-        """The mute is a press, so a pointer on its way along the slider must
-        not toggle it as it passes."""
         press, asked = self._press()
         self._squeeze(press, self._at("slider"))
 
@@ -356,9 +336,6 @@ class TestWhatAPressOnTheRowAsksFor:
 
 
 class TestAFlicksDial:
-    """A flick's row carries a dial beside its track -- a clock hand going round
-    once per loop of the flick -- where a video's row has none."""
-
     def _dial_center(self, layout) -> tuple[int, int]:
         return layout.dial + DIAL_SIZE // 2, PARTS_Y + DIAL_SIZE // 2
 
@@ -369,8 +346,6 @@ class TestAFlicksDial:
         assert painted[cy, cx, 3] > 0
 
     def test_the_hand_is_as_far_round_as_the_loops_frames_have_played(self):
-        """Six frames of twenty played is three tenths of a turn: the hand
-        points a little past three o'clock."""
         painted, layout = _painted(FLICK)
         cx, cy = self._dial_center(layout)
         ink = painted[:, :, :3].astype(int).sum(axis=2)

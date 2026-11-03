@@ -1,4 +1,3 @@
-"""The verbs a Funestra answers, driven through its registry one at a time."""
 from __future__ import annotations
 
 import threading
@@ -46,7 +45,6 @@ from funestra.volume_control import AppVolume, VolumeControl
 
 
 def _never_reloads() -> None:
-    """The reload hook, for the verbs that must not reach it."""
     raise AssertionError("RELOAD_PLAYLIST was not the command under test")
 
 
@@ -170,9 +168,6 @@ class TestApplyCommand:
         assert controls.playback.showing == video
 
     def test_two_quick_steps_carrying_one_family_both_land(self, tmp_path):
-        """Fun Time reads the file on screen off a status file that lags the
-        Funestra, so it sends the family rather than a target: two presses read
-        the same status, and a target would have put the same file up twice."""
         controls = _controls(tmp_path)
         video = controls.playback.current_video
         family = [video, tmp_path / "v0_sorted.mp4", tmp_path / "v0_small.mp4"]
@@ -201,7 +196,6 @@ class TestApplyCommand:
         assert stop.is_set()
 
     def test_a_build_with_no_stop_event_refuses_quit(self, tmp_path):
-        """The headset's Funestras end with the session, never on their own."""
         controls = _controls(tmp_path, stop_event=None)
         assert apply_command(QUIT, controls) is False
 
@@ -213,8 +207,6 @@ class TestApplyCommand:
         assert "FLOOP" in caplog.text
 
     def test_a_value_on_a_verb_that_takes_none_is_refused(self, tmp_path):
-        """Half a command is not a command, and neither is one and a half — the
-        same rule the Main Funestra and Genau already keep."""
         controls = _controls(tmp_path)
         assert apply_command(f"{NEXT} 5", controls) is False
         assert controls.playback.current_video.name == "v0.mp4"

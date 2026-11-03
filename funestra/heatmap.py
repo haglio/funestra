@@ -1,4 +1,3 @@
-"""A funscript's colors across the scrubber: how fast the script moves in each pixel of the track."""
 from __future__ import annotations
 
 from itertools import pairwise

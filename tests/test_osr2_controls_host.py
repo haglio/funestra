@@ -1,4 +1,3 @@
-"""The OSR2 part of the Main Funestra's HUD, drawn by a host on a surface of its own and pressed there."""
 from __future__ import annotations
 
 from funestra.main_hud_painter import MainHud, hud_xy

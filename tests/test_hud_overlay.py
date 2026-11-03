@@ -1,4 +1,3 @@
-"""The HUD a Funestra composites over its item: the published HUD, and its clicks."""
 from __future__ import annotations
 
 import json
@@ -32,7 +31,6 @@ from funestra.volume import (
 
 @pytest.fixture
 def hud(tmp_path: Path) -> Path:
-    """A published HUD HUD on disk, with one seed and one action row."""
     thumb = tmp_path / "t.jpg"
     Image.new("RGB", (40, 60), (90, 90, 90)).save(thumb)
     path = tmp_path / "portrait_hud.json"
@@ -63,17 +61,11 @@ def _commands(tmp_path: Path) -> list[str]:
 
 
 def _colors_across(row) -> list[tuple[int, int, int]]:
-    """One color per pixel of the track the HUD drew, which is what a host
-    hands back for the next one to be filled with."""
     x0, x1 = row.track
     return [(200, 40, 40)] * (x1 - x0)
 
 
 class TestTheClipsRowAtItsFoot:
-    """The track, the time and the volume a window laid along the lower edge of
-    its video ride on this HUD: one HUD on screen rather than two, and in
-    the headset a wrapped video smears such a row round the nadir."""
-
     _ROW = RowHud(position_ms=0.0, duration_ms=10_000.0,
                   volume=VolumeHud(volume=80, muted=False))
 
@@ -147,8 +139,6 @@ class TestTheClipsRowAtItsFoot:
         assert levels == []
 
     def test_a_scripted_clip_colors_its_track(self, tmp_path, hud):
-        """The host measures the track the HUD drew and builds the script's
-        colors across it; the HUD fills the next one with them."""
         plain, scripted = FakeEngine(), FakeEngine()
         _overlay(tmp_path, hud, plain).tick(item_row=self._ROW)
         colored = _overlay(tmp_path, hud, scripted)
@@ -161,11 +151,6 @@ class TestTheClipsRowAtItsFoot:
         assert not (bare == filled).all()
 
     def test_a_fill_measured_across_some_other_track_is_dropped(self, tmp_path, hud):
-        """A HUD is as wide as what is on it, so a host measures one HUD and
-        fills the next, and between the two the HUD can change width.  The
-        wrong length raises out of the track painter rather than stretching --
-        which took the window's drawing down with it and left the Main Funestra
-        showing no item at all."""
         plain, mismatched = FakeEngine(), FakeEngine()
         _overlay(tmp_path, hud, plain).tick(item_row=self._ROW)
         overlay = _overlay(tmp_path, hud, mismatched)
@@ -177,8 +162,6 @@ class TestTheClipsRowAtItsFoot:
         assert (bare == drawn).all()
 
     def test_the_host_is_told_where_the_row_landed(self, tmp_path, hud):
-        """Its width is what the colors must cover, and under it is where the
-        loop's two frames hang."""
         overlay = _overlay(tmp_path, hud, FakeEngine())
 
         overlay.tick(item_row=self._ROW)
@@ -210,8 +193,6 @@ def test_tick_composites_the_hud_at_the_hud_inset(tmp_path: Path, hud: Path):
 
 
 def test_tick_redraws_only_when_the_published_hud_changes(tmp_path: Path, hud: Path):
-    """The source rewrites the file only on a real change, but the Funestra polls it
-    every frame — an unchanged read must not re-render the whole HUD."""
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
 
@@ -227,10 +208,6 @@ def test_tick_redraws_only_when_the_published_hud_changes(tmp_path: Path, hud: P
 
 
 def test_tick_redraws_when_the_clip_on_screen_changes(tmp_path: Path, hud: Path):
-    """The HUD names the file the engine has open, and a Funestra left alone walks
-    its playlist by itself — the source republishes the HUD only when the nav map under
-    it moves, so the name has to redraw off the engine's own answer or it would sit
-    on a video that had already rolled past."""
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
 
@@ -269,8 +246,6 @@ def test_tick_redraws_when_the_funestras_rate_changes(tmp_path: Path, hud: Path)
 
 
 def test_no_hud_file_means_no_overlay(tmp_path: Path):
-    """A Funestra its source has published no HUD for (an integration run, or
-    before the first publish) simply shows no map."""
     engine = FakeEngine()
     _overlay(tmp_path, tmp_path / "absent.json", engine).tick()
 
@@ -291,13 +266,6 @@ def test_the_overlay_is_removed_when_the_hud_goes_away(tmp_path: Path, hud: Path
 def test_a_hud_that_cannot_be_read_this_frame_keeps_the_nav_map_up(
     tmp_path: Path, hud: Path, monkeypatch: pytest.MonkeyPatch
 ):
-    """The source replaces this file while the Funestra polls it 60x/s, so a read can
-    lose that race and come back as a sharing violation.
-
-    That is not the HUD going away — it is one frame that could not see it.
-    Tearing the overlay down for it, and rebuilding it on the next frame, is a
-    HUD that blinks.
-    """
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
     overlay.tick()
@@ -393,8 +361,6 @@ def test_a_hud_there_is_no_memory_to_paint_keeps_the_last_one_until_there_is(
 
 
 def test_a_single_click_posts_the_switch_once_its_window_lapses(tmp_path: Path, hud: Path):
-    """A click on a thumbnail could be the first half of a double-click, so the
-    switch is posted by a later tick — not by the press itself."""
     now = [0.0]
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine, clock=lambda: now[0])
@@ -415,7 +381,7 @@ def test_a_double_click_locks_instead_of_switching(tmp_path: Path, hud: Path):
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine, clock=lambda: now[0])
     overlay.tick()
-    x, y, _w, _h = overlay.targets.click[1][0]  # the seed thumbnail
+    x, y, _w, _h = overlay.targets.click[1][0]
 
     overlay.press(x + MARGIN + 2, y + MARGIN + 2)
     now[0] = 0.2
@@ -439,15 +405,13 @@ def test_a_loop_button_click_posts_at_once(tmp_path: Path, hud: Path):
 
 def test_a_press_outside_the_hud_posts_nothing_and_is_refused(
         tmp_path: Path, hud: Path):
-    """Refused rather than merely silent: what the HUD does not take is a press
-    on the item, and the run loop has its own answer for one."""
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
     overlay.tick()
 
     taken = [
-        overlay.press(2, 2),          # inside the window, outside the HUD's inset
-        overlay.press(2000, 2000),    # far off the HUD
+        overlay.press(2, 2),
+        overlay.press(2000, 2000),
     ]
 
     assert taken == [False, False]
@@ -455,8 +419,6 @@ def test_a_press_outside_the_hud_posts_nothing_and_is_refused(
 
 
 def test_a_press_between_the_huds_controls_is_still_the_huds(tmp_path: Path, hud: Path):
-    """The slab is one surface: a press between its controls posts nothing and
-    is still the HUD's, not the item's."""
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
     overlay.tick()
@@ -510,20 +472,14 @@ def test_hovering_a_button_redraws_with_its_tooltip(tmp_path: Path, hud: Path):
     overlay.motion(rect[0] + MARGIN + 2, rect[1] + MARGIN + 2)
 
     hovered = engine.overlays[overlay.overlay_id][2]
-    assert bytes(hovered) != bytes(plain)  # the tooltip is in the pixels
+    assert bytes(hovered) != bytes(plain)
 
-    # Moving off the button clears it again: the redraw matches the pre-hover
-    # pixels, not merely "some new object" (the old identity check held even
-    # with the whole clear branch deleted).
     overlay.motion(MARGIN + 2, MARGIN + 2)
     cleared = engine.overlays[overlay.overlay_id][2]
     assert bytes(cleared) == bytes(plain)
 
 
 def test_pressing_the_lit_filter_button_lifts_the_filter(tmp_path: Path, hud: Path):
-    """The published filter is what makes the button a toggle, so a filter set any
-    other way — spoken, or from the other side of the nav map — is lifted by pressing the
-    button it lit."""
     engine = FakeEngine()
     hud.write_text(hud.read_text(encoding="utf-8").replace(
         '"funestra": "portrait"', '"funestra": "portrait", "filter_query": "alpha"'), encoding="utf-8")
@@ -548,8 +504,6 @@ def test_pressing_an_unlit_filter_button_filters_to_its_act(tmp_path: Path, hud:
 
 
 def test_the_published_loop_state_wins_over_the_optimistic_one(tmp_path: Path, hud: Path):
-    """A click lights the button before the source answers, but the published HUD
-    is authoritative — a loop that ended must not stay lit."""
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
     overlay.tick()
@@ -726,8 +680,6 @@ def _hud_at(tmp_path: Path, hud_path: Path, engine, **hud_changes):
 @pytest.mark.parametrize("corner", list(HudCorner))
 def test_the_minus_sits_where_the_plus_of_the_minimized_hud_sits(
         tmp_path: Path, hud: Path, corner: HudCorner):
-    """So a click that minimizes the HUD, made again without moving the
-    mouse, opens it again."""
     engine = FakeEngine()
     overlay = _hud_at(tmp_path, hud, engine, hud_corner=corner.value)
     (left, top, _bgra), = engine.overlays.values()
@@ -744,9 +696,6 @@ def test_the_minus_sits_where_the_plus_of_the_minimized_hud_sits(
 
 def test_the_hud_is_composited_in_the_corner_the_session_moved_it_to(
         tmp_path: Path, hud: Path):
-    """Its own margin from the edges and nothing else: the track that used to
-    run along the lower edge is a block of this HUD now, so there is nothing
-    down there to clear."""
     engine = FakeEngine()
 
     _hud_at(tmp_path, hud, engine, hud_corner="lower_right")
@@ -773,8 +722,6 @@ def test_a_press_in_a_lower_corner_reaches_the_button_drawn_there(
 
 def test_the_plus_names_itself_where_the_hud_floats_over_an_item(
         tmp_path: Path, hud: Path):
-    """The HUD takes the tooltip's room only while the pointer is on the plus,
-    so a press beside a collapsed HUD still reaches the video under it."""
     engine = FakeEngine()
     overlay = _hud_at(tmp_path, hud, engine, hud_minimized=True,
                       hud_corner="upper_left")
@@ -790,10 +737,6 @@ def test_the_plus_names_itself_where_the_hud_floats_over_an_item(
 
 def test_a_hud_on_its_own_screen_holds_the_tooltips_room_from_the_start(
         tmp_path: Path, hud: Path):
-    """In the headset the HUD IS a screen, sized from its own bitmap and
-    centered on the side it hangs against, so a HUD that grew under the
-    pointer would carry the plus out from under it and the tooltip would
-    flicker as the pointer lost and found it.  The app is there all along."""
     engine = FakeEngine()
     _publish(hud, hud_minimized=True)
     overlay = HudOverlay(hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
@@ -806,10 +749,6 @@ def test_a_hud_on_its_own_screen_holds_the_tooltips_room_from_the_start(
 
 
 class TestAHudWhoseMinusHangsOutsideIt:
-    """In the headset the minus hangs on its own between the item and the
-    HUD, where the plus hangs once the HUD is minimized, so the HUD
-    carries neither."""
-
     @staticmethod
     def _overlay(tmp_path: Path, hud: Path, engine) -> HudOverlay:
         return HudOverlay(hud_file=hud, command_file=tmp_path / "dashboard_cmd.txt",
@@ -925,9 +864,6 @@ class TestANameFlashingWhileMinimized:
 
 def test_a_hud_hanging_on_its_own_screen_keeps_its_default_justification(
         tmp_path: Path, hud: Path):
-    """In the headset the HUD is a screen of its own rather than a slab over a
-    corner of the item, so the corner the session moved it to says which side
-    of the Funestra it hangs against and nothing about how it is laid out."""
     engine = FakeEngine()
     _publish(hud, hud_corner="lower_right", hud_edge="right",
              rows=[[{"command": "portrait_next", "glyph": "N",
@@ -945,8 +881,6 @@ def test_a_hud_hanging_on_its_own_screen_keeps_its_default_justification(
 
 
 class _Foot:
-    """A block the source paints at the HUD's foot, as the source sees it."""
-
     def __init__(self, size=(120, 40)) -> None:
         self._size = size
 
@@ -979,9 +913,6 @@ class TestAWindowsOwnHud:
         assert posted == ["portrait_next"]
 
     def test_it_keeps_the_visualizer_the_program_drew_into_it(self):
-        """A session publishes no visualizer and the app's motion file fills one
-        in; the window's own program composes the visualizer itself, and nothing
-        here may wipe it."""
         engine = FakeEngine()
         visualizer = DriveHud(speed=50, amplitude=80, center=50,
                            waveform=tuple(0.5 for _ in range(80)))
@@ -996,10 +927,6 @@ class TestAWindowsOwnHud:
 
 
 class TestTheBlockAtTheFoot:
-    """The source painted the block and knows what is drawn where, so the
-    pointer goes back to it: a press, a drag, the button coming up and the
-    wheel, each with where it landed in the block's own pixels."""
-
     def _foot_at(self, overlay):
         x, y, _width, _height = overlay.targets.foot
         return MARGIN + x, MARGIN + y

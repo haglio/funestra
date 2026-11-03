@@ -1,4 +1,3 @@
-"""The chrome the Funestras' in-video HUDs are drawn on."""
 from __future__ import annotations
 
 import numpy as np
@@ -26,11 +25,6 @@ from funestra.hud_icons import app_icon
 
 
 def test_the_palette_is_shared_uis_own_read_without_qt():
-    """The HUDs color with the family's palette itself, not a copy of it: the
-    numbers used to be typed out twice, here and in shared_ui, and only a test
-    kept them from drifting apart.
-    """
-
     assert hud.WHITE is palette.WHITE
     assert hud.BG_PRIMARY is palette.BG_PRIMARY
     assert hud.BLUE is palette.BLUE
@@ -44,7 +38,7 @@ def test_hud_is_a_translucent_rounded_slab_of_the_asked_size():
     assert bgra.shape == (40, 60, 4)
     middle = bgra[20, 30]
     assert tuple(middle) == (BG_PRIMARY[2], BG_PRIMARY[1], BG_PRIMARY[0], HUD_ALPHA)
-    assert bgra[0, 0, 3] == 0  # the rounded corner leaves the very corner clear
+    assert bgra[0, 0, 3] == 0
     assert np.asarray(bgra).dtype == np.uint8
 
 
@@ -65,8 +59,6 @@ def test_a_point_size_loads_its_face_at_its_pixels_on_a_96_dpi_screen():
 
 
 def test_a_missing_face_falls_back_instead_of_raising():
-    """A font the machine does not have must not take the Funestra down mid-render:
-    the HUD is drawn every frame, so an OSError here is a crash, not a blank."""
     assert load_font(11, "no-such-face.ttf") is not None
 
 
@@ -78,9 +70,6 @@ def test_text_width_measures_the_drawn_string():
 
 
 def test_the_active_dot_is_lit_or_gray_but_never_absent():
-    """An absent dot cannot be told from an idle one, so only the Funestra holding the
-    floor would say anything — and a reader would have to check every screen to
-    learn what one mark should tell them."""
     def dot(active: bool) -> tuple[int, ...]:
         hud = Hud(40, 40)
         draw_active_dot(hud.image, 10, 10, active)
@@ -102,9 +91,6 @@ def test_the_active_dot_is_the_familys_disc():
 
 
 def test_a_tooltip_wider_than_the_hud_wraps_rather_than_running_off_it():
-    """A tooltip is drawn into the HUD's own bitmap, so whatever crosses the edge
-    is simply never drawn — the sentence loses its tail with nothing to say it had
-    one.  It wraps to the app there is instead, and the tooltip stays on the slab."""
     hud = Hud(150, 120)
     font = load_font(8)
 
@@ -114,13 +100,10 @@ def test_a_tooltip_wider_than_the_hud_wraps_rather_than_running_off_it():
     x, y, w, h = rect
     assert (x, y) >= (0, 0)
     assert (x + w, y + h) <= (150, 120)
-    assert h > sum(font.getmetrics()) + 2 * TOOLTIP_PAD  # more than one line
+    assert h > sum(font.getmetrics()) + 2 * TOOLTIP_PAD
 
 
 def test_a_tooltip_that_fits_stays_on_one_line_beside_the_cursor():
-    """Wrapping is what a tooltip does when it must, not what it does — one that
-    fits keeps its single line and sits down and to the right of the pointer,
-    clear of the arrow itself."""
     hud = Hud(300, 200)
     font = load_font(8)
 
@@ -142,8 +125,6 @@ def test_a_tooltip_starts_a_new_line_wherever_its_text_does():
 
 
 def test_a_tooltip_keeps_the_spaces_it_was_written_with():
-    """It wraps with the family's one wrapper, which keeps a text's own spaces
-    as the desktop's log does."""
     hud = Hud(300, 200)
     font = load_font(8)
 
@@ -155,8 +136,6 @@ def test_a_tooltip_keeps_the_spaces_it_was_written_with():
 
 
 def _ink_center(size: int, paint) -> tuple[float, float]:
-    """Where the ink *paint* leaves on a blank square actually sits."""
-
     image = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     paint(ImageDraw.Draw(image))
     ys, xs = np.nonzero(np.asarray(image)[:, :, 3])
@@ -164,10 +143,6 @@ def _ink_center(size: int, paint) -> tuple[float, float]:
 
 
 def test_a_icon_is_centered_on_its_ink_not_on_the_fonts_bounds():
-    """``anchor="mm"`` centers the font's bounds, whose lower edge is the descender line
-    however short the icon — which is why every icon button drew its mark low.
-    Centering the ink puts it in the middle of the button, for the transport
-    arrows, the padlock and the bare minus sign alike."""
     font = load_font(20, "seguisym.ttf")
 
     for icon in ("⏮", "\U0001F512", "−", "∿"):
@@ -177,13 +152,10 @@ def test_a_icon_is_centered_on_its_ink_not_on_the_fonts_bounds():
             (30, 30), g, font=font, anchor="mm", fill=(255, 255, 255, 255)))
 
         assert abs(centered[1] - 30) <= 0.5, icon
-        assert by_metrics[1] > centered[1], icon  # the old way sat lower
+        assert by_metrics[1] > centered[1], icon
 
 
 def test_an_app_mark_fits_inside_the_button_it_is_centered_in():
-    """It has to sit in the same 18px square every other control on these HUDs
-    uses, with room left around it rather than running to the button's border."""
-
     image = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
     draw_button(image, ImageDraw.Draw(image), (0, 0, 18, 18), Button("fmode", app_icon("F"), ""),
                 hovered=False, icon_font=load_font(11), word_font=load_font(11))
@@ -196,9 +168,6 @@ def test_an_app_mark_fits_inside_the_button_it_is_centered_in():
 
 
 def test_a_icon_with_no_ink_draws_nothing_rather_than_raising():
-    """A space has no ink to center on; the HUD repaints every frame, so this must
-    be a no-op and not an exception out of the run loop."""
-
     image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
     draw_character(ImageDraw.Draw(image), 5, 5, " ", load_font(11), (255, 255, 255, 255))
 

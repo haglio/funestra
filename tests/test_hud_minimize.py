@@ -1,4 +1,3 @@
-"""The HUD at its smallest: the plus, and the name it flashes beside it."""
 from __future__ import annotations
 
 import numpy as np

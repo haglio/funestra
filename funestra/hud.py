@@ -54,12 +54,9 @@ from .hud_icons import (
 # lacks, where Qt falls back silently — so anything typed names this face.
 SYMBOL_FONT = "seguisym.ttf"
 
-# Translucent enough to read the video through, opaque enough to read the text.
 HUD_ALPHA = 224
 CORNER_RADIUS = BUTTON_RADIUS
 
-# The family's own hover step, re-exported under the name this package's
-# painters already call it.
 hovered_fill = hovered
 
 
@@ -74,24 +71,13 @@ def load_font(points: int, family: str = BOLD_FACE) -> ImageFont.FreeTypeFont:
 
 
 def text_width(font: ImageFont.FreeTypeFont, text: str) -> int:
-    """How wide *text* draws in *font* — what a HUD sizes itself against."""
     return int(font.getlength(text))
 
 
-# Where each icon's ink sits relative to the origin ``draw.text`` draws from,
-# measured once per face+size+icon.  A HUD uses a dozen icon and repaints them
-# for the life of the session, so the probe below runs a handful of times.
 _INK_OFFSETS: dict[tuple[str, int, str], tuple[float, float] | None] = {}
 
 
 def ink_center_offset(font: ImageFont.FreeTypeFont, icon: str) -> tuple[float, float] | None:
-    """The center of *icon*'s ink, offset from where ``draw.text`` starts it.
-
-    Measured by drawing it, because nothing reported is the ink bounds:
-    ``textbbox`` gives the layout bounds, whose lower edge is the face's descender line
-    however short the icon — a minus sign reports nine pixels of empty space
-    under it.  None when the icon leaves no ink at all.
-    """
     key = (str(getattr(font, "path", "")), int(getattr(font, "size", 0)), icon)
     if key not in _INK_OFFSETS:
         pad = 8
@@ -139,46 +125,23 @@ def draw_icon(image: Image.Image, name: str, rect: tuple[int, int, int, int],
                fill)
 
 
-# The dot at the head of every HUD's title, saying whether a bare, unaddressed
-# command lands on this Funestra.  Same size and same corner on all three, because a
-# reader glancing across two screens is looking for one mark in one place.
 ACTIVE_DOT = 10
-# The family's disc keeps the edge of its frame clear, so the frame it is drawn
-# in is a little bigger than the square the dot fills.
 _DISC_FRAME = ACTIVE_DOT + 2
 
 
 def draw_active_dot(image: Image.Image, x: int, y: int, active: bool) -> None:
-    """The active-Funestra dot, the family's disc, its top-left at ``(x, y)``.
-
-    White while a bare command would land on this Funestra, the palette's gray
-    otherwise — and always drawn, never hidden.  An absent dot and an idle dot look
-    the same, and then only the Funestra that *has* the floor says anything, which is
-    half an answer to a question asked of the app.
-    """
     paste_icon(image, "disc", (x, y, _DISC_FRAME, _DISC_FRAME), WHITE if active else TEXT_MUTED)
 
 
 TOOLTIP_PAD = GAP_SMALL
 TOOLTIP_RADIUS = BUTTON_RADIUS
 TOOLTIP_ALPHA = 240
-_TOOLTIP_EDGE = 2           # the gap it keeps from the HUD's own edge
-_TOOLTIP_OFFSET = (14, 16)  # right of and below the cursor, clear of the pointer
+_TOOLTIP_EDGE = 2
+_TOOLTIP_OFFSET = (14, 16)
 
 
 def draw_tooltip(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: str,
                  pos: tuple[int, int], bounds: tuple[int, int]) -> tuple[int, int, int, int]:
-    """Name a control in a tooltip near *pos*, inside a HUD *bounds* big, and
-    return the rect it drew.
-
-    These HUDs are painted into the video, so there is no native tooltip to fall
-    back on and every icon on them is cryptic on purpose — this tooltip *is* how a
-    control says what it is.  Being part of the HUD's own bitmap is also why it
-    wraps rather than running on: whatever crosses the slab's edge is never drawn,
-    so an over-wide tooltip loses its tail with nothing to say it had one.  It
-    is then nudged back inside the slab, so a control near an edge names itself
-    inward instead of off it.
-    """
     room = max(1, bounds[0] - 2 * (_TOOLTIP_EDGE + TOOLTIP_PAD))
     lines = wrap_text(font, text, room)
     if not lines:
@@ -291,17 +254,6 @@ class KeptBitmap:
 def button_ground(draw: ImageDraw.ImageDraw, rect: tuple[int, int, int, int], fill,
                   *, hovered: bool = False, dim: bool = False,
                   rest_ink=None) -> tuple[int, int, int, int]:
-    """The square a HUD control sits on, filled *fill*, and the ink for its mark.
-
-    The edge is the chrome's muted gray over either gray ground and the fill's
-    own color over a colored one, chosen before the hover step lightens the
-    fill so hovering never changes the outline.  A dim control is never
-    lightened: it cannot be pressed, and lighting it would promise otherwise.
-
-    A mark reverses out of a light fill only (white, yellow); over either gray
-    ground it keeps *rest_ink* or the chrome's own, muted while dim; over a
-    colored ground it is white.
-    """
     edge = TEXT_MUTED if (dim or fill in (BG_BUTTON, BG_BUTTON_ACTIVE)) else fill
     if hovered and not dim:
         fill = hovered_fill(fill)
@@ -318,23 +270,6 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
                 icon_font: ImageFont.FreeTypeFont,
                 word_font: ImageFont.FreeTypeFont,
                 row_label: bool = False) -> None:
-    """One declared control (:class:`funestra.hud_button.Button`), in the
-    one shape every HUD here draws: on the family's button ground at rest,
-    filled while lit -- green for a favorites control, yellow for an enhanced
-    one, the family's blue for the rest; red for a live recording, blue for the
-    loop it leaves running, the active gray for a choice held but not applied
-    -- with its face drawn on top: an app mark, one of the family's icons, a
-    typed icon out of *icon_font*, or a word in *word_font*.
-
-    An item with nothing to post is a READ-OUT, not a control: bare text with no
-    button under it, in the visualizer's own key/value colors -- a muted word names
-    the value beside it, which is bright.  Drawn as a button it invites a press
-    that does nothing, which is what "Clip seconds" looked like on the one HUD
-    a show wears.  *row_label* is a read-out at the HUD's left edge, naming
-    its row: left aligned on the family's tight button pad, so it lines up with
-    the rows that open with a button whose mark is inset rather than sitting
-    hard against the edge beside them.
-    """
     x, y, w, h = rect
     if not button.command:
         named = button.is_a_name and not button.lit

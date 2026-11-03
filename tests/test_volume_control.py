@@ -1,9 +1,3 @@
-"""A Funestra's own volume control: what it opens showing, and what the two verbs set.
-
-Where on the volume control a press landed is the row's to work out
-(:class:`funestra.hud_row.RowPress`, covered in tests/test_hud_row.py); what
-reaches a control is the mute or the level it asks for.
-"""
 from __future__ import annotations
 
 from funestra.testing import FakeEngine
@@ -75,10 +69,6 @@ class TestWhatTheTwoVerbsSet:
 
 
 class TestTheRoomsVolume:
-    """The Main Funestra's sound is the app's to decide: the volume control shows the level
-    the app publishes, a press asks the room for a new one and shows it at once,
-    and the app's answer overwrites it either way."""
-
     def _control(self, tmp_path, *, live: bool = True):
         engine = FakeEngine()
         return AppVolume(engine, dashboard_cmd_file=tmp_path / "dashboard_cmd.txt", live=live), engine
