@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+from typing import NamedTuple
 
 from PIL import Image, ImageDraw
 from shared_ui.palette import (
@@ -128,8 +129,8 @@ def controls(x: int, y: int, hud: DriveHud) -> list[DriveControl]:
 def tracks(x: int, y: int, hud: DriveHud) -> list[DriveTrack]:
     return drive_layout.tracks(
         x, y, hud.center, dim=not hud.driving,
-        amplitude_ceiling=amplitude_ceiling(hud.max_intensity, hud.speed),
-        speed_ceiling=speed_ceiling(hud.max_intensity, hud.amplitude))
+        ceilings=(amplitude_ceiling(hud.max_intensity, hud.speed),
+                  speed_ceiling(hud.max_intensity, hud.amplitude)))
 
 
 def track_command(track: DriveTrack, px: int, py: float) -> str:
@@ -199,6 +200,11 @@ def draw_level_bar(draw, rect: Rect, *, fill: float, color) -> None:
     draw.rectangle([x, y, x + filled - 1, y + h - 1], fill=color)
 
 
+class _Readout(NamedTuple):
+    key: str
+    value: str
+
+
 class DriveSection:
     def __init__(self) -> None:
         self._tiny = load_font(SIZE_TINY)
@@ -216,11 +222,11 @@ class DriveSection:
         for control in controls(x, y, hud):
             self._draw_control(image, draw, control)
 
-        self._stacked(draw, g.center_label, "Center", str(hud.center),
+        self._stacked(draw, g.center_label, _Readout("Center", str(hud.center)),
                       anchor="rm", ink=value_ink)
-        self._stacked(draw, g.amp_label, "Amp", str(hud.amplitude),
+        self._stacked(draw, g.amp_label, _Readout("Amp", str(hud.amplitude)),
                       anchor="lm", ink=value_ink)
-        self._value(draw, g.speed_label_y, "Speed", str(hud.speed),
+        self._value(draw, g.speed_label_y, _Readout("Speed", str(hud.speed)),
                     center=g.speed_label_x, ink=value_ink)
 
     @staticmethod
@@ -231,15 +237,17 @@ class DriveSection:
                                outline=ink, width=1)
         draw_icon(image, control.mark, control.rect, ink)
 
-    def _stacked(self, draw, rect: Rect, key: str, value: str, *, anchor: str, ink) -> None:
+    def _stacked(self, draw, rect: Rect, readout: _Readout, *, anchor: str, ink) -> None:
+        key, value = readout
         x, y, w, h = rect
         text_x = x + w if anchor.startswith("r") else x
         for text, middle, fill in ((key, y + _CTRL / 2, (*TEXT_MUTED, 255)),
                                    (value, y + h - _CTRL / 2, ink)):
             draw.text((text_x, middle), text, font=self._tiny, anchor=anchor, fill=fill)
 
-    def _value(self, draw, y: int, key: str, value: str, *,
+    def _value(self, draw, y: int, readout: _Readout, *,
                center: int, ink=(*TEXT_PRIMARY, 255)) -> None:
+        key, value = readout
         span = text_width(self._tiny, key) + _KEY_GAP + text_width(self._tiny, value)
         key_x, value_x = label_pair_x(self._tiny, key, left=center - span // 2)
         draw.text((key_x, y + _LABEL_H / 2), key, font=self._tiny, anchor="lm",

@@ -12,7 +12,7 @@ from .flick_flip import HALF_A_LOOP
 from .flick_renderer import display_index_for_phase
 from .flick_scrub import FlickScrub, scrub_flick
 from .genau_controls import GenauControls, apply_runtime_command
-from .genau_status import GENAU_STATUS_FILENAME, build_status_text, write_status_file
+from .genau_status import GENAU_STATUS_FILENAME, FlickOnScreen, build_status_text, write_status_file
 from .genau_visualizer import AutoMotion, GenauVisualizer
 from .learned_motion import tick_learned_motion
 from .main_hud import HELD_HEIGHT, HOLD_VERB
@@ -241,9 +241,8 @@ class GenauRefreshController:
             self.robot_hand,
             learned=self.learned,
             flick_advance=self.flick_advance,
-            flick=self.renderer.current_flick_path,
-            flipped=self.flip.on,
-            portrait=self.renderer.portrait,
+            on_screen=FlickOnScreen(
+                self.renderer.current_flick_path, self.flip.on, self.renderer.portrait),
         ))
 
     def seek_the_time_on_screen(self, seconds: float) -> None:
