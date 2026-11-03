@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import bisect
 import time
+from typing import NamedTuple
 
 from .funscript import HANDOFF_RAMP_MS, PARK_SETTLE_MS, Funscript
 from .robot_hand import FULL_INTENSITY
@@ -15,6 +16,11 @@ from .tcode import (
 _RESEND_INTERVAL = 0.1
 _PARK_INTERVAL_MS = PARK_SETTLE_MS
 _PARK_SEGMENT = -2
+
+
+class _Pace(NamedTuple):
+    speed: float
+    max_intensity: int
 
 
 class FunscriptTCodeDriver:
@@ -41,7 +47,7 @@ class FunscriptTCodeDriver:
 
         next_index = bisect.bisect_right(fs._times, position_ms)
         if self._should_send(next_index, now):
-            self._send_waypoint(fs, next_index, position_ms, speed, max_intensity, now)
+            self._send_waypoint(fs, next_index, position_ms, _Pace(speed, max_intensity), now)
             self._mark_sent(next_index, now)
             self._took_over = False
 
@@ -72,9 +78,9 @@ class FunscriptTCodeDriver:
         self._last_send_time = now
 
     def _send_waypoint(
-        self, fs: Funscript, next_index: int, position_ms: int, speed: float, max_intensity: int,
-        now: float,
+        self, fs: Funscript, next_index: int, position_ms: int, pace: _Pace, now: float,
     ) -> None:
+        speed, max_intensity = pace
         if next_index < len(fs.actions):
             next_t = fs.actions[next_index][0]
             remaining = max(1, round((next_t - position_ms) / speed))
