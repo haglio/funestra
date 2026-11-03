@@ -17,7 +17,6 @@ from funestra.main_hud import OSR2_PARKED, VALUE_W
 from funestra.modes import Osr2State
 from funestra.satellite_hud import (
     CTRL_BTN,
-    DOUBLE_CLICK_S,
     ELLIPSIS,
     FILTER_BTN,
     LOOP_BTN,
@@ -27,7 +26,6 @@ from funestra.satellite_hud import (
     ROW_GAP,
     TITLE_X,
     HudCell,
-    HudClicks,
     HudModel,
     HudTargets,
     NavMapRects,
@@ -36,7 +34,6 @@ from funestra.satellite_hud import (
     action_label_blocks,
     build_click_targets,
     button_row_rects,
-    button_tooltip,
     ellipsis_rects,
     expand_button_rect,
     filter_button_rects,
@@ -56,6 +53,7 @@ from funestra.satellite_hud import (
     speed_row,
     thumbnail_rect,
 )
+from funestra.satellite_hud_clicks import DOUBLE_CLICK_S, HudClicks, button_tooltip
 
 CAMERA_WORDS = ("Side", "XYZ")
 

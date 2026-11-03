@@ -16,15 +16,14 @@ from .osr2_visualizer import DriveHud, DrivePublisher, read_drive
 from .satellite_hud import (
     MARGIN,
     MINUS_INSET,
-    HudClicks,
     HudModel,
     HudTargets,
     PaintedFoot,
-    button_tooltip,
     button_under,
     hit_test_targets,
     parse_hud,
 )
+from .satellite_hud_clicks import HudClicks, button_tooltip
 from .satellite_hud_paint import DrawnWith, HudRenderer
 
 HUD_OVERLAY_ID = 10
