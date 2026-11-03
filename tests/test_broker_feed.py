@@ -12,6 +12,7 @@ from app_support.threading_utils import wait_until
 from funestra.broker_feed import (
     BrokerFeed,
     BrokerSnapshot,
+    UdpListener,
     apply_udp_line,
     bind_with_retry,
     snapshot,
@@ -65,7 +66,8 @@ def _turned_away(caplog) -> bool:
 def _run_reader(state: BrokerFeed, port: int) -> tuple[threading.Thread, threading.Event]:
     stop = threading.Event()
     logger = logging.getLogger("test.udp_reader")
-    t = threading.Thread(target=udp_reader, args=("127.0.0.1", port, state, stop, logger), daemon=True)
+    t = threading.Thread(
+        target=udp_reader, args=(UdpListener("127.0.0.1", port, state, stop, logger),), daemon=True)
     t.start()
     _wait_until_bound(port, state)
     return t, stop
@@ -167,6 +169,27 @@ class TestTheSocketLoop:
         t.join(timeout=2.0)
         assert not t.is_alive()
 
+    def test_the_old_positional_arguments_still_start_a_reader(self):
+        state = BrokerFeed()
+        port = _free_udp_port()
+        stop = threading.Event()
+        t = threading.Thread(
+            target=udp_reader,
+            args=("127.0.0.1", port, state, stop, logging.getLogger("test.udp_reader")),
+            kwargs={"retry_delays": (0.02,)},
+            daemon=True,
+        )
+        t.start()
+        try:
+            _wait_until_bound(port, state)
+            _send(port, "AUTO 1")
+            wait_until(lambda: state.auto_active, timeout=10.0, interval=0.02)
+        finally:
+            stop.set()
+            t.join(timeout=2.0)
+
+        assert state.auto_active is True
+
     def test_bind_retries_on_port_conflict(self, caplog):
         state = BrokerFeed()
         port = _free_udp_port()
@@ -178,8 +201,7 @@ class TestTheSocketLoop:
         logger = logging.getLogger("test.udp_reader")
         t = threading.Thread(
             target=udp_reader,
-            args=("127.0.0.1", port, state, stop, logger),
-            kwargs={"retry_delays": (0.02,) * 500},
+            args=(UdpListener("127.0.0.1", port, state, stop, logger, (0.02,) * 500),),
             daemon=True,
         )
         try:
@@ -224,8 +246,7 @@ class TestTheSocketLoop:
         logger = MagicMock()
         t = threading.Thread(
             target=udp_reader,
-            args=("127.0.0.1", port, state, stop, logger),
-            kwargs={"retry_delays": (0, 0, 0)},
+            args=(UdpListener("127.0.0.1", port, state, stop, logger, (0, 0, 0)),),
             daemon=True,
         )
         t.start()
