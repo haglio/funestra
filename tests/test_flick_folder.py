@@ -7,6 +7,7 @@ import pytest
 from app_support import flick_folder as shared_layout
 
 from funestra.flick_folder import (
+    _modified_at,
     flat_flicks_in,
     move_flick_to_trash,
     scan_flicks,

@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 import funestra.playlist
-from funestra.up_next import put_up_next
 from funestra.playlist import (
     PlaylistItem,
     item_from_line,
@@ -15,6 +14,7 @@ from funestra.playlist import (
     read_playlist,
     write_playlist,
 )
+from funestra.up_next import put_up_next
 
 
 class TestReadPlaylist:
