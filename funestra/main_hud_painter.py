@@ -4,6 +4,7 @@ import re
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
+from typing import NamedTuple
 
 import numpy as np
 from PIL import Image
@@ -42,7 +43,7 @@ from .hud_osr2 import (
 )
 from .hud_placement import HudCorner, PointerReading, block_x
 from .hud_row import ROW_H, RowHud, RowLayout, RowSection, row_layout
-from .hud_sections import blocks_height, stack
+from .hud_sections import Stacked, blocks_height, stack
 from .hud_title import (
     LATEST_LABEL,
     SEPARATOR,
@@ -132,6 +133,40 @@ class MainHud:
 def _section_rect(corner: HudCorner, width: int, reserve: int, top: int,
                   height: int) -> Rect:
     return (_PAD + (0 if corner.right else reserve), top, width - 2 * _PAD - reserve, height)
+
+
+class _Slot(NamedTuple):
+    corner: HudCorner
+    reserve: int
+
+
+class _TopBlock(NamedTuple):
+    title: str
+    filename: str
+    active: bool
+
+
+@dataclass(frozen=True)
+class _Plan:
+    whole: bool
+    rows: list[list[Button]]
+    aim_rows: list[list[Button]]
+    top: _TopBlock
+    item_row: RowHud | None
+    host_controls: HostControlsHud | None
+    drive_w: int
+    row_h: int
+    width: int
+    reserves: list[int]
+    sections: Stacked
+
+
+def _reserved(widths: list[int], used: tuple[bool, ...], corner: HudCorner,
+              minus_room: int) -> tuple[list[int], int]:
+    last = max(index for index, present in enumerate(used) if present)
+    reserves = [0] * len(widths)
+    reserves[last if corner.lower else 0] = minus_room
+    return reserves, max(width + reserve for width, reserve in zip(widths, reserves, strict=True))
 
 
 class MainHudPainter:
@@ -246,28 +281,27 @@ class MainHudPainter:
         return block_x(corner, hud_width=hud_width, extent=extent, pad=_PAD,
                        reserve=reserve)
 
-    def _draw_top_block(self, hud: Hud, y: int, title: str, filename: str,
-                        active: bool, width: int, corner: HudCorner, *,
-                        reserve: int) -> None:
+    def _draw_top_block(self, hud: Hud, y: int, block: _TopBlock, slot: _Slot) -> None:
         draw = hud.draw
+        width = hud.image.width
         ascent, descent = self._body.getmetrics()
         indent = ACTIVE_DOT + DOT_GAP
-        title_x = self._block_x(corner, width,
-                                 indent + text_width(self._body, title), reserve)
+        title_x = self._block_x(slot.corner, width,
+                                 indent + text_width(self._body, block.title), slot.reserve)
         draw_active_dot(hud.image, title_x, y + (ascent + descent) // 2 - ACTIVE_DOT // 2,
-                        active)
-        if title:
-            draw.text((title_x + indent, y + ascent), title, font=self._body,
+                        block.active)
+        if block.title:
+            draw.text((title_x + indent, y + ascent), block.title, font=self._body,
                       anchor="ls", fill=(*TEXT_PRIMARY, 255))
-        if filename:
-            name_x = self._block_x(corner, width,
-                                   indent + text_width(self._tiny, filename), reserve)
-            draw.text((name_x + indent, y + ascent + descent + _SUBTITLE_GAP), filename,
+        if block.filename:
+            name_x = self._block_x(slot.corner, width,
+                                   indent + text_width(self._tiny, block.filename), slot.reserve)
+            draw.text((name_x + indent, y + ascent + descent + _SUBTITLE_GAP), block.filename,
                       font=self._tiny, anchor="la", fill=(*TEXT_MUTED, 255))
 
-    def _draw_rows(self, hud: Hud, rows: list[list[Button]], y: int,
-                   corner: HudCorner, hover: tuple[int, int] | None, reserve: int = 0,
-                   ) -> list[tuple[Rect, Button]]:
+    def _draw_rows(self, hud: Hud, rows: list[list[Button]], y: int, slot: _Slot,
+                   hover: tuple[int, int] | None) -> list[tuple[Rect, Button]]:
+        corner, reserve = slot
         width = hud.image.width
         placed = place_rows(rows, x=_PAD + (0 if corner.right else reserve), y=y,
                             ends_at=width - _PAD - reserve if corner.right else None)
@@ -289,6 +323,12 @@ class MainHudPainter:
         self._composed_drive = (
             drive if (drive is not None and drive.segments
                       and kino_shows(main_hud_model.main_mode)) else None)
+        plan = self._plan(main_hud, item_row, host_controls)
+        return self._draw_plan(main_hud, hover, plan, heatmap)
+
+    def _plan(self, main_hud: MainHud, item_row: RowHud | None,
+              host_controls: HostControlsHud | None) -> _Plan:
+        main_hud_model, drive = main_hud.main_hud_model, main_hud.drive
         whole = not self._device_only
         rows = [[self._filled(button, main_hud) for button in row]
                 for row in (main_hud_model.rows if whole else ())]
@@ -310,12 +350,9 @@ class MainHudPainter:
                   self._item_row.least_width(item_row) if item_row is not None else 0,
                   self._host_controls.least_width(host_controls) if host_controls is not None else 0]
         minus_room = MINUS_ROOM if whole and self._minus_on_the_hud else 0
-        last = max(index for index, used in enumerate(
-            (True, bool(rows), bool(aim_rows) or main_hud_model.has_osr2 or drive is not None,
-             item_row is not None, host_controls is not None)) if used)
-        reserves = [0] * len(widths)
-        reserves[last if corner.lower else 0] = minus_room
-        parts_w = max(width_ + reserve for width_, reserve in zip(widths, reserves, strict=True))
+        used = (True, bool(rows), bool(aim_rows) or main_hud_model.has_osr2 or drive is not None,
+                item_row is not None, host_controls is not None)
+        reserves, parts_w = _reserved(widths, used, corner, minus_room)
         if self._width is None:
             width = 2 * _PAD + max(
                 parts_w,
@@ -338,69 +375,78 @@ class MainHudPainter:
             row_h,
             HostControlsSection.height if host_controls is not None else 0,
         ])
-        title_top, rows_top, device_top, row_top, host_top = sections.tops
-        height = sections.end + _PAD
+        return _Plan(whole, rows, aim_rows, _TopBlock(title, filename, main_hud_model.active),
+                     item_row, host_controls, drive_w, row_h, width, reserves, sections)
 
+    def _draw_plan(self, main_hud: MainHud, hover: tuple[int, int] | None, plan: _Plan,
+                   heatmap) -> Image.Image:
+        main_hud_model = main_hud.main_hud_model
+        corner = main_hud_model.hud_corner
+        width, height = plan.width, plan.sections.end + _PAD
         hud = Hud(width, height, ground=main_hud.ground or BG_PRIMARY)
-        for divider in sections.dividers:
+        for divider in plan.sections.dividers:
             hud.divide(divider)
-        draw = hud.draw
+        title_top, rows_top, device_top, _row_top, _host_top = plan.sections.tops
 
-        if whole:
-            self._draw_top_block(hud, title_top, title, filename, main_hud_model.active,
-                                 width, corner, reserve=reserves[0])
-        self.buttons = self._draw_rows(hud, rows, rows_top, corner, hover, reserves[1])
+        if plan.whole:
+            self._draw_top_block(hud, title_top, plan.top, _Slot(corner, plan.reserves[0]))
+        self.buttons = self._draw_rows(hud, plan.rows, rows_top, _Slot(corner, plan.reserves[1]),
+                                       hover)
         self.tracks = []
+        self._draw_device_block(hud, main_hud, plan, device_top, hover)
 
-        y = device_top
-        if aim_rows:
-            self.buttons.extend(self._draw_rows(hud, aim_rows, y, corner, hover, reserves[2]))
-            y += rows_height(aim_rows) + _BLOCK_GAP
+        if plan.whole and self._minus_on_the_hud:
+            minus = (corner_button_rect(corner, hud=(width, height), inset=_MINUS_INSET),
+                     minimize_button(main_hud_model.funestra))
+            draw_button(hud.image, hud.draw, *minus,
+                        hovered=hover is not None and contains(minus[0], *hover),
+                        icon_font=self._icon, word_font=self._tiny)
+            self.buttons.append(minus)
+        self._draw_the_foot(hud.image, plan, corner, heatmap)
+
+        if hover is not None:
+            tip = tooltip_at(self.buttons, *hover)
+            if tip:
+                draw_tooltip(hud.draw, self._tiny, tip, hover, (width, height))
+        return hud.image
+
+    def _draw_device_block(self, hud: Hud, main_hud: MainHud, plan: _Plan, y: int,
+                           hover: tuple[int, int] | None) -> None:
+        main_hud_model, drive = main_hud.main_hud_model, main_hud.drive
+        corner, width, reserve = main_hud_model.hud_corner, hud.image.width, plan.reserves[2]
+        if plan.aim_rows:
+            self.buttons.extend(self._draw_rows(hud, plan.aim_rows, y, _Slot(corner, reserve),
+                                                hover))
+            y += rows_height(plan.aim_rows) + _BLOCK_GAP
 
         if main_hud_model.has_osr2:
             osr2_line = self._osr2_line(main_hud_model)
-            osr2_x = self._block_x(corner, width, self._osr2.width(osr2_line), reserves[2])
-            self.buttons.extend(self._osr2.draw(hud.image, draw, (osr2_x, y), osr2_line,
+            osr2_x = self._block_x(corner, width, self._osr2.width(osr2_line), reserve)
+            self.buttons.extend(self._osr2.draw(hud.image, hud.draw, (osr2_x, y), osr2_line,
                                                 hover=hover))
             self.tracks.extend(self._osr2.bars(osr2_x, y, osr2_line))
             y += _OSR2_H + _BLOCK_GAP
 
         if drive is not None:
-            drive_x = self._block_x(corner, width, drive_w, reserves[2])
+            drive_x = self._block_x(corner, width, plan.drive_w, reserve)
             self._drive.draw(hud.image, drive_x, y, drive)
             targets, bars = visualizer_targets(drive_x, y, drive)
             self.buttons.extend(targets)
             self.tracks.extend(bars)
 
-        if whole and self._minus_on_the_hud:
-            minus = (corner_button_rect(corner, hud=(width, height), inset=_MINUS_INSET),
-                     minimize_button(main_hud_model.funestra))
-            draw_button(hud.image, draw, *minus,
-                        hovered=hover is not None and contains(minus[0], *hover),
-                        icon_font=self._icon, word_font=self._tiny)
-            self.buttons.append(minus)
-        self._draw_the_foot(hud.image, corner, reserves, item_row, row_top, row_h, heatmap,
-                            host_controls, host_top)
-
-        if hover is not None:
-            tip = tooltip_at(self.buttons, *hover)
-            if tip:
-                draw_tooltip(draw, self._tiny, tip, hover, (width, height))
-        return hud.image
-
-    def _draw_the_foot(self, image: Image.Image, corner: HudCorner, reserves: list[int],
-                       item_row: RowHud | None, row_top: int, row_h: int, heatmap,
-                       host_controls: HostControlsHud | None, host_top: int) -> None:
+    def _draw_the_foot(self, image: Image.Image, plan: _Plan, corner: HudCorner,
+                       heatmap) -> None:
+        *_above, row_top, host_top = plan.sections.tops
         self.row = None
-        if item_row is not None:
-            self.row = row_layout(item_row, rect=_section_rect(
-                corner, image.width, reserves[3], row_top, row_h))
-            self._item_row.draw(image, self.row, item_row, heatmap=heatmap)
+        if plan.item_row is not None:
+            self.row = row_layout(plan.item_row, rect=_section_rect(
+                corner, image.width, plan.reserves[3], row_top, plan.row_h))
+            self._item_row.draw(image, self.row, plan.item_row, heatmap=heatmap)
         self.host_controls_layout = None
-        if host_controls is not None:
+        if plan.host_controls is not None:
             self.host_controls_layout = self._host_controls.draw(image, _section_rect(
-                corner, image.width, reserves[4], host_top, HostControlsSection.height),
-                host_controls)
+                corner, image.width, plan.reserves[4], host_top, HostControlsSection.height),
+                plan.host_controls)
 
     def _paint_minimized(self, funestra: str, corner: HudCorner,
                          hover: tuple[int, int] | None, flash: str) -> Image.Image:
