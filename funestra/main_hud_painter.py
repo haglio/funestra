@@ -48,6 +48,7 @@ from .hud_title import (
     LATEST_LABEL,
     SEPARATOR,
     SHUFFLE_LABEL,
+    HudTitleFacts,
     hud_title,
 )
 from .main_hud import (
@@ -121,13 +122,13 @@ class MainHud:
         if not kino_shows(self.main_hud_model.main_mode) and not self.main_hud_model.locked and self.advance_interval:
             pace = f"{self.advance_interval}s"
             order = f"{order}{SEPARATOR}{pace}" if order else pace
-        return hud_title(
+        return hud_title(HudTitleFacts(
             playing_set=compilation,
             locked=self.main_hud_model.locked,
             order=order,
             f_mode=self.modes.scripted_filter,
             filters=self.main_hud_model.filters or (_LENGTH_LABELS.get(self.modes.length_mode, ""),),
-        )
+        ))
 
 
 def _section_rect(corner: HudCorner, width: int, reserve: int, top: int,
