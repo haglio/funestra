@@ -6,11 +6,6 @@ from .up_next import put_up_next
 
 
 def _index_of(flicks: list[Path], wanted: Path | None) -> int | None:
-    """Where *wanted* sits in *flicks*, or None for "not among them".
-
-    Compared case-insensitively: the path comes back through a status file
-    another process wrote, and Windows hands the same file back in either case.
-    """
     if wanted is None:
         return None
     key = str(wanted).lower()

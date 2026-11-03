@@ -1,4 +1,3 @@
-"""The HUD wears the family's icons, not lookalikes of them."""
 from __future__ import annotations
 
 import numpy as np

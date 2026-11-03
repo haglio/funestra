@@ -1,4 +1,3 @@
-"""The OSR2 visualizer itself: the motion being sent, drawn as a block that hosts inside whatever HUD shows it."""
 from __future__ import annotations
 
 from dataclasses import dataclass

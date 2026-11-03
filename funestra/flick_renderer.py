@@ -1,9 +1,3 @@
-"""Which frame of the flick on screen is up, and putting a chosen one up.
-
-The renderer knows the flick and the frame index; the surface it draws on is the
-shell's, reached through the one ``blit_frame`` callable it is built with, so
-the same renderer serves a pygame window and a headset texture.
-"""
 from __future__ import annotations
 
 from pathlib import Path

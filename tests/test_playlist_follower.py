@@ -41,10 +41,6 @@ class TestAListWrittenUnderTheWindow:
         assert _names(taken) == [["a show.png"]]
 
     def test_is_told_apart_from_the_one_before_it_by_what_it_says(self, tmp_path):
-        """Not by the file's size and write time, which both lists here share: two
-        names can be the same length, and Windows stamps both writes with the same
-        time whenever they land inside one tick of its 15ms clock.  Read that way,
-        this landed green on one machine and red on the next."""
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "v0.mp4")
         first = playlist.stat()
@@ -70,10 +66,6 @@ class TestAListWrittenUnderTheWindow:
 
 
 class TestAReadThatLandsInsideTheWrite:
-    """The list is published by writing a temp file and renaming it over this one,
-    and on Windows a read during that rename answers a sharing violation, which
-    `read_playlist` reports as no items.  Taken for the list, that would leave the
-    window playing its old one and the new list would never be read again."""
 
     def test_is_read_again_on_the_next_frame(self, tmp_path, monkeypatch):
         playlist = tmp_path / "landscape.tsv"

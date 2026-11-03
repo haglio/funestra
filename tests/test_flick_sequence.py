@@ -41,8 +41,6 @@ class TestStartAt:
         assert FlickSequenceController(_paths(), start_at=None).current_path == Path("a.mp4")
 
     def test_case_alone_is_not_a_different_flick(self):
-        """The path comes back through a status file another process wrote, and
-        Windows hands the same file back in either case."""
         controller = FlickSequenceController(_paths(), start_at=Path("B.MP4"))
 
         assert controller.current_path == Path("b.mp4")

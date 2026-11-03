@@ -30,9 +30,6 @@ class TestWhatAVideosVisualizerSays:
         assert video_playhead(42_000.0, 6_315_000.0, 0.0).text == "0:00:42 / 1:45:15"
 
     def test_the_frame_is_the_one_mpv_counts_to(self):
-        """libmpv's own estimated-frame-number, read off a 29.97fps test pattern
-        paused on its last frame: 239.  The rate it reports is a float32, so
-        truncating the product lands one frame short at 238."""
         playhead = video_playhead(7_974.633333333334, 8_008.0, 29.970029830932617)
 
         assert playhead.text == "frame 239 / 240 · 0:07 / 0:08"
@@ -105,8 +102,6 @@ class TestTheVisualizer:
         assert painter.bgra(hud) is painter.bgra(hud)
 
     def test_its_digits_sit_in_the_middle_of_the_row(self):
-        """Centered on the digits' own ink.  Pillow's middle anchor centers the
-        face's whole line, descender included, which sits a digit low."""
         bgra = PlayheadHudPainter().bgra(video_playhead(42_000.0, 195_000.0, 0.0))
 
         first_digit = bgra[:, :6, 3] > 128

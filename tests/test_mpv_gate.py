@@ -1,4 +1,3 @@
-"""The lease that stops an engine's mpv being freed under a live call."""
 from __future__ import annotations
 
 import threading
@@ -15,7 +14,6 @@ def test_a_gate_with_nothing_inside_closes_at_once():
 
 
 def test_a_call_inside_holds_the_close_off_and_then_lets_it_through():
-    """The whole point: close() answers only once mpv is unoccupied."""
     gate = CallGate()
     inside = threading.Event()
     release = threading.Event()
@@ -94,7 +92,6 @@ def test_closing_bars_new_calls_immediately_so_a_looping_worker_cannot_extend_th
 
 
 def test_only_one_close_ever_owns_the_teardown():
-    """python-mpv's render-context free has no double-free guard; this is it."""
     gate = CallGate()
     assert gate.close(timeout=5.0)
     assert not gate.close(timeout=5.0)

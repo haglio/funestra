@@ -1,6 +1,3 @@
-"""Fetch the pinned libmpv build into the user folder's .haglio/libmpv.
-
-    python tools/fetch_libmpv.py [--require]"""
 from __future__ import annotations
 
 import argparse

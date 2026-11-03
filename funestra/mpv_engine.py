@@ -1,4 +1,3 @@
-"""libmpv-backed playback engine shared by every Funestra, with an offscreen twin in render_engine."""
 from __future__ import annotations
 
 import ctypes
@@ -23,10 +22,7 @@ from .mpv_gate import CallGate, mpv_call
 
 logger = logging.getLogger(__name__)
 
-# Every Lua script mpv loads for itself, the on-screen controller among them.  An
-# engine here is driven through the client API, so the scripting layer has
-# nothing to do but cost, and one of those scripts erroring on the way out takes
-# a host process down — see tests/test_mpv_control.py for the mechanism.
+# mpv's Lua scripts are off: one erroring on the way out takes a host process down.
 _MPV_SCRIPTS_OFF = {
     "osc": "no",
     "load_scripts": "no",
@@ -39,22 +35,10 @@ _MPV_SCRIPTS_OFF = {
     "ytdl": "no",
 }
 
-# mpv's severities onto Python's.  Only warnings and worse are asked for below,
-# so anything that arrives belongs in the host's log at face value.
 _MPV_LEVELS = {"fatal": logging.CRITICAL, "error": logging.ERROR, "warn": logging.WARNING}
 
 
 def _log_mpv(level: str, prefix: str, text: str) -> None:
-    """Write one of mpv's own messages to the host's log.
-
-    Failures inside the engine are otherwise invisible from Python: a video mpv
-    cannot open, a codec it cannot initialize, a hardware decoder it cannot
-    create — none of them raise, and playback carries on with an empty video
-    output.  What the host is left with is a black window over a healthy process
-    and nothing written down anywhere, which is the one state that cannot be
-    diagnosed afterwards.  mpv says why at the moment it happens; this keeps the
-    sentence, in the log file the host already writes.
-    """
     logger.log(_MPV_LEVELS.get(level, logging.WARNING), "mpv %s: %s", prefix, text.strip())
 
 
@@ -66,21 +50,7 @@ def _import_mpv():
 
 
 def _import_the_engine(load, tries: int = _TRIES_AT_THE_ENGINE):
-    """Put the engine's folder on PATH and load python-mpv, more than once if
-    something takes the folder off again.
-
-    python-mpv finds libmpv by walking ``%PATH%``, and PATH is shared: other
-    libraries put themselves on it with a read and then a write, so a write
-    built from a read taken before ours lands afterwards and puts PATH back
-    without our folder in it.  vosk does exactly that, in its module body, on
-    the thread a voice application listens on -- and a host that opened an
-    engine at that moment was told the engine could not be found while it sat
-    in the folder the line before had just named.
-
-    Asked again, the folder goes back and the import takes.  What survives all
-    of them is a folder that really is empty, and the refusal says which ones
-    were looked in rather than leaving that to the reader.
-    """
+    # vosk rewrites PATH from a read taken before ours, which drops libmpv's folder; ask again.
     last = None
     for attempt in range(1, tries + 1):
         add_libmpv_to_path()
@@ -105,32 +75,14 @@ def _where_it_looked() -> str:
 
 
 def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool = True) -> dict:
-    """The mpv options every engine in this family shares, however it renders.
-
-    The windowed engine adds its ``wid``/``vo=gpu`` pair on top, and a log handler
-    that also tells its :class:`~funestra.lost_gpu.LostGpu` what mpv said; the offscreen
-    one (:mod:`funestra.render_engine`) adds ``vo=libmpv`` instead.
-
-    ``log_handler`` and ``loglevel`` are python-mpv's own constructor keywords
-    rather than mpv options; they ride here because both engines want them for
-    the same reason (:func:`_log_mpv`) and both hand this dict straight to
-    ``MPV()``.
-    """
     options = dict(
         log_handler=_log_mpv,
-        # Warnings and worse only.  At "info" mpv narrates every file it opens,
-        # which for a satellite walking a playlist is a line every few seconds —
-        # noise that would bury the one line that matters.
         loglevel="warn",
         hwdec="auto-safe",
         loop_file="inf" if loop_file else "no",
         keep_open="yes",
         mute="yes" if muted else "no",
-        # An audio device that cannot be opened must never stop the video:
-        # mpv's default clock follows audio, so a failed output would freeze
-        # every frame while the file "plays".  Null-audio playback keeps the
-        # clock running and the session alive (a headset sink that is not
-        # accepting streams yet is the case that found this).
+        # mpv's clock follows audio, so an audio device that cannot open would freeze the video.
         audio_fallback_to_null="yes",
         **_MPV_SCRIPTS_OFF,
         input_default_bindings=False,
@@ -146,10 +98,7 @@ def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool
 
 TILES_SHADER = Path(__file__).with_name("tiles.glsl")
 
-# How a image's view reaches mpv: its zoom, and how far it leans each way
-# between the image's two edges (video/out/aspect.c places an image that
-# overhangs the window from flush with one edge at -1 to flush with the other
-# at +1, so every lean keeps it covering the window).
+# video/out/aspect.c places an overhanging image from -1 (flush with one edge) to +1 (the other).
 _PLACING = ("video_zoom", "video_align_x", "video_align_y")
 
 
@@ -161,13 +110,7 @@ def tiles_across(source: tuple[int, int], viewport: tuple[int, int]) -> int:
     return viewport_width * source_height // (viewport_height * source_width)
 
 
-# How long close() waits for calls already inside mpv before giving up on
-# freeing the handle at all.  Generous because it is only ever spent on calls
-# that are genuinely in flight: the gate turns every *later* call into a no-op
-# the instant close() starts, so a worker looping on mpv does not extend this.
-# A single property read waiting on the core lock of a file being opened
-# measured 72-492ms in the shutdown probe, and a cold video off the network
-# drive is slower again.
+# A property read can wait on mpv's core lock for hundreds of milliseconds while a file opens.
 CLOSE_DRAIN_TIMEOUT_S = 10.0
 
 
@@ -199,10 +142,8 @@ def _holds_a_com_apartment() -> bool:
 
 
 def _terminate_outside_the_callers_apartment(handle) -> None:
-    # libmpv destroys its core on the thread that terminates it, and its WASAPI
-    # output ends with a CoUninitialize it never paired with an init there --
-    # which takes the calling thread's apartment, and a Qt GUI thread's drag
-    # and drop with it.
+    # libmpv's WASAPI output ends with an unpaired CoUninitialize on the terminating thread,
+    # which takes a Qt GUI thread's drag and drop with it.
     def terminate() -> None:
         try:
             handle.terminate()
@@ -223,13 +164,9 @@ class _MpvControl:
     def __init__(self, moves: Moves | None = None, *, looping: bool = False) -> None:
         self._gate = CallGate()
         self._frame_rate = 0.0
-        # mpv's word on the file's video track: an image, a video, or None
-        # while it has none -- between two files, before the next one's tracks.
         self._image_track: bool | None = None
         self._overlays: dict[int, np.ndarray] = {}
-        # A still runs on a clock of its own, which moves it and ends it: mpv
-        # leaves a image's playhead at nought (verified against libmpv,
-        # 2026-09-19), so nothing of mpv's can say how far into its pace it is.
+        # mpv leaves an image's playhead at 0, so a clock of our own paces it.
         self._ken_burns = KenBurns(moves, looping=looping, fit=self._fit)
         self._viewport = (0, 0)
         self._placed = (0.0, 0.0, 0.0)
@@ -296,20 +233,9 @@ class _MpvControl:
 
     @property
     def video_dims(self) -> tuple[int, int]:
-        """The item's shape as mpv puts it out, tiles included -- (0, 0)
-        until it knows, and between files.
-
-        What a host measures its own chrome against: where to float the images
-        either side of the item, where to seat a HUD under it.  Callers
-        keep their last size through the gap between files, which is what keeps
-        the previous video's final frame on screen during a transition instead
-        of a teardown flicker.
-        """
         return self._video_dims
 
     def _now(self) -> float:
-        """The clock a image's move is paced by, in one call a test can wind on
-        by hand -- mpv leaves an image's own playhead at nought."""
         return time.monotonic()
 
     @property
@@ -339,37 +265,16 @@ class _MpvControl:
         if self._staged is not None:
             self._mpv.loadfile(self._staged, "append")
 
-    # Everything below trims mpv's playlist down to the video on screen, and each
-    # does it with ``playlist-clear`` — "clear the playlist, except the currently
-    # played file" — rather than by removing computed indices.
-    #
-    # Which entry is current is mpv's to know, and it changes underneath us: with
-    # prefetch on, mpv rolls onto the staged entry by itself at end-of-file, so an
-    # index read a moment earlier can already name the video now playing.  Removing
-    # by that index takes the playing entry out from under mpv, which leaves it on
-    # an empty playlist — a black window for the rest of the session, with a
-    # healthy process, a running loop and nothing raised anywhere.  There is no
-    # window to lose here: ``playlist-clear`` resolves "current" inside mpv.
+    # playlist-clear resolves "current" inside mpv; removing by an index read earlier
+    # can take the playing entry out from under it.
 
     @mpv_call()
     def stop(self) -> None:
-        """Let go of the file on screen, playing nothing.
-
-        A host that is about to move or delete what it was showing has to: the
-        engine holds an open handle on it, and Windows refuses to move a file
-        out from under one.
-        """
         self._staged = None
         self._mpv.command("stop")
 
     @mpv_call()
     def stage_next(self, path: Path) -> None:
-        """Make *path* the single entry queued after the current video.
-
-        With ``prefetch-playlist`` on, mpv opens and demuxes this entry before the
-        current video ends, so the end-of-file auto-advance onto it is seamless.
-        Any previously-staged entry is replaced.
-        """
         if str(path) == self._staged:
             return
         self._mpv.playlist_clear()
@@ -384,20 +289,11 @@ class _MpvControl:
     @property
     @mpv_call(False)
     def advanced_to_next(self) -> bool:
-        """True once mpv has reached end-of-file and auto-advanced off the current
-        video onto the staged next one (its playlist position moved past the head).
-
-        -1 is mpv's "no entry playing", which is not past the head.
-        """
         pos = self._mpv.playlist_pos
         return pos is not None and pos >= 1
 
     @mpv_call()
     def settle_on_the_next(self) -> None:
-        """After an auto-advance the spent video still occupies index 0; clearing
-        around the current entry shifts it back to the head (mpv keeps playing it
-        uninterrupted), restoring the [current, next] window.
-        """
         rolled_onto, self._staged = self._staged, None
         self._mpv.playlist_clear()
         self._begin_the_new_clip(rolled_onto)
@@ -409,14 +305,7 @@ class _MpvControl:
     @property
     @mpv_call(False)
     def idle(self) -> bool:
-        """Whether the engine has nothing up at all.
-
-        True between a file that would not open and the next one asked for:
-        mpv does not raise for a file it cannot demux, it simply ends up with
-        nothing playing (verified -- a text file named .mp4 leaves idle-active
-        true, path None and eof-reached unset).  A host that has asked for a
-        file and finds this reads it as the file's refusal.
-        """
+        # mpv raises nothing for a file it cannot demux; it ends up with nothing playing.
         return bool(self._mpv.idle_active)
 
     @property
@@ -487,20 +376,10 @@ class _MpvControl:
 
     @mpv_call()
     def set_speed(self, speed: float) -> None:
-        """Set the playback rate (1.0 = normal). mpv retimes video and audio,
-        and its ``time_pos`` clock advances at this rate — so the session's
-        funscript sync, which reads that clock, follows the new speed for free
-        (the T-Code driver only rescales its move durations)."""
         self._mpv.speed = speed
 
     @mpv_call()
     def set_volume(self, volume: int) -> None:
-        """Set the audio volume (0-100, a percentage of the source's own level).
-
-        ``volume`` and ``mute`` are independent mpv properties, so an engine
-        constructed muted (``--no-audio`` / ``FUN_TIME_MUTE_AUDIO``, which the
-        hidden-desktop integration runs rely on) stays silent whatever is set here.
-        """
         self._mpv.volume = volume
 
     @mpv_call()
@@ -536,14 +415,8 @@ class _MpvControl:
 
     @mpv_call()
     def screenshot_bgra(self, height: int = 64):
-        """Current displayed frame, resized to *height*, as a BGRA array.
-
-        Captures loop in/out thumbnails on demand (a few times per loop)
-        without disturbing playback — mpv renders the video itself.  None when
-        no frame is available yet.
-        """
         try:
-            img = self._mpv.screenshot_raw()  # PIL Image
+            img = self._mpv.screenshot_raw()
         except SystemError:  # python-mpv's word for a command mpv refused: no frame to take
             return None
         if img is None or img.height == 0:
@@ -571,15 +444,7 @@ class _MpvControl:
         self._overlays.pop(ident, None)
 
     def close(self) -> None:
-        """Free this engine's mpv, once no thread is inside a call on it.
-
-        The only method here that does NOT take a lease — it is what closes the
-        gate — and the only one that can decline to do its job: a call that has
-        not come back within :data:`CLOSE_DRAIN_TIMEOUT_S` leaves the handle
-        alive and the process to reap it, because destroying mpv underneath a
-        live call is an access violation and a leaked handle on the way out is
-        not.  Calling this twice frees nothing twice.
-        """
+        # Destroying mpv under a call still inside it is an access violation; a leaked handle at exit is not.
         started = time.monotonic()
         if not self._gate.close(CLOSE_DRAIN_TIMEOUT_S):
             if self._gate.inside:
@@ -595,11 +460,6 @@ class _MpvControl:
         self._release()
 
     def _release(self) -> None:
-        """Hand mpv's own resources back.  Subclasses free theirs first.
-
-        Reached only through :meth:`close`, and only once, so an override needs
-        no guard of its own.
-        """
         _terminate_outside_the_callers_apartment(self._mpv)
 
 
@@ -663,10 +523,7 @@ def _station_options(audio_device: str | None) -> dict:
 
 
 class MpvStation:
-    """One of a radio's stations: its videos' sound alone, round and round in a
-    fresh order each time round (mpv reshuffles a looped list as it comes round,
-    and gives up on one whose every video fails, both probed against libmpv on
-    2026-10-16), playing on whether or not it is heard."""
+    # mpv reshuffles a looped list as it comes round, and gives up on one whose every video fails.
 
     def __init__(self, handle, videos: Sequence[Path]) -> None:
         self._mpv = handle

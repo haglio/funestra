@@ -1,10 +1,3 @@
-"""When the graphics card goes out from under a window's video output, and when to build a new one.
-
-A graphics driver restart takes every Direct3D device away from the programs using it, and
-mpv's d3d11 output never gets its device back: every frame after it fails with
-DXGI_ERROR_DEVICE_REMOVED, and the window shows nothing for the rest of the session.
-A new output, though, builds a new device on the card that came back.
-"""
 from __future__ import annotations
 
 import logging

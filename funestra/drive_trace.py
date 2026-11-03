@@ -1,4 +1,3 @@
-"""What the device is about to be asked to do, and by whom: the trace's model, free of Pillow."""
 from __future__ import annotations
 
 from dataclasses import replace

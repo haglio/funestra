@@ -1,4 +1,3 @@
-"""Offscreen twin of MpvEngine: libmpv's render API drawing into a caller's FBO."""
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -73,19 +72,7 @@ class MpvRenderEngine(_MpvControl):
 
     @mpv_call()
     def render(self, fbo: int, width: int, height: int, *, flip_y: bool = False) -> str | None:
-        """Draw the current frame (video + OSD overlays) into *fbo* at width x height,
-        and say which file the frame shows: None while it is not one to show.
-
-        mpv scales to the target preserving aspect, so a target sized to the
-        video's own aspect (see :attr:`video_dims`) fills edge to edge.
-
-        Returns immediately: without block_for_target_time=False, libmpv holds
-        the call until the frame's own display time — pacing the caller at the
-        video's frame rate.  A host compositing several Funestras on its own
-        clock (a 90Hz VR frame loop over 30fps videos) must never inherit that
-        pacing; presentation timing is the host's, and mpv just supplies its
-        latest frame.
-        """
+        # Without block_for_target_time=False libmpv holds the call until the frame's display time.
         self._viewport = (int(width), int(height))
         flags = self._next_frame_flags()
         self._render_context.render(
@@ -97,15 +84,7 @@ class MpvRenderEngine(_MpvControl):
             new_frame=bool(flags & _FRAME_PRESENT) and not flags & _FRAME_REDRAW)
 
     def _release(self) -> None:
-        """The render context first, then the core it was created against.
-
-        That order is libmpv's: a render context outstanding when the core is
-        destroyed is undefined behavior.  Both frees reach here only once, and
-        only once :meth:`close` has established that no thread is inside a
-        ``render``, an ``update`` or a property read — python-mpv's
-        ``MpvRenderContext.free`` is a bare ``mpv_render_context_free`` with no
-        guard of its own, and a second one would free a freed context.
-        """
+        # libmpv: a render context outstanding when the core is destroyed is undefined behavior.
         try:
             self._render_context.free()
         except Exception:

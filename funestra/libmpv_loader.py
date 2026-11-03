@@ -1,4 +1,3 @@
-"""Put the directory holding libmpv-2.dll on PATH so ``import mpv`` finds it."""
 from __future__ import annotations
 
 import os

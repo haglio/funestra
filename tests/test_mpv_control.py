@@ -1,4 +1,3 @@
-"""The shared mpv control surface, driven against a fake mpv handle."""
 from __future__ import annotations
 
 import ctypes
@@ -25,14 +24,6 @@ from funestra.mpv_engine import (
 
 
 class FakeMpv:
-    """An mpv handle that records what was asked of it.
-
-    ``playlist_pos`` is settable so a test can put the handle in the states the
-    real one reaches: on the head, rolled onto a prefetched entry, or holding no
-    entry at all (-1, mpv's "nothing is playing").  Like the real one, it
-    keeps count of its entries and refuses ``playlist-next`` with no entry
-    after the one playing.
-    """
 
     def __init__(self, *, pos: int = 0, count: int = 2) -> None:
         self.playlist_pos = pos
@@ -91,12 +82,6 @@ CREEP = zoom_in(0.0, 0.0)
 
 
 class Control(_MpvControl):
-    """A control surface whose clock a test moves by hand.
-
-    A still's move is paced by a clock rather than by a playhead -- mpv
-    leaves an image's at nought -- so ``now`` is what a test winds on to say
-    how far into the hold the image has got.
-    """
 
     def __init__(self, mpv, now: float = 0.0, move: Move = CREEP,
                  viewport: tuple[int, int] = (0, 0), deals: Deals | None = None,
@@ -211,17 +196,6 @@ MPVS_OWN_SCRIPTS = (
 
 
 def test_a_engine_runs_none_of_mpvs_lua_scripts():
-    """All of them, not just the on-screen controller.
-
-    An engine here is driven through the client API alone, so mpv's scripting
-    layer can only cost.  What it costs is a crash: these scripts error on the
-    way out often enough to matter, LuaJIT unwinds a Lua error through a Windows
-    structured exception, and a process with faulthandler armed answers every one
-    by dumping all threads' Python frames without the GIL -- while python-mpv's
-    event thread is exiting, so the walk reaches a thread state being freed and
-    faults.  Measured on this family's options: 22 of 40 core teardowns raised
-    one with these left on, none of 60 with them off.
-    """
     options = _shared_options(muted=False, loop_file=True, prefetch=False)
 
     assert {name: options.get(name) for name in MPVS_OWN_SCRIPTS} == dict.fromkeys(
@@ -250,14 +224,6 @@ def test_a_window_that_can_be_heard_leaves_mpv_its_sound_track(monkeypatch):
 
 
 def test_staging_the_next_clip_never_removes_by_index():
-    """The staged entry goes through ``playlist-clear``, which mpv resolves against
-    whatever is playing at that instant.
-
-    Removing by an index read a moment earlier is the bug this pins: with prefetch
-    on, mpv rolls onto the staged entry by itself at end-of-file, so ``pos + 1``
-    can already name the video now on screen — and removing it leaves mpv on an
-    empty playlist, which is a black window for the rest of the session.
-    """
     mpv = FakeMpv(pos=0, count=2)
     Control(mpv).stage_next(Path("alpha.mp4"))
     assert ("clear",) in mpv.calls
@@ -266,11 +232,6 @@ def test_staging_the_next_clip_never_removes_by_index():
 
 
 def test_staging_holds_up_when_mpv_says_nothing_is_playing():
-    """-1 is mpv's "no entry playing", not entry zero.
-
-    Read as a position it made the trim walk the playlist to nothing — so an engine
-    that had lost its file could never get one back.
-    """
     mpv = FakeMpv(pos=-1, count=3)
     Control(mpv).stage_next(Path("beta.mp4"))
     assert not [call for call in mpv.calls if call[0] == "remove"]
@@ -325,9 +286,6 @@ class BlockingMpv(FakeMpv):
 
 
 def test_close_waits_for_a_read_that_is_still_inside_mpv():
-    """The shutdown crash, in miniature: python-mpv's terminate() nulls its
-    handle before destroying the core, so a property read that began a moment
-    earlier dereferences NULL.  close() may not run until the read is out."""
     mpv = BlockingMpv()
     control = Control(mpv)
     reading = threading.Thread(target=lambda: control.position_ms)
@@ -347,8 +305,6 @@ def test_close_waits_for_a_read_that_is_still_inside_mpv():
 
 
 def test_the_frame_rate_is_answered_while_a_read_is_stuck_inside_mpv():
-    """A file being opened holds mpv's core lock for hundreds of milliseconds,
-    and a Funestra asks for the frame rate every frame it paints."""
     mpv = BlockingMpv()
     control = Control(mpv)
     mpv.report("container-fps", 25.0)
@@ -393,17 +349,12 @@ _APTTYPE_MAINSTA = 3
 
 
 class AudioOutputTeardown(FakeMpv):
-    """A handle whose teardown ends the way libmpv's does once a file with
-    sound has played: its WASAPI output calls ``CoUninitialize`` on whichever
-    thread destroys the core, having initialized COM on a thread of its own."""
 
     def terminate(self) -> None:
         ctypes.windll.ole32.CoUninitialize()
 
 
 def _on_a_thread_holding_an_sta(work) -> None:
-    """Run *work* on a thread holding a single-threaded apartment, as a Qt
-    app's GUI thread does."""
     def run() -> None:
         ole32 = ctypes.windll.ole32
         ole32.CoInitializeEx(None, _COINIT_APARTMENTTHREADED)
@@ -445,7 +396,6 @@ class SlowTeardown(FakeMpv):
 
 
 def test_a_close_on_a_thread_holding_an_apartment_returns_once_mpv_is_torn_down():
-    """A host takes the window mpv draws into down straight after the close."""
     mpv = SlowTeardown()
     torn_down_at_return: list[bool] = []
 
@@ -458,8 +408,6 @@ def test_a_close_on_a_thread_holding_an_apartment_returns_once_mpv_is_torn_down(
 
 
 class EventThreadTeardown(FakeMpv):
-    """python-mpv's terminate(): destroy the core, then join the thread that
-    delivers mpv's events -- which is a wait on itself if that thread asked."""
 
     def __init__(self) -> None:
         super().__init__()

@@ -1,4 +1,3 @@
-"""A seek mpv can refuse, and one a Funestra owes the file it is opening."""
 from __future__ import annotations
 
 import logging
