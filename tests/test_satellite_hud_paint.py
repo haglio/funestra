@@ -56,6 +56,7 @@ from funestra.satellite_hud import (
     place_width,
 )
 from funestra.satellite_hud_clicks import HudClicks, button_tooltip
+from funestra.satellite_hud_nav_map import narrowed_to_window
 from funestra.satellite_hud_paint import DrawnWith, HudRenderer
 from funestra.volume import VolumeHud
 
@@ -1691,3 +1692,17 @@ def test_a_hud_whose_osr2_visualizer_is_still_draws_only_its_row_again_too(thumb
                                            item_row=RowHud(position_ms=4_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
     assert np.array_equal(moved.bgra, whole.bgra)
     assert (moved.targets, drawn_while_moving) == (whole.targets, 0)
+
+
+def test_playing_an_action_names_the_action_at_the_head_of_its_window():
+    model = HudModel(
+        funestra="portrait", locked=False, title="Unlocked",
+        corner=HudCell(path="c.mp4", label="corner"),
+        actions=(HudCell(path="a.mp4", label="alpha"), HudCell(path="b.mp4", label="beta")),
+        playing=("action", 1),
+        current_action="beta",
+    )
+
+    narrowed, _seeds, _actions = narrowed_to_window(model)
+
+    assert narrowed.current_action == "corner"

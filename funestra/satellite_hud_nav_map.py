@@ -22,10 +22,12 @@ def dashed_rect(draw: ImageDraw.ImageDraw, rect: Rect, color, dash: int = 4) -> 
         draw.line([(x, start), (x, end)], fill=color)
         draw.line([(x + w - 1, start), (x + w - 1, end)], fill=color)
 
+
 def count_lines(model: HudModel) -> tuple[str, ...]:
     if not (model.seed_count or model.action_count):
         return ()
     return (f"Seeds: {model.seed_count}", f"Actions: {model.action_count}")
+
 
 def narrowed_to_window(model: HudModel) -> tuple[HudModel, NavMapWindow | None, NavMapWindow | None]:
     if model.corner is None:
@@ -51,6 +53,7 @@ def narrowed_to_window(model: HudModel) -> tuple[HudModel, NavMapWindow | None, 
     if bucket == "action":
         narrowed = replace(narrowed, current_action=corner.label or model.current_action)
     return narrowed, seed_win, action_win
+
 
 def draw_ellipses(image, rects: NavMapRects, axis: str, window) -> None:
     before, after = ellipsis_rects(rects, axis)
