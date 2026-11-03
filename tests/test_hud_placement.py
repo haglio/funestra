@@ -22,7 +22,7 @@ def test_a_funestra_with_one_pair_of_keys_walks_the_four_corners_round():
 
 
 def test_a_hud_is_inset_from_whichever_corner_it_was_moved_to():
-    at = dict(hud=(100, 60), viewport=(800, 600), margin=12)
+    at = {"hud": (100, 60), "viewport": (800, 600), "margin": 12}
     assert hud_origin(HudCorner.UPPER_LEFT, **at) == (12, 12)
     assert hud_origin(HudCorner.UPPER_RIGHT, **at) == (688, 12)
     assert hud_origin(HudCorner.LOWER_LEFT, **at) == (12, 528)

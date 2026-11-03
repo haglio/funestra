@@ -26,9 +26,9 @@ RAMP_STEPS = HANDOFF_RAMP_MS // STEP_MS
 
 
 def _motion(**over) -> DriveHud:
-    base = dict(
-        speed=50, amplitude=80, center=50, trace_seconds=SPAN_S,
-        waveform=tuple(0.5 + 0.4 * np.sin(i / 6) for i in range(TRACE_SAMPLES)))
+    base = {
+        "speed": 50, "amplitude": 80, "center": 50, "trace_seconds": SPAN_S,
+        "waveform": tuple(0.5 + 0.4 * np.sin(i / 6) for i in range(TRACE_SAMPLES))}
     base.update(over)
     return DriveHud(**base)
 
