@@ -15,6 +15,7 @@ from funestra.flick_folder import (
     vr_flicks_in,
 )
 
+
 class TestScanFlicks:
     def test_finds_mp4_files(self, tmp_path: Path):
         (tmp_path / "a.mp4").touch()

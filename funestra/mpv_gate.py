@@ -1,34 +1,4 @@
-"""What keeps an engine's mpv alive while another thread is inside a call on it.
-
-Every mpv-backed engine here is driven from more than one thread, which is
-libmpv's designed usage: the client API (property reads, commands, overlays) on
-one, the render API on another.  What is never safe is taking the thing away
-underneath.  ``mpv_terminate_destroy`` and ``mpv_render_context_free`` both
-destroy state a concurrent call is standing on, and python-mpv makes the window
-wider still — its ``terminate()`` nulls ``self.handle`` *before* the destroy, so
-a property read that began a moment earlier hands libmpv a NULL client and
-dereferences it.
-
-That is not a theory.  Closing an engine from one thread while a worker read
-``time-pos`` from another reproduced an access violation on every attempt, the
-faulting thread being the worker at ``mpv_get_property`` (reading 0x48 — NULL
-plus a field offset) with the closer inside ``terminate()``.
-
-Joining the pump thread is not enough to rest shutdown on: a join that times
-out returns anyway, and even one that returns cleanly says nothing about the
-*other* threads an engine is reachable from.  A lease needs no such guess.
-Every call into mpv takes one; :meth:`CallGate.close` bars new leases — so a
-worker that never noticed the stop flag simply gets no-ops from here on — waits
-out the calls already inside, and only then says the handle may be freed.  If
-they do not come back inside the timeout it declines to free at all: an mpv
-left for the exiting process to reap is a leak, freeing under a live call is a
-crash, and a leak at shutdown is much the cheaper of the two.  The wait is
-always bounded, so a wedged decoder can never hold a session open.
-
-Leases nest safely (the gate counts callers rather than excluding them), so a
-guarded method is free to call another.  What must never take one is ``close``
-itself, which would then be waiting for itself.
-"""
+"""Leases that keep an engine's mpv from being freed under a live call from another thread."""
 from __future__ import annotations
 
 import functools

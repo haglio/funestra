@@ -207,7 +207,7 @@ def _actions_of(path: Path) -> list[tuple[int, int]]:
 
 
 def parse_arguments(argv: list[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description="Fit the learned motion's model from a folder of real funscripts.")
     parser.add_argument("--corpus", action="append", type=Path)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--kept", type=int, default=KEPT_PER_CLASS)

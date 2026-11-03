@@ -1,27 +1,4 @@
-"""libmpv-backed playback engine, shared by every Funestra in this family.
-
-mpv hardware-decodes on the GPU end to end (d3d11va), owns audio and so gets A/V
-sync for free, seeks precisely enough to click on a scrubber, and loops A-B
-natively.  ``MpvEngine`` renders into a window the caller owns (via ``wid``) --
-a pygame window, or a Qt widget's native one; its offscreen twin
-(:mod:`funestra.render_engine`) renders into a framebuffer the caller
-supplies.  Both drive the ``_MpvControl`` surface below, and both put overlays
-on top through ``overlay_add``.
-
-The interface is a superset of what any one Funestra needs, because the two use it
-differently: the Main Funestra opens one file at a time (``loop_file="inf"``) and navigates
-explicitly, while a satellite opens letting end-of-file walk a prefetched
-playlist.  Either can be told to behave like the other — that is what a lock is
-on either — so a constructor option is a *default* and never a rule.
-
-Every method below that touches mpv holds :mod:`funestra.mpv_gate` open for
-its whole body, because a host drives one engine from more than one thread and
-closing it from any of them would otherwise free the handle under the others.
-
-``_MpvControl`` is driven against a fake in ``tests/test_mpv_control.py``.  What
-needs the DLL and a real window is constructing an ``MpvEngine``, and Fun Time's
-hidden-desktop integration suite is what exercises that.
-"""
+"""libmpv-backed playback engine shared by every Funestra, with an offscreen twin in render_engine."""
 from __future__ import annotations
 
 import ctypes

@@ -392,6 +392,19 @@ class TestApplyRuntimeCommand:
 
         assert handled is False
 
+    def test_a_number_that_is_not_whole_is_refused_rather_than_rounded(self):
+        ds = RobotHandState(playing=True, amplitude=80)
+
+        handled = _answered(
+            "AMP 50.5",
+            engine=BeatEngine(phase=0.0, last_tick=0.0),
+            paused=Flag(),
+            step_flick=lambda _step: None,
+            robot_hand=ds,
+        )
+
+        assert (handled, ds.amplitude) == (False, 80)
+
     def test_quit_sets_stop_event(self):
         engine = BeatEngine(phase=0.0, last_tick=0.0)
         paused = Flag()

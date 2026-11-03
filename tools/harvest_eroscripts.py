@@ -272,7 +272,7 @@ def _forum_for(corpus: Path, pace_s: float) -> Forum:
 
 
 def parse_arguments(argv: list[str] | None) -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description="Harvest the funscripts attached to free-script topics on EroScripts.")
     parser.add_argument("--corpus", type=Path)
     parser.add_argument("--category", default=FREE_SCRIPTS)
     parser.add_argument("--pace", type=float, default=1.0, help="seconds between requests")

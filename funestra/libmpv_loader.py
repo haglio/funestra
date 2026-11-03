@@ -1,10 +1,4 @@
-"""Locate the libmpv DLL so ``import mpv`` can find it.
-
-python-mpv resolves libmpv through the Windows DLL search path (``%PATH%``),
-not ``os.add_dll_directory``, so the directory holding ``libmpv-2.dll`` must be
-on PATH before ``import mpv``.  The DLL is ~117 MB and is NOT committed; it is
-fetched once (see the README).
-"""
+"""Put the directory holding libmpv-2.dll on PATH so ``import mpv`` finds it."""
 from __future__ import annotations
 
 import os

@@ -1,14 +1,4 @@
-"""SDL settings a Funestra's window needs decided before it exists.
-
-SDL reads these from the environment at the moment it acts, not at import, so
-each has to be in place before the window is created — which for every Funestra in
-this family means before ``pygame.init()``.  They live here rather than in each
-Funestra.
-
-Nothing here imports pygame: these are SDL's own environment hints, and this
-package deliberately stays clear of the window toolkit (``MpvEngine`` takes a
-bare window handle for the same reason).
-"""
+"""SDL hints a Funestra's window needs set before pygame.init()."""
 from __future__ import annotations
 
 import os

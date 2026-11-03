@@ -1,22 +1,4 @@
-"""Offscreen twin of MpvEngine: the same engine rendered into a caller's FBO.
-
-``MpvEngine`` paints into a window mpv owns (``wid``); some hosts have no
-window per video — a VR compositor draws several Funestras into one scene — so
-this variant drives libmpv's render API instead: mpv decodes exactly as
-before, but each frame is drawn on demand into whatever OpenGL framebuffer the
-caller passes, for the host to composite wherever it likes.  libmpv renders
-the OSD into that frame too, so overlays pushed through ``overlay_add`` (the
-Funestras' HUDs) carry over unchanged.
-
-The caller owns the GL context and must have it current on the calling thread
-for construction, for every ``render`` and for ``close`` (which frees the
-render context); *get_proc_address* resolves GL entry points by name (e.g.
-wrapping ``glfw.get_proc_address``), because libmpv binds its own GL functions
-through it.
-
-The control surface is ``_MpvControl`` — MpvEngine's own — so a Funestra
-drives either engine without knowing which rendering path is backing it.
-"""
+"""Offscreen twin of MpvEngine: libmpv's render API drawing into a caller's FBO."""
 from __future__ import annotations
 
 from collections.abc import Callable
