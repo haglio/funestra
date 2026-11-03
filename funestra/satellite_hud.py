@@ -1,21 +1,3 @@
-"""The satellite lock HUD: the published HUD's geometry and hit-testing.
-
-Shared through funestra because two apps draw this exact HUD: each of Fun
-Time's Satellite Funestras composites it into its video, and a hosted
-Origenerator's region shows wear it as a widget — one HUD, one codebase, so
-the two surfaces cannot drift apart.
-
-fun_time owns each Funestra's *model* — which videos sit on the nav map, whether the
-satellite is locked, which axis is looping — because only fun_time has the
-library metadata.  It serializes that to a small JSON file per Funestra; this module
-parses it and lays it out.  (A hosted Origenerator builds its shows' models
-directly — the same dataclass, no file in between.)  :mod:`funestra.satellite_hud_paint` turns the layout into a bitmap mpv
-composites into the video, so the HUD has no window and therefore no z-order at
-all — it *is* the frame.
-
-Kept free of Pillow so the geometry and hit-testing are unit-testable without a
-font: the paint module measures text and hands the width back in.
-"""
 from __future__ import annotations
 
 import json
@@ -545,10 +527,7 @@ def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
     return ""
 
 
-# Windows' default double-click time.  A click that turns out to be the first
-# half of a double-click must not also post a switch, so a lone click waits this
-# long before it is posted.  Erring short is safe: a slow double-click simply
-# switches to the video it then locks.
+# Windows' default double-click time.
 DOUBLE_CLICK_S = 0.5
 
 

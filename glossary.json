@@ -467,9 +467,7 @@
       "code_today": [
         "backdrop",
         "card",
-        "gutter",
-        "shelf",
-        "toolbar"
+        "gutter"
       ],
       "code_word": null,
       "status": "kept"

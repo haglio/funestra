@@ -1,4 +1,3 @@
-"""Pixel-level checks on the HUD bitmap mpv composites into the satellite video."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -109,7 +108,6 @@ def _model(**overrides) -> HudModel:
 
 
 def _rgb(bgra: np.ndarray) -> np.ndarray:
-    """(H, W, 3) RGB view of an mpv BGRA buffer, for pixel assertions."""
     return bgra[:, :, [2, 1, 0]]
 
 
@@ -410,10 +408,6 @@ def test_render_draws_the_sides_own_controls_even_with_no_clip():
 
 
 def test_the_minimize_button_wears_a_bar_rather_than_a_font_icon():
-    """The minimize mark Windows uses lives in a face these buttons don't load, and
-    Pillow draws a ".notdef" tofu for a codepoint a face doesn't carry — so it is
-    drawn: one horizontal run of ink across the middle of the button, wider than it
-    is tall, which is what a title bar's minimize looks like everywhere."""
     rendered = HudRenderer("landscape").render(
         _model(funestra="landscape", title="Unlocked"))
     x, y, w, h = _rects(rendered)["minimize"]

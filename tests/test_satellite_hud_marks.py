@@ -1,12 +1,3 @@
-"""The satellite HUD wears the family's icons, not lookalikes of them.
-
-The HUD is painted into the video frame with Pillow and there is no Qt in a
-satellite process, so every mark here used to be whatever Segoe UI Symbol
-carried -- a loop that was one arc where the family's is a circuit.  The
-HUD's own marks come out of shared_ui's geometry now, through funestra's
-HUD chrome, and these hold them to it; the faces a source declares for its
-buttons are held to it where they are declared.
-"""
 from __future__ import annotations
 
 from PIL import Image, ImageDraw

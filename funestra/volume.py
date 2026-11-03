@@ -1,22 +1,3 @@
-"""The volume control every Funestra in this family draws in its timeline row.
-
-A speaker and a slider, sized for the corner of a video: the Main Funestra and Genau each draw
-it live and report presses to Fun Time (which holds the authoritative level for
-the whole primary display); a silent satellite draws the same chip as a muted
-*indicator*.  Because those Funestras are separate processes in separate repos,
-the volume control lives here in the shared engine rather than in any of them — and it is
-painted into both an mpv overlay bitmap and a pygame surface, since the Funestras
-that draw it live do not share a renderer.
-
-It shows the level *and* the mute as separate facts.  Fun Time silences a sink by
-publishing a level of zero, which is all a sink needs and useless to draw: muted
-and turned-all-the-way-down look the same, and unmuting has to return to the
-level the speaker chose.  So the mute rides alongside the level, and the fill
-stays put under it.
-
-Geometry and hit-testing are pure functions with no Pillow, the way
-:mod:`funestra.satellite_hud` keeps its layout testable without a font.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass

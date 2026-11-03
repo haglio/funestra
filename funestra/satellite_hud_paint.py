@@ -1,15 +1,3 @@
-"""Draw the satellite's lock HUD as a bitmap mpv composites into the video.
-
-Drawing it into the frame rather than into a window of its own is the whole
-point: an mpv overlay has no z-order, so it can neither fall beneath the video nor
-float above the desktop.
-
-The slab it is drawn on — the rounded translucent HUD, the palette, the Segoe
-face sized the way Qt sized it, the BGRA hand-off — comes from
-:mod:`funestra.hud`, which the Main Funestra's own HUD is drawn on too, so the two
-Funestras go on looking like one another.  The layout and hit-test rects come from
-:mod:`funestra.satellite_hud`, so what is drawn and what is clickable cannot drift apart.
-"""
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
@@ -136,8 +124,6 @@ _EXPAND_ICON = shared_icon(EXPAND_ICON)
 
 @dataclass(frozen=True)
 class RenderedHud:
-    """The HUD as mpv wants it, plus what the pixels under the cursor mean."""
-
     bgra: np.ndarray
     targets: HudTargets
 
@@ -163,8 +149,7 @@ class _DrawnButTheRow:
 
 
 def _dashed_rect(draw: ImageDraw.ImageDraw, rect: Rect, color, dash: int = 4) -> None:
-    """A 1px dashed outline — Pillow draws only solid lines, and the hover preview
-    has to read as provisional next to the solid border a running loop gets."""
+    # Pillow draws only solid lines.
     x, y, w, h = rect
     for start in range(x, x + w, dash * 2):
         end = min(start + dash, x + w)
