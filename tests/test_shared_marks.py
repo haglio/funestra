@@ -9,6 +9,7 @@ from shared_ui.toggle_switch_pil import paste_toggle_switch
 
 from funestra.hud import (
     SYMBOL_FONT,
+    ButtonLook,
     draw_button,
     draw_icon,
     load_font,
@@ -18,8 +19,11 @@ from funestra.hud_icons import TOGGLE_SWITCH, shared_icon, shared_icon_name
 
 
 def _drawn(hud, draw, button) -> None:
-    draw_button(hud, draw, (0, 0, 18, 18), button, hovered=False,
-                icon_font=load_font(11, SYMBOL_FONT), word_font=load_font(8))
+    draw_button(hud, draw, (0, 0, 18, 18), button,
+        ButtonLook(
+            hovered=False,
+            icon_font=load_font(11, SYMBOL_FONT),
+            word_font=load_font(8)))
 
 
 class TestNamingTheMarks:
@@ -93,9 +97,11 @@ class TestTheFamilysSwitch:
 
         def cell(lit: bool) -> bytes:
             hud = Image.new("RGBA", (width, 18), (0, 0, 0, 255))
-            draw_button(hud, ImageDraw.Draw(hud), (0, 0, width, 18),
-                        Button("x", TOGGLE_SWITCH, "", width=width, lit=lit), hovered=False,
-                        icon_font=load_font(11, SYMBOL_FONT), word_font=load_font(8))
+            draw_button(hud, ImageDraw.Draw(hud), (0, 0, width, 18), Button("x", TOGGLE_SWITCH, "", width=width, lit=lit),
+                ButtonLook(
+                    hovered=False,
+                    icon_font=load_font(11, SYMBOL_FONT),
+                    word_font=load_font(8)))
             return hud.tobytes()
 
         def familys(on: bool) -> bytes:
@@ -118,8 +124,10 @@ class TestTheFamilysSwitch:
         def brightest(icon: str) -> int:
             hud = Image.new("RGBA", (60, 18), (0, 0, 0, 255))
             draw_button(hud, ImageDraw.Draw(hud), (0, 0, 60, 18), Button("", icon, ""),
-                        hovered=False, icon_font=load_font(11, SYMBOL_FONT),
-                        word_font=load_font(8))
+                ButtonLook(
+                    hovered=False,
+                    icon_font=load_font(11, SYMBOL_FONT),
+                    word_font=load_font(8)))
             return int(np.asarray(hud)[:, :, :3].max())
 
         assert brightest("OSR2 control") < brightest("4s")

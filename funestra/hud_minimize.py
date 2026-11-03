@@ -11,6 +11,7 @@ from shared_ui.type_scale import SIZE_SMALL, SIZE_TINY
 
 from .geometry import Rect
 from .hud import (
+    ButtonLook,
     Hud,
     draw_button,
     draw_tooltip,
@@ -113,7 +114,10 @@ def collapsed_button(funestra: str, corner: HudCorner = HudCorner.UPPER_LEFT, *,
     image = Image.new("RGBA", size, (0, 0, 0, 0))
     rect = corner_button_rect(corner, hud=size, inset=(0, 0))
     draw_button(image, ImageDraw.Draw(image), rect, restore_button(funestra),
-                hovered=hover is not None, icon_font=icon_font(), word_font=icon_font())
+        ButtonLook(
+            hovered=hover is not None,
+            icon_font=icon_font(),
+            word_font=icon_font()))
     if named is not None:
         image.alpha_composite(named, (0 if corner.right else ROOM, 0))
     if hover is not None:

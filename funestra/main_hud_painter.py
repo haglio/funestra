@@ -22,6 +22,7 @@ from .host_controls import HostControlsHud, HostControlsLayout, HostControlsSect
 from .hud import (
     ACTIVE_DOT,
     SYMBOL_FONT,
+    ButtonLook,
     Hud,
     draw_active_dot,
     draw_button,
@@ -309,9 +310,11 @@ class MainHudPainter:
         row_top = None
         for rect, button in placed:
             draw_button(hud.image, hud.draw, rect, button,
-                        hovered=hover is not None and contains(rect, *hover),
-                        icon_font=self._icon, word_font=self._tiny,
-                        row_label=rect[1] != row_top)
+                ButtonLook(
+                    hovered=hover is not None and contains(rect, *hover),
+                    icon_font=self._icon,
+                    word_font=self._tiny,
+                    row_label=rect[1] != row_top))
             row_top = rect[1]
         return placed
 
@@ -400,8 +403,10 @@ class MainHudPainter:
             minus = (corner_button_rect(corner, hud=(width, height), inset=_MINUS_INSET),
                      minimize_button(main_hud_model.funestra))
             draw_button(hud.image, hud.draw, *minus,
-                        hovered=hover is not None and contains(minus[0], *hover),
-                        icon_font=self._icon, word_font=self._tiny)
+                ButtonLook(
+                    hovered=hover is not None and contains(minus[0], *hover),
+                    icon_font=self._icon,
+                    word_font=self._tiny))
             self.buttons.append(minus)
         self._draw_the_foot(hud.image, plan, corner, heatmap)
 

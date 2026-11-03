@@ -6,7 +6,7 @@ from functools import lru_cache
 import numpy as np
 from PIL import Image, ImageDraw
 
-from .hud import draw_button, draw_tooltip, to_bgra
+from .hud import ButtonLook, draw_button, draw_tooltip, to_bgra
 from .hud_button import Button
 from .hud_corners import plus_bgra, plus_button, tooltip_size
 from .hud_minimize import BUTTON, icon_font, minimize_button, name_slab, restore_button
@@ -55,7 +55,10 @@ class OutsideButtons:
 def _button_bgra(button: Button, pointed: bool) -> np.ndarray:
     image = Image.new("RGBA", (BUTTON, BUTTON), (0, 0, 0, 0))
     draw_button(image, ImageDraw.Draw(image), (0, 0, BUTTON, BUTTON), button,
-                hovered=pointed, icon_font=icon_font(), word_font=icon_font())
+        ButtonLook(
+            hovered=pointed,
+            icon_font=icon_font(),
+            word_font=icon_font()))
     return to_bgra(image)
 
 
