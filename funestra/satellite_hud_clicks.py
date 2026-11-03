@@ -46,25 +46,15 @@ def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
 DOUBLE_CLICK_S = 0.5
 
 
-class HudClicks:
+class HudClicks(TrackGrip):
     def __init__(self, funestra: str, *, double_click_s: float = DOUBLE_CLICK_S) -> None:
+        super().__init__()
         self._funestra = funestra
         self._double_click_s = double_click_s
         self._pending_path = ""
         self._pending_at = 0.0
-        self._grip = TrackGrip()
         self.active_loop = ""
         self.active_filter = ""
-
-    @property
-    def holding(self) -> bool:
-        return self._grip.holding
-
-    def drag_to(self, px: int, py: int) -> str:
-        return self._grip.drag_to(px, py)
-
-    def release(self) -> None:
-        self._grip.release()
 
     def press(self, targets: HudTargets, px: int, py: int, *, now: float) -> str:
         self.release()
@@ -91,7 +81,7 @@ class HudClicks:
         return "" if button.dim else button.command
 
     def _press_a_track(self, targets: HudTargets, px: int, py: int) -> str | None:
-        return self._grip.grab(targets.tracks, px, py) or None
+        return self.grab(targets.tracks, px, py) or None
 
     def _press_a_loop(self, targets: HudTargets, px: int, py: int) -> str | None:
         loop = hit_test_targets(targets.loop, px, py)
