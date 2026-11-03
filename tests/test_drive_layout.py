@@ -26,7 +26,7 @@ def test_the_block_is_as_big_as_the_parts_it_places(center):
 def test_the_center_marks_ride_the_line_they_move_and_stay_on_the_block():
     for center in (0, 25, 50, 75, 100):
         g = layout.geometry(0, 0, layout.fraction(center))
-        wave_x, wave_y, _w, wave_h = g.wave
+        _wave_x, wave_y, _w, wave_h = g.wave
         for rect in (g.center_up, g.center_down):
             assert wave_y <= rect[1]
             assert rect[1] + rect[3] <= wave_y + wave_h

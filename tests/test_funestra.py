@@ -1634,7 +1634,7 @@ class TestTheWindowsOwnVerbs:
         assert "Unhandled" not in caplog.text
 
     def test_what_runs_on_the_window_is_asked_first_and_the_funestra_last(self, tmp_path):
-        funestra, engine, heard = self._answering(tmp_path, "KINO_THING\nNEXT\n")
+        funestra, _engine, heard = self._answering(tmp_path, "KINO_THING\nNEXT\n")
 
         funestra.tick(viewport=WINDOW)
 

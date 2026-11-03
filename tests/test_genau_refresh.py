@@ -377,7 +377,7 @@ def test_direct_mode_calls_tcode_sender():
     built["controller"].refresh()
 
     assert len(tcode.sends) == 1
-    phase, now = tcode.sends[0]
+    _phase, now = tcode.sends[0]
     assert now == 5.0
 
 

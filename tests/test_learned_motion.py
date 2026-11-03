@@ -59,7 +59,7 @@ class TestPlayingThePhrases:
 
     def test_each_phrase_rises_from_where_the_last_one_ended(self):
         model = _model(_phrase(500, 20, 80), _phrase(200, 40, 60))
-        hand, state = _playing(model)
+        _hand, state = _playing(model)
 
         assert state.positions[0] == 0.0
         lows = state.positions[2::2]
@@ -136,7 +136,7 @@ class TestHandingTheDeviceAbout:
         assert learned_motion.position(state, hand) == pytest.approx(40.0)
 
     def test_switching_off_forgets_the_phrases(self):
-        hand, state = _playing(_model(_phrase(500, 20, 80)))
+        _hand, state = _playing(_model(_phrase(500, 20, 80)))
 
         assert learned_motion.toggle_learned_motion(state) is False
         assert not state.active

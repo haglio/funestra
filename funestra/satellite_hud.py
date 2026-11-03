@@ -305,7 +305,7 @@ def looped_group_rect(
     corner_rect: Rect, seed_rects: list[Rect], action_rects: list[Rect], axis: str,
     *, reserve: int = 0, column_rect: Rect | None = None,
 ) -> Rect:
-    cx, cy, cw, ch = corner_rect
+    cx, cy, _cw, ch = corner_rect
     if axis == "seed":
         row_right = _row_right(corner_rect, seed_rects)
         return (cx - reserve, cy, (row_right + reserve) - (cx - reserve), ch)
@@ -318,7 +318,7 @@ def ellipsis_rects(
     corner_rect: Rect, seed_rects: list[Rect], action_rects: list[Rect], axis: str,
     *, column_rect: Rect | None = None,
 ) -> tuple[Rect, Rect]:
-    cx, cy, cw, ch = corner_rect
+    cx, cy, _cw, ch = corner_rect
     if axis == "seed":
         return ((cx - NAV_MAP_GAP - ELLIPSIS, cy, ELLIPSIS, ch),
                 (_row_right(corner_rect, seed_rects) + NAV_MAP_GAP, cy, ELLIPSIS, ch))
