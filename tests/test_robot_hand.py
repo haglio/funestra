@@ -587,13 +587,6 @@ def test_the_two_held_ends_are_the_ends_of_the_travel():
 
 
 class TestTheWaveTracedOnKnots:
-    def test_the_old_arguments_trace_the_same_window(self):
-        old = trace_window(
-            WaveformShape.TRIANGLE, 80, 40, phase=0.3, bpm=90.0, samples=7, span_s=2.0)
-
-        assert old == trace_window(
-            Waveform(WaveformShape.TRIANGLE, 80, 40), TraceSpan(0.3, 90.0, 7, 2.0))
-
     def test_the_knots_start_at_or_before_the_phase(self):
         heights, slide = trace_window(
             Waveform(WaveformShape.SINE, 100, 50), TraceSpan(0.0, 60.0, 5, 1.0))
@@ -613,7 +606,7 @@ class TestTheWaveTracedOnKnots:
 
     def test_a_wave_that_is_not_moving_is_drawn_flat_at_where_it_stands(self):
         heights, slide = trace_window(
-            WaveformShape.SINE, 100, 50, phase=0.5, bpm=0.0, samples=3, span_s=1.0)
+            Waveform(WaveformShape.SINE, 100, 50), TraceSpan(0.5, 0.0, 3, 1.0))
 
         assert heights == pytest.approx([1.0] * 4)
         assert slide == pytest.approx(0.0)

@@ -169,27 +169,6 @@ class TestTheSocketLoop:
         t.join(timeout=2.0)
         assert not t.is_alive()
 
-    def test_the_old_positional_arguments_still_start_a_reader(self):
-        state = BrokerFeed()
-        port = _free_udp_port()
-        stop = threading.Event()
-        t = threading.Thread(
-            target=udp_reader,
-            args=("127.0.0.1", port, state, stop, logging.getLogger("test.udp_reader")),
-            kwargs={"retry_delays": (0.02,)},
-            daemon=True,
-        )
-        t.start()
-        try:
-            _wait_until_bound(port, state)
-            _send(port, "AUTO 1")
-            wait_until(lambda: state.auto_active, timeout=10.0, interval=0.02)
-        finally:
-            stop.set()
-            t.join(timeout=2.0)
-
-        assert state.auto_active is True
-
     def test_bind_retries_on_port_conflict(self, caplog):
         state = BrokerFeed()
         port = _free_udp_port()

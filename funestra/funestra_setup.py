@@ -47,7 +47,3 @@ class FunestraSetup(NamedTuple):
             play_points=PlayPoints(channels.play_points),
             funscripts=funscripts_of(playlist),
             points_of_interest=points_of_interest_of(playlist), tcode=tcode)
-
-    @classmethod
-    def of(cls, setup: FunestraSetup | None, old: dict) -> FunestraSetup:
-        return cls(**old) if setup is None else setup

@@ -873,35 +873,6 @@ class TestTheRoomHoldingTheDevice:
         assert shown == _heights(0.5, 0.25, 0.0)
 
 
-def test_the_old_keywords_build_a_controller_over_the_same_files():
-    parts = _build_controller()["parts"]
-
-    controller = GenauRefreshController(**parts._asdict())
-
-    assert (controller.command_file, controller.paused_file) == (
-        parts.command_file, parts.paused_file)
-
-
-def test_the_controller_cannot_be_built_without_a_direct_state():
-    with pytest.raises(TypeError):
-        GenauRefreshController(
-            broker=BrokerFeed(),
-            loader=FakeLoader(),
-            notifier=FakeNotifier(),
-            renderer=FakeRenderer(),
-            selection=FakeSelection(),
-            engine=BeatEngine(phase=0.0, last_tick=0.0),
-            paused=Flag(),
-            command_file=Path("command.txt"),
-            paused_file=Path("paused.txt"),
-            beats_per_loop=4.0,
-            bpm_smoothing=0.5,
-            sync_strength=0.5,
-            set_loading_text=lambda _text: None,
-            logger=MagicMock(),
-        )
-
-
 class TestTheOrderTheTickDoesThingsIn:
     @staticmethod
     def _steps() -> list[str]:
@@ -1026,8 +997,6 @@ def test_toggle_learned_command_via_refresh():
     built["controller"].refresh()
 
     assert learned.active is True
-
-
 
 
 def test_the_learned_motion_ticks_during_refresh(tmp_path):

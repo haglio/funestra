@@ -333,18 +333,3 @@ def test_a_flick_put_next_leaves_the_one_on_screen_up_and_is_decoded_ahead():
     assert renderer.current_flick_path == Path("a.mp4")
     assert notifier.flick_notifications == []
     assert loader.prefetch_requests == [Path("new.mp4")]
-
-
-def test_the_old_keywords_build_a_selection_over_the_same_sequence():
-    flick_store = FlickCacheStore(limit=4)
-    sequence = FlickSequenceController([Path("a.mp4"), Path("b.mp4")])
-    controller = FlickSelectionController(
-        sequence=sequence,
-        flick_store=flick_store,
-        loader=FakeLoader(flick_store),
-        renderer=FakeRenderer(),
-        notifier=FakeNotifier(),
-    )
-
-    assert controller.count == 2
-    assert controller.condemn_flick(Path("a.mp4")) is None

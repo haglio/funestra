@@ -17,8 +17,7 @@ class FlickLoadParts(NamedTuple):
 
 
 class FlickLoadController:
-    def __init__(self, parts: FlickLoadParts | None = None, **old):
-        parts = FlickLoadParts(**old) if parts is None else parts
+    def __init__(self, parts: FlickLoadParts):
         (self.flick_store, self.load_state, self.prefetch_state,
          self.current_flick_path_getter, self.decode_flick, self.start_thread,
          self.logger, self.on_active_flick_loaded) = parts

@@ -138,10 +138,10 @@ class Funestra:
     IN_FRAME_OVERLAY_ID = 8
     OUT_FRAME_OVERLAY_ID = 9
 
-    def __init__(self, engine, setup: FunestraSetup | None = None, **old) -> None:
+    def __init__(self, engine, setup: FunestraSetup) -> None:
         (channels, playlist, _tcode, audible, tiles, _locked, sound_is_the_rooms, users, hud,
          muted, hud_surface, users_frames, window_verbs, host_controls, radio,
-         on_volume_moved, clock) = (setup := FunestraSetup.of(setup, old))
+         on_volume_moved, clock) = setup
         self._engine = engine
         self._clock = clock
         self._volume_moved = on_volume_moved
@@ -267,8 +267,7 @@ class Funestra:
             frame.seek_loop(turn)
 
     @classmethod
-    def on_window(cls, wid: int, setup: FunestraSetup | None = None, **old) -> Funestra:
-        setup = FunestraSetup.of(setup, old)
+    def on_window(cls, wid: int, setup: FunestraSetup) -> Funestra:
         return cls(
             MpvEngine(wid, muted=setup.muted, loop_file=False, prefetch=True, audio=setup.audible),
             setup._replace(tcode=osr2_line(setup.channels)))

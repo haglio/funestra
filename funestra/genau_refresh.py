@@ -19,11 +19,11 @@ from .tick_failures import TickFailures
 
 
 class GenauRefreshController:
-    def __init__(self, parts: GenauRefreshParts | None = None, **old):
+    def __init__(self, parts: GenauRefreshParts):
         (controls, broker, loader, notifier, renderer, selection, command_file, paused_file,
          beats_per_loop, bpm_smoothing, sync_strength, set_loading_text, logger, now_source,
          consume_command, read_paused_state, tcode_sender, status_file,
-         drive_file) = GenauRefreshParts.of(parts, old)
+         drive_file) = parts
         self.controls = controls
         self.engine = controls.engine
         self.paused = controls.paused

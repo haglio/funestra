@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from shared_ui import palette
 from shared_ui.icons_pil import paste_icon
-from shared_ui.palette import BG_BUTTON, BG_PRIMARY, MAGENTA, TEXT_MUTED, WHITE
+from shared_ui.palette import BG_PRIMARY, MAGENTA, TEXT_MUTED, WHITE
 from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL
 
 from funestra import hud
@@ -12,10 +12,8 @@ from funestra.hud import (
     ACTIVE_DOT,
     HUD_ALPHA,
     TOOLTIP_PAD,
-    ButtonGroundState,
     ButtonLook,
     Hud,
-    button_ground,
     draw_active_dot,
     draw_button,
     draw_character,
@@ -178,8 +176,6 @@ def test_a_icon_with_no_ink_draws_nothing_rather_than_raising():
     assert np.asarray(image)[:, :, 3].max() == 0
 
 
-
-
 def _button_pixels(button: Button, *, hovered: bool) -> np.ndarray:
     image = Image.new("RGBA", (40, 24), (0, 0, 0, 0))
     draw_button(image, ImageDraw.Draw(image), (2, 2, 36, 20), button,
@@ -220,26 +216,3 @@ def test_a_tooltip_near_the_far_corner_is_nudged_back_inside_the_hud():
 
     assert (x, y) >= (0, 0)
     assert (x + w, y + h) <= (150, 120)
-
-
-def test_a_button_drawn_with_the_old_keywords_looks_like_one_drawn_with_a_look():
-    button = Button("next", "Go", "", lit=True)
-    font = load_font(11)
-
-    def drawn(**how) -> bytes:
-        image = Image.new("RGBA", (40, 24), (0, 0, 0, 0))
-        draw_button(image, ImageDraw.Draw(image), (2, 2, 36, 20), button, **how)
-        return image.tobytes()
-
-    assert drawn(hovered=True, icon_font=font, word_font=font) == drawn(
-        look=ButtonLook(hovered=True, icon_font=font, word_font=font))
-
-
-def test_a_button_ground_asked_with_the_old_keywords_matches_one_asked_with_a_state():
-    def ground(**how) -> tuple[bytes, tuple[int, int, int, int]]:
-        image = Image.new("RGBA", (40, 24), (0, 0, 0, 0))
-        ink = button_ground(ImageDraw.Draw(image), (2, 2, 36, 20), BG_BUTTON, **how)
-        return image.tobytes(), ink
-
-    assert ground(hovered=True, rest_ink=(1, 2, 3)) == ground(
-        state=ButtonGroundState(hovered=True, rest_ink=(1, 2, 3)))

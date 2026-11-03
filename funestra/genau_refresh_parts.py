@@ -31,7 +31,3 @@ class GenauRefreshParts(NamedTuple):
     tcode_sender: Any = None
     status_file: Path | None = None
     drive_file: Path | None = None
-
-    @classmethod
-    def of(cls, parts: GenauRefreshParts | None, old: dict) -> GenauRefreshParts:
-        return cls(**old) if parts is None else parts
