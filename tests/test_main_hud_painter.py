@@ -5,7 +5,7 @@ from dataclasses import replace
 import numpy as np
 import pytest
 from host_controls_fakes import a_hud
-from main_hud_rows import main_hud_rows, motion_rows
+from main_hud_rows import RowLights, main_hud_rows, motion_rows
 from shared_ui import colors
 from shared_ui.app_icon import LETTERS
 from shared_ui.palette import BG_PRIMARY, BLUE, BORDER_PANEL, GREEN, MAGENTA, TEXT_MUTED, WHITE
@@ -348,7 +348,7 @@ class TestPainter:
         shade, _pixels = self._busiest_shade(
             "main_shuffle",
             MainHudModel(main_mode=MainMode.KINO, latest=False,
-                         rows=main_hud_rows(remembered=True)),
+                         rows=main_hud_rows(lights=RowLights(remembered=True))),
             modes=ModeHud(length_mode=LengthMode.MIXED, compilation="Volume 6"))
 
         assert shade == gray
@@ -377,7 +377,7 @@ class TestPainter:
         for action, grid in (("broker_panel", LETTERS["B"]),
                              ("main_fmode", LETTERS["F"])):
             pixels = self._button_pixels(action, MainHudModel(
-                main_mode=MainMode.KINO, rows=main_hud_rows(favorites=True),
+                main_mode=MainMode.KINO, rows=main_hud_rows(lights=RowLights(favorites=True)),
                 osr2_controls=osr2_controls(broker_running=True)))
             magenta = (pixels == np.array((200, 80, 160), dtype=pixels.dtype)).all(axis=2)
             ys, xs = np.nonzero(magenta)
@@ -415,7 +415,7 @@ class TestPainter:
         pixels = self._button_pixels(
             "main_fmode",
             MainHudModel(main_mode=MainMode.KINO,
-                         rows=main_hud_rows(favorites=True))).astype(int)
+                         rows=main_hud_rows(lights=RowLights(favorites=True)))).astype(int)
 
         shades, counts = np.unique(pixels.reshape(-1, 3), axis=0, return_counts=True)
         assert tuple(shades[counts.argmax()]) == (48, 160, 48)
@@ -454,7 +454,7 @@ class TestPainter:
         painter = MainHudPainter()
         rgb = _rgb(painter.bgra(
             MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO,
-                                            rows=main_hud_rows(recording=True)))))
+                                            rows=main_hud_rows(lights=RowLights(recording=True))))))
         bx, by, bw, bh = _rect_of(painter, "main_player_record_tap")
         pixels = rgb[by:by + bh, bx:bx + bw].astype(int)
 
@@ -1149,7 +1149,7 @@ class TestTheLockIsGreen:
 
         painter = MainHudPainter()
         rgb = _rgb(painter.bgra(MainHud(
-            main_hud_model=MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows(locked=True)))))
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows(lights=RowLights(locked=True))))))
         bx, by, bw, bh = _rect_of(painter, "main_lock")
         pixels = rgb[by:by + bh, bx:bx + bw].astype(int)
         shades, counts = np.unique(pixels.reshape(-1, 3), axis=0, return_counts=True)
@@ -1160,7 +1160,7 @@ class TestTheLockIsGreen:
 
         painter = MainHudPainter()
         rgb = _rgb(painter.bgra(MainHud(
-            main_hud_model=MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows(locked=False)))))
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows(lights=RowLights(locked=False))))))
         bx, by, bw, bh = _rect_of(painter, "main_lock")
         pixels = rgb[by:by + bh, bx:bx + bw].astype(int)
         shades, counts = np.unique(pixels.reshape(-1, 3), axis=0, return_counts=True)

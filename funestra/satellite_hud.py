@@ -5,7 +5,7 @@ import json
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import TYPE_CHECKING, Protocol
+from typing import TYPE_CHECKING, NamedTuple, Protocol
 
 from PIL import Image
 from shared_ui.icon_geometry import tooltip_for
@@ -203,10 +203,16 @@ class HudLayout:
     dividers: tuple[int, ...]
 
 
-def hud_layout(*, title_h: int, bars: int = 0, speed: bool = False,
-               row_h: int = 0, device_h: int = 0, foot_h: int = 0) -> HudLayout:
-    stacked = stack(PAD, [title_h, blocks_height([CTRL_BTN] * (bars + speed), BLOCK_GAP),
-                          row_h, device_h, foot_h, NAV_MAP_H])
+class SectionHeights(NamedTuple):
+    title: int
+    row: int = 0
+    device: int = 0
+    foot: int = 0
+
+
+def hud_layout(*, heights: SectionHeights, bars: int = 0, speed: bool = False) -> HudLayout:
+    stacked = stack(PAD, [heights.title, blocks_height([CTRL_BTN] * (bars + speed), BLOCK_GAP),
+                          heights.row, heights.device, heights.foot, NAV_MAP_H])
     _title, bars_top, row_top, device_top, foot_top, nav_map_top = stacked.tops
     return HudLayout(bars_top, bars_top + bars * CONTROL_ROW_H, row_top, device_top,
                      foot_top, nav_map_top, stacked.end + PAD, stacked.dividers)
@@ -240,22 +246,34 @@ def column_anchor_rect(playing: Cell, corner_rect: Rect, seed_rects: list[Rect])
     return corner_rect
 
 
+class NavMapRects(NamedTuple):
+    corner: Rect | None
+    seeds: list[Rect]
+    actions: list[Rect]
+    column: Rect | None = None
+
+    @property
+    def column_or_corner(self) -> Rect | None:
+        return self.corner if self.column is None else self.column
+
+
 def place_rects(
     *,
-    nav_map_x: int,
-    nav_map_y: int,
+    origin: tuple[int, int],
     place_w: int,
     seeds: int,
     actions: int,
     playing: Cell = ("corner", 0),
-) -> tuple[Rect, list[Rect], list[Rect]]:
+) -> NavMapRects:
+    nav_map_x, nav_map_y = origin
     corner = (nav_map_x, nav_map_y, place_w, MAP_THUMB_H)
     seed_rects = [(nav_map_x + step * (place_w + NAV_MAP_GAP), nav_map_y, place_w, MAP_THUMB_H)
                   for step in range(1, min(seeds + 1, NAV_MAP_CELLS))]
-    column_x = column_anchor_rect(playing, corner, seed_rects)[0]
+    column = column_anchor_rect(playing, corner, seed_rects)
+    column_x = column[0]
     action_rects = [(column_x, nav_map_y + step * (MAP_THUMB_H + ROW_GAP), place_w, MAP_THUMB_H)
                     for step in range(1, min(actions + 1, NAV_MAP_CELLS))]
-    return corner, seed_rects, action_rects
+    return NavMapRects(corner, seed_rects, action_rects, column)
 
 
 def thumbnail_rect(place: Rect, size: tuple[int, int]) -> Rect:
@@ -301,30 +319,24 @@ def loop_button_rects(
     return loop_action, loop_seed
 
 
-def looped_group_rect(
-    corner_rect: Rect, seed_rects: list[Rect], action_rects: list[Rect], axis: str,
-    *, reserve: int = 0, column_rect: Rect | None = None,
-) -> Rect:
-    cx, cy, _cw, ch = corner_rect
+def looped_group_rect(rects: NavMapRects, axis: str, *, reserve: int = 0) -> Rect:
+    cx, cy, _cw, ch = rects.corner
     if axis == "seed":
-        row_right = _row_right(corner_rect, seed_rects)
+        row_right = _row_right(rects.corner, rects.seeds)
         return (cx - reserve, cy, (row_right + reserve) - (cx - reserve), ch)
-    col_x, _col_y, col_w, _col_h = corner_rect if column_rect is None else column_rect
-    col_lower = _col_lower(corner_rect, action_rects)
+    col_x, _col_y, col_w, _col_h = rects.column_or_corner
+    col_lower = _col_lower(rects.corner, rects.actions)
     return (col_x, cy - reserve, col_w, (col_lower + reserve) - (cy - reserve))
 
 
-def ellipsis_rects(
-    corner_rect: Rect, seed_rects: list[Rect], action_rects: list[Rect], axis: str,
-    *, column_rect: Rect | None = None,
-) -> tuple[Rect, Rect]:
-    cx, cy, _cw, ch = corner_rect
+def ellipsis_rects(rects: NavMapRects, axis: str) -> tuple[Rect, Rect]:
+    cx, cy, _cw, ch = rects.corner
     if axis == "seed":
         return ((cx - NAV_MAP_GAP - ELLIPSIS, cy, ELLIPSIS, ch),
-                (_row_right(corner_rect, seed_rects) + NAV_MAP_GAP, cy, ELLIPSIS, ch))
-    col_x, _col_y, col_w, _col_h = corner_rect if column_rect is None else column_rect
+                (_row_right(rects.corner, rects.seeds) + NAV_MAP_GAP, cy, ELLIPSIS, ch))
+    col_x, _col_y, col_w, _col_h = rects.column_or_corner
     return ((col_x, cy - NAV_MAP_GAP - ELLIPSIS, col_w, ELLIPSIS),
-            (col_x, _col_lower(corner_rect, action_rects) + NAV_MAP_GAP, col_w, ELLIPSIS))
+            (col_x, _col_lower(rects.corner, rects.actions) + NAV_MAP_GAP, col_w, ELLIPSIS))
 
 
 CTRL_BTN = BUTTON_SIZE_HUD
@@ -432,19 +444,13 @@ class HudTargets:
     foot: Rect | None = None
 
 
-def build_click_targets(
-    corner_rect: Rect | None,
-    seed_rects: list[Rect],
-    action_rects: list[Rect],
-    corner: HudCell | None,
-    seeds: list[HudCell] | tuple[HudCell, ...],
-    actions: list[HudCell] | tuple[HudCell, ...],
-) -> list[tuple[Rect, str]]:
+def build_click_targets(rects: NavMapRects, model: HudModel) -> list[tuple[Rect, str]]:
     targets: list[tuple[Rect, str]] = []
-    if corner_rect is not None and corner is not None and corner.path:
-        targets.append((corner_rect, corner.path))
-    targets.extend((rect, cell.path) for rect, cell in zip(seed_rects, seeds, strict=False))
-    targets.extend((rect, cell.path) for rect, cell in zip(action_rects, actions, strict=False))
+    if rects.corner is not None and model.corner is not None and model.corner.path:
+        targets.append((rects.corner, model.corner.path))
+    targets.extend((rect, cell.path) for rect, cell in zip(rects.seeds, model.seeds, strict=False))
+    targets.extend((rect, cell.path)
+                   for rect, cell in zip(rects.actions, model.actions, strict=False))
     return targets
 
 
@@ -515,15 +521,13 @@ def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
     loop = hit_test_targets(targets.loop, px, py)
     if loop:
         return tooltip_for(LOOP_ICON, LOOP_TOOLTIPS.get(loop, ""))
-    if _in(targets.wrong_action, px, py):
-        return tooltip_for(WRONG_ACTION_ICON, WRONG_ACTION_TOOLTIP)
-    if hit_test_targets(targets.filter, px, py):
-        return FILTER_TOOLTIP
-    if _in(targets.expand, px, py):
-        return tooltip_for(EXPAND_ICON, EXPAND_TOOLTIP)
-    if _in(targets.favorite, px, py):
-        return tooltip_for(FAVORITE_ICON, FAVORITE_TOOLTIP)
-    return ""
+    beneath = (
+        (_in(targets.wrong_action, px, py), tooltip_for(WRONG_ACTION_ICON, WRONG_ACTION_TOOLTIP)),
+        (bool(hit_test_targets(targets.filter, px, py)), FILTER_TOOLTIP),
+        (_in(targets.expand, px, py), tooltip_for(EXPAND_ICON, EXPAND_TOOLTIP)),
+        (_in(targets.favorite, px, py), tooltip_for(FAVORITE_ICON, FAVORITE_TOOLTIP)),
+    )
+    return next((tooltip for hit, tooltip in beneath if hit), "")
 
 
 # Windows' default double-click time.
@@ -552,27 +556,11 @@ class HudClicks:
 
     def press(self, targets: HudTargets, px: int, py: int, *, now: float) -> str:
         self.release()
-        button = button_under(targets, px, py)
-        if button is not None and button.command:
-            return "" if button.dim else button.command
-        grabbed = self._grip.grab(targets.tracks, px, py)
-        if grabbed:
-            return grabbed
-        loop = hit_test_targets(targets.loop, px, py)
-        if loop:
-            return self._toggle_loop(loop)
-        if _in(targets.expand, px, py):
-            return f"{self._funestra}_more_seeds"
-        if _in(targets.wrong_action, px, py):
-            return f"{self._funestra}_wrong_action"
-        action = hit_test_targets(targets.filter, px, py)
-        if action:
-            query = normalized_text(action)
-            if query == normalized_text(self.active_filter):
-                self.active_filter = ""
-                return f"{self._funestra}_no_filter"
-            self.active_filter = query
-            return f"filter_{self._funestra}_{query.replace(' ', '_')}"
+        for ask in (self._press_a_button, self._press_a_track, self._press_a_loop,
+                    self._press_expand, self._press_wrong_action, self._press_a_filter):
+            asked = ask(targets, px, py)
+            if asked is not None:
+                return asked
         path = hit_test_targets(targets.click, px, py)
         if not path:
             return ""
@@ -582,6 +570,37 @@ class HudClicks:
         self._pending_path = path
         self._pending_at = now
         return ""
+
+    @staticmethod
+    def _press_a_button(targets: HudTargets, px: int, py: int) -> str | None:
+        button = button_under(targets, px, py)
+        if button is None or not button.command:
+            return None
+        return "" if button.dim else button.command
+
+    def _press_a_track(self, targets: HudTargets, px: int, py: int) -> str | None:
+        return self._grip.grab(targets.tracks, px, py) or None
+
+    def _press_a_loop(self, targets: HudTargets, px: int, py: int) -> str | None:
+        loop = hit_test_targets(targets.loop, px, py)
+        return self._toggle_loop(loop) if loop else None
+
+    def _press_expand(self, targets: HudTargets, px: int, py: int) -> str | None:
+        return f"{self._funestra}_more_seeds" if _in(targets.expand, px, py) else None
+
+    def _press_wrong_action(self, targets: HudTargets, px: int, py: int) -> str | None:
+        return f"{self._funestra}_wrong_action" if _in(targets.wrong_action, px, py) else None
+
+    def _press_a_filter(self, targets: HudTargets, px: int, py: int) -> str | None:
+        action = hit_test_targets(targets.filter, px, py)
+        if not action:
+            return None
+        query = normalized_text(action)
+        if query == normalized_text(self.active_filter):
+            self.active_filter = ""
+            return f"{self._funestra}_no_filter"
+        self.active_filter = query
+        return f"filter_{self._funestra}_{query.replace(' ', '_')}"
 
     def due(self, *, now: float) -> str:
         if not self._pending_path or now - self._pending_at <= self._double_click_s:

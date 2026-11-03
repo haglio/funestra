@@ -25,7 +25,7 @@ from .satellite_hud import (
     hit_test_targets,
     parse_hud,
 )
-from .satellite_hud_paint import HudRenderer
+from .satellite_hud_paint import DrawnWith, HudRenderer
 
 HUD_OVERLAY_ID = 10
 
@@ -332,11 +332,11 @@ class HudOverlay:
             model = replace(model, osr2="", drive=None)
         self._draw_owed = True
         rendered = self._renderer.render(
-            model,
-            video=self._video, hover_loop=hover.loop, hover_tip=hover.tip, hover_pos=hover.at,
-            may_grow_on_hover=self._over_the_video,
-            minus_on_the_hud=self._minus_on_the_hud,
-            item_row=self._item_row, heatmap=self._heatmap, flash=self._flash,
+            model, item_row=self._item_row, heatmap=self._heatmap,
+            drawn_with=DrawnWith(
+                video=self._video, hover_loop=hover.loop, hover_tip=hover.tip, hover_pos=hover.at,
+                may_grow_on_hover=self._over_the_video,
+                minus_on_the_hud=self._minus_on_the_hud, flash=self._flash),
         )
         height, width = rendered.bgra.shape[:2]
         origin = self._place(corner, (width, height))

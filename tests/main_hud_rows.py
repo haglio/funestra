@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import NamedTuple
+
 from shared_ui.spacing import BUTTON_WORD_W
 
 from funestra.hud_button import Button
@@ -10,10 +12,19 @@ LONG_TIP = ("Reset the browse: no filter, no lock, no loop, no F-Mode, and the "
             "whole library shuffled again from the top")
 
 
-def main_hud_rows(mode: str = "kino", *, locked: bool = False, favorites: bool = False,
-                 remembered: bool = False,
-                 enhanced: bool | None = None,
-                 recording: bool = False) -> tuple[tuple[Button, ...], ...]:
+class RowLights(NamedTuple):
+    locked: bool = False
+    favorites: bool = False
+    remembered: bool = False
+    recording: bool = False
+
+
+NO_LIGHTS = RowLights()
+
+
+def main_hud_rows(mode: str = "kino", lights: RowLights = NO_LIGHTS, *,
+                  enhanced: bool | None = None) -> tuple[tuple[Button, ...], ...]:
+    locked, favorites, remembered, recording = lights
     kino = mode == "kino"
     pace = "main_player_speed" if kino else "genau_clip_seconds"
     return (

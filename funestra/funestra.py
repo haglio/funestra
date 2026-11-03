@@ -469,7 +469,8 @@ class Funestra:
 
     def item_row(self) -> RowHud:
         playback, engine = self.playback, self._engine
-        follow = None if playback.mark is None else MarkFollow(playback.mark, playback.position_ms)
+        mark = playback.mark
+        follow = None if mark is None else MarkFollow(mark, playback.position_ms)
         self._strip.update(playback.showing, playback.current_funscript,
                            playback.duration_ms, self._track_width(), follow)
         if playback.showing_image:
