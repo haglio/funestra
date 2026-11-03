@@ -9,15 +9,16 @@
     "funestra/hud.py": 1,
     "funestra/libmpv_loader.py": 2,
     "funestra/loop_dial.py": 1,
-    "funestra/lost_gpu.py": 2,
-    "funestra/mpv_engine.py": 15,
+    "funestra/lost_gpu.py": 1,
+    "funestra/mpv_engine.py": 16,
     "funestra/mpv_gate.py": 1,
     "funestra/osr2_visualizer.py": 2,
     "funestra/render_engine.py": 6,
     "funestra/satellite_hud_clicks.py": 1,
     "funestra/satellite_hud_nav_map.py": 1,
+    "funestra/sdl_hints.py": 2,
     "tests/test_install.py": 1,
-    "tests/test_ken_burns.py": 2,
+    "tests/test_ken_burns.py": 1,
     "tests/test_lost_gpu.py": 1,
     "tests/test_mpv_control.py": 1
   },
@@ -37,7 +38,7 @@
     "tests/test_flick_loader.py": 1,
     "tests/test_funestra_priority.py": 1,
     "tests/test_genau_command_seam.py": 1,
-    "tests/test_genau_refresh.py": 5
+    "tests/test_genau_refresh.py": 4
   },
   "monkeypatches": {
     "tests/test_audio_outputs.py": 1,
@@ -72,10 +73,7 @@
     "funestra/render_engine.py": 1,
     "funestra/tcode_driver.py": 1
   },
-  "prose_lines": {
-    "funestra/mpv_engine.py": 1,
-    "funestra/sdl_hints.py": 2
-  },
+  "prose_lines": {},
   "reach_chains": {
     "funestra/descent_latch.py": 2,
     "funestra/drive_gate.py": 14,
@@ -127,9 +125,9 @@
     "tests/test_render_engine.py": 5
   },
   "statements": {
-    "funestra/funestra.py": 349,
+    "funestra/funestra.py": 348,
     "funestra/mpv_engine.py": 340,
-    "funestra/playback.py": 328,
+    "funestra/playback.py": 327,
     "funestra/satellite_hud.py": 353,
     "funestra/satellite_hud_paint.py": 355
   },
