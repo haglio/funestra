@@ -777,7 +777,7 @@ class TestPlaybackSpeed:
             return [button.icon for _rect, button in painter.buttons if button.host_value]
 
         assert visualizers(MainHud(main_hud_model=with_playback_speed(
-            MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows("kino")), 1.75))) == ["1.75×"]
+            MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows("kino")), 1.75))) == ["1.75\u00d7"]
         assert visualizers(MainHud(
             main_hud_model=MainHudModel(main_mode=MainMode.GENAU, rows=main_hud_rows("genau")),
             drive=_drive(advance_interval=7))) == ["7s"]
@@ -1202,7 +1202,7 @@ class TestARowsNameLinesUpWithItsControls:
         painter = MainHudPainter()
         painter.bgra(MainHud(main_hud_model=MainHudModel(rows=(
             (Button("", "Playback speed", "", width=20),
-             Button("slower", "−", "Slower")),))))
+             Button("slower", "\u2212", "Slower")),))))
         (name, _n), (slower, _s) = painter.buttons[:2]
 
         assert name[2] >= text_width(painter._tiny, "Playback speed")

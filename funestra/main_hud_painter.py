@@ -75,7 +75,7 @@ _LENGTH_LABELS = {LengthMode.FULL: "Full", LengthMode.CLIPS: "Clips"}
 _REVISION = re.compile(r"\s*\(v\d+\)$")
 
 def _format_rate(rate: float) -> str:
-    return f"{rate:g}×"
+    return f"{rate:g}\u00d7"
 
 
 def compilation_label(title: str) -> str:

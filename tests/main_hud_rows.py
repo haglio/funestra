@@ -36,7 +36,7 @@ def main_hud_rows(mode: str = "kino", *, locked: bool = False, favorites: bool =
                    "Another version (none for this one)", dim=True, group_break=True),)
            if kino else ())),
         (Button("", "Playback speed" if kino else "Clip seconds", "", width=ROW_LABEL_W),
-         Button(f"{pace}_down", "−", "Less", group_break=True),
+         Button(f"{pace}_down", "\u2212", "Less", group_break=True),
          Button("", "", "", width=VALUE_W,
                 host_value="playback_speed" if kino else "advance_interval"),
          Button(f"{pace}_up", "+", "More")),

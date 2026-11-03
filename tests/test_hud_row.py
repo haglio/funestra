@@ -128,7 +128,7 @@ def _painted(row: RowHud, *, width: int = WIDTH, at: tuple[int, int] = (0, 0), h
 
 
 def test_it_draws_everything_inside_the_room_it_was_laid_out_in():
-    painted, layout = _painted(FLICK, at=(20, 20))
+    painted, _ = _painted(FLICK, at=(20, 20))
 
     inked = np.argwhere(painted[:, :, 3] > 0)
     assert inked.size
@@ -165,7 +165,7 @@ def test_a_host_with_a_funscript_fills_the_track_with_its_colors():
     x0, x1 = _layout(row).track
     colors = np.array([(200, 40 + x % 150, 30) for x in range(x1 - x0)], dtype=np.uint8)
 
-    painted, _layout_ = _painted(row, heatmap=colors)
+    painted, _ = _painted(row, heatmap=colors)
 
     middle = painted[ROW_H // 2]
     assert middle[x0 + 10:x1 - 10].tolist() == [
@@ -176,7 +176,7 @@ def test_colors_measured_across_some_other_track_leave_it_plain():
     x0, x1 = _layout(VIDEO).track
     colors = np.array([(200, 40, 30)] * (x1 - x0 + 7), dtype=np.uint8)
 
-    painted, _layout_ = _painted(VIDEO, heatmap=colors)
+    painted, _ = _painted(VIDEO, heatmap=colors)
 
     assert painted[ROW_H // 2, x0 + 10, :3].tolist() != [200, 40, 30]
 
