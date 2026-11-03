@@ -1,4 +1,3 @@
-"""One turn of Genau's loop."""
 from __future__ import annotations
 
 import time
@@ -50,8 +49,6 @@ class GenauRefreshController:
         drive_file: Path | None = None,
     ):
         self.controls = controls
-        # The ones the tick itself reads, named here rather than reached for
-        # through the controls on every line below.
         self.engine = controls.engine
         self.paused = controls.paused
         self.robot_hand = controls.robot_hand
@@ -78,8 +75,6 @@ class GenauRefreshController:
         self.consume_command = consume_command
         self.read_paused_state = read_paused_state or (lambda _path, logger=None: False)
         self.tcode_sender = tcode_sender
-        # Beside the command file when the orchestrator has not named one --
-        # which is where every version of it so far has looked.
         self.status_file = status_file or command_file.parent / GENAU_STATUS_FILENAME
         self.handoff = DeviceHandoff(
             playing=self.robot_hand.playing,
@@ -91,8 +86,6 @@ class GenauRefreshController:
             tcode_sender=tcode_sender,
             drive_file=drive_file,
         )
-        # Which half of the flick is showing, and what is known about the end
-        # the motion is at — see :meth:`_scrub_the_flick`.
         self._scrub = FlickScrub()
         self._walk: Walk | None = None
         self._held: str | None = None
@@ -102,9 +95,6 @@ class GenauRefreshController:
         try:
             self._refresh_once()
         except Exception as exc:
-            # Said once per kind rather than every frame: the loop calls this
-            # again immediately, so a persistent fault would otherwise fill the
-            # state directory the IPC files live in.
             self.failures.failed(exc)
             return
         self.failures.worked()
@@ -117,9 +107,6 @@ class GenauRefreshController:
 
         beat = self._who_is_driving(now)
 
-        # Said every tick and heard once: the notifier drops a repeat.  The
-        # flick that goes with it is the flick selection's to announce, and it
-        # already has by the time the first tick runs.
         self.notifier.notify_visible(not self._over_a_video)
 
         advance_beat(
@@ -134,8 +121,6 @@ class GenauRefreshController:
             paused=beat.paused,
         )
 
-        # Seen the same tick the command landed, because the drain above runs
-        # first.
         self.handoff.watch(self.robot_hand.playing)
 
         if self.tcode_sender is not None:
@@ -148,9 +133,6 @@ class GenauRefreshController:
         if beat.robot_hand_active:
             self.visualizer.update(now)
         else:
-            # The device is running itself.  The HUD stays up and the line
-            # goes on moving -- on the broker's beat, the same one the frames
-            # below are scrubbed by.
             self.visualizer.update(now, AutoMotion(
                 phase=self.engine.phase, bpm=self.engine.estimated_bpm or 0.0))
 
@@ -173,7 +155,6 @@ class GenauRefreshController:
             apply_runtime_command(cmd, self.controls)
 
     def _who_is_driving(self, now: float) -> Beat:
-        """Genau's own hand, or the broker — and what the engine is told either way."""
         shared = snapshot(self.broker)
         if shared.auto_active:
             self.paused.on = self.read_paused_state(
@@ -195,19 +176,12 @@ class GenauRefreshController:
         )
 
     def _tick_the_hand(self, now: float) -> None:
-        """The two things that move the hand on their own: the learned motion
-        replacing it, and the flick advance letting the frame move on."""
         if self.learned is not None:
-            # Where the device is, read on the tick that lays out the first
-            # phrase, so it begins from there and taking over cannot be felt.
             tick_learned_motion(
                 self.robot_hand, self.learned, now,
                 start_fraction=self._where_the_device_is(),
             )
         if self.flick_advance is not None:
-            # The interval is timed against the flick actually on screen — a
-            # decoded, rendering one — so a slow load can't make a short
-            # interval fire repeatedly and stack switches that never play.
             entry = self.renderer.current_flick_entry()
             on_screen_flick = (
                 self.renderer.current_flick_path if entry and entry.get("frames") else None
@@ -221,10 +195,6 @@ class GenauRefreshController:
             )
 
     def _where_the_device_is(self) -> float:
-        """How far up its envelope the device is, 0 at the floor and 1 at the
-        ceiling -- where the learned motion begins so that taking over cannot be
-        felt.  A build with no sender, or a motion with no travel, begins at the
-        floor."""
         hand = self.robot_hand
         if self.tcode_sender is None or hand.amplitude <= 0:
             return 0.0
@@ -245,11 +215,6 @@ class GenauRefreshController:
         self._held, self._following = held, following
 
     def _show_the_frame(self, beat: Beat, now: float) -> None:
-        """Which frame of the decoded flick to put up.
-
-        Driving its own hand, the frame shows where the device is;
-        under the broker it is where the engine's phase has reached.
-        """
         active_entry = self.renderer.current_flick_entry()
         if not (active_entry and active_entry["frames"]):
             return
@@ -282,23 +247,10 @@ class GenauRefreshController:
         ))
 
     def seek_the_time_on_screen(self, seconds: float) -> None:
-        """A press along the track: put the flick *seconds* into its turn on
-        screen, so the next one comes that much sooner or later."""
         if self.flick_advance is not None:
             set_elapsed(self.flick_advance, seconds)
 
     def seek_the_flick(self, fraction: float) -> None:
-        """Put the flick *fraction* of the way round its loop, and the device where
-        that is.
-
-        The frame shows where the device is (:mod:`funestra.flick_scrub`),
-        so seeking the frame is moving the device rather than moving the frame
-        away from it.  Which half of the loop the fraction falls in says which way
-        the motion is traveling -- the front half runs A to B, the back half back
-        -- and how far into that half says how far up the axis it has to be.  The
-        jump is the point: it is what the hand would have had to travel to get the
-        frame there.
-        """
         entry = self.renderer.current_flick_entry()
         if self.tcode_sender is None or not (entry and entry["frames"]):
             return
@@ -306,8 +258,6 @@ class GenauRefreshController:
         back_half = fraction > HALF_A_LOOP
         height = 2 * (1 - fraction) if back_half else 2 * fraction
         self._scrub.back_half = back_half
-        # Not arrived at either end by traveling, so the next tick may not read
-        # this as a turn and swap the half back out from under the seek.
         self._scrub.started = False
         self.tcode_sender.set_motion_phase(phase_for_position_fraction(
             height,

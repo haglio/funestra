@@ -1,4 +1,3 @@
-"""The time at the left end of the scrubber row: where the video is, and how long it runs."""
 from __future__ import annotations
 
 import numpy as np
@@ -19,15 +18,12 @@ class TestWhatAVideosVisualizerSays:
         assert video_playhead(42_000.0, 195_000.0, 0.0).text == "0:42 / 3:15"
 
     def test_its_frame_comes_first_with_how_many_there_are_then_the_time(self):
-        """The way a flick's row reads, so the two modes differ only by the dial."""
         assert video_playhead(42_000.0, 195_000.0, 30.0).text == "frame 1260 / 5850 · 0:42 / 3:15"
 
     def test_its_frame_counts_up_in_the_room_its_last_frame_takes(self):
         assert video_playhead(300.0, 195_000.0, 30.0).text == f"frame {FIGURE_SPACE * 3}9 / 5850 · 0:00 / 3:15"
 
     def test_where_it_is_takes_the_shape_of_how_long_it_runs(self):
-        """Every digit is as wide as every other in the face these are drawn in,
-        so a clock with the length's own fields never moves along the row."""
         assert video_playhead(42_000.0, 2_715_000.0, 0.0).text == "00:42 / 45:15"
 
     def test_a_video_an_hour_long_counts_its_hours_on_both_sides(self):
@@ -48,8 +44,6 @@ class TestWhatAVideosVisualizerSays:
         assert video_playhead(1_000.0, 5_000.0, 0.0).text == "0:01 / 0:05"
 
     def test_the_widest_it_gets_is_what_it_says_on_the_last_frame(self):
-        """The time's room is sized to this, so a frame count that gains a
-        digit partway through the video never pushes the clock along the row."""
         playhead = video_playhead(42_000.0, 2_715_000.0, 60.0)
 
         assert playhead.widest == "frame 162900 / 162900 · 45:15 / 45:15"
@@ -57,7 +51,6 @@ class TestWhatAVideosVisualizerSays:
 
 class TestWhatAClipsVisualizerSays:
     def test_a_clip_has_frames_and_no_clock(self):
-        """Genau's videos are frames the Robot Hand scrubs through, with no time in them."""
         playhead = flick_playhead(7, 20)
 
         assert (playhead.text, playhead.widest) == (f"frame {FIGURE_SPACE}7 / 20", "frame 20 / 20")
@@ -68,8 +61,6 @@ class TestWhatAClipsVisualizerSays:
 
 class TestTheVisualizer:
     def test_it_is_the_words_alone_with_nothing_drawn_round_them(self):
-        """He asked that the time and the frames not sit in a bubble as if
-        they were a button: the HUD under them is ground enough."""
         bgra = PlayheadHudPainter().bgra(video_playhead(42_000.0, 195_000.0, 30.0))
 
         painted = bgra[:, :, 3] > 0
@@ -108,8 +99,6 @@ class TestTheVisualizer:
         assert np.array_equal(nine[:, half:], ten[:, half:])
 
     def test_a_time_text_that_has_not_moved_is_not_repainted(self):
-        """Asked for on every frame a Funestra paints; a paused video's visualizer
-        holds still for as long as the pause does."""
         painter = PlayheadHudPainter()
         hud = video_playhead(1_000.0, 195_000.0, 30.0)
 

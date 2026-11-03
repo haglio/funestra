@@ -81,9 +81,6 @@ def _log_mpv(level: str, prefix: str, text: str) -> None:
     logger.log(_MPV_LEVELS.get(level, logging.WARNING), "mpv %s: %s", prefix, text.strip())
 
 
-# How many times the engine is asked for before the folder it lives in is
-# declared genuinely empty.  Each attempt puts the folder back on PATH first,
-# and the window another thread can take it out in is one import long.
 _TRIES_AT_THE_ENGINE = 5
 
 
@@ -120,13 +117,6 @@ def _import_the_engine(load, tries: int = _TRIES_AT_THE_ENGINE):
 
 
 def _where_it_looked() -> str:
-    """What each folder answered, and where PATH actually starts.
-
-    The two halves settle between the two ways this fails.  A folder that says
-    it holds the DLL while the import cannot find it means PATH is not what we
-    left it -- something rewrote it between the two lines.  A folder that
-    cannot answer at all names the error it got, which is the other half.
-    """
     answers = []
     for folder in libmpv_dirs():
         try:
@@ -156,10 +146,6 @@ def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool
         # noise that would bury the one line that matters.
         loglevel="warn",
         hwdec="auto-safe",
-        # loop-1: the current file repeats, so a video never ends on its own;
-        # [ ] navigates.  The Main Funestra opens on this; a satellite constructs with
-        # loop_file=False ("no") so end-of-file advances its playlist.  Both
-        # toggle it at runtime (see set_loop_file).
         loop_file="inf" if loop_file else "no",
         keep_open="yes",
         mute="yes" if muted else "no",
@@ -172,16 +158,9 @@ def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool
         **_MPV_SCRIPTS_OFF,
         input_default_bindings=False,
         image_display_duration="inf",
-        # Leaning a image (video-align) moves it only along a side it
-        # overhangs the window on: along one it fits inside, it stays centered.
         video_recenter="yes",
     )
     if prefetch:
-        # Open and demux the *next* playlist entry during the tail of the
-        # current one, so a satellite's end-of-file auto-advance cuts to an
-        # already-loaded video instead of cold-opening it on screen.  Only
-        # satellites pass this; the Main Funestra plays one file at a time (loop_file=inf,
-        # explicit [ ] nav) and has no next entry to prefetch.
         options["prefetch_playlist"] = "yes"
     if not audio:
         options["aid"] = "no"
@@ -262,18 +241,6 @@ def _terminate_outside_the_callers_apartment(handle) -> None:
 
 
 class _MpvControl:
-    """The control surface shared by the windowed and offscreen engines.
-
-    Subclasses call ``super().__init__()`` and hand the handle they construct to
-    ``_adopt``; every method here only drives it, so a Funestra can hold either
-    engine without knowing which rendering path is backing it.
-
-    Each of those methods runs under :class:`funestra.mpv_gate.CallGate`,
-    which is what makes an engine safe to close from a thread other than the one
-    driving it — and, after :meth:`close`, turns every straggler into a no-op
-    instead of a dereference of a freed handle.
-    """
-
     _mpv: object
 
     def __init__(self, moves: Moves | None = None, *, looping: bool = False) -> None:
@@ -294,11 +261,6 @@ class _MpvControl:
         self._image_time = (0.0, 0.0)
         self._audio_device: str | None = None
         self._staged: str | None = None
-        # Read off an observation rather than asked for: a property read takes
-        # the core's lock, which a file being opened holds for long stretches,
-        # and a frame loop asking mid-open measured hundreds of milliseconds
-        # blocked on it.  video-out-params (not dwidth/dheight) so both numbers
-        # land in one event and a reader can never see half a size.
         self._video_dims = (0, 0)
         self._source_dims = (0, 0)
         self._tiling = (1, "no")
@@ -390,10 +352,6 @@ class _MpvControl:
         self._staged = None
         self._begin_the_new_clip(str(path))
         self._mpv.play(str(path))
-        # Reset to just this file: drop any entry the previous video had staged as
-        # its prefetched next, so the caller stages a fresh one from a clean base.
-        # A no-op for the Main Funestra (single-file playlist); the reset is what a satellite's
-        # jump/discard/filter navigation needs.
         self._mpv.playlist_clear()
 
     @mpv_call()
@@ -443,7 +401,6 @@ class _MpvControl:
 
     @mpv_call()
     def clear_next(self) -> None:
-        """Drop the staged next entry (used when a lock pins the current video)."""
         self._staged = None
         self._mpv.playlist_clear()
 
@@ -504,8 +461,6 @@ class _MpvControl:
         self._ken_burns.set_pace(seconds or 0.0, self._now())
 
     def set_points_of_interest(self, places: tuple) -> None:
-        """The places in the image on screen a lock punches in on, as
-        ``(x0, y0, x1, y1)`` fractions of it -- none for an image that has none."""
         self._ken_burns.set_points_of_interest(places, self._now())
 
     def _fit(self) -> Fit:
@@ -516,9 +471,6 @@ class _MpvControl:
 
     @mpv_call()
     def push_still(self) -> None:
-        """Carry the image on screen one frame further along its move; a video
-        is drawn as it comes.  Called once a frame by whichever loop is driving
-        this engine."""
         if self._image_track is None:
             return
         now = self._now()
@@ -536,8 +488,6 @@ class _MpvControl:
 
     @property
     def image_time(self) -> tuple[float, float] | None:
-        """How far the image on screen is into the time it holds the screen,
-        and how long that is, in milliseconds -- None on a video."""
         return self._image_time if self._image_track else None
 
     def hold_image_for(self, seconds: float | None) -> None:
@@ -555,14 +505,6 @@ class _MpvControl:
 
     @mpv_call()
     def set_loop_file(self, loop: bool) -> None:
-        """Toggle infinite single-file looping at runtime.
-
-        This is what a lock is on every Funestra here: unlocked plays through and
-        lets end-of-file walk the playlist (``no``); locked, the file repeats
-        seamlessly in place (``inf``).  Which end each opens on differs — a
-        satellite starts unlocked, the Main Funestra starts locked — but the switch is the same
-        one, so "locked" means the same thing wherever it is said.
-        """
         self._ken_burns.set_looping(loop, self._now())
         self._mpv.loop_file = "inf" if loop else "no"
 
@@ -586,19 +528,10 @@ class _MpvControl:
 
     @mpv_call()
     def set_muted(self, muted: bool) -> None:
-        """Silence or unsilence the engine at runtime, leaving the volume alone
-        (so unmuting restores whatever level was set — the mixer convention)."""
         self._mpv.mute = muted
 
     @mpv_call()
     def set_audio_device_matching(self, substring: str) -> str | None:
-        """Route audio to the output device named *substring*, by the rule
-        :mod:`funestra.audio_outputs` states.
-
-        Returns the picked device's description, or None — with the device
-        untouched — when nothing matches, so a headset that is off falls back
-        to the system default rather than to silence.
-        """
         outputs = [Output(str(device.get("description") or device["name"]), device["name"])
                    for device in self._mpv.audio_device_list or []]
         picked = pick_output(outputs, substring)
@@ -608,7 +541,6 @@ class _MpvControl:
         return picked.label
 
     def radio_station(self, videos: Sequence[Path]) -> MpvStation | None:
-        """A station of *videos*, sounding wherever this engine's own sound goes."""
         return MpvStation.opened(videos, audio_device=self._audio_device)
 
     @mpv_call()
@@ -645,7 +577,6 @@ class _MpvControl:
 
     @mpv_call()
     def overlay(self, ident: int, x: int, y: int, rgba) -> None:
-        """Composite an (H, W, 4) BGRA uint8 array at (x, y) over the video."""
         arr = np.ascontiguousarray(rgba, dtype=np.uint8)
         h, w = arr.shape[:2]
         try:
@@ -774,7 +705,6 @@ class MpvStation:
         return cls(_import_mpv().MPV(**_station_options(audio_device)), videos)
 
     def tune(self, level: int | None) -> None:
-        """Be heard at *level*, or not at all for None."""
         if level == self._heard_at:
             return
         self._heard_at = level

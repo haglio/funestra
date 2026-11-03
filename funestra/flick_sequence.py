@@ -1,4 +1,3 @@
-"""The order Genau browses its flicks in, and where it is in that order."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -23,11 +22,6 @@ def _index_of(flicks: list[Path], wanted: Path | None) -> int | None:
 
 class FlickSequenceController:
     def __init__(self, flicks: list[Path], *, start_at: Path | None = None):
-        """*start_at* is the flick to open on — where a reopened session picks up,
-        in whatever order *flicks* were scanned in.  A flick that is no longer in
-        it (deleted, or condemned as trash since) simply is not found, and the
-        scan order stands from its top.
-        """
         if not flicks:
             raise ValueError("FlickSequenceController requires at least one flick")
         self._flicks = list(flicks)
@@ -46,17 +40,6 @@ class FlickSequenceController:
         return self._flicks[self._index]
 
     def take_up(self, flicks: list[Path], *, holding: Path | None = None) -> Path:
-        """Browse a freshly scanned list, from its top or from *holding* where
-        it is among them.
-
-        A reorder takes it from the top: it is asked for to see what the new
-        order puts first — the arrivals, under Latest — and holding position
-        would apply the order only *after* the flick that is up, so those
-        arrivals would never come round.
-
-        Refuses an empty list for the same reason building one does: Genau has to
-        keep something on screen.
-        """
         if not flicks:
             raise ValueError("FlickSequenceController requires at least one flick")
         self._flicks = list(flicks)
@@ -83,11 +66,6 @@ class FlickSequenceController:
         return self.current_path
 
     def remove_current(self) -> Path | None:
-        """Remove the current flick and return whichever one takes its place.
-
-        Returns None — and keeps the flick — when it is the only one left,
-        since a sequence with nothing in it has no frame to show.
-        """
         if len(self._flicks) <= 1:
             return None
         del self._flicks[self._index]

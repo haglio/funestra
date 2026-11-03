@@ -1,4 +1,3 @@
-"""The flicks folder: the scan, its orders, and the condemned pile beside it."""
 from __future__ import annotations
 
 import os
@@ -15,10 +14,6 @@ from funestra.flick_folder import (
     trash_folder_for,
     vr_flicks_in,
 )
-
-# ---------------------------------------------------------------------------
-# scan_flicks
-# ---------------------------------------------------------------------------
 
 class TestScanFlicks:
     def test_finds_mp4_files(self, tmp_path: Path):
@@ -89,10 +84,6 @@ class TestScanFlicks:
 
 
 class TestTheShuffleItself:
-    """It was a call on a module-global generator with no seed, so the only
-    thing a test could say about it was that nothing went missing.  It is a
-    dependency now, and these say what it is actually asked to do."""
-
     @staticmethod
     def _folder(tmp_path: Path) -> Path:
         for name in ("alpha.mp4", "beta.mp4", "gamma.mp4"):
@@ -100,8 +91,6 @@ class TestTheShuffleItself:
         return tmp_path
 
     def test_the_order_it_leaves_the_list_in_is_the_order_returned(self, tmp_path: Path):
-        """It shuffles in place, so a caller that ignored the mutation and
-        returned the list it built would come back unshuffled."""
         def _z_to_a(files):
             files.sort(key=lambda path: path.name, reverse=True)
 
@@ -130,7 +119,6 @@ class TestTheShuffleItself:
         assert asked == []
 
     def test_it_is_not_asked_for_an_order_that_was_named_outright(self, tmp_path: Path):
-        """Latest is an order; shuffling it would undo it."""
         asked = []
 
         scan_flicks(self._folder(tmp_path), shuffle_on_load=True, recent=True,
@@ -140,9 +128,6 @@ class TestTheShuffleItself:
 
 
 class TestLatestOrder:
-    """Newest-first — the order "latest" asks for, so a flick that landed in the
-    folder minutes ago heads the sequence instead of sitting somewhere in it."""
-
     @staticmethod
     def _aged(tmp_path: Path, name: str, mtime: float) -> Path:
         path = tmp_path / name
@@ -160,8 +145,6 @@ class TestLatestOrder:
         assert [path.name for path in result] == ["newest.mp4", "middle.mp4", "old.mp4"]
 
     def test_the_named_order_outranks_the_shuffle(self, tmp_path: Path):
-        """Shuffling an order that was asked for outright would undo it, and
-        ``shuffle_on_load`` is a config default rather than this session's word."""
         self._aged(tmp_path, "old.mp4", 1_000)
         self._aged(tmp_path, "new.mp4", 2_000)
 
@@ -221,16 +204,12 @@ def test_move_creates_the_trash_dir_on_first_use(tmp_path: Path):
 
 
 def test_a_flick_already_gone_is_not_an_error(tmp_path: Path):
-    """Two TRASH verbs can race the same flick; the second must not crash Genau."""
     trash = tmp_path / "trash"
 
     assert move_flick_to_trash(tmp_path / "missing.mp4", trash) is None
 
 
 class TestSeveralFoldersBrowsedAsOne:
-    """The headset browses its VR flicks and the desktop's flat flicks together,
-    the way the main rotation joins the VR library to the desktop's."""
-
     @staticmethod
     def _two_folders(tmp_path: Path) -> tuple[Path, Path]:
         vr, flat = tmp_path / "vr_flicks", tmp_path / "flicks"

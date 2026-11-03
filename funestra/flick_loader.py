@@ -1,12 +1,3 @@
-"""Decoding flicks off the frame loop's thread, one load and one prefetch at a time.
-
-A load is a flick somebody asked for; a prefetch is a neighbor decoded ahead of
-being asked for.  Each runs on its own thread and reports through a
-:class:`~funestra.flick_cache.DecodeRequestState`, which the loop polls on its
-own tick -- so frames are adopted on the thread that draws them, and a request
-superseded while its decode was still running is dropped rather than adopted
-late.
-"""
 from __future__ import annotations
 
 import time
@@ -40,12 +31,6 @@ class FlickLoadController:
         return self.load_state.loading or self.prefetch_state.loading
 
     def frames_ready(self, path: Path) -> bool:
-        """Whether *path* can go on screen now, taking up a prefetch that landed.
-
-        The two caches are one question to everyone outside this class: a flick
-        decoded ahead is as ready as one that has been up before, and asking
-        moves it across.
-        """
         if path in self.flick_store.flick_cache:
             return True
         if self.flick_store.adopt_decoded_frames(
@@ -112,23 +97,13 @@ class FlickLoadController:
             self.on_active_flick_loaded()
 
     def _already_decoding(self, path: Path) -> bool:
-        """Whether a decode of this very flick is running, either side.
-
-        A flick asked for while it is being decoded ahead is waited for rather
-        than decoded twice over: the second decode would take half the machine
-        from the first, and the two finish later than the one would have.
-        """
         return (self.load_state.is_decoding(path)
                 or self.prefetch_state.is_decoding(path))
 
     def _flick_on_screen(self) -> set[Path]:
-        """What trimming may never take: whatever is up now."""
         return {self.current_flick_path_getter()}
 
     def _decode_thread_fn(self, path: Path, request_id: int, state, log_error) -> None:
-        # Not the frame loop's clock: this runs on a decode thread and the two
-        # reads are one duration for one log line, not a timing decision the
-        # loop makes.  The loop's clock is injected -- see the refresh controller.
         t0 = time.monotonic()
         try:
             frames = self.decode_flick(path)

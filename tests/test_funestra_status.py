@@ -34,8 +34,6 @@ class TestStatusFields:
         assert status_fields(playback, None)["playlist_length"] == "1"
 
     def test_a_version_stepped_to_is_published_as_the_clip_it_stands_in_for(self, tmp_path):
-        """The nav map, the star and the trash are all keyed on the video, so the
-        file a version step put up is never what the status names."""
         playback, _engine = make_playback(tmp_path)
         other = tmp_path / "v0_sorted.mp4"
         other.write_text("fake")

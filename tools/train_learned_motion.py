@@ -1,16 +1,3 @@
-"""Fit the learned motion's model from a folder of real funscripts.
-
-    python tools/train_learned_motion.py [--corpus <dir> ...] --out <model.json.gz>
-
-Each ``--corpus`` folder is searched for ``*.funscript``; a folder holding the
-harvester's ``index.jsonl`` also has its topics' tags read: only a script whose
-topic wears a tag in ``--keep-tag`` (:data:`KEPT_TAGS` unless said otherwise)
-is taken, and one wearing a tag in ``--skip-tag`` (:data:`SKIPPED_TAGS`) is
-left out.  A folder with no index -- his own scripts -- is taken whole.  What comes out is a
-:class:`funestra.learned_model.LearnedModel`: up to ``--kept`` phrases per
-class, drawn evenly from everything seen, and the counts of which class
-followed which.  Nothing named in the corpus reaches the model.
-"""
 from __future__ import annotations
 
 import argparse
@@ -36,15 +23,9 @@ from funestra.learned_model import (
     save,
 )
 
-# A reversal has to travel at least this far to be a turn rather than a wobble
-# on the way somewhere.
 MIN_SPAN = 8
-# Nothing scripted for this long is a rest, not a movement: the continuous
-# action ends there.
 REST_GAP_MS = 2000
-# So is a swing longer than this: a hold written out point by point.
 MAX_SWING_MS = 2500
-# How many phrases of each class the model keeps.
 KEPT_PER_CLASS = 64
 
 logger = logging.getLogger("train")
@@ -67,10 +48,6 @@ class Swing(NamedTuple):
 
 def turning_points(actions: list[tuple[int, int]], *, min_span: int = MIN_SPAN,
                    ) -> list[tuple[int, int]]:
-    """Where the script turns back: the highest point of each rise and the lowest
-    of each fall, ignoring a reversal shorter than *min_span*.  A hold at a turn
-    belongs to the swing that arrived there, so the swing that leaves is the
-    movement alone."""
     if not actions:
         return []
     turns = [actions[0]]
@@ -100,13 +77,6 @@ def turning_points(actions: list[tuple[int, int]], *, min_span: int = MIN_SPAN,
 
 def passages_of(actions: list[tuple[int, int]], *, rest_gap_ms: int = REST_GAP_MS,
                 max_swing_ms: int = MAX_SWING_MS) -> list[list[Swing]]:
-    """The script's continuous action, as swings.
-
-    A passage ends at a gap in the actions -- the script had nothing to say for
-    that long -- and at a swing too long to be a movement, which is a hold
-    written out point by point.  A swing to nowhere, two turns at one moment,
-    is dropped.
-    """
     passages: list[list[Swing]] = []
     for chunk in _between_gaps(actions, rest_gap_ms):
         current: list[Swing] = []
@@ -140,8 +110,6 @@ def _between_gaps(actions: list[tuple[int, int]], rest_gap_ms: int,
 
 def phrases_of(passage: list[Swing], *, swings_per_phrase: int = PHRASE_SWINGS,
                ) -> list[Phrase]:
-    """The passage cut into whole phrases, each beginning with a swing upward,
-    in the order they were played; what is left over at the end is dropped."""
     first_up = next((i for i, swing in enumerate(passage) if swing.upward), len(passage))
     phrases = []
     for start in range(first_up, len(passage) - swings_per_phrase + 1, swings_per_phrase):
@@ -152,9 +120,6 @@ def phrases_of(passage: list[Swing], *, swings_per_phrase: int = PHRASE_SWINGS,
 
 def fit(scripts: Iterable[list[tuple[int, int]]], *, rng: random.Random,
         kept_per_class: int = KEPT_PER_CLASS) -> LearnedModel:
-    """The model of *scripts*: every phrase classed and counted, up to
-    *kept_per_class* of each class kept (drawn evenly from all of them), and
-    each class's successors counted within a passage -- never across a rest."""
     model = LearnedModel()
     for actions in scripts:
         for passage in passages_of(actions):
@@ -171,8 +136,6 @@ def fit(scripts: Iterable[list[tuple[int, int]]], *, rng: random.Random,
 
 
 def _keep(model: LearnedModel, rng: random.Random, cls, phrase: Phrase, limit: int) -> None:
-    """Reservoir sampling: the phrases kept are a uniform draw from every phrase
-    of the class seen, however many there were."""
     seen = model.seen.get(cls, 0)
     model.seen[cls] = seen + 1
     kept = model.phrases.setdefault(cls, [])
@@ -184,33 +147,17 @@ def _keep(model: LearnedModel, rng: random.Random, cls, phrase: Phrase, limit: i
         kept[place] = phrase
 
 
-# A script with fewer actions than this is a fragment or a placeholder.
 MIN_ACTIONS = 20
-# Left out by default: scripts a machine wrote, and scripts written to music
-# or to spoken instruction rather than to a person's motion -- their swings
-# are beats and buzzes, not what this model is for.  A corpus folder may name
-# more in a ``skip_tags.txt`` beside its index, one tag per line.
 SKIPPED_TAGS = (
     "ai-generated", "ai-assisted",
     "pmv", "hmv", "beat-based", "music-based", "music", "joi", "audio-only",
 )
 SKIP_TAGS_FILENAME = "skip_tags.txt"
-# Taken by default, where a folder's index says what each script is of:
-# scripts of real people.  Drawn and rendered scenes move as no person can,
-# which is the motion this model is not for.
 KEPT_TAGS = ("real",)
 
 
 def scripts_in(folders: Iterable[Path], *, skip_tags: set[str],
                keep_tags: set[str] = frozenset(KEPT_TAGS)) -> Iterator[list[tuple[int, int]]]:
-    """Every distinct script under *folders*, as sorted (ms, position) pairs.
-
-    A folder holding the harvester's index has its scripts' tags read from it:
-    only one tagged with something in *keep_tags* is taken, and one tagged with
-    anything in *skip_tags*, or in the folder's own ``skip_tags.txt``, is left
-    out.  A folder with no index is taken whole.  A script seen before,
-    wherever it was, is not yielded twice.
-    """
     seen: set[str] = set()
     for folder in folders:
         tags_of = _tags_by_file(Path(folder) / "index.jsonl")

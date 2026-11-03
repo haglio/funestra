@@ -64,7 +64,6 @@ def test_build_status_text_spd_at_min():
 
 
 def test_build_status_text_ctr_at_limits_given_amplitude():
-    # amplitude=100 → half=50 → center clamped to [50, 50]
     ds = RobotHandState(amplitude=100, center=50, intended_center=50)
 
     text = build_status_text(ds)
@@ -74,7 +73,6 @@ def test_build_status_text_ctr_at_limits_given_amplitude():
 
 
 def test_build_status_text_ctr_not_at_limits():
-    # amplitude=20 → half=10 → center range [10, 90]
     ds = RobotHandState(amplitude=20, center=50, intended_center=50)
 
     text = build_status_text(ds)
@@ -97,10 +95,10 @@ def test_write_status_file_skips_when_unchanged(tmp_path: Path):
     text = build_status_text(RobotHandState())
     path = tmp_path / "genau_status.txt"
 
-    assert write_status_file(path, text) is True  # first write
+    assert write_status_file(path, text) is True
     written_at = path.stat().st_mtime_ns
 
-    assert write_status_file(path, text) is False  # no change
+    assert write_status_file(path, text) is False
     assert path.stat().st_mtime_ns == written_at, "the file was rewritten anyway"
 
 
@@ -119,7 +117,6 @@ def test_build_status_text_reports_a_released_flick():
 
 
 def test_build_status_text_names_the_flick_on_screen():
-    """Which flick is up, so a reopened session can be pointed back at it."""
     text = build_status_text(
         RobotHandState(), flick=Path("C:/flicks/alpha.mp4"),
     )
@@ -128,8 +125,6 @@ def test_build_status_text_names_the_flick_on_screen():
 
 
 def test_build_status_text_names_no_flick_before_one_is_up():
-    """Genau publishes from its refresh loop, which can run a tick before the
-    first flick is decoded; an empty value reads as nothing to come back to."""
     text = build_status_text(RobotHandState())
 
     assert "flick=\n" in text
@@ -170,8 +165,6 @@ def test_write_status_file_replaces_the_record_whole_so_a_poller_never_reads_hal
 
 
 def test_whether_the_hand_is_moving_is_said_for_a_genau_taking_its_place():
-    """A Genau arriving beside this one has to know whether to be moving when
-    it takes the app, and nothing else it can read says so."""
     assert "playing=1" in build_status_text(RobotHandState(playing=True))
     assert "playing=0" in build_status_text(RobotHandState(playing=False))
 

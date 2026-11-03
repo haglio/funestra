@@ -14,17 +14,15 @@ from __future__ import annotations
 from typing import NamedTuple
 
 _RENDER_ENDPOINTS = r"SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render"
-_DESCRIPTION = "{a45c254e-df1c-4efd-8020-67d146a850e0},2"  # PKEY_Device_DeviceDesc
+_DESCRIPTION = "{a45c254e-df1c-4efd-8020-67d146a850e0},2"
 _ADAPTER = "{b3f8fa53-0004-438e-9003-51a46e139bfc},6"  # what Windows shows in the brackets
-_BUS = "{a45c254e-df1c-4efd-8020-67d146a850e0},24"  # PKEY_Device_EnumeratorName
-_STATE_MASK = 0x0F  # DEVICE_STATEMASK_ALL: the stored value carries flags above these
-_ACTIVE = 0x01  # DEVICE_STATE_ACTIVE
+_BUS = "{a45c254e-df1c-4efd-8020-67d146a850e0},24"
+_STATE_MASK = 0x0F
+_ACTIVE = 0x01
 _NO_HARDWARE = "ROOT"  # what Windows enumerates a driver that has no device of its own on
 
 
 class Output(NamedTuple):
-    """One output, as the system names it and as its engine opens it."""
-
     label: str
     handle: str
 
@@ -64,13 +62,6 @@ def _windows_endpoints():
 
 
 def software_outputs(endpoints=None):
-    """The names of the live outputs that no real device answers.
-
-    Read from the machine rather than guessed from the name, because "AirLink"
-    or "Virtual" in one is a house style, not a rule.  Anywhere the machine
-    cannot answer -- another platform, a registry that will not open -- nothing
-    is named as software, and a named device is taken as it was before.
-    """
     if endpoints is None:
         try:
             endpoints = list(_windows_endpoints())
@@ -83,13 +74,6 @@ def software_outputs(endpoints=None):
 
 
 def pick_output(outputs, wanted, *, software=None):
-    """The :class:`Output` to play on for a device named *wanted*, or None.
-
-    *wanted* is matched case-insensitively against each output's label and
-    handle.  None -- for a blank name, or one no output carries -- leaves the
-    caller on the system default, which is what a headset that is off should
-    fall back to rather than silence.
-    """
     needle = (wanted or "").strip().lower()
     if not needle:
         return None

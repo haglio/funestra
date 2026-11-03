@@ -106,10 +106,6 @@ def test_display_index_for_phase_clamps_past_end():
 
 
 class TestHowFarRoundTheLoopTheFlickIs:
-    """What the dial and the frame count show: frames played of the loop,
-    counted UP while the frame that is up counts DOWN, since a flick is shown
-    from its last frame back (display_index_for_phase)."""
-
     def _showing(self, index: int | None, count: int | None):
         controller, flick_store, _calls = _make_controller()
         path = Path("demo.mp4")

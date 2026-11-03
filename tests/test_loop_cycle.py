@@ -1,4 +1,3 @@
-"""What every Funestra's loop key steps through."""
 from __future__ import annotations
 
 from funestra.loop_cycle import ACTION, LOCK, OFF, SEED, next_stop, standing_at

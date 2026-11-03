@@ -1,4 +1,3 @@
-"""Which sound output a Funestra takes when it is told a device by name."""
 from __future__ import annotations
 
 from funestra import audio_outputs
@@ -9,7 +8,6 @@ STREAMING = "Speakers (Example AirLink)"
 
 
 def named(*labels):
-    """The outputs as a mixer that opens a device by the system's own name lists them."""
     return [Output(label, label) for label in labels]
 
 

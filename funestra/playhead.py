@@ -1,4 +1,3 @@
-"""The time at the left end of every Funestra's timeline row: where the video is, and how long it runs."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -48,8 +47,6 @@ def _framed(frame: int, total: int, position_ms: float, duration_ms: float) -> s
 
 def framed_playhead(frame: int, total: int, position_ms: float,
                     duration_ms: float) -> PlayheadHud:
-    """A frame of how many, then the time, which a video's row and a flick's
-    both read."""
     return PlayheadHud(text=_framed(frame, total, position_ms, duration_ms),
                        widest=_framed(total, total, duration_ms, duration_ms))
 
@@ -81,13 +78,10 @@ def _font():
 
 
 def time_text_width(hud: PlayheadHud) -> int:
-    """The app the time takes on the row: its widest words' worth."""
     return text_width(_font(), hud.widest)
 
 
 class PlayheadHudPainter(KeptBitmap):
-    """The words alone, as tall as the volume control and centered on the digits' ink."""
-
     def __init__(self) -> None:
         super().__init__()
         self._top = (VOLUME_CONTROL_H - 1) / 2 - ink_center_offset(_font(), "0")[1]

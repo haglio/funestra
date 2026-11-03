@@ -1,7 +1,3 @@
-"""The corpus harvester, run against an invented forum.
-
-Every topic, title, upload key and file name here is made up.
-"""
 from __future__ import annotations
 
 import email.message
@@ -60,8 +56,6 @@ class _FakeResponse:
 
 
 class _FakeClock:
-    """Time that only moves when something sleeps."""
-
     def __init__(self):
         self.now = 1000.0
         self.slept: list[float] = []
@@ -260,9 +254,6 @@ class TestWorkingOutWhereAFileIs:
 
 class TestDownloadingAScript:
     def test_the_file_is_fetched_from_where_its_link_says_without_asking_the_forum(self):
-        # Each ask of the forum comes off the day's allowance and a file host
-        # asks nothing, so the file is fetched by the address its link spells
-        # out, and the forum is not asked for it at all.
         clock = _FakeClock()
         seen: list[tuple[str, str | None]] = []
         found = harvest.file_addresses(_short_link())[1]
@@ -283,8 +274,6 @@ class TestDownloadingAScript:
         assert clock.slept == []
 
     def test_a_file_the_host_has_at_no_address_is_asked_of_the_forum(self):
-        # The forum resolves its short link to the file host; the key is the
-        # forum's business and goes nowhere else.
         clock = _FakeClock()
         seen: list[tuple[str, str | None]] = []
 
@@ -309,7 +298,6 @@ class TestDownloadingAScript:
             ("https://forum.invalid/uploads/short-url/aaa.funscript", "k"),
             ("https://files.invalid/original/1/2/abc123.funscript", None),
         ]
-        # The pace is the forum's; a file server is not asked to wait for it.
         assert clock.slept == []
 
 

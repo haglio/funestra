@@ -1,4 +1,3 @@
-"""The move across a image while it holds the screen: a zoom in, a zoom out, a pan."""
 from __future__ import annotations
 
 import itertools
@@ -123,7 +122,7 @@ def test_halfway_through_the_hold_it_is_halfway_along_its_move():
 
 
 def test_an_image_with_no_pace_is_held_whole_and_still():
-    still = paced(0.0)  # a pace of nought holds the image
+    still = paced(0.0)
 
     assert still.view(now_s=1000.0) == View()
 
@@ -148,7 +147,7 @@ def test_the_room_thawing_carries_the_move_on_from_where_it_stopped():
 def test_turning_the_pace_up_slows_the_move_instead_of_jumping_it_on():
     still = paced()
 
-    still.set_pace(8.0, now_s=102.0)  # halfway along, and the show slows down
+    still.set_pace(8.0, now_s=102.0)
 
     assert_along(still.view(now_s=102.0), DRIFT, 0.5)
     assert_along(still.view(now_s=104.0), DRIFT, 0.75)

@@ -1,15 +1,3 @@
-"""Which flicks get decoded over a session, and which one is on screen while.
-
-`test_flick_selection.py` drives the selection against a fake loader and
-`test_flick_loader.py` drives the loader against a hand-filled store.  Between
-them sits what the two caches do to each other turn after turn, which neither
-can see: a sweep that re-decoded the same two flicks for as long as Genau ran,
-and an advance that showed the loading line for a flick it already had.
-
-A decode asked for during a turn comes back at the top of the next one -- the
-same one turn of lag the real threads have, without the clock -- so a test can
-also step while one is still running, by stepping between turns.
-"""
 from __future__ import annotations
 
 from pathlib import Path
@@ -20,7 +8,6 @@ from funestra.flick_renderer import FlickRenderController
 from funestra.flick_selection import FlickSelectionController
 from funestra.flick_sequence import FlickSequenceController
 
-# What Genau's own config gives it: the flick on screen, and room for one more.
 CACHE_LIMIT = 2
 
 
@@ -33,9 +20,6 @@ class FakeNotifier:
 
 
 class Pipeline:
-    """The three parts that get a flick onto the screen, wired as the app wires
-    them, driven one turn of the tick at a time."""
-
     def __init__(self, *names: str, logger=None):
         self.decodes: list[str] = []
         self.blits: list[object] = []
@@ -74,7 +58,6 @@ class Pipeline:
         self.selection.set_current_flick(Path(name))
 
     def turn(self) -> None:
-        """One turn of the tick, with whatever was asked for last turn come back."""
         running, self._running = self._running, []
         for target, args in running:
             target(*args)
@@ -101,14 +84,6 @@ class _SilentLog:
 
 
 def test_a_flick_is_decoded_once_however_long_the_sweep_runs():
-    """The flick on screen must not take a place in the decode-ahead cache.
-
-    Genau holds two flicks' frames and has two neighbors to decode ahead.  With
-    the flick on screen sitting in that cache as well -- and protected from
-    trimming, so never leaving -- only one neighbor fits, and decoding either
-    one throws the other out: the sweep then re-decoded both, alternately, for
-    as long as the session ran.
-    """
     pipeline = Pipeline("on_screen.mp4", "after.mp4", "before.mp4")
 
     pipeline.open_on("on_screen.mp4")
@@ -119,14 +94,6 @@ def test_a_flick_is_decoded_once_however_long_the_sweep_runs():
 
 
 def test_an_advance_to_a_flick_decoded_ahead_puts_it_up_with_no_wait():
-    """Nothing is pending when the flick was already decoded, so the loading
-    line -- which is drawn from exactly that -- never comes up.
-
-    The switch used to be deferred a turn whatever the state of the flick: the
-    selection asked only whether it was in the flicks-on-screen cache, and a
-    flick decoded ahead is not in that one yet.  So every advance raised the
-    loading line for the frame before the flick it already had went up.
-    """
     pipeline = Pipeline("on_screen.mp4", "after.mp4", "before.mp4")
     pipeline.open_on("on_screen.mp4")
     for _ in range(4):
@@ -140,13 +107,6 @@ def test_an_advance_to_a_flick_decoded_ahead_puts_it_up_with_no_wait():
 
 
 def test_a_flick_that_goes_up_gives_its_decode_ahead_slot_back():
-    """Decode-ahead room is for flicks not yet up, and Genau has room for two.
-
-    Condemning is where taking one up and leaving it there shows: the successor
-    comes off the decode-ahead pile, and if it stays on that pile as well it
-    leaves one place for its own two neighbors -- so the sweep decodes them
-    alternately, for as long as the session runs.
-    """
     pipeline = Pipeline("trash.mp4", "after.mp4", "third.mp4", "before.mp4")
     pipeline.open_on("trash.mp4")
     for _ in range(4):
@@ -163,15 +123,6 @@ def test_a_flick_that_goes_up_gives_its_decode_ahead_slot_back():
 
 
 def test_an_advance_that_catches_a_decode_running_does_not_start_it_again():
-    """The flick the advance lands on is often the one being decoded ahead --
-    whenever a decode takes longer than the flick holds the screen, which is
-    every advance at a short interval.
-
-    Asking for it again started a second decode of the same file beside the
-    first, so the two halved each other's share of the machine at exactly the
-    moment it was already too slow.  The advance waits for the decode that is
-    running instead.
-    """
     pipeline = Pipeline("on_screen.mp4", "after.mp4", "before.mp4")
     pipeline.open_on("on_screen.mp4")
     pipeline.turn()

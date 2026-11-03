@@ -1,4 +1,3 @@
-"""The playlist file: one item per line, written and read back through one module."""
 from __future__ import annotations
 
 import threading
@@ -54,9 +53,6 @@ class TestReadPlaylist:
 
 
 class TestAnItemIsAlsoThePairItWas:
-    """Every reader in the family unpacked ``(video, funscript)`` before the item
-    had a name, and a reader on a checkout that has not moved yet still does."""
-
     def test_unpacks_and_indexes_as_the_pair(self):
         item = PlaylistItem(Path("C:/vids/a.mp4"), Path("C:/scripts/a.funscript"))
 
@@ -86,9 +82,6 @@ class TestAnItemIsAlsoThePairItWas:
 
 
 class TestOneLineOneItem:
-    """The line grammar is the file's and PLAY_FILE's alike, so both are read
-    and written here and cannot say the same item two ways."""
-
     def test_a_scripted_item_carries_its_script_after_a_tab(self):
         item = PlaylistItem(Path("C:/vids/a.mp4"), Path("C:/scripts/a.funscript"))
 

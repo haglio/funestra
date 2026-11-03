@@ -1,4 +1,3 @@
-"""What a Funestra publishes in its status file, after the lines every Funestra leads with."""
 from __future__ import annotations
 
 from .status import FunestraStatus

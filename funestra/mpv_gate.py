@@ -53,7 +53,6 @@ class CallGate:
 
     @property
     def closing(self) -> bool:
-        """Whether the gate is barred — every call from here on is a no-op."""
         with self._idle:
             return self._closing
 

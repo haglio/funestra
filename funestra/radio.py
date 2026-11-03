@@ -1,8 +1,3 @@
-"""A Funestra's radio: stations of sound playing out of sight, one of them tuned in while an image is up.
-
-A Funestra's stations are written beside its playlist by whoever deals them, as
-one line per video: the station's number, a TAB, the video.
-"""
 from __future__ import annotations
 
 import logging
@@ -57,15 +52,11 @@ def read_radio(path: Path) -> list[list[Path]]:
 
 
 class RadioFile:
-    """The stations dealt into a radio file, handed on each time the file changes."""
-
     def __init__(self, path: Path) -> None:
         self._path = path
         self._seen: tuple[int, int] | None = None
 
     def changed(self) -> list[list[Path]] | None:
-        """The stations the file now deals, [] once it is gone, or None while
-        it is as it was."""
         try:
             stat = self._path.stat()
         except OSError:
@@ -79,11 +70,6 @@ class RadioFile:
 
 
 class Radio:
-    """A Funestra's stations, each playing on out of earshot: an image coming
-    up after a video tunes the next of them in, or every one when they play
-    together, and the images after it stay on that one, through the moment
-    between each two files."""
-
     def __init__(self, open_station: Callable[[list[Path]], Station | None], *,
                  dealt_in: RadioFile | None = None, together: bool = False) -> None:
         self._open_station = open_station

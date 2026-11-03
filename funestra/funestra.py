@@ -1,6 +1,3 @@
-"""A window that plays what it is handed, draws the HUD, the scrubber and the
-volume over it -- or on a screen of the window's own beside it -- answers their presses,
-and is driven through files by whatever runs on it."""
 from __future__ import annotations
 
 import logging
@@ -55,8 +52,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass(frozen=True)
 class Channels:
-    """The files a Funestra is driven through, and the inlet it drives the OSR2 from; each optional."""
-
     playlist: Path | None = None
     command: Path | None = None
     paused: Path | None = None
@@ -76,8 +71,6 @@ class Channels:
 
 @runtime_checkable
 class User(Protocol):
-    """What runs on a Funestra, as the Funestra sees it."""
-
     def apply_command(self, command: str) -> bool: ...
 
     def tick(self) -> None: ...
@@ -93,9 +86,6 @@ class User(Protocol):
 
 @runtime_checkable
 class HudSurface(Protocol):
-    """A screen of the window's own that the HUD is drawn on, beside the
-    item rather than over it, held to one width or sized to its contents."""
-
     width: int | None
 
     def overlay(self, ident: int, x: int, y: int, bgra) -> None: ...
@@ -105,17 +95,12 @@ class HudSurface(Protocol):
 
 @runtime_checkable
 class UsersFrames(Protocol):
-    """Where a User's own frame goes up: over the engine's item, as
-    :class:`FlickOverlay` tiles it, or wherever else the window shows one."""
-
     def show(self, frame: FlickFrame, viewport: tuple[int, int]) -> None: ...
 
     def hide(self) -> None: ...
 
 
 class _Nobody:
-    """A Funestra driven through its files alone."""
-
     def apply_command(self, command: str) -> bool:
         return False
 
@@ -253,12 +238,6 @@ class Funestra:
 
     def _hud_for(self, channels: Channels, drawn_on,
                  hud: Callable[[], HudModel | None] | None) -> HudOverlay | MainHudOverlay | None:
-        """The one HUD this window wears, which carries the item's row: the
-        Main Funestra's HUD on the main place, the published HUD, or the window's
-        own program's HUD where no room publishes one.  Each places a press
-        on the row itself, so each is handed what it asks of the window when
-        one lands.
-        """
         if channels.dashboard_cmd is None:
             if hud is None:
                 return None
@@ -308,9 +287,6 @@ class Funestra:
         return moved
 
     def _seek_along_the_track(self, ms: float) -> None:
-        """A press on the track names a time in the stretch the track spans,
-        which is the whole video until a loop being recorded zooms it in -- or,
-        under an image, how far into its time on screen that image is."""
         frame = self._front.own_frame()
         if frame is not None:
             frame.seek_time(ms)
@@ -345,9 +321,6 @@ class Funestra:
         return self.apply
 
     def _press_on_the_item(self, channels: Channels) -> Callable[[], None]:
-        """What a press off the HUD does: in a session it asks the app to
-        pause everything; on a window with no room to ask, what runs on the
-        window is asked instead."""
         if channels.dashboard_cmd is not None:
             return lambda: ask(channels.dashboard_cmd, OMNIPAUSE_TOGGLE)
         return self._ask_what_runs_here_to_pause
@@ -446,7 +419,6 @@ class Funestra:
                          paused=self.playback.is_paused)
 
     def _an_image_on_screen(self) -> bool | None:
-        """True for an image, False for a video, None between two files."""
         if self.playback.showing_image:
             return True
         return False if self._engine.showing_video else None
@@ -500,12 +472,6 @@ class Funestra:
             self._corners.paint(viewport=viewport)
 
     def item_row(self) -> RowHud:
-        """Where the item on screen has got to, how long it runs, how loud it
-        is and where its loop ends -- the row the HUD carries at its foot.  An
-        image runs for the time it holds the screen.  A video is timed
-        against the stretch the track spans, which is the whole video until a
-        loop being recorded zooms it in.
-        """
         playback, engine = self.playback, self._engine
         self._strip.update(playback.showing, playback.current_funscript,
                            playback.duration_ms, self._track_width(),
@@ -528,10 +494,6 @@ class Funestra:
         )
 
     def _track_width(self) -> int:
-        """How wide the HUD drew the track last frame, which is what the
-        colors have to cover.  A HUD is as wide as what is on it, so there is
-        no answer until one has been drawn: 0 leaves the first row plain.
-        """
         row = None if self._hud is None else self._hud.row
         return 0 if row is None else row.track[1] - row.track[0]
 
@@ -550,8 +512,6 @@ class Funestra:
                            item_row=row, heatmap=colors, flash=self._flash)
 
     def _paint_loop_frames(self, viewport: tuple[int, int]) -> None:
-        """The loop's in and out frames, each hanging under the HUD below its
-        own mark on the track."""
         playback, engine, frames = self.playback, self._engine, self._loop_frames
         which = frames.needed(playback.ab_loop, playback.position_ms)
         if which is not None:
@@ -580,9 +540,6 @@ class Funestra:
 
 
 def frame_row(frame: FlickFrame, volume) -> RowHud | None:
-    """The row for a frame a User put up itself: its time on screen on the
-    track, its loop on the dial, and the frame and the time read out between
-    them, or None while there is none up."""
     if frame.count <= 0:
         return None
     return RowHud(position_ms=frame.elapsed_ms, duration_ms=frame.interval_ms,

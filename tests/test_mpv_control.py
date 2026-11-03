@@ -107,7 +107,6 @@ class Control(_MpvControl):
     def __init__(self, mpv, now: float = 0.0, move: Move = CREEP,
                  viewport: tuple[int, int] = (0, 0), deals: Deals | None = None,
                  looping: bool = False) -> None:
-        # the call gate every method here runs under
         super().__init__(deals or Deals(move), looping=looping)
         self.now = now
         self._viewport = viewport
@@ -296,7 +295,6 @@ def test_staging_the_clip_already_staged_asks_mpv_nothing():
 
 
 def test_clearing_the_staged_entry_keeps_the_clip_on_screen():
-    """A lock drops the prefetched next; the video being held must not go with it."""
     mpv = FakeMpv(pos=0, count=2)
     Control(mpv).clear_next()
     assert mpv.calls == [("clear",)]
@@ -309,18 +307,12 @@ def test_settling_on_the_next_clip_keeps_it_on_screen():
 
 
 def test_no_entry_playing_does_not_read_as_having_advanced():
-    """An engine holding no file has not moved past the head — it has fallen off
-    the playlist, and treating that as an advance walks the session's index on
-    past a video that never played."""
     assert Control(FakeMpv(pos=-1)).advanced_to_next is False
     assert Control(FakeMpv(pos=0)).advanced_to_next is False
     assert Control(FakeMpv(pos=1)).advanced_to_next is True
 
 
 class BlockingMpv(FakeMpv):
-    """A handle whose property read can be held open, the way a real one is
-    while a file it is opening holds the core's lock."""
-
     def __init__(self) -> None:
         super().__init__()
         self.entered = threading.Event()
@@ -378,8 +370,6 @@ def test_the_frame_rate_is_answered_while_a_read_is_stuck_inside_mpv():
 
 
 def test_a_call_arriving_after_the_close_reaches_no_handle():
-    """A worker that never noticed the stop flag keeps calling; every one of
-    those calls has to become a no-op rather than a use-after-free."""
     mpv = BlockingMpv()
     mpv.release.set()
     control = Control(mpv)
@@ -395,8 +385,6 @@ def test_a_call_arriving_after_the_close_reaches_no_handle():
 
 
 def test_closing_twice_frees_once():
-    """``MpvRenderContext.free`` is a bare ``mpv_render_context_free`` with no
-    double-free guard of its own, so the guard is here."""
     mpv = BlockingMpv()
     mpv.release.set()
     control = Control(mpv)
@@ -503,9 +491,6 @@ HEADSET = {"name": "wasapi/{headset-id}", "description": "Headphones (Example He
 
 def test_a_headset_named_for_its_maker_takes_the_sound_over_that_makers_software_output(
         monkeypatch):
-    """Two outputs can carry the maker's name — the headset's own, and the
-    streaming driver its software installed — and the streaming one is listed
-    first, so taking the first match leaves the headset silent."""
     monkeypatch.setattr(audio_outputs, "software_outputs",
                         lambda: frozenset({STREAMING["description"]}))
     mpv = FakeMpv()
@@ -739,7 +724,7 @@ def test_a_pace_set_while_a_still_is_swapped_in_times_it_from_then_on():
     mpv, control = an_image_with_the_next_staged(4.0)
     swapped_in(mpv, control, at=102.0)
 
-    control.set_pace(8.0)  # halfway along, so four seconds are left of it
+    control.set_pace(8.0)
 
     pushed_at(control, 105.9)
     assert moved_on(mpv) == 0
@@ -1193,7 +1178,7 @@ def test_a_locked_image_with_places_is_drawn_on_the_close_up_its_window_frames()
 
 def test_a_windows_size_is_read_off_windows_itself():
     user32 = ctypes.windll.user32
-    screen = (user32.GetSystemMetrics(0), user32.GetSystemMetrics(1))  # SM_CXSCREEN, SM_CYSCREEN
+    screen = (user32.GetSystemMetrics(0), user32.GetSystemMetrics(1))
 
     assert _client_size(user32.GetDesktopWindow()) == screen
 

@@ -1,8 +1,3 @@
-"""Fitting the learned motion's model from scripts: where the turning points
-are, which stretches are continuous action, and how the phrases are cut.
-
-Every script here is invented.
-"""
 from __future__ import annotations
 
 import json
@@ -23,8 +18,6 @@ class TestFindingTheTurningPoints:
         assert train.turning_points(actions) == [(0, 10), (200, 90), (400, 10), (500, 90)]
 
     def test_a_wobble_smaller_than_the_span_that_counts_is_not_a_turn(self):
-        # The turn is the last time the script reached the top, so the wobble
-        # belongs to the rise that ended there.
         actions = [(0, 10), (100, 90), (150, 86), (200, 90), (300, 10)]
 
         assert train.turning_points(actions) == [(0, 10), (200, 90), (300, 10)]
@@ -42,8 +35,6 @@ class TestContinuousAction:
         ]
 
     def test_a_hold_too_long_to_be_a_movement_ends_the_passage_too(self):
-        # Held at the top by a run of points rather than by a gap: the rise that
-        # arrived there is the hold's, and is dropped with it.
         actions = [(0, 10), (300, 90), (600, 10), (900, 90), (1500, 90), (2500, 90),
                    (3500, 90), (4500, 90), (4800, 10), (5100, 90)]
 
@@ -169,7 +160,6 @@ class TestReadingTheCorpus:
 
         scripts = list(train.scripts_in([harvested, own], skip_tags=set(), keep_tags={"beta"}))
 
-        # The kept one, and the un-indexed folder whole.
         assert scripts == [steady, slow]
 
     def test_a_folder_may_name_more_tags_to_skip_beside_its_index(self, tmp_path):

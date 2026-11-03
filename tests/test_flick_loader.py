@@ -71,10 +71,6 @@ def test_adopt_loaded_flick_if_ready_promotes_frames_and_notifies_current_flick(
 
 
 def test_adopt_loaded_flick_if_ready_takes_up_nothing_from_a_failed_decode():
-    """A flick that would not decode is dropped, not cached half-made.
-
-    The failure itself is already on the log, written by the decode thread.
-    """
     path = Path("demo.mp4")
     controller, flick_store, load_state, _prefetch_state, _starter, _logger, active_loaded = _make_loader(current_flick_path=path)
     request_id = load_state.begin(path)
@@ -119,8 +115,6 @@ def test_adopt_prefetch_if_ready_caches_frames_without_active_notification():
 
 
 def test_a_flick_switched_to_while_it_was_decoding_ahead_goes_up_when_that_decode_lands():
-    """A switch to a flick already being decoded ahead waits for that decode rather
-    than starting a second one, so the decode landing is what puts it up."""
     path = Path("demo.mp4")
     controller, flick_store, _load_state, prefetch_state, starter, _logger, active_loaded = _make_loader(
         current_flick_path=path)

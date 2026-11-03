@@ -1,4 +1,3 @@
-"""The frames a User chose, put up over the video: the Funestra's second way of playing."""
 from __future__ import annotations
 
 import numpy as np

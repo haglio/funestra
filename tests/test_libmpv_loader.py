@@ -75,8 +75,6 @@ def test_putting_them_on_path_twice_adds_nothing(monkeypatch):
     assert all(parts.count(str(d)) == 1 for d in libmpv_dirs())
 
 
-# --- the import, and the PATH another thread can take out from under it -----
-
 def test_the_engine_is_imported_once_the_folder_is_on_the_path():
     asked = []
 
@@ -117,9 +115,6 @@ def test_an_engine_that_is_really_not_there_says_where_it_looked():
 
 
 def test_a_folder_that_cannot_be_looked_in_at_all_says_what_it_answered(monkeypatch):
-    """The other half of the same question: a folder that holds the DLL while
-    the import cannot find it means PATH was rewritten under us; one that
-    cannot be read at all names the error instead."""
     class Refuses(type(Path("."))):
         def is_file(self):
             raise PermissionError("[WinError 5] Access is denied")

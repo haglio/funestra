@@ -41,12 +41,6 @@ def test_notify_visible_deduplicates_repeated_state():
 
 
 def test_the_notifier_has_only_the_two_things_it_says():
-    """FLICK and VISIBLE, each with one caller.
-
-    A third method wrapped them to send both at once, for a first tick that
-    had already had its FLICK sent by the flick selection a moment earlier --
-    so it put the same datagram on the wire twice at every launch.
-    """
     assert not hasattr(GenauNotifier, "announce_visible")
 
 

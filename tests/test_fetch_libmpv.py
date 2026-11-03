@@ -1,13 +1,3 @@
-"""The pin that stands in for a DLL resolved from whatever a feed served that morning.
-
-Two things have to hold or the pin is theatre. A digest that does not match must
-stop the fetch rather than be reported and used; and the day upstream retires
-the pinned tag -- it keeps about a month -- the fallback has to be loud and still
-produce a DLL, because a merge gate that cannot fetch its engine blocks every
-landing in the repo that needs it.
-
-Every release, tag and digest here is invented.
-"""
 from __future__ import annotations
 
 import hashlib
@@ -55,8 +45,6 @@ class TestWhatIsFetched:
 
     def test_an_archive_whose_digest_does_not_match_stops_the_fetch(self, tmp_path: Path,
                                                                     monkeypatch):
-        # Upstream rebuilding a tag and a tampered download look identical from
-        # here, and neither may be extracted next to the interpreter.
         monkeypatch.setattr(fetch_libmpv.urllib.request, "urlretrieve",
                             lambda _url, target: Path(target).write_bytes(b"something else"))
 
@@ -125,8 +113,6 @@ class TestWhenThePinExpires:
             fetch_libmpv.resolve(pinned)
 
     def test_the_releases_are_asked_for_with_the_token_the_runner_holds(self, monkeypatch):
-        # A shared runner's address runs out of unauthenticated requests within
-        # the hour, and the gate then fails before a test has run.
         sent = []
 
         class _Answer:
@@ -163,16 +149,6 @@ def test_a_wrong_user_folder_variable_moves_neither(monkeypatch, tmp_path):
 
 
 def test_this_repo_s_gate_fetches_the_pin_rather_than_leaving_it_to_a_consumer():
-    """A digest that matches nothing is caught here, not in somebody else's gate.
-
-    Everything above tests the mechanism with an invented archive, so the one
-    thing never exercised was the pin itself: `--require` finds the DLL already
-    on a developer's machine and returns without a download, and no gate fetched
-    it.  The recorded sha256 therefore matched no file for a fortnight -- not the
-    asset it names, and not the DLL every Funestra here runs -- and the first run
-    to download anything was a consumer's, in a repo whose own history held
-    nothing to explain it.
-    """
     gate = (Path(__file__).resolve().parent.parent
             / ".github" / "workflows" / "merge-gate.yml").read_text(encoding="utf-8")
 

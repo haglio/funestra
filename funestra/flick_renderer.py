@@ -48,10 +48,6 @@ class FlickRenderController:
 
     @property
     def playhead(self) -> tuple[int, int] | None:
-        """How many of the loop's frames have played, of how many -- the dial
-        and the frame count; None before a frame is up.  Counted up while the
-        index counts down, the way :func:`display_index_for_phase` chose the
-        frame."""
         entry = self.current_flick_entry()
         index = self.current_frame_index
         if entry is None or not entry["frames"] or index is None:
@@ -69,12 +65,6 @@ class FlickRenderController:
             self.show_frame_at(0)
 
     def show_frame_at(self, index: int) -> bool:
-        """Put frame *index* of the flick on screen, or say there was none.
-
-        Named for the choice rather than the drawing: the view's own
-        ``blit_frame`` takes an image, and one name for both would leave a call
-        site not saying which of the two it meant.
-        """
         path = self.current_flick_path
         if path is None or path not in self.flick_store.flick_cache:
             return False

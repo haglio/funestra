@@ -1,10 +1,3 @@
-"""A window follows the list file it was given rather than waiting to be told.
-
-What this replaced: the host wrote a window's list and queued one RELOAD_PLAYLIST,
-and `append_command` drops that line when the file it queues onto is held for
-longer than 25ms -- so the window went on playing what it had, with the new list
-sitting on disk beside it, for the rest of the session.
-"""
 from __future__ import annotations
 
 import os
@@ -36,7 +29,6 @@ class TestAListWrittenUnderTheWindow:
         assert _names(taken) == [["a show.png"]]
 
     def test_is_taken_once_however_many_frames_follow(self, tmp_path):
-        """Taking it again would restart the show on every frame."""
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "its own clip.mp4")
         taken: list[list[PlaylistItem]] = []
@@ -67,8 +59,6 @@ class TestAListWrittenUnderTheWindow:
         assert _names(taken) == [["v2.mp4"]]
 
     def test_the_list_the_window_opened_on_is_not_taken_again(self, tmp_path):
-        """The window is handed that list as it is built, so reading it back would
-        start the first video over on the first frame of every session."""
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "its own clip.mp4")
         taken: list[list[PlaylistItem]] = []
@@ -104,9 +94,6 @@ class TestAReadThatLandsInsideTheWrite:
 
 
 class TestAListTakenAway:
-    """Entering Origenerator mode takes each Funestra's own list away and the app
-    writes its own in its place, so between the two there is nothing to read."""
-
     def test_leaves_what_is_playing_alone(self, tmp_path):
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "its own clip.mp4")
@@ -134,10 +121,6 @@ class TestAListTakenAway:
 
 class TestTheReloadVerb:
     def test_reads_at_once_rather_than_on_the_next_frame(self, tmp_path):
-        """Held for a frame, the read lands after the command that came next: the
-        host sends a reload and then one video to play with its funscript, and a
-        reload taken after that replaces the list the video went into -- which
-        drops the funscript, and a window that drops it stops driving the OSR2."""
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "a show.png")
         taken: list[list[PlaylistItem]] = []

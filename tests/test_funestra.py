@@ -1,4 +1,3 @@
-"""A Funestra, ticked: it plays what it was handed, answers its files, publishes its status and paints its own controls."""
 from __future__ import annotations
 
 import json
@@ -43,9 +42,6 @@ WINDOW = (640, 480)
 
 
 def _on_the_row(funestra, engine, part: str = "track", *, along: int | None = None):
-    """A window point on one of the row's controls, which the HUD draws at
-    its foot.  The HUD is wherever the app put it, so this is read back off
-    the overlay it was composited at."""
     left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
     row = funestra._hud.row
     x, y, width, height = row.rect
@@ -53,7 +49,7 @@ def _on_the_row(funestra, engine, part: str = "track", *, along: int | None = No
         x0, x1 = row.track
         return left + x + (along if along is not None else (x0 + x1) // 2), top + y + height - 4
     if part == "dial":
-        return left + x + row.dial + DIAL_SIZE - 3, top + y + PARTS_Y + DIAL_SIZE // 2  # quarter past
+        return left + x + row.dial + DIAL_SIZE - 3, top + y + PARTS_Y + DIAL_SIZE // 2
     cx, cy = volume_control_xy(viewport_w=width, viewport_h=height, timeline_h=SCRUBBER_HEIGHT)
     across = 4 if part == "speaker" else VOLUME_CONTROL_W - PAD
     return left + x + cx + across, top + y + cy + VOLUME_CONTROL_H // 2
@@ -135,10 +131,6 @@ def test_a_level_and_mute_it_is_handed_are_its_own_from_then_on(tmp_path):
 
 
 def test_a_funestra_jumps_to_its_clips_scripting_and_says_so_on_its_notice_channel(tmp_path):
-    """Every Funestra plays scripted videos, so every one answers the two
-    funscript moves itself, and tells the app what came of each on the
-    channel it was given -- a dead end as a warning, a jump in the funscripts'
-    own color."""
     video = _videos(tmp_path, "v0")[0]
     script = tmp_path / "v0.funscript"
     script.write_text('{"actions": [{"at": 10000, "pos": 0}, {"at": 10300, "pos": 100}, '
@@ -171,9 +163,6 @@ def test_a_funestra_given_no_notice_channel_still_jumps(tmp_path):
 
 
 def test_a_window_wearing_no_hud_draws_nothing_over_its_item(tmp_path):
-    """The track, the time and the volume are a block of the HUD, so a window
-    with no HUD to wear has nowhere to put them -- and the item comes
-    through untouched instead of carrying a row along its lower edge."""
     funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
 
     funestra.tick(viewport=WINDOW)
@@ -193,8 +182,6 @@ def test_the_row_says_where_the_clip_is_and_how_long_it_runs(tmp_path):
 
 
 def test_a_scripted_clips_track_is_filled_across_the_width_the_hud_drew_it_at(tmp_path):
-    """The colors fill the track, and a HUD is as wide as what is on it, so
-    they are measured across the row the HUD drew rather than the window."""
     video = _videos(tmp_path, "v0")[0]
     script = tmp_path / "v0.funscript"
     script.write_text('{"actions": [{"at": 0, "pos": 0}, {"at": 900, "pos": 100}, '
@@ -366,9 +353,6 @@ def test_commands_drain_and_act_before_the_frame_is_published(tmp_path):
 
 
 def test_a_list_written_under_the_window_is_taken_with_no_verb_sent(tmp_path):
-    """The host writes the list and then queues one reload, and that queue drops the
-    line when the file is held for longer than 25ms -- after which the window went
-    on playing what it had, with the new list on disk beside it, for good."""
     videos = _videos(tmp_path, "v0", "v1", "v2")
     funestra, _engine = _funestra(tmp_path, [str(videos[0])], commands="")
     (tmp_path / "playlist.tsv").write_text(f"{videos[2]}\n", encoding="utf-8")
@@ -539,9 +523,6 @@ def _wearing_a_hud(tmp_path, *, audible: bool = True):
 
 
 class TestAPress:
-    """On the row the HUD draws, which is where the track, the time and the
-    volume are now."""
-
     def test_on_the_track_seeks_the_clip(self, tmp_path):
         funestra, engine = _wearing_a_hud(tmp_path)
         x0, x1 = funestra._hud.row.track
@@ -651,9 +632,6 @@ def _minimized_satellite(tmp_path: Path, clock: _Clock) -> tuple[Funestra, FakeE
 
 
 class TestTheNameOfWhatHasJustStarted:
-    """Minimized, the HUD is a plus in its corner; it names a video for the
-    first few seconds it plays, as the open HUD does all along."""
-
     def test_a_minimized_hud_names_it_beside_its_plus(self, tmp_path):
         funestra, engine = _minimized_satellite(tmp_path, _Clock())
 
@@ -811,9 +789,6 @@ def _publish_main_hud(tmp_path: Path, **over) -> None:
 
 
 class Kino:
-    """What runs on a Funestra, as the Funestra sees it: its own verbs, a pass
-    of its own each frame, lines in the status file, and the Main Funestra's HUD's top block."""
-
     def __init__(self, playback) -> None:
         self.playback = playback
         self.commands: list[str] = []
@@ -846,9 +821,6 @@ class Kino:
 
 
 class Genau(Kino):
-    """A User that puts its own frame up: frames it decoded itself, counted
-    in frames, which the Funestra shows in place of the video."""
-
     def __init__(self, playback) -> None:
         super().__init__(playback)
         self.video = "alpha"
@@ -897,9 +869,6 @@ def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
 
 
 class TestTheMainFunestra:
-    """A Funestra handed a Main Funestra's HUD file draws the Main Funestra's HUD in place of a
-    satellite HUD, opens holding its item, and leaves its sound to the app."""
-
     def test_it_opens_holding_its_item(self, tmp_path):
         funestra, engine, _kino = _main(tmp_path)
 
@@ -1122,9 +1091,6 @@ class TestAStretchOfTheItem:
 
 
 class TestWhoHasTheWindow:
-    """Two things run on the Main Funestra -- Kino and Genau -- and the app says
-    which one has the window.  The other keeps running out of sight."""
-
     def test_the_first_user_has_the_window_until_the_room_says_otherwise(self, tmp_path):
         funestra, _engine, kino = _main(tmp_path, genau=True)
 
@@ -1168,9 +1134,6 @@ class TestWhoHasTheWindow:
 
 
 class TestAUsersOwnFrame:
-    """Genau shows frames it decoded itself, so with the window it puts them up
-    over the video, and the row and the track answer for them."""
-
     def _genau_in_front(self, tmp_path):
         funestra, engine, _kino = _main(tmp_path, commands="SHOW genau\n", genau=True)
         funestra.tick(viewport=WINDOW)
@@ -1209,9 +1172,6 @@ class TestAUsersOwnFrame:
         assert engine.overlays[HUD_OVERLAY_ID][2] is not before
 
     def test_the_row_runs_its_frames_time_on_screen_and_turns_its_dial(self, tmp_path):
-        """A flick has two senses of time: the track runs how long it has been
-        up of the seconds it gets, and the dial beside it goes round with the
-        loop of the video itself."""
         funestra, _engine, genau = self._genau_in_front(tmp_path)
 
         row = funestra._hud._item_row
@@ -1274,10 +1234,6 @@ class _ARadioOfItsHost:
 
 
 class TestAWindowsOwnHud:
-    """A window handed a HUD of its own -- built in its process, as a
-    standalone Origenerator builds its Slideshow's -- wears it where a session
-    would have published one, and hands its presses to what runs on the window."""
-
     def _own_hud(self, tmp_path, *, user=Kino, muted=True, **handed):
         videos = _videos(tmp_path, "v0", "v1")
         channels = _channels(tmp_path, [str(video) for video in videos], commands="")
@@ -1327,7 +1283,7 @@ class TestAWindowsOwnHud:
     def test_it_is_redrawn_when_the_hud_changes_and_only_then(self, tmp_path):
         funestra, engine, _user, hud = self._own_hud(tmp_path)
         funestra.tick(viewport=WINDOW)
-        funestra.tick(viewport=WINDOW)  # the second fills the track at the width the first measured
+        funestra.tick(viewport=WINDOW)
         first = engine.overlays[HUD_OVERLAY_ID][2]
         funestra.tick(viewport=WINDOW)
         assert engine.overlays[HUD_OVERLAY_ID][2] is first
@@ -1451,9 +1407,6 @@ def test_a_window_told_to_fall_silent_mutes_its_engine_and_its_volume_control(tm
 
 
 class _ASurface:
-    """A screen of the window's own beside the item: what a headset gives
-    its HUD, which hangs there rather than lying over the video."""
-
     def __init__(self, width: int | None = None) -> None:
         self.width = width
         self.overlays: dict[int, tuple[int, int, object]] = {}
@@ -1466,9 +1419,6 @@ class _ASurface:
 
 
 class TestAHudBesideTheItem:
-    """A headset hangs the HUD as a screen of its own beside the item, so
-    a Funestra on such a window draws it there and leaves the item alone."""
-
     def _wearing_a_hud_beside(self, tmp_path, surface=None):
         surface = surface or _ASurface()
         videos = _videos(tmp_path, "v0")
@@ -1487,9 +1437,6 @@ class TestAHudBesideTheItem:
         assert engine.overlays == {}
 
     def test_it_fills_its_surface_from_the_corner_whatever_corner_the_room_published(self, tmp_path):
-        """the app's corner places a HUD over the item; a screen of its
-        own has no item to be placed on, so the HUD starts at its edge the
-        way test_hud_overlay says a HUD beside the item does."""
         (tmp_path / "portrait_hud.json").write_text(
             json.dumps({"funestra": "portrait", "hud_corner": "lower_right"}), encoding="utf-8")
         videos = _videos(tmp_path, "v0")
@@ -1516,9 +1463,6 @@ class TestAHudBesideTheItem:
         return funestra, engine
 
     def test_the_main_hud_is_held_to_the_surfaces_width(self, tmp_path):
-        """A console sized to its contents changes size between the modes and
-        with the title, and a screen that grows and shrinks is a screen that
-        moves; the surface says the one width it is held to."""
         surface = _ASurface(width=600)
 
         self._main_beside(tmp_path, surface)
@@ -1526,8 +1470,6 @@ class TestAHudBesideTheItem:
         assert surface.overlays[HUD_OVERLAY_ID][2].shape[1] == 600
 
     def test_the_window_is_told_which_edge_of_the_item_the_hud_hangs_along(self, tmp_path):
-        """The app moves the HUD between the item's edges; a window that
-        hangs the HUD beside the item has to hear which one."""
         funestra, _engine = self._main_beside(tmp_path, _ASurface())
         assert funestra.hud_edge is HudEdge.LOWER
 
@@ -1605,9 +1547,6 @@ class TestAHudBesideTheItem:
         assert funestra.outside_buttons is None
 
     def test_a_press_is_placed_by_the_surfaces_own_pixels_and_where_the_hud_was_drawn(self, tmp_path):
-        """A squeeze on the hanging screen lands in the HUD's own pixels; the
-        window adds where the HUD was drawn and the row answers as it would
-        over the item."""
         funestra, engine, surface = self._wearing_a_hud_beside(tmp_path)
         funestra.tick(viewport=WINDOW)
         left, top, _bgra = surface.overlays[HUD_OVERLAY_ID]
@@ -1620,8 +1559,6 @@ class TestAHudBesideTheItem:
         assert abs(engine.seeks[0] - engine.duration_ms / 2) <= engine.duration_ms / (x1 - x0)
 
     def test_the_loops_frames_stay_off_an_item_the_hud_does_not_lie_on(self, tmp_path):
-        """They hang under the HUD's track in the window; a HUD on a screen
-        of its own has no stretch of the item under it to hang them from."""
         funestra, engine = self._main_beside(tmp_path, _ASurface())
         funestra.playback.set_ab_loop(1_000, 3_000)
         engine.screenshot = np.zeros((10, 20, 4), dtype=np.uint8)
@@ -1634,9 +1571,6 @@ class TestAHudBesideTheItem:
 
 
 class _AFramesSurface:
-    """Where a headset puts a User's own frame: a texture of its own, wrapped
-    the way the video is, rather than tiles over the video."""
-
     def __init__(self) -> None:
         self.shown: list[tuple[FlickFrame, tuple[int, int]]] = []
         self.hidden = 0
@@ -1649,9 +1583,6 @@ class _AFramesSurface:
 
 
 class TestAUsersOwnFrameElsewhere:
-    """A window may show a User's own frame somewhere other than over the
-    engine's: it is handed the frame whenever one is up and told when none is."""
-
     def test_the_frame_is_handed_over_and_the_video_is_left_alone(self, tmp_path):
         surface = _AFramesSurface()
         funestra, engine = TestAHudBesideTheItem()._main_beside(
@@ -1677,9 +1608,6 @@ class TestAUsersOwnFrameElsewhere:
 
 
 class TestTheWindowsOwnVerbs:
-    """A window may answer verbs of its own -- a headset's projection, tilt and
-    scenes -- asked after what runs on it and before the Funestra's own."""
-
     def _answering(self, tmp_path, commands: str):
         heard: list[str] = []
 

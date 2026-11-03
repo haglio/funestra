@@ -1,10 +1,3 @@
-"""The visualizer's cadence, and what goes out at it.
-
-Nothing had ever pinned it.  The visualizer goes out 25 times a second because its
-trace scrolls; drop the throttle and the app still works, faster and noisier --
-a file written at the refresh rate -- which is why it shows up as a failure
-nowhere else.
-"""
 from __future__ import annotations
 
 import random
@@ -52,12 +45,8 @@ def _visualizer(**over) -> GenauVisualizer:
     )
 
 
-# Deltas either side of a threshold, chosen as exact binary fractions so the
-# comparison is decided by the rule and not by float error -- and chosen close,
-# so the threshold cannot be moved a step either way without reddening one of
-# them.
-JUST_UNDER_DRIVE = 0.0390625     # 5/128, under 0.04
-JUST_OVER_DRIVE = 0.04296875     # 11/256, over 0.04
+JUST_UNDER_DRIVE = 0.0390625
+JUST_OVER_DRIVE = 0.04296875
 
 
 class TestHowOftenTheVisualizerGoesOut:
@@ -91,14 +80,12 @@ class TestHowOftenTheVisualizerGoesOut:
         assert drive.read_text(encoding="utf-8") != "stale"
 
     def test_a_build_with_nowhere_to_publish_says_nothing(self):
-        _visualizer().update(1.0)   # must not raise
+        _visualizer().update(1.0)
 
 
 
 class TestWhatTheLineIsEachTime:
     def test_under_the_broker_the_line_still_goes_out(self):
-        """The whole visualizer used to come down here, leaving the device running
-        itself with no line at all."""
         visualizer = _visualizer()
 
         visualizer.update(1.0, AutoMotion(phase=0.0, bpm=90.0))
@@ -106,9 +93,6 @@ class TestWhatTheLineIsEachTime:
         assert visualizer.drive is not None
 
     def test_its_line_does_not_jump_where_the_beat_starts_round_again(self):
-        """The broker's beat counts 0 to 1 and starts again, while the trace's
-        knots stay put only on a phase counted up without wrapping: taken as it
-        comes, the line jumped sideways at every wrap."""
         wrapping = _visualizer()
         counting = _visualizer()
 
@@ -121,10 +105,6 @@ class TestWhatTheLineIsEachTime:
 
 
 class TestTheSpanTheTraceIsDrawnOver:
-    """Published with the visualizer, because a funscript the Main Funestra draws on this same
-    trace has to be sampled over the same stretch and the Main Funestra has nowhere else to
-    learn it -- two spans would make a handoff look like a jump."""
-
     @pytest.mark.parametrize("beats_per_loop", [2.0, 4.0, 8.0])
     def test_it_is_one_whole_cycle_at_the_slowest_speed(self, beats_per_loop):
         visualizer = _visualizer(beats_per_loop=beats_per_loop)
@@ -136,17 +116,11 @@ class TestTheSpanTheTraceIsDrawnOver:
 
 
 class TestTheTraceHoldsStillAndSlides:
-    """He watched the blue line writhe in every mode: it was re-read from the
-    clock at every publish, and with a few samples to a swing the heights at
-    fixed columns changed every frame.  Every mode is read on knots now."""
-
     def test_the_wave_holds_its_drawing_between_knots(self):
         sender = FakeSender()
         visualizer = _visualizer(tcode_sender=sender)
         visualizer.update(1.0)
         first = visualizer.drive
-        # A twelfth of a knot on: the visualizer spans 12 s over 80 samples, and
-        # at speed 50 the phase moves 0.0126 cycles in 0.05 s.
         sender.motion_phase = 0.0126
 
         visualizer.update(1.05)
