@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
+from typing import NamedTuple
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from shared_ui.icons_pil import paste_icon
 from shared_ui.lettering import fit_text
 from shared_ui.palette import (
     BG_BUTTON,
@@ -77,17 +77,18 @@ from .satellite_hud import (
     WRONG_BTN,
     WRONG_GAP,
     HudCell,
+    HudLayout,
     HudModel,
     HudTargets,
+    NavMapRects,
     NavMapWindow,
+    SectionHeights,
     act_is_filtered,
     action_label_blocks,
     build_click_targets,
     button_row_rects,
     button_row_width,
-    column_anchor_rect,
     device_height,
-    ellipsis_rects,
     expand_button_rect,
     favorite_icon_rect,
     filter_button_rects,
@@ -101,7 +102,6 @@ from .satellite_hud import (
     map_block_width,
     name_line,
     nav_map_row_width,
-    nav_map_window,
     place_rects,
     place_width,
     playing_rect,
@@ -110,6 +110,12 @@ from .satellite_hud import (
     speed_row_width,
     thumbnail_rect,
     wrong_action_rect,
+)
+from .satellite_hud_nav_map import (
+    count_lines,
+    dashed_rect,
+    draw_ellipses,
+    narrowed_to_window,
 )
 
 _PLACEHOLDER = BG_TERTIARY
@@ -129,14 +135,48 @@ class RenderedHud:
 
 
 @dataclass(frozen=True)
-class _DrawnWith:
-    video: str
-    hover_loop: str
-    hover_tip: str
-    hover_pos: tuple[int, int] | None
-    may_grow_on_hover: bool
-    minus_on_the_hud: bool
-    flash: str
+class DrawnWith:
+    video: str = ""
+    hover_loop: str = ""
+    hover_tip: str = ""
+    hover_pos: tuple[int, int] | None = None
+    may_grow_on_hover: bool = True
+    minus_on_the_hud: bool = True
+    flash: str = ""
+
+
+PLAIN = DrawnWith()
+
+
+class NavMapThumbs(NamedTuple):
+    corner: Image.Image | None
+    seeds: list[Image.Image]
+    actions: list[Image.Image]
+
+
+class _NavMap(NamedTuple):
+    counts: tuple[str, ...]
+    thumbs: NavMapThumbs
+    windows: tuple[NavMapWindow | None, NavMapWindow | None]
+
+
+class _Title(NamedTuple):
+    font: ImageFont.FreeTypeFont
+    subtitle: str
+    reserve: int
+
+
+@dataclass(frozen=True)
+class _Sizes:
+    rows: list[list[Button]]
+    widths: list[list[int]]
+    device_rows: list[list[Button]]
+    device_row_widths: list[list[int]]
+    osr2_line: Osr2Line
+    foot_h: int
+    width: int
+    row_h: int
+    layout: HudLayout
 
 
 @dataclass(frozen=True)
@@ -146,19 +186,6 @@ class _DrawnButTheRow:
     bgra: np.ndarray
     row_rect: tuple[int, int, int, int]
     targets: HudTargets
-
-
-def _dashed_rect(draw: ImageDraw.ImageDraw, rect: Rect, color, dash: int = 4) -> None:
-    # Pillow draws only solid lines.
-    x, y, w, h = rect
-    for start in range(x, x + w, dash * 2):
-        end = min(start + dash, x + w)
-        draw.line([(start, y), (end, y)], fill=color)
-        draw.line([(start, y + h - 1), (end, y + h - 1)], fill=color)
-    for start in range(y, y + h, dash * 2):
-        end = min(start + dash, y + h)
-        draw.line([(x, start), (x, end)], fill=color)
-        draw.line([(x + w - 1, start), (x + w - 1, end)], fill=color)
 
 
 class HudRenderer:
@@ -212,38 +239,27 @@ class HudRenderer:
         self,
         model: HudModel,
         *,
-        video: str = "",
         item_row: RowHud | None = None,
         heatmap: np.ndarray | None = None,
-        hover_loop: str = "",
-        hover_tip: str = "",
-        hover_pos: tuple[int, int] | None = None,
-        may_grow_on_hover: bool = True,
-        minus_on_the_hud: bool = True,
-        flash: str = "",
+        drawn_with: DrawnWith = PLAIN,
     ) -> RenderedHud:
-        self._pointer = hover_pos
+        self._pointer = drawn_with.hover_pos
         if model.hud_minimized:
             bgra, buttons = collapsed_hud(
                 model.funestra, model.hud_corner, hover=self._pointer,
-                room_for_the_tooltip=not may_grow_on_hover, flash=flash)
+                room_for_the_tooltip=not drawn_with.may_grow_on_hover, flash=drawn_with.flash)
             return RenderedHud(bgra, HudTargets(click=[], loop=[], filter=[], expand=None,
                                                 buttons=buttons))
         model = replace(model, drive=self._visualizer.resolve(
             model.drive, osr2=model.osr2, control=model.osr2_control, paused=model.paused,
             composed=model.drive_composed))
-        drawn_with = _DrawnWith(video, hover_loop, hover_tip, hover_pos, may_grow_on_hover,
-                                minus_on_the_hud, flash)
         drawn_for = self._all_but_the_row(model, item_row, drawn_with)
         if drawn_for is not None and self._drawn is not None and self._drawn.drawn_for == drawn_for:
             return self._with_the_row(self._drawn, item_row, heatmap)
         return self._drawn_whole(model, drawn_for, item_row, heatmap, drawn_with)
 
-    def _drawn_whole(self, model: HudModel, drawn_for: tuple | None, item_row: RowHud | None,
-                     heatmap: np.ndarray | None, drawn_with: _DrawnWith) -> RenderedHud:
-        counts = self._count_lines(model)
-        model, seed_win, action_win = self._window(model)
-        corner_thumb, seed_thumbs, action_thumbs = self._nav_map_thumbnails(model)
+    def _measure(self, model: HudModel, item_row: RowHud | None,
+                 drawn_with: DrawnWith) -> _Sizes:
         rows = [list(row) for row in model.rows]
         widths = [[self._button_width(button) for button in row] for row in rows]
         device_rows = [list(row) for row in model.osr2_rows]
@@ -272,12 +288,21 @@ class HudRenderer:
                                 if item_row is not None else 0))
         row_h = ROW_H if item_row is not None else 0
         layout = hud_layout(
-            title_h=self._title_height(),
-            bars=len(rows), speed=model.playback_speed is not None, row_h=row_h,
-            device_h=device_height(model.osr2, model.drive, drive_h, len(device_rows)),
-            foot_h=foot_h)
-        height = layout.height
-        hud = Hud(width, height)
+            heights=SectionHeights(
+                self._title_height(), row_h,
+                device_height(model.osr2, model.drive, drive_h, len(device_rows)), foot_h),
+            bars=len(rows), speed=model.playback_speed is not None)
+        return _Sizes(rows, widths, device_rows, device_row_widths, osr2_line, foot_h, width,
+                      row_h, layout)
+
+    def _drawn_whole(self, model: HudModel, drawn_for: tuple | None, item_row: RowHud | None,
+                     heatmap: np.ndarray | None, drawn_with: DrawnWith) -> RenderedHud:
+        counts = count_lines(model)
+        model, seed_win, action_win = narrowed_to_window(model)
+        thumbs = NavMapThumbs(*self._nav_map_thumbnails(model))
+        sizes = self._measure(model, item_row, drawn_with)
+        layout, width, foot_h = sizes.layout, sizes.width, sizes.foot_h
+        hud = Hud(width, layout.height)
         for divider in layout.dividers:
             hud.divide(divider)
         image, draw = hud.image, hud.draw
@@ -290,51 +315,20 @@ class HudRenderer:
             lambda size: text_width(self._title_font(size), model.title)))
         model = replace(model, title=fit_text(title_font, model.title, room))
         favorite = self._draw_title_row(
-            image, draw, PAD, model, width, title_font,
-            name_line(drawn_with.video, model.item_note, room, self._tiny),
-            reserve=0 if model.hud_corner.lower else minus_room)
-        y = layout.bars
+            hud, PAD, model,
+            _Title(title_font, name_line(drawn_with.video, model.item_note, room, self._tiny),
+                   0 if model.hud_corner.lower else minus_room))
         buttons: list[tuple[Rect, Button]] = []
         if drawn_with.minus_on_the_hud:
-            minus = (corner_button_rect(model.hud_corner, hud=(width, height),
-                                        inset=MINUS_INSET),
-                     minimize_button(model.funestra))
-            draw_button(image, draw, *minus, hovered=self._pointer_is_on(minus[0]),
-                        icon_font=self._icon, word_font=self._tiny)
-            buttons.append(minus)
-
-        for row, row_widths in zip(rows, widths, strict=True):
-            placed = button_row_rects(
-                self._block_x(model, width, button_row_width(row, row_widths)),
-                y, row, row_widths)
-            for index, (rect, button) in enumerate(placed):
-                draw_button(image, draw, rect, button, hovered=self._pointer_is_on(rect),
-                            icon_font=self._icon, word_font=self._tiny,
-                            row_label=index == 0)
-            buttons.extend(placed)
-            y += CONTROL_ROW_H
-
+            buttons.append(self._draw_minus(hud, model))
+        buttons.extend(self._draw_button_rows(hud, model, sizes.rows, sizes.widths, layout.bars))
         if model.playback_speed is not None:
-            label_width = text_width(self._tiny, PLAYBACK_SPEED_LABEL) + BUTTON_GROUP_GAP
-            speed_x = self._block_x(model, width, speed_row_width(label_width))
-            speed_buttons, rate_rect = speed_row(model.funestra, speed_x, layout.speed,
-                                                 label_width=label_width)
-            draw.text((speed_x, layout.speed + CTRL_BTN / 2), PLAYBACK_SPEED_LABEL,
-                      font=self._tiny, anchor="lm", fill=(*TEXT_MUTED, 255))
-            for rect, button in speed_buttons:
-                draw_button(image, draw, rect, button, hovered=self._pointer_is_on(rect),
-                            icon_font=self._icon, word_font=self._tiny)
-            rx, ry, rw, rh = rate_rect
-            draw.text((rx + rw / 2, ry + rh / 2), format_rate(model.playback_speed),
-                      font=self._tiny, anchor="mm", fill=(*TEXT_PRIMARY, 255))
-            buttons.extend(speed_buttons)
+            buttons.extend(self._draw_speed_row(hud, model, layout.speed))
 
         row = None
         if item_row is not None:
-            row = row_layout(item_row, rect=(x, layout.row, width - 2 * PAD, row_h))
-        device_buttons, bars = self._draw_device(
-            image, draw, width, layout.device, model, osr2_line, drive_h,
-            rows=device_rows, widths=device_row_widths)
+            row = row_layout(item_row, rect=(x, layout.row, width - 2 * PAD, sizes.row_h))
+        device_buttons, bars = self._draw_device(hud, model, layout.device, sizes)
         buttons.extend(device_buttons)
         foot_rect = None
         if model.foot is not None:
@@ -342,11 +336,12 @@ class HudRenderer:
             buttons.extend(model.foot.paint(image, x, layout.foot, width - 2 * PAD,
                                             self._pointer))
 
-        nav_map_targets = (self._draw_nav_map(image, draw, model, layout.nav_map, width, counts,
-                                      (corner_thumb, seed_thumbs, action_thumbs),
-                                      (seed_win, action_win), drawn_with.hover_loop)
-                       if corner_thumb is not None
-                       else HudTargets(click=[], loop=[], filter=[], expand=None))
+        nav_map_targets = (self._draw_nav_map(
+                               hud, model, layout.nav_map,
+                               _NavMap(counts, thumbs, (seed_win, action_win)),
+                               drawn_with.hover_loop)
+                           if thumbs.corner is not None
+                           else HudTargets(click=[], loop=[], filter=[], expand=None))
         targets = replace(nav_map_targets, tracks=bars, row=row, foot=foot_rect, buttons=buttons,
                           favorite=favorite)
         if drawn_for is not None:
@@ -356,11 +351,50 @@ class HudRenderer:
             self._item_row.draw(image, row, item_row, heatmap=heatmap)
         if drawn_with.hover_tip:
             draw_tooltip(draw, self._tiny, drawn_with.hover_tip, drawn_with.hover_pos,
-                         (width, height))
+                         image.size)
         return RenderedHud(hud.to_bgra(), targets)
 
+    def _draw_minus(self, hud: Hud, model: HudModel) -> tuple[Rect, Button]:
+        minus = (corner_button_rect(model.hud_corner, hud=hud.image.size, inset=MINUS_INSET),
+                 minimize_button(model.funestra))
+        draw_button(hud.image, hud.draw, *minus, hovered=self._pointer_is_on(minus[0]),
+                    icon_font=self._icon, word_font=self._tiny)
+        return minus
+
+    def _draw_button_rows(self, hud: Hud, model: HudModel, rows, widths,
+                          y: int) -> list[tuple[Rect, Button]]:
+        buttons: list[tuple[Rect, Button]] = []
+        for row, row_widths in zip(rows, widths, strict=True):
+            placed = button_row_rects(
+                self._block_x(model, hud.image.width, button_row_width(row, row_widths)),
+                y, row, row_widths)
+            for index, (rect, button) in enumerate(placed):
+                draw_button(hud.image, hud.draw, rect, button,
+                            hovered=self._pointer_is_on(rect),
+                            icon_font=self._icon, word_font=self._tiny,
+                            row_label=index == 0)
+            buttons.extend(placed)
+            y += CONTROL_ROW_H
+        return buttons
+
+    def _draw_speed_row(self, hud: Hud, model: HudModel,
+                        y: int) -> list[tuple[Rect, Button]]:
+        label_width = text_width(self._tiny, PLAYBACK_SPEED_LABEL) + BUTTON_GROUP_GAP
+        speed_x = self._block_x(model, hud.image.width, speed_row_width(label_width))
+        speed_buttons, rate_rect = speed_row(model.funestra, speed_x, y,
+                                             label_width=label_width)
+        hud.draw.text((speed_x, y + CTRL_BTN / 2), PLAYBACK_SPEED_LABEL,
+                      font=self._tiny, anchor="lm", fill=(*TEXT_MUTED, 255))
+        for rect, button in speed_buttons:
+            draw_button(hud.image, hud.draw, rect, button, hovered=self._pointer_is_on(rect),
+                        icon_font=self._icon, word_font=self._tiny)
+        rx, ry, rw, rh = rate_rect
+        hud.draw.text((rx + rw / 2, ry + rh / 2), format_rate(model.playback_speed),
+                      font=self._tiny, anchor="mm", fill=(*TEXT_PRIMARY, 255))
+        return speed_buttons
+
     def _all_but_the_row(self, model: HudModel, item_row: RowHud | None,
-                         drawn_with: _DrawnWith) -> tuple | None:
+                         drawn_with: DrawnWith) -> tuple | None:
         if item_row is None or drawn_with.hover_tip:
             return None
         return model, self._item_row.least_width(item_row), drawn_with
@@ -375,50 +409,45 @@ class HudRenderer:
         return RenderedHud(bgra, replace(drawn.targets,
                                          row=row_layout(item_row, rect=drawn.row_rect)))
 
-    def _draw_nav_map(self, image, draw, model: HudModel, top: int, width: int,
-                  counts: tuple[str, ...], thumbs, windows, hover_loop: str) -> HudTargets:
-        corner_thumb, seed_thumbs, action_thumbs = thumbs
-        seed_win, action_win = windows
-        gutter_x = self._block_x(model, width, map_block_width(model.funestra))
-        self._draw_counts(draw, gutter_x, top, counts)
+    def _draw_nav_map(self, hud: Hud, model: HudModel, top: int, nav: _NavMap,
+                      hover_loop: str) -> HudTargets:
+        image, draw = hud.image, hud.draw
+        gutter_x = self._block_x(model, image.width, map_block_width(model.funestra))
+        self._draw_counts(draw, gutter_x, top, nav.counts)
         nav_map_x = gutter_x + ROW_LABEL_GUTTER + ELLIPSIS_ROOM
         nav_map_y = top + COL_LABEL_H + COL_LABEL_GAP + ELLIPSIS_ROOM
-        corner_rect, seed_rects, action_rects = place_rects(
-            nav_map_x=nav_map_x, nav_map_y=nav_map_y, place_w=place_width(model.funestra),
-            seeds=len(seed_thumbs), actions=len(action_thumbs), playing=model.playing)
-        column_rect = column_anchor_rect(model.playing, corner_rect, seed_rects)
+        rects = place_rects(
+            origin=(nav_map_x, nav_map_y), place_w=place_width(model.funestra),
+            seeds=len(nav.thumbs.seeds), actions=len(nav.thumbs.actions), playing=model.playing)
+        seed_win, action_win = nav.windows
 
-        thumbnails = self._draw_thumbnails(image, model, corner_rect, seed_rects, action_rects,
-                                           corner_thumb, seed_thumbs, action_thumbs)
-        held = playing_rect(model.playing, corner_rect, seed_rects, action_rects)
+        thumbnails = self._draw_thumbnails(image, model, rects, nav.thumbs)
+        held = playing_rect(model.playing, rects.corner, rects.seeds, rects.actions)
         if model.locked and held is not None:
             hx, hy, hw, hh = thumbnails[held]
             draw.rectangle([hx, hy, hx + hw - 1, hy + hh - 1],
                            outline=(*WHITE, 255), width=_BORDER_W)
-        wrong_rect = self._draw_labels(image, draw, model, gutter_x, top,
-                                       corner_rect, seed_rects, action_rects,
+        wrong_rect = self._draw_labels(hud, model, (gutter_x, top), rects,
                                        seed_offset=seed_win.start if seed_win else 0)
-        filter_rects = filter_button_rects(corner_rect, action_rects, gutter_x,
+        filter_rects = filter_button_rects(rects.corner, rects.actions, gutter_x,
                                            model.current_action,
                                            [cell.label for cell in model.actions])
-        self._draw_filter_buttons(image, draw, filter_rects, model)
+        self._draw_filter_buttons(hud, filter_rects, model)
 
         loop_action_rect, loop_seed_rect = loop_button_rects(
-            corner_rect, row_end=nav_map_x + nav_map_row_width(model.funestra),
-            column_end=nav_map_y + NAV_MAP_COLUMN_H, reserve=ELLIPSIS_ROOM, column_rect=column_rect)
+            rects.corner, row_end=nav_map_x + nav_map_row_width(model.funestra),
+            column_end=nav_map_y + NAV_MAP_COLUMN_H, reserve=ELLIPSIS_ROOM,
+            column_rect=rects.column)
         expand_rect = expand_button_rect(loop_seed_rect)
-        self._draw_loop_controls(image, draw, corner_rect, column_rect, loop_action_rect,
-                                 loop_seed_rect, seed_rects, action_rects,
+        self._draw_loop_controls(hud, rects, (loop_action_rect, loop_seed_rect),
                                  model.active_loop, hover_loop)
         for axis, window in (("seed", seed_win), ("action", action_win)):
             if window is not None:
-                self._draw_ellipses(image, corner_rect, column_rect, seed_rects,
-                                    action_rects, axis, window)
+                draw_ellipses(image, rects, axis, window)
         if expand_rect is not None:
-            self._icon_button(image, draw, expand_rect, _EXPAND_ICON)
+            self._icon_button(hud, expand_rect, _EXPAND_ICON)
         return HudTargets(
-            click=build_click_targets(corner_rect, seed_rects, action_rects,
-                                      model.corner, model.seeds, model.actions),
+            click=build_click_targets(rects, model),
             loop=[(button, kind)
                   for kind, button in (("action", loop_action_rect), ("seed", loop_seed_rect))
                   if button is not None],
@@ -427,31 +456,23 @@ class HudRenderer:
             wrong_action=wrong_rect,
         )
 
-    def _draw_device(self, image, draw, width: int, y: int, model: HudModel,
-                     osr2_line: Osr2Line, drive_h: int, *, rows, widths,
-                     ) -> tuple[list[tuple[Rect, Button]], list[DriveTrack]]:
-        buttons: list[tuple[Rect, Button]] = []
+    def _draw_device(self, hud: Hud, model: HudModel, y: int,
+                     sizes: _Sizes) -> tuple[list[tuple[Rect, Button]], list[DriveTrack]]:
+        width = hud.image.width
+        buttons = self._draw_button_rows(hud, model, sizes.device_rows,
+                                         sizes.device_row_widths, y)
+        y += CONTROL_ROW_H * len(sizes.device_rows)
         bars: list[DriveTrack] = []
-        for row, row_widths in zip(rows, widths, strict=True):
-            placed = button_row_rects(
-                self._block_x(model, width, button_row_width(row, row_widths)),
-                y, row, row_widths)
-            for index, (rect, button) in enumerate(placed):
-                draw_button(image, draw, rect, button, hovered=self._pointer_is_on(rect),
-                            icon_font=self._icon, word_font=self._tiny,
-                            row_label=index == 0)
-            buttons.extend(placed)
-            y += CONTROL_ROW_H
         max_intensity_bars: list[DriveTrack] = []
         if model.osr2:
-            osr2_x = self._block_x(model, width, self._osr2.width(osr2_line))
-            buttons.extend(self._osr2.draw(image, draw, (osr2_x, y), osr2_line,
+            osr2_x = self._block_x(model, width, self._osr2.width(sizes.osr2_line))
+            buttons.extend(self._osr2.draw(hud.image, hud.draw, (osr2_x, y), sizes.osr2_line,
                                            hover=self._pointer))
-            max_intensity_bars = self._osr2.bars(osr2_x, y, osr2_line)
+            max_intensity_bars = self._osr2.bars(osr2_x, y, sizes.osr2_line)
             y += OSR2_H + BLOCK_GAP
         if model.drive is not None:
             drive_x = self._block_x(model, width, section_size()[0])
-            self._drive.draw(image, drive_x, y, model.drive)
+            self._drive.draw(hud.image, drive_x, y, model.drive)
             drive_targets, bars = visualizer_targets(drive_x, y, model.drive)
             buttons.extend(drive_targets)
         return buttons, bars + max_intensity_bars
@@ -464,22 +485,21 @@ class HudRenderer:
             self._titles[size] = load_font(size)
         return self._titles[size]
 
-    def _draw_title_row(self, image, draw, y: int, model: HudModel, width: int,
-                         title_font: ImageFont.FreeTypeFont, subtitle: str, *,
-                         reserve: int) -> Rect | None:
+    def _draw_title_row(self, hud: Hud, y: int, model: HudModel, title: _Title) -> Rect | None:
+        image, draw, width = hud.image, hud.draw, hud.image.width
         title_x = self._block_x(model, width,
-                                TITLE_INDENT + text_width(title_font, model.title),
-                                reserve=reserve)
+                                TITLE_INDENT + text_width(title.font, model.title),
+                                reserve=title.reserve)
         draw_active_dot(image, title_x, y + 2, model.active)
         draw.text((title_x + TITLE_INDENT, y + TITLE_BASELINE), model.title,
-                  font=title_font, anchor="ls", fill=(*TEXT_PRIMARY, 255))
-        if not subtitle:
+                  font=title.font, anchor="ls", fill=(*TEXT_PRIMARY, 255))
+        if not title.subtitle:
             return None
         line_y = y + self._name_line_top()
         name_x = self._block_x(model, width,
-                              TITLE_INDENT + text_width(self._tiny, subtitle),
-                              reserve=reserve)
-        draw.text((name_x + TITLE_INDENT, line_y), subtitle,
+                              TITLE_INDENT + text_width(self._tiny, title.subtitle),
+                              reserve=title.reserve)
+        draw.text((name_x + TITLE_INDENT, line_y), title.subtitle,
                   font=self._tiny, anchor="la", fill=(*TEXT_MUTED, 255))
         favorite = favorite_icon_rect(name_x, line_y, sum(self._tiny.getmetrics()))
         draw_icon(image, FAVORITE_ICON, favorite,
@@ -493,62 +513,19 @@ class HudRenderer:
     def _title_height(self) -> int:
         return self._name_line_top() + sum(self._tiny.getmetrics())
 
-    def _window(
-        self, model: HudModel
-    ) -> tuple[HudModel, NavMapWindow | None, NavMapWindow | None]:
-        if model.corner is None:
-            return model, None, None
-        bucket, index = model.playing
-        seed_strip = [model.corner, *model.seeds]
-        action_strip = [model.corner, *model.actions]
-        seed_at = index + 1 if bucket == "seed" else 0
-        action_at = index + 1 if bucket == "action" else 0
-        seed_win = nav_map_window(len(seed_strip), seed_at)
-        action_win = nav_map_window(len(action_strip), action_at)
-        window = action_win if bucket == "action" else seed_win
-        strip = action_strip if bucket == "action" else seed_strip
-        corner = strip[window.start]
-        lit = (action_at if bucket == "action" else seed_at) - window.start
-        narrowed = replace(
-            model,
-            corner=corner,
-            seeds=tuple(seed_strip[seed_win.start + 1:seed_win.start + seed_win.count]),
-            actions=tuple(action_strip[action_win.start + 1:action_win.start + action_win.count]),
-            playing=("corner", 0) if lit <= 0 else (bucket, lit - 1),
-        )
-        if bucket == "action":
-            narrowed = replace(narrowed, current_action=corner.label or model.current_action)
-        return narrowed, seed_win, action_win
-
-    @staticmethod
-    def _count_lines(model: HudModel) -> tuple[str, ...]:
-        if not (model.seed_count or model.action_count):
-            return ()
-        return (f"Seeds: {model.seed_count}", f"Actions: {model.action_count}")
-
     def _draw_counts(self, draw, x: int, y: int, lines: tuple[str, ...]) -> None:
         for line_no, text in enumerate(lines, start=1):
             draw.text((x, y + _COUNT_LINE_H * line_no), text, font=self._tiny,
                       anchor="ls", fill=(*TEXT_MUTED, 255))
 
-    def _draw_ellipses(self, image, corner_rect, column_rect, seed_rects, action_rects,
-                       axis, window) -> None:
-        before, after = ellipsis_rects(corner_rect, seed_rects, action_rects, axis,
-                                       column_rect=column_rect)
-        for rect, show in ((before, window.more_before), (after, window.more_after)):
-            if not show:
-                continue
-            paste_icon(image, "more" if axis == "seed" else "more_vertical", rect,
-                       TEXT_PRIMARY)
-
-    def _draw_thumbnails(self, image, model, corner_rect, seed_rects, action_rects,
-                         corner_thumb, seed_thumbs, action_thumbs) -> dict[Rect, Rect]:
+    def _draw_thumbnails(self, image, model: HudModel, rects: NavMapRects,
+                         thumbs: NavMapThumbs) -> dict[Rect, Rect]:
         bucket, index = model.playing
-        drawn = [(corner_rect, corner_thumb, bucket == "corner")]
+        drawn = [(rects.corner, thumbs.corner, bucket == "corner")]
         drawn += [(place, thumb, bucket == "seed" and index == i)
-                  for i, (place, thumb) in enumerate(zip(seed_rects, seed_thumbs, strict=False))]
+                  for i, (place, thumb) in enumerate(zip(rects.seeds, thumbs.seeds, strict=False))]
         drawn += [(place, thumb, bucket == "action" and index == i)
-                  for i, (place, thumb) in enumerate(zip(action_rects, action_thumbs, strict=False))]
+                  for i, (place, thumb) in enumerate(zip(rects.actions, thumbs.actions, strict=False))]
         thumbnails: dict[Rect, Rect] = {}
         for place, thumb, bright in drawn:
             thumbnails[place] = thumbnail_rect(place, thumb.size)
@@ -559,8 +536,11 @@ class HudRenderer:
             image.alpha_composite(shown, thumbnails[place][:2])
         return thumbnails
 
-    def _draw_labels(self, image, draw, model, x, y, corner_rect, seed_rects,
-                     action_rects, *, seed_offset: int = 0) -> Rect | None:
+    def _draw_labels(self, hud: Hud, model: HudModel, at: tuple[int, int], rects: NavMapRects,
+                     *, seed_offset: int = 0) -> Rect | None:
+        image, draw = hud.image, hud.draw
+        x, y = at
+
         def column(cx: int, cw: int, text: str) -> None:
             strip = Image.new("RGBA", (cw, COL_LABEL_H), (0, 0, 0, 0))
             ImageDraw.Draw(strip).text((cw / 2, COL_LABEL_H / 2), text, font=self._tiny,
@@ -586,17 +566,17 @@ class HudRenderer:
                 ty += ACT_GAP
             return words_end
 
-        cx, cy, cw, ch = corner_rect
+        cx, cy, cw, ch = rects.corner
         column(cx, cw, seed_column_label(seed_offset))
         strike = WRONG_BTN + WRONG_GAP if model.current_action else 0
         words_end = row(cy, ch, model.current_action, extra=strike)
         wrong = (wrong_action_rect(x + ROW_LABEL_GUTTER - NAV_MAP_GAP, words_end)
                  if model.current_action else None)
         if wrong is not None:
-            self._strike_button(image, draw, wrong)
-        for i, (sx, _sy, sw, _sh) in enumerate(seed_rects):
+            self._strike_button(hud, wrong)
+        for i, (sx, _sy, sw, _sh) in enumerate(rects.seeds):
             column(sx, sw, seed_column_label(seed_offset + i + 1))
-        for i, (_ax, ay, _aw, ah) in enumerate(action_rects):
+        for i, (_ax, ay, _aw, ah) in enumerate(rects.actions):
             row(ay, ah, model.actions[i].label if i < len(model.actions) else "")
         return wrong
 
@@ -608,48 +588,43 @@ class HudRenderer:
         return button_ground(draw, rect, on_color if on else BG_BUTTON,
                              hovered=self._pointer_is_on(rect), rest_ink=ink)
 
-    def _icon_button(self, image, draw, rect: Rect, icon: str, *, on: bool = False,
-                      on_color=WHITE, ink=None) -> None:
-        ink = self._button_square(draw, rect, on=on, on_color=on_color, ink=ink)
+    def _icon_button(self, hud: Hud, rect: Rect, icon: str, *, on: bool = False) -> None:
+        ink = self._button_square(hud.draw, rect, on=on, on_color=WHITE)
         if icon.startswith(SHARED_ICON):
-            draw_icon(image, shared_icon_name(icon), rect, ink)
+            draw_icon(hud.image, shared_icon_name(icon), rect, ink)
             return
         bx, by, bw, bh = rect
-        draw_character(draw, (bx + bw / 2, by + bh / 2), icon, self._icon, ink)
+        draw_character(hud.draw, (bx + bw / 2, by + bh / 2), icon, self._icon, ink)
 
-    def _filter_button(self, image, draw, rect: Rect, *, on: bool = False) -> None:
-        draw_icon(image, "filter", rect, self._button_square(draw, rect, on=on))
+    def _filter_button(self, hud: Hud, rect: Rect, *, on: bool = False) -> None:
+        draw_icon(hud.image, "filter", rect, self._button_square(hud.draw, rect, on=on))
 
-    def _strike_button(self, image, draw, rect: Rect) -> None:
-        self._button_square(draw, rect, on=False, ink=RED)
-        draw_icon(image, WRONG_ACTION_ICON, rect, (*RED, 255))
+    def _strike_button(self, hud: Hud, rect: Rect) -> None:
+        self._button_square(hud.draw, rect, on=False, ink=RED)
+        draw_icon(hud.image, WRONG_ACTION_ICON, rect, (*RED, 255))
 
-    def _draw_filter_buttons(self, image, draw, rects: list[tuple[Rect, str]],
+    def _draw_filter_buttons(self, hud: Hud, rects: list[tuple[Rect, str]],
                              model: HudModel) -> None:
         for rect, name in rects:
-            self._filter_button(image, draw, rect, on=label_is_filtered(
+            self._filter_button(hud, rect, on=label_is_filtered(
                 name, model.filter_query, model.camera_words))
 
-    def _draw_loop_controls(self, image, draw, corner_rect, column_rect, loop_action_rect,
-                            loop_seed_rect, seed_rects, action_rects, active_loop,
-                            hover_loop) -> None:
-        rects = {
-            kind: (
-                button,
-                looped_group_rect(corner_rect, seed_rects, action_rects, kind,
-                                  reserve=ELLIPSIS_ROOM, column_rect=column_rect),
-            )
+    def _draw_loop_controls(self, hud: Hud, rects: NavMapRects,
+                            loop_buttons: tuple[Rect | None, Rect | None], active_loop: str,
+                            hover_loop: str) -> None:
+        loop_action_rect, loop_seed_rect = loop_buttons
+        groups = {
+            kind: (button, looped_group_rect(rects, kind, reserve=ELLIPSIS_ROOM))
             for kind, button in (("action", loop_action_rect), ("seed", loop_seed_rect))
         }
-        for kind, (button, group_rect) in rects.items():
+        for kind, (button, group_rect) in groups.items():
             if button is None:
                 continue
             on = active_loop == kind
-            self._icon_button(image, draw, button, _LOOP_ICON, on=on)
+            self._icon_button(hud, button, _LOOP_ICON, on=on)
             if on:
                 gx, gy, gw, gh = group_rect
-                draw.rectangle([gx, gy, gx + gw - 1, gy + gh - 1],
-                               outline=(*WHITE, 255), width=2)
+                hud.draw.rectangle([gx, gy, gx + gw - 1, gy + gh - 1],
+                                   outline=(*WHITE, 255), width=2)
             elif hover_loop == kind:
-                _dashed_rect(draw, group_rect, (*WHITE, 255))
-
+                dashed_rect(hud.draw, group_rect, (*WHITE, 255))

@@ -11,7 +11,7 @@ from shared_ui.app_icon import LETTERS
 from shared_ui.palette import BLUE, BORDER_PANEL, GREEN, TEXT_MUTED, TEXT_PRIMARY, WHITE
 from shared_ui.spacing import BUTTON_GAP
 
-from funestra import satellite_hud_paint
+from funestra import satellite_hud_nav_map, satellite_hud_paint
 from funestra.drive_layout import MAX_INTENSITY, SECTION_W
 from funestra.geometry import Rect
 from funestra.hud import ACTIVE_DOT
@@ -49,6 +49,7 @@ from funestra.satellite_hud import (
     HudCell,
     HudClicks,
     HudModel,
+    NavMapRects,
     PaintedFoot,
     button_tooltip,
     ellipsis_rects,
@@ -56,7 +57,7 @@ from funestra.satellite_hud import (
     nav_map_row_width,
     place_width,
 )
-from funestra.satellite_hud_paint import HudRenderer
+from funestra.satellite_hud_paint import DrawnWith, HudRenderer
 from funestra.volume import VolumeHud
 
 
@@ -304,7 +305,7 @@ def _control_band_top(rendered) -> int:
 def test_the_file_on_screen_is_named_in_muted_gray_under_the_title(thumb):
     renderer = HudRenderer("portrait")
     model = _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))
-    named = renderer.render(model, video="example clip one")
+    named = renderer.render(model, drawn_with=DrawnWith(video="example clip one"))
 
     strip = _rgb(named.bgra)[PAD + TITLE_ROW_H:_dividers(named)[0], TITLE_X:-PAD]
     assert (strip > 80).any(axis=2).sum() > 0
@@ -315,7 +316,7 @@ def test_the_line_the_file_name_takes_is_kept_while_there_is_no_name(thumb):
     renderer = HudRenderer("portrait")
     model = _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))
     bare = renderer.render(model)
-    named = renderer.render(model, video="example clip one")
+    named = renderer.render(model, drawn_with=DrawnWith(video="example clip one"))
 
     assert bare.bgra.shape == named.bgra.shape
     assert _control_band_top(bare) == _control_band_top(named)
@@ -325,10 +326,10 @@ def test_a_file_name_too_wide_for_the_nav_map_widens_the_hud(thumb):
     renderer = HudRenderer("portrait")
     model = _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))
 
-    short = renderer.render(model, video="clip")
+    short = renderer.render(model, drawn_with=DrawnWith(video="clip"))
     long = renderer.render(
-        model, video="a considerably longer example clip name than the map is wide,"
-                     " made longer still so that no map could ever be as wide")
+        model, drawn_with=DrawnWith(video="a considerably longer example clip name than the map is wide,"
+                     " made longer still so that no map could ever be as wide"))
 
     assert long.bgra.shape[1] > short.bgra.shape[1]
     assert long.bgra.shape[0] == short.bgra.shape[0]
@@ -339,11 +340,10 @@ def test_a_note_after_a_name_shortens_the_name_rather_than_widening_the_hud(thum
     corner = HudCell(path="c.mp4", thumb=thumb)
     name = "Example Folder / seed 123456789012345"
 
-    named = renderer.render(_model(title="Unlocked", corner=corner), video=name)
+    named = renderer.render(_model(title="Unlocked", corner=corner), drawn_with=DrawnWith(video=name))
     noted = renderer.render(
         _model(title="Unlocked", corner=corner,
-               item_note="Enhance 1 — 1 of 2 · Enhancing…"),
-        video=name)
+               item_note="Enhance 1 — 1 of 2 · Enhancing…"), drawn_with=DrawnWith(video=name))
 
     assert noted.bgra.shape == named.bgra.shape
 
@@ -430,8 +430,7 @@ def test_the_state_controls_and_favorite_mark_light_up_when_they_apply():
         return HudRenderer("landscape").render(
             _model(funestra="landscape", locked=locked, title="Unlocked",
                    is_favorite=is_favorite,
-                   rows=funestra_rows("landscape", locked=locked, favorites=favorites)),
-            video="example - scene one")
+                   rows=funestra_rows("landscape", locked=locked, favorites=favorites)), drawn_with=DrawnWith(video="example - scene one"))
 
     off = rendered_with()
     on = rendered_with(locked=True, is_favorite=True, favorites=True)
@@ -444,8 +443,7 @@ def test_the_state_controls_and_favorite_mark_light_up_when_they_apply():
 
 def test_the_star_is_centered_under_the_dot():
     rendered = HudRenderer("landscape").render(
-        HudModel(funestra="landscape", title="Unlocked", active=True, is_favorite=True),
-        video="example - scene one")
+        HudModel(funestra="landscape", title="Unlocked", active=True, is_favorite=True), drawn_with=DrawnWith(video="example - scene one"))
     rgb = _rgb(rendered.bgra).astype(int)
     _x, star_top, _w, star_h = rendered.targets.favorite
     left_column = slice(PAD + MINUS_ROOM - 2, MINUS_ROOM + TITLE_X - 2)
@@ -540,7 +538,7 @@ def _loop_model(thumb: str, playing, *, count: int = 12, loop: str = "seed") -> 
 def _tail_ink(rendered) -> int:
     corner_rect = rendered.targets.click[0][0]
     seed_rects = [rect for rect, _p in rendered.targets.click[1:]]
-    _before, after = ellipsis_rects(corner_rect, seed_rects, [], "seed")
+    _before, after = ellipsis_rects(NavMapRects(corner_rect, seed_rects, []), "seed")
     x, y, w, h = after
     return int((_rgb(rendered.bgra)[y + 2:y + h - 2, x + 2:x + w - 2] > 100).sum())
 
@@ -567,7 +565,7 @@ def test_the_more_mark_reads_as_three_dots(thumb):
     rendered = HudRenderer("portrait").render(_loop_model(thumb, ("corner", 0)))
     corner_rect = rendered.targets.click[0][0]
     seed_rects = [rect for rect, _p in rendered.targets.click[1:]]
-    _before, after = ellipsis_rects(corner_rect, seed_rects, [], "seed")
+    _before, after = ellipsis_rects(NavMapRects(corner_rect, seed_rects, []), "seed")
     x, y, w, h = after
     row = (_rgb(rendered.bgra)[y + h // 2, x:x + w] > 100).any(axis=1)
 
@@ -575,21 +573,21 @@ def test_the_more_mark_reads_as_three_dots(thumb):
     assert runs == 3
 
 
-def _marks_drawn(monkeypatch, painter: str) -> list[str]:
+def _marks_drawn(monkeypatch, module, painter: str) -> list[str]:
     drawn: list[str] = []
-    real = getattr(satellite_hud_paint, painter)
+    real = getattr(module, painter)
 
     def spy(image, name, frame, color):
         drawn.append(name)
         real(image, name, frame, color)
 
-    monkeypatch.setattr(satellite_hud_paint, painter, spy)
+    monkeypatch.setattr(module, painter, spy)
     return drawn
 
 
 def test_the_more_marks_are_the_familys_dots_along_the_row_and_down_the_column(
         thumb, monkeypatch):
-    drawn = _marks_drawn(monkeypatch, "paste_icon")
+    drawn = _marks_drawn(monkeypatch, satellite_hud_nav_map, "paste_icon")
 
     HudRenderer("portrait").render(_crowded("portrait", thumb))
 
@@ -597,7 +595,7 @@ def test_the_more_marks_are_the_familys_dots_along_the_row_and_down_the_column(
 
 
 def test_the_filter_button_wears_the_familys_filter(thumb, monkeypatch):
-    drawn = _marks_drawn(monkeypatch, "draw_icon")
+    drawn = _marks_drawn(monkeypatch, satellite_hud_paint, "draw_icon")
 
     HudRenderer("portrait").render(
         _model(corner=HudCell(path="c.mp4", thumb=thumb), current_action="alpha"))
@@ -609,8 +607,8 @@ def test_the_more_mark_does_not_touch_the_loop_rectangle(thumb):
     rendered = HudRenderer("portrait").render(_loop_model(thumb, ("seed", 5)))
     corner_rect = rendered.targets.click[0][0]
     seed_rects = [rect for rect, _p in rendered.targets.click[1:]]
-    rect = looped_group_rect(corner_rect, seed_rects, [], "seed", reserve=ELLIPSIS_ROOM)
-    before, _after = ellipsis_rects(corner_rect, seed_rects, [], "seed")
+    rect = looped_group_rect(NavMapRects(corner_rect, seed_rects, []), "seed", reserve=ELLIPSIS_ROOM)
+    before, _after = ellipsis_rects(NavMapRects(corner_rect, seed_rects, []), "seed")
 
     assert before[0] - rect[0] >= NAV_MAP_GAP
     bx, by, _bw, bh = rect
@@ -863,8 +861,7 @@ def test_hovering_a_button_draws_its_tooltip(thumb):
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb))
 
     plain = renderer.render(model)
-    tipped = renderer.render(model, hover_loop="seed", hover_tip="Loop this seed row",
-                             hover_pos=(40, 40))
+    tipped = renderer.render(model, drawn_with=DrawnWith(hover_loop="seed", hover_tip="Loop this seed row", hover_pos=(40, 40)))
 
     assert not np.array_equal(plain.bgra, tipped.bgra)
 
@@ -874,8 +871,8 @@ def test_a_hud_with_no_clip_yet_still_names_the_button_under_the_pointer():
     model = _model(funestra="landscape", title="Unlocked")
     x, y, _w, _h = _rects(renderer.render(model))["lock"]
 
-    short_tip = renderer.render(model, hover_tip="Lock", hover_pos=(x + 2, y + 2))
-    long_tip = renderer.render(model, hover_tip="Lock this clip", hover_pos=(x + 2, y + 2))
+    short_tip = renderer.render(model, drawn_with=DrawnWith(hover_tip="Lock", hover_pos=(x + 2, y + 2)))
+    long_tip = renderer.render(model, drawn_with=DrawnWith(hover_tip="Lock this clip", hover_pos=(x + 2, y + 2)))
 
     assert not np.array_equal(short_tip.bgra, long_tip.bgra)
 
@@ -886,7 +883,7 @@ def test_a_tooltip_longer_than_the_hud_is_wide_stays_on_the_hud(thumb):
     plain = _rgb(renderer.render(model).bgra)
 
     def tooltip_bounds(text: str) -> tuple[int, int, int]:
-        tipped = _rgb(renderer.render(model, hover_tip=text, hover_pos=(33, 44)).bgra)
+        tipped = _rgb(renderer.render(model, drawn_with=DrawnWith(hover_tip=text, hover_pos=(33, 44))).bgra)
         rows, cols = np.nonzero((tipped != plain).any(axis=2))
         assert len(rows), f"hovering with {text!r} drew nothing"
         return rows.min(), rows.max(), cols.max()
@@ -1344,8 +1341,7 @@ class TestTheBlockASourcePaintsAtTheFoot:
         self._rendered(block)
         assert block.pointer is None
 
-        HudRenderer("portrait").render(_model(title="Unlocked", foot=block),
-                                       hover_tip="Cancel this run", hover_pos=(40, 300))
+        HudRenderer("portrait").render(_model(title="Unlocked", foot=block), drawn_with=DrawnWith(hover_tip="Cancel this run", hover_pos=(40, 300)))
         assert block.pointer == (40, 300)
 
     def test_a_hud_with_no_nav_map_at_all_still_paints_it(self):
@@ -1451,7 +1447,7 @@ def test_the_status_block_moves_to_the_corner_the_hud_sits_in(thumb):
     def rendered(corner):
         return HudRenderer("portrait").render(
             _model(hud_corner=corner, active=True, is_favorite=True, title="Locked",
-                   corner=HudCell(path="c.mp4", thumb=thumb)), video="one.mp4")
+                   corner=HudCell(path="c.mp4", thumb=thumb)), drawn_with=DrawnWith(video="one.mp4"))
 
     left = rendered(HudCorner.UPPER_LEFT)
     right = rendered(HudCorner.UPPER_RIGHT)
@@ -1470,8 +1466,7 @@ def test_the_nav_map_moves_to_the_corner_the_hud_sits_in(thumb):
     def rendered(corner):
         return HudRenderer("portrait").render(
             _model(hud_corner=corner, corner=HudCell(path="c.mp4", thumb=thumb),
-                   seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2),
-            video="a name far longer than the map is wide, by a good margin.mp4")
+                   seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2), drawn_with=DrawnWith(video="a name far longer than the map is wide, by a good margin.mp4"))
 
     left, right = rendered(HudCorner.UPPER_LEFT), rendered(HudCorner.UPPER_RIGHT)
     width = right.bgra.shape[1]
@@ -1485,8 +1480,7 @@ def test_the_speed_row_moves_to_the_corner_the_hud_sits_in(thumb):
     def rendered(corner):
         return HudRenderer("portrait").render(
             _model(hud_corner=corner, playback_speed=1.0,
-                   corner=HudCell(path="c.mp4", thumb=thumb)),
-            video="a name far longer than the map is wide, by a good margin.mp4")
+                   corner=HudCell(path="c.mp4", thumb=thumb)), drawn_with=DrawnWith(video="a name far longer than the map is wide, by a good margin.mp4"))
 
     right = rendered(HudCorner.UPPER_RIGHT)
     width = right.bgra.shape[1]
@@ -1504,8 +1498,7 @@ def test_the_device_block_moves_to_the_corner_the_hud_sits_in(thumb):
         return HudRenderer("portrait").render(
             _model(hud_corner=corner, osr2=Osr2State.ROBOT_HAND,
                    drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND),
-                   corner=HudCell(path="c.mp4", thumb=thumb)),
-            video="a name far longer than the map is wide, by a good margin.mp4")
+                   corner=HudCell(path="c.mp4", thumb=thumb)), drawn_with=DrawnWith(video="a name far longer than the map is wide, by a good margin.mp4"))
 
     right = rendered(HudCorner.UPPER_RIGHT)
     left = rendered(HudCorner.UPPER_LEFT)
@@ -1523,8 +1516,7 @@ def test_the_max_intensity_moves_with_its_line_to_the_corner_the_hud_sits_in(thu
     def rendered(corner):
         return HudRenderer("portrait").render(
             _model(hud_corner=corner, osr2=Osr2State.ROBOT_HAND, osr2_controls=(park,),
-                   max_intensity=35, corner=HudCell(path="c.mp4", thumb=thumb)),
-            video="a name far longer than the map is wide, by a good margin.mp4")
+                   max_intensity=35, corner=HudCell(path="c.mp4", thumb=thumb)), drawn_with=DrawnWith(video="a name far longer than the map is wide, by a good margin.mp4"))
 
     def slider_past_park(hud) -> int:
         (max_intensity,) = [bar for bar in hud.targets.tracks if bar.axis == MAX_INTENSITY]
@@ -1557,7 +1549,7 @@ def _drawn_columns(rendered, rows: range, *, leaving_out: Rect) -> list[int]:
 @pytest.mark.parametrize("corner", [HudCorner.UPPER_LEFT, HudCorner.UPPER_RIGHT])
 def test_the_title_moves_over_for_the_minus_in_the_huds_corner(thumb, corner):
     rendered = HudRenderer("portrait").render(
-        _model(hud_corner=corner, corner=HudCell(path="c.mp4", thumb=thumb)), video="one.mp4")
+        _model(hud_corner=corner, corner=HudCell(path="c.mp4", thumb=thumb)), drawn_with=DrawnWith(video="one.mp4"))
     minus = _button_rect(rendered, "portrait_hud_minimize")
     first_band = min(rect[1] for rect, _button in _declared(rendered))
 
@@ -1578,8 +1570,8 @@ def test_in_a_lower_corner_the_minus_sits_in_room_the_nav_map_leaves_free(thumb,
         seeds=tuple(HudCell(path=f"s{i}.mp4", thumb=thumb) for i in range(cells)),
         actions=tuple(HudCell(path=f"a{i}.mp4", thumb=thumb, label=label)
                       for i, label in zip(range(cells), ("alpha", "beta", "gamma"), strict=False)))
-    with_it = HudRenderer("portrait").render(model, video="one.mp4")
-    without_it = HudRenderer("portrait").render(model, video="one.mp4", minus_on_the_hud=False)
+    with_it = HudRenderer("portrait").render(model, drawn_with=DrawnWith(video="one.mp4"))
+    without_it = HudRenderer("portrait").render(model, drawn_with=DrawnWith(video="one.mp4", minus_on_the_hud=False))
     x, y, w, h = _button_rect(with_it, "portrait_hud_minimize")
 
     rgba = without_it.bgra[:, :, [2, 1, 0, 3]].astype(int)
@@ -1590,8 +1582,7 @@ def test_in_a_lower_corner_the_minus_sits_in_room_the_nav_map_leaves_free(thumb,
 
 def test_the_pointer_on_a_minimized_hud_names_what_the_plus_does(thumb):
     rendered = HudRenderer("portrait").render(
-        _model(hud_minimized=True, corner=HudCell(path="c.mp4", thumb=thumb)),
-        video="one.mp4", hover_tip=RESTORE_TOOLTIP, hover_pos=(CTRL_BTN // 2, CTRL_BTN // 2))
+        _model(hud_minimized=True, corner=HudCell(path="c.mp4", thumb=thumb)), drawn_with=DrawnWith(video="one.mp4", hover_tip=RESTORE_TOOLTIP, hover_pos=(CTRL_BTN // 2, CTRL_BTN // 2)))
     height, width = rendered.bgra.shape[:2]
     (rect, button), = rendered.targets.buttons
 
@@ -1602,8 +1593,7 @@ def test_the_pointer_on_a_minimized_hud_names_what_the_plus_does(thumb):
 
 def test_a_minimized_hud_is_the_restore_button_and_nothing_else(thumb):
     rendered = HudRenderer("portrait").render(
-        _model(hud_minimized=True, corner=HudCell(path="c.mp4", thumb=thumb)),
-        video="one.mp4")
+        _model(hud_minimized=True, corner=HudCell(path="c.mp4", thumb=thumb)), drawn_with=DrawnWith(video="one.mp4"))
     height, width = rendered.bgra.shape[:2]
 
     assert (width, height) == (CTRL_BTN, CTRL_BTN)
@@ -1648,8 +1638,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
         rendered = HudRenderer("portrait").render(
             _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
                    playback_speed=1.0, osr2=Osr2State.ROBOT_HAND, drive=drive, foot=block,
-                   osr2_rows=((Button("robot_hand_toggle_learned", "hi", "Human inspired"),),)),
-            video="example clip one", item_row=RowHud(duration_ms=60_000))
+                   osr2_rows=((Button("robot_hand_toggle_learned", "hi", "Human inspired"),),)), item_row=RowHud(duration_ms=60_000), drawn_with=DrawnWith(video="example clip one"))
         painted = np.argwhere((_rgb(rendered.bgra) == np.array(_Block.MARK)).all(axis=-1))
         _x, row_y, _w, row_h = rendered.targets.row.rect
         sections = [self._status(rendered), self._controls(rendered), (row_y, row_y + row_h),
@@ -1669,18 +1658,18 @@ def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_it
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb),
                    seeds=(HudCell(path="s1.mp4", thumb=thumb),))
     renderer = HudRenderer("portrait")
-    renderer.render(model, video="scene one", item_row=RowHud(position_ms=1_000, duration_ms=10_000))
+    renderer.render(model, item_row=RowHud(position_ms=1_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
     pressed = []
     draw = satellite_hud_paint.draw_button
     monkeypatch.setattr(satellite_hud_paint, "draw_button",
                         lambda *args, **kwargs: pressed.append(1) or draw(*args, **kwargs))
 
-    moved = renderer.render(model, video="scene one",
-                            item_row=RowHud(position_ms=4_000, duration_ms=10_000))
+    moved = renderer.render(model,
+                            item_row=RowHud(position_ms=4_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
 
     drawn_while_moving = len(pressed)
-    whole = HudRenderer("portrait").render(model, video="scene one",
-                                           item_row=RowHud(position_ms=4_000, duration_ms=10_000))
+    whole = HudRenderer("portrait").render(model,
+                                           item_row=RowHud(position_ms=4_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
     assert np.array_equal(moved.bgra, whole.bgra)
     assert (moved.targets, drawn_while_moving) == (whole.targets, 0)
 
@@ -1689,17 +1678,17 @@ def test_a_hud_whose_osr2_visualizer_is_still_draws_only_its_row_again_too(thumb
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb), osr2=Osr2State.ROBOT_HAND,
                    drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND))
     renderer = HudRenderer("portrait")
-    renderer.render(model, video="scene one", item_row=RowHud(position_ms=1_000, duration_ms=10_000))
+    renderer.render(model, item_row=RowHud(position_ms=1_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
     pressed = []
     draw = satellite_hud_paint.draw_button
     monkeypatch.setattr(satellite_hud_paint, "draw_button",
                         lambda *args, **kwargs: pressed.append(1) or draw(*args, **kwargs))
 
-    moved = renderer.render(model, video="scene one",
-                            item_row=RowHud(position_ms=4_000, duration_ms=10_000))
+    moved = renderer.render(model,
+                            item_row=RowHud(position_ms=4_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
 
     drawn_while_moving = len(pressed)
-    whole = HudRenderer("portrait").render(model, video="scene one",
-                                           item_row=RowHud(position_ms=4_000, duration_ms=10_000))
+    whole = HudRenderer("portrait").render(model,
+                                           item_row=RowHud(position_ms=4_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
     assert np.array_equal(moved.bgra, whole.bgra)
     assert (moved.targets, drawn_while_moving) == (whole.targets, 0)

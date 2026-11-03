@@ -30,6 +30,7 @@ from funestra.satellite_hud import (
     HudClicks,
     HudModel,
     HudTargets,
+    NavMapRects,
     PaintedFoot,
     act_is_filtered,
     action_label_blocks,
@@ -223,7 +224,7 @@ def test_pressing_a_two_act_rows_button_filters_to_both_of_its_acts():
 
 
 def test_slot_rects_lays_the_row_and_the_column_out_in_fixed_slots_three_to_a_side():
-    corner, seeds, actions = place_rects(nav_map_x=100, nav_map_y=50, place_w=30, seeds=5, actions=5)
+    corner, seeds, actions, _column = place_rects(origin=(100, 50), place_w=30, seeds=5, actions=5)
 
     assert corner == (100, 50, 30, 54)
     assert seeds == [(100 + 30 + NAV_MAP_GAP, 50, 30, 54), (100 + 2 * (30 + NAV_MAP_GAP), 50, 30, 54)]
@@ -231,14 +232,14 @@ def test_slot_rects_lays_the_row_and_the_column_out_in_fixed_slots_three_to_a_si
 
 
 def test_slot_rects_draws_only_the_slots_an_axis_has_clips_for():
-    _corner, seeds, actions = place_rects(nav_map_x=0, nav_map_y=0, place_w=30, seeds=1, actions=0)
+    _corner, seeds, actions, _column = place_rects(origin=(0, 0), place_w=30, seeds=1, actions=0)
 
     assert len(seeds) == 1
     assert actions == []
 
 
 def test_the_action_column_hangs_under_the_playing_seed():
-    _corner, seeds, actions = place_rects(nav_map_x=100, nav_map_y=50, place_w=30, seeds=2, actions=2,
+    _corner, seeds, actions, _column = place_rects(origin=(100, 50), place_w=30, seeds=2, actions=2,
                                          playing=("seed", 0))
 
     assert [x for x, _y, _w, _h in actions] == [seeds[0][0]] * 2
@@ -246,20 +247,20 @@ def test_the_action_column_hangs_under_the_playing_seed():
 
 def test_the_column_stays_under_the_corner_off_the_seed_row():
     for playing in (("corner", 0), ("action", 0)):
-        _corner, _seeds, actions = place_rects(nav_map_x=100, nav_map_y=50, place_w=30, seeds=1,
+        _corner, _seeds, actions, _column = place_rects(origin=(100, 50), place_w=30, seeds=1,
                                               actions=1, playing=playing)
         assert actions[0][0] == 100
 
 
 def test_a_playing_seed_that_was_not_drawn_leaves_the_column_on_the_corner():
-    _corner, _seeds, actions = place_rects(nav_map_x=100, nav_map_y=50, place_w=30, seeds=1, actions=1,
+    _corner, _seeds, actions, _column = place_rects(origin=(100, 50), place_w=30, seeds=1, actions=1,
                                           playing=("seed", 5))
 
     assert actions[0][0] == 100
 
 
 def test_a_column_under_the_rows_last_seed_ends_where_the_row_does():
-    _corner, seeds, actions = place_rects(nav_map_x=0, nav_map_y=0, place_w=place_width("portrait"),
+    _corner, seeds, actions, _column = place_rects(origin=(0, 0), place_w=place_width("portrait"),
                                          seeds=2, actions=1, playing=("seed", 1))
     ax, _ay, aw, _ah = actions[0]
 
@@ -280,10 +281,11 @@ def test_the_columns_chrome_follows_it_under_the_playing_seed():
         corner, row_end=300, column_end=250, column_rect=column)
     assert loop_action == (40, 250 + NAV_MAP_GAP, 24, LOOP_BTN)
 
-    rect = looped_group_rect(corner, [column], actions, "action", column_rect=column)
+    rects = NavMapRects(corner, [column], actions, column)
+    rect = looped_group_rect(rects, "action")
     assert rect == (40, 10, 24, (42 + 20) - 10)
 
-    before, after = ellipsis_rects(corner, [column], actions, "action", column_rect=column)
+    before, after = ellipsis_rects(rects, "action")
     assert before == (40, 10 - NAV_MAP_GAP - ELLIPSIS, 24, ELLIPSIS)
     assert after == (40, 42 + 20 + NAV_MAP_GAP, 24, ELLIPSIS)
 
@@ -310,8 +312,9 @@ def test_build_and_hit_test_click_targets():
     actions = [(10, 40, 20, 20)]
 
     targets = build_click_targets(
-        corner, seeds, actions,
-        HudCell(path="cur.mp4"), [HudCell(path="s1.mp4")], [HudCell(path="a1.mp4")],
+        NavMapRects(corner, seeds, actions),
+        HudModel(funestra="portrait", corner=HudCell(path="cur.mp4"),
+                 seeds=(HudCell(path="s1.mp4"),), actions=(HudCell(path="a1.mp4"),)),
     )
 
     assert targets == [
@@ -326,7 +329,7 @@ def test_build_and_hit_test_click_targets():
 
 
 def test_build_click_targets_skips_a_missing_corner():
-    assert build_click_targets(None, [], [], None, [], []) == []
+    assert build_click_targets(NavMapRects(None, [], []), HudModel(funestra="portrait")) == []
 
 
 def test_filter_button_rects_puts_one_at_the_head_of_each_row():
@@ -699,3 +702,44 @@ def test_a_hud_published_without_a_corner_is_drawn_in_the_upper_left():
     assert read_back.hud_corner is HudCorner.UPPER_LEFT
     assert read_back.hud_edge is HudEdge.LOWER
     assert read_back.hud_minimized is False
+
+
+def test_a_press_where_a_button_a_loop_and_a_clip_overlap_goes_to_the_button():
+    square = (0, 0, 20, 20)
+    targets = _targets(
+        buttons=_squares(0, 0, (Button("portrait_step", "⏭", "Step"),)),
+        loop=[(square, "action")], click=[(square, "C:/v/pick.mp4")], expand=square,
+        wrong_action=square)
+
+    assert HudClicks("portrait").press(targets, 5, 5, now=0.0) == "portrait_step"
+
+
+def test_a_press_where_a_loop_a_wrong_action_and_a_clip_overlap_goes_to_the_loop():
+    square = (0, 0, 20, 20)
+    targets = _targets(loop=[(square, "seed")], click=[(square, "C:/v/pick.mp4")],
+                       expand=square, wrong_action=square)
+
+    assert HudClicks("portrait").press(targets, 5, 5, now=0.0) == "portrait_seed_loop"
+
+
+def test_a_press_where_an_expand_a_wrong_action_and_a_filter_overlap_goes_to_the_expand():
+    square = (0, 0, 20, 20)
+    targets = _targets(filter=[(square, "Gamma")], expand=square, wrong_action=square)
+
+    assert HudClicks("portrait").press(targets, 5, 5, now=0.0) == "portrait_more_seeds"
+
+
+def test_a_press_where_a_wrong_action_and_a_filter_overlap_goes_to_the_wrong_action():
+    square = (0, 0, 20, 20)
+    targets = _targets(filter=[(square, "Gamma")], wrong_action=square)
+
+    assert HudClicks("portrait").press(targets, 5, 5, now=0.0) == "portrait_wrong_action"
+
+
+def test_a_tooltip_where_a_wrong_action_a_filter_and_an_expand_overlap_is_the_wrong_actions():
+    square = (0, 0, 20, 20)
+    targets = _targets(filter=[(square, "Gamma")], expand=square, wrong_action=square)
+
+    assert button_tooltip(targets, 5, 5) == tooltip_for(
+        "cross", "Wrong action — strike it, and it gets asked about again")
+    assert button_tooltip(_targets(filter=[(square, "Gamma")], expand=square), 5, 5) == "Filter to this action"
