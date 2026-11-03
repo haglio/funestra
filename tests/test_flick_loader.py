@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 from funestra.flick_cache import DecodeRequestState, FlickCacheStore
-from funestra.flick_loader import FlickLoadController
+from funestra.flick_loader import FlickLoadController, FlickLoadParts
 
 
 class JobStarter:
@@ -23,7 +23,7 @@ def _make_loader(*, current_flick_path: Path | None = None):
     logger = MagicMock()
     active_loaded: list[str] = []
 
-    controller = FlickLoadController(
+    controller = FlickLoadController(FlickLoadParts(
         flick_store=flick_store,
         load_state=load_state,
         prefetch_state=prefetch_state,
@@ -32,7 +32,7 @@ def _make_loader(*, current_flick_path: Path | None = None):
         start_thread=starter,
         logger=logger,
         on_active_flick_loaded=lambda: active_loaded.append("ready"),
-    )
+    ))
     return controller, flick_store, load_state, prefetch_state, starter, logger, active_loaded
 
 
@@ -152,3 +152,24 @@ def test_taking_up_a_prefetched_flick_never_trims_out_the_flick_on_screen():
     assert controller.frames_ready(adopted) is True
 
     assert on_screen in flick_store.flick_cache
+
+
+def test_the_old_keywords_build_a_loader_that_reads_the_same_state():
+    flick_store = FlickCacheStore(limit=4)
+    load_state = DecodeRequestState()
+    prefetch_state = DecodeRequestState()
+    controller = FlickLoadController(
+        flick_store=flick_store,
+        load_state=load_state,
+        prefetch_state=prefetch_state,
+        current_flick_path_getter=lambda: None,
+        decode_flick=lambda _path: [],
+        start_thread=JobStarter(),
+        logger=MagicMock(),
+        on_active_flick_loaded=lambda: None,
+    )
+
+    assert controller.flick_store is flick_store
+    assert controller.is_busy is False
+    load_state.begin(Path("demo.mp4"))
+    assert controller.is_busy is True

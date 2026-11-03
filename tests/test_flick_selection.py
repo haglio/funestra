@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from funestra.flick_cache import FlickCacheStore
-from funestra.flick_selection import FlickSelectionController
+from funestra.flick_selection import FlickSelectionController, FlickSelectionParts
 from funestra.flick_sequence import FlickSequenceController
 
 
@@ -58,14 +58,14 @@ def _build_controller(*paths: str, loader_busy: bool = False, condemn_flick=None
     notifier = FakeNotifier()
 
     kwargs = {} if condemn_flick is None else {"condemn_flick": condemn_flick}
-    controller = FlickSelectionController(
+    controller = FlickSelectionController(FlickSelectionParts(
         sequence=sequence,
         flick_store=flick_store,
         loader=loader,
         renderer=renderer,
         notifier=notifier,
         **kwargs,
-    )
+    ))
     return controller, flick_store, loader, renderer, notifier
 
 
@@ -333,3 +333,18 @@ def test_a_flick_put_next_leaves_the_one_on_screen_up_and_is_decoded_ahead():
     assert renderer.current_flick_path == Path("a.mp4")
     assert notifier.flick_notifications == []
     assert loader.prefetch_requests == [Path("new.mp4")]
+
+
+def test_the_old_keywords_build_a_selection_over_the_same_sequence():
+    flick_store = FlickCacheStore(limit=4)
+    sequence = FlickSequenceController([Path("a.mp4"), Path("b.mp4")])
+    controller = FlickSelectionController(
+        sequence=sequence,
+        flick_store=flick_store,
+        loader=FakeLoader(flick_store),
+        renderer=FakeRenderer(),
+        notifier=FakeNotifier(),
+    )
+
+    assert controller.count == 2
+    assert controller.condemn_flick(Path("a.mp4")) is None
