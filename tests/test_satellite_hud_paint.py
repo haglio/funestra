@@ -668,7 +668,8 @@ def test_a_sliding_loop_window_never_shifts_the_nav_map(thumb):
     assert midway.targets.expand == later.targets.expand
     assert at_start.targets.click[0][0] == midway.targets.click[0][0]
     assert at_start.targets.expand == midway.targets.expand
-    seed_buttons = lambda t: [rect for rect, kind in t.loop if kind == "seed"]
+    def seed_buttons(t):
+        return [rect for rect, kind in t.loop if kind == "seed"]
     assert seed_buttons(at_start.targets) == seed_buttons(midway.targets)
 
 
