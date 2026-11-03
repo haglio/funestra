@@ -224,7 +224,7 @@ class TestTheRiseOutOfThePark:
         assert int(sink.sent[2][2:6]) > 3600
 
     def test_the_published_position_follows_the_climb(self):
-        sink, sender = self._sender()
+        _sink, sender = self._sender()
 
         sender.take_over()
         assert sender.current_position() == 0

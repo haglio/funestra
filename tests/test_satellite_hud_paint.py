@@ -613,7 +613,7 @@ def test_the_more_mark_does_not_touch_the_loop_rectangle(thumb):
     before, _after = ellipsis_rects(corner_rect, seed_rects, [], "seed")
 
     assert before[0] - rect[0] >= NAV_MAP_GAP
-    bx, by, bw, bh = rect
+    bx, by, _bw, bh = rect
     assert int((_rgb(rendered.bgra)[by + 2:by + bh - 2, bx + 2:bx + NAV_MAP_GAP] > 100).sum()) == 0
 
 
@@ -854,7 +854,7 @@ def test_a_missing_thumbnail_still_draws_the_nav_map():
     rendered = HudRenderer("portrait").render(_model(corner=HudCell(path="c.mp4")))
 
     assert rendered.targets.click == [(rendered.targets.click[0][0], "c.mp4")]
-    x, y, w, h = rendered.targets.click[0][0]
+    _x, _y, w, h = rendered.targets.click[0][0]
     assert (w, h) == (place_width("portrait"), MAP_THUMB_H)
 
 

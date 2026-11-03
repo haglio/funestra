@@ -713,7 +713,7 @@ def test_a_press_in_a_lower_corner_reaches_the_button_drawn_there(
                       rows=[[{"command": "portrait_next", "glyph": "N",
                               "tooltip": "Next", "width": 18}]])
     (left, top, _bgra), = engine.overlays.values()
-    (bx, by, bw, bh), button = next(
+    (bx, by, bw, bh), _button = next(
         (rect, b) for rect, b in overlay.targets.buttons if b.command == "portrait_next")
 
     assert overlay.press(left + bx + bw // 2, top + by + bh // 2) is True
@@ -983,6 +983,6 @@ class TestTheBlockAtTheFoot:
         assert _commands(tmp_path) == ["portrait_foot_press|30|7", "portrait_foot_release|30|7"]
 
     def test_a_hud_without_a_block_has_nothing_at_its_foot_to_press(self):
-        overlay, posted = _a_windows_own_hud(FakeEngine())
+        overlay, _posted = _a_windows_own_hud(FakeEngine())
 
         assert overlay.targets.foot is None

@@ -265,7 +265,7 @@ class TestVersions:
         assert playback.playlist == [video, tmp_path / "v1.mp4"]
 
     def test_a_step_back_from_the_clips_own_file_wraps_to_the_last_version(self, tmp_path):
-        playback, engine = _make_playback(tmp_path)
+        playback, _engine = _make_playback(tmp_path)
         video = playback.current_video
         other = self._other_version(tmp_path, playback)
 
@@ -510,7 +510,7 @@ class TestTheOsr2:
         assert tcode.resets == before + 1
 
     def test_every_jump_of_the_clock_starts_it_from_wherever_it_is(self, tmp_path):
-        playback, engine, tcode = _driving(tmp_path, entries=3)
+        playback, _engine, tcode = _driving(tmp_path, entries=3)
         jumps = (lambda: playback.step(1), lambda: playback.seek_to(2500),
                  lambda: playback.set_speed(2.0))
         for jump in jumps:
@@ -983,7 +983,7 @@ class TestAFrameInTheImagesPlace:
         assert playback.showing_image is False
 
     def test_a_clip_stepped_to_after_a_frame_is_what_the_engine_says(self, tmp_path):
-        playback, engine = _make_playback(tmp_path, entries=2)
+        playback, _engine = _make_playback(tmp_path, entries=2)
         playback.show_frame(tmp_path / "frame.png")
 
         playback.step(1)

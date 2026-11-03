@@ -108,7 +108,7 @@ def test_set_current_flick_takes_up_frames_decoded_ahead_without_loading():
 
 
 def test_step_switches_immediately_when_cached():
-    controller, flick_store, loader, renderer, notifier = _build_controller("a.mp4", "b.mp4")
+    controller, flick_store, _loader, renderer, notifier = _build_controller("a.mp4", "b.mp4")
     flick_store.flick_cache[Path("b.mp4")] = {"frames": ["f0"]}
 
     controller.step(1)
@@ -134,7 +134,7 @@ def test_step_defers_switch_when_not_cached():
 
 
 def test_adopt_pending_flick_switches_when_loaded():
-    controller, flick_store, loader, renderer, notifier = _build_controller("a.mp4", "b.mp4")
+    controller, flick_store, _loader, renderer, notifier = _build_controller("a.mp4", "b.mp4")
     renderer.current_flick_path = Path("a.mp4")
 
     controller.step(1)
@@ -150,7 +150,7 @@ def test_adopt_pending_flick_switches_when_loaded():
 
 
 def test_a_flick_still_decoding_is_not_adopted():
-    controller, _flick_store, loader, renderer, notifier = _build_controller("a.mp4", "b.mp4")
+    controller, _flick_store, _loader, renderer, _notifier = _build_controller("a.mp4", "b.mp4")
     renderer.current_flick_path = Path("a.mp4")
 
     controller.step(1)
