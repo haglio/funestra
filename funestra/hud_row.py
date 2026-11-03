@@ -14,7 +14,7 @@ from .playhead import (
     time_text_width,
     video_playhead,
 )
-from .scrubber_bar import SCRUBBER_HEIGHT, bar_track_x, progress_bar_bgra
+from .scrubber_bar import SCRUBBER_HEIGHT, TrackMarks, bar_track_x, progress_bar_bgra
 from .volume import (
     PLACE_W,
     VOLUME_CONTROL_H,
@@ -133,9 +133,9 @@ class RowSection:
     def draw(self, image: Image.Image, layout: RowLayout, row: RowHud,
              *, heatmap: np.ndarray | None = None) -> None:
         x, y, width, _height = layout.rect
-        bar = progress_bar_bgra(row.position_ms, row.duration_ms, row.loop_bounds,
-                                width, record_in_ms=row.record_in_ms,
-                                heatmap=fitting(heatmap, layout.track), track=layout.track)
+        marks = TrackMarks(row.position_ms, row.duration_ms, row.loop_bounds, row.record_in_ms)
+        bar = progress_bar_bgra(marks, width, heatmap=fitting(heatmap, layout.track),
+                                track=layout.track)
         image.alpha_composite(_rgba(bar), (x, y))
         if row.volume is not None:
             volume_control = _rgba(self._volume.bgra(row.volume))
