@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from funestra.robot_hand_beat import BeatEngine, advance_beat
+from funestra.robot_hand_beat import Beat, BeatEngine, BeatTuning, advance_beat
 
 
 class TestUpdateEngine:
@@ -11,14 +11,10 @@ class TestUpdateEngine:
 
         returned = advance_beat(
             engine,
+            Beat(robot_hand_active=True, auto_active=False, raw_bpm=120.0,
+                 paused=False, sync_pulse_id=0),
+            BeatTuning(4.0, 0.2, 0.35),
             now=100.05,
-            auto_active=False,
-            raw_bpm=120.0,
-            sync_pulse_id=0,
-            beats_per_loop=4.0,
-            bpm_smoothing=0.2,
-            sync_strength=0.35,
-            paused=False,
         )
 
         assert returned is None, "advance_beat is a command, not a query"
@@ -30,14 +26,10 @@ class TestUpdateEngine:
 
         advance_beat(
             engine,
+            Beat(robot_hand_active=True, auto_active=False, raw_bpm=130.0,
+                 paused=False, sync_pulse_id=0),
+            BeatTuning(4.0, 0.25, 0.35),
             now=100.05,
-            auto_active=False,
-            raw_bpm=130.0,
-            sync_pulse_id=0,
-            beats_per_loop=4.0,
-            bpm_smoothing=0.25,
-            sync_strength=0.35,
-            paused=False,
         )
 
         assert engine.target_bpm == pytest.approx(130.0)
@@ -48,14 +40,10 @@ class TestUpdateEngine:
 
         returned = advance_beat(
             engine,
+            Beat(robot_hand_active=True, auto_active=True, raw_bpm=None,
+                 paused=False, sync_pulse_id=0),
+            BeatTuning(4.0, 0.2, 0.35),
             now=100.05,
-            auto_active=True,
-            raw_bpm=None,
-            sync_pulse_id=0,
-            beats_per_loop=4.0,
-            bpm_smoothing=0.2,
-            sync_strength=0.35,
-            paused=False,
         )
 
         assert returned is None
@@ -66,14 +54,10 @@ class TestUpdateEngine:
 
         returned = advance_beat(
             engine,
+            Beat(robot_hand_active=True, auto_active=True, raw_bpm=None,
+                 paused=True, sync_pulse_id=0),
+            BeatTuning(4.0, 0.2, 0.35),
             now=100.05,
-            auto_active=True,
-            raw_bpm=None,
-            sync_pulse_id=0,
-            beats_per_loop=4.0,
-            bpm_smoothing=0.2,
-            sync_strength=0.35,
-            paused=True,
         )
 
         assert returned is None
@@ -84,14 +68,10 @@ class TestUpdateEngine:
 
         advance_beat(
             engine,
+            Beat(robot_hand_active=True, auto_active=False, raw_bpm=None,
+                 paused=False, sync_pulse_id=2),
+            BeatTuning(4.0, 0.2, 0.5),
             now=100.01,
-            auto_active=False,
-            raw_bpm=None,
-            sync_pulse_id=2,
-            beats_per_loop=4.0,
-            bpm_smoothing=0.2,
-            sync_strength=0.5,
-            paused=False,
         )
 
         assert engine.seen_sync_pulse_id == 2
@@ -102,14 +82,10 @@ class TestUpdateEngine:
 
         advance_beat(
             engine,
+            Beat(robot_hand_active=True, auto_active=False, raw_bpm=None,
+                 paused=False, sync_pulse_id=2),
+            BeatTuning(4.0, 0.2, 0.5),
             now=100.01,
-            auto_active=False,
-            raw_bpm=None,
-            sync_pulse_id=2,
-            beats_per_loop=4.0,
-            bpm_smoothing=0.2,
-            sync_strength=0.5,
-            paused=False,
         )
 
         assert engine.seen_sync_pulse_id == 2
@@ -120,14 +96,10 @@ class TestUpdateEngine:
 
         advance_beat(
             engine,
+            Beat(robot_hand_active=True, auto_active=True, raw_bpm=None,
+                 paused=False, sync_pulse_id=0),
+            BeatTuning(4.0, 0.2, 0.35),
             now=101.0,
-            auto_active=True,
-            raw_bpm=None,
-            sync_pulse_id=0,
-            beats_per_loop=4.0,
-            bpm_smoothing=0.2,
-            sync_strength=0.35,
-            paused=False,
         )
 
         assert engine.phase == pytest.approx(0.05)
