@@ -48,7 +48,7 @@ ROWS = (
      Button("go_other", "Other", "The other mode", width=40),
      Button("park", MINIMIZE_ICON, "Park the window", group_break=True)),
     (Button("", "Playback speed", "", width=ROW_LABEL_W),
-     Button("slower", "−", "Slower", group_break=True),
+     Button("slower", "\u2212", "Slower", group_break=True),
      Button("", "", "", width=VALUE_W, host_value="playback_speed"),
      Button("faster", "+", "Faster"),
      Button("spent", "⏭", "Nothing left to step to", dim=True)),

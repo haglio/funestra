@@ -143,7 +143,7 @@ def _ink_center(size: int, paint) -> tuple[float, float]:
 def test_a_icon_is_centered_on_its_ink_not_on_the_fonts_bounds():
     font = load_font(20, "seguisym.ttf")
 
-    for icon in ("⏮", "\U0001F512", "−", "∿"):
+    for icon in ("⏮", "\U0001F512", "\u2212", "∿"):
         centered = _ink_center(60, lambda d, g=icon: draw_character(
             d, 30, 30, g, font, (255, 255, 255, 255)))
         by_metrics = _ink_center(60, lambda d, g=icon: d.text(

@@ -12,7 +12,7 @@ def clamp_rate(rate: float) -> float:
 
 
 def format_rate(rate: float) -> str:
-    return f"{rate:g}×"
+    return f"{rate:g}\u00d7"
 
 
 def parse_rate(said: str) -> float | None:
