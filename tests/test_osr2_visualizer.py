@@ -41,8 +41,8 @@ PAD = 10
 
 
 def _hud(**overrides) -> DriveHud:
-    base = dict(speed=50, amplitude=80, center=50, shape="sine", position=5000,
-                waveform=tuple(0.5 + 0.4 * np.sin(i / 6) for i in range(80)))
+    base = {"speed": 50, "amplitude": 80, "center": 50, "shape": "sine", "position": 5000,
+                "waveform": tuple(0.5 + 0.4 * np.sin(i / 6) for i in range(80))}
     base.update(overrides)
     return DriveHud(**base)
 

@@ -520,7 +520,7 @@ def test_action_label_blocks_split_a_leading_camera_word_into_its_own_act():
 
 
 def _targets(**overrides) -> HudTargets:
-    base = dict(click=[], loop=[], filter=[], expand=None)
+    base = {"click": [], "loop": [], "filter": [], "expand": None}
     base.update(overrides)
     return HudTargets(**base)
 

@@ -101,7 +101,7 @@ def _sides_and_shapes() -> list[tuple[str, tuple[int, int]]]:
 
 
 def _model(**overrides) -> HudModel:
-    base = dict(funestra="portrait", locked=True, title="Locked")
+    base = {"funestra": "portrait", "locked": True, "title": "Locked"}
     base.update(overrides)
     base.setdefault("rows", funestra_rows(base["funestra"]))
     return HudModel(**base)
@@ -507,10 +507,10 @@ def test_a_running_loops_button_fills_white_and_not_the_locks_green(thumb):
 def test_the_playing_cell_is_brighter_than_the_others(tmp_path: Path):
     bright_thumb = tmp_path / "bright.jpg"
     Image.new("RGB", (40, 60), (240, 240, 240)).save(bright_thumb)
-    cells = dict(
-        corner=HudCell(path="c.mp4", thumb=str(bright_thumb)),
-        seeds=(HudCell(path="s1.mp4", thumb=str(bright_thumb)),),
-    )
+    cells = {
+        "corner": HudCell(path="c.mp4", thumb=str(bright_thumb)),
+        "seeds": (HudCell(path="s1.mp4", thumb=str(bright_thumb)),),
+    }
 
     def corner_and_seed(playing) -> tuple[float, float]:
         rendered = HudRenderer("portrait").render(_model(playing=playing, **cells))
