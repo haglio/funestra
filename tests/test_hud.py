@@ -145,7 +145,7 @@ def test_a_icon_is_centered_on_its_ink_not_on_the_fonts_bounds():
 
     for icon in ("⏮", "\U0001F512", "\u2212", "∿"):
         centered = _ink_center(60, lambda d, g=icon: draw_character(
-            d, 30, 30, g, font, (255, 255, 255, 255)))
+            d, (30, 30), g, font, (255, 255, 255, 255)))
         by_metrics = _ink_center(60, lambda d, g=icon: d.text(
             (30, 30), g, font=font, anchor="mm", fill=(255, 255, 255, 255)))
 
@@ -167,7 +167,7 @@ def test_an_app_mark_fits_inside_the_button_it_is_centered_in():
 
 def test_a_icon_with_no_ink_draws_nothing_rather_than_raising():
     image = Image.new("RGBA", (10, 10), (0, 0, 0, 0))
-    draw_character(ImageDraw.Draw(image), 5, 5, " ", load_font(11), (255, 255, 255, 255))
+    draw_character(ImageDraw.Draw(image), (5, 5), " ", load_font(11), (255, 255, 255, 255))
 
     assert np.asarray(image)[:, :, 3].max() == 0
 

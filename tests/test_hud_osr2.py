@@ -26,7 +26,7 @@ from funestra.osr2_visualizer import DRIVEN_BY_NOTHING, DriveHud, track_command
 def _drawn(line: Osr2Line) -> tuple[Hud, list]:
     section = Osr2Section()
     hud = Hud(section.width(line) + 20, HEIGHT + 20)
-    placed = section.draw(hud.image, hud.draw, 10, 10, line)
+    placed = section.draw(hud.image, hud.draw, (10, 10), line)
     return hud, placed
 
 

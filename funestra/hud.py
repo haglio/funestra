@@ -68,11 +68,12 @@ def ink_center_offset(font: ImageFont.FreeTypeFont, icon: str) -> tuple[float, f
     return _INK_OFFSETS[key]
 
 
-def draw_character(draw: ImageDraw.ImageDraw, cx: float, cy: float, icon: str,
-               font: ImageFont.FreeTypeFont, fill) -> None:
+def draw_character(draw: ImageDraw.ImageDraw, center: tuple[float, float], icon: str,
+                   font: ImageFont.FreeTypeFont, fill) -> None:
     offset = ink_center_offset(font, icon)
     if offset is None:
         return
+    cx, cy = center
     draw.text((cx - offset[0], cy - offset[1]), icon, font=font, fill=fill)
 
 
@@ -238,6 +239,6 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
     elif icon.startswith(SHARED_ICON):
         draw_icon(image, shared_icon_name(icon), rect, ink)
     elif len(icon) == 1 and not icon.isalnum():
-        draw_character(draw, x + w / 2, y + h / 2, icon, icon_font, ink)
+        draw_character(draw, (x + w / 2, y + h / 2), icon, icon_font, ink)
     else:
         draw.text((x + w / 2, y + h / 2), icon, font=word_font, anchor="mm", fill=ink)
