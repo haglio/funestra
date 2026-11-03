@@ -361,7 +361,7 @@ they go once no checkout names them.
 ## 2026-10-12 — the Main Funestra's HUD draws the host's list and bar itself
 
 Only a Funestra draws a HUD, and the Main Funestra's HUD's `host_block` let a host paint
-its own block into it, which FunTimeVR's headset did for its projection list
+its own block into it, which Fun Time VR's headset did for its projection list
 and Angle bar. `host_block` is gone. A Funestra takes `host_controls` instead
 (`host_controls.HostControls`): something that says what its list and bar
 show now (`hud()`, a `HostControlsHud` naming what is chosen, the list in
@@ -395,7 +395,7 @@ to its `least_width`, gives its `height` a section of its own at its foot, under
 the clip's row, has it draw itself there before any tooltip, and says where in
 `host_block_rect`, which the host reads to place a press. A control only one
 host has goes inside that host's one panel this way, rather than on a second
-panel beside it: FunTimeVR's projection list and angle bar are the first.
+panel beside it: Fun Time VR's projection list and angle bar are the first.
 A Funestra takes the same as `host_block`, something that says what it draws
 now (`drawing()`) and takes the presses on it (`press`, `drag_to`, `holding`,
 `release`, each in the panel's own pixels with the rect it landed in); its
@@ -515,7 +515,7 @@ inset=)`; `hud_placement.hud_origin` takes an `inset` and `block_x` a
 is the satellite panel's. `HudOverlay(minus_on_the_panel=False)`,
 `ConsolePainter(minus_on_the_panel=False)` and `HudRenderer.render(...,
 minus_on_the_panel=False)` leave the minus off for a host that hangs it outside
-the panel (FunTimeVR's), and an overlay that does draws nothing while minimized.
+the panel (Fun Time VR's), and an overlay that does draws nothing while minimized.
 
 ## 2026-10-09 — a click in any corner sends the HUD there
 
