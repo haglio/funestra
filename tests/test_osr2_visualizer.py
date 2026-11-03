@@ -402,6 +402,15 @@ class TestPublishing:
 
         assert (read.slide, read.edge) == (0.0, None)
 
+    def test_a_file_from_a_publisher_that_never_said_let_go_reads_as_still_held(self, tmp_path):
+        path = tmp_path / "genau_drive.txt"
+        publish_drive(path, _hud(let_go=0.4))
+        lines = path.read_text(encoding="utf-8").splitlines()
+        kept = [line for line in lines if not line.startswith("let_go=")]
+        path.write_text("\n".join(kept) + "\n", encoding="utf-8")
+
+        assert read_drive(path).let_go is None
+
     def test_who_drives_each_stretch_of_the_line_goes_over_the_wire(self, tmp_path):
         path = tmp_path / "portrait_osr2_visualizer.txt"
         stretches = ((0, DRIVEN_BY_FUNSCRIPT), (40, DRIVEN_BY_ROBOT_HAND))
@@ -536,11 +545,6 @@ class TestDimmedForTheScript:
 
 
 class TestSmoothTrace:
-    """Pillow's line has no antialiasing of its own: drawn at HUD size the
-    wave was a hard-edged pixel staircase, and at low amplitude it scrolled as
-    chunks.  Supersampled and scaled back down, the edges come back as
-    intensity ramps and the motion as quarter-pixel steps."""
-
     def test_the_line_s_edges_ramp_instead_of_stepping(self):
         rgb = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND)).astype(int)[:, :, :3]
         blue_family = {

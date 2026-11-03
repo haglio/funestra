@@ -13,9 +13,11 @@ from funestra.broker_feed import (
     BrokerFeed,
     BrokerSnapshot,
     apply_udp_line,
+    bind_with_retry,
     snapshot,
     udp_reader,
 )
+
 
 class TestBrokerFeed:
     def test_it_holds_only_the_fields_something_reads(self):
@@ -166,17 +168,6 @@ class TestTheSocketLoop:
         assert not t.is_alive()
 
     def test_bind_retries_on_port_conflict(self, caplog):
-        """The port is held when the reader starts, and free by its next attempt.
-
-        The blocker deliberately does NOT set SO_REUSEADDR: Windows lets two
-        sockets share a port when both ask for it -- and the reader asks -- so a
-        blocker that asked was no blocker there at all, the first bind
-        succeeded, and this proved nothing on the one platform the gate runs on.
-
-        The release is driven by the reader's own "bind attempt failed" warning
-        rather than by a nap, so the port is freed once it has actually been
-        turned away, however slow the machine is.
-        """
         state = BrokerFeed()
         port = _free_udp_port()
 
@@ -206,6 +197,21 @@ class TestTheSocketLoop:
             t.join(timeout=2.0)
 
         assert state.auto_active is True
+
+    def test_a_quit_while_the_port_is_still_held_ends_the_wait_without_binding(self):
+        blocker = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        blocker.bind(("127.0.0.1", 0))
+        port = blocker.getsockname()[1]
+        stop = threading.Event()
+        stop.set()
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            bound = bind_with_retry(sock, "127.0.0.1", port, stop, MagicMock(), (30.0, 30.0))
+        finally:
+            sock.close()
+            blocker.close()
+
+        assert bound is False
 
     def test_bind_failure_gives_up_and_says_so_on_the_log(self):
         state = BrokerFeed()

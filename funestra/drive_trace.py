@@ -1,37 +1,4 @@
-"""What the device is about to be asked to do, and by whom — the trace's model.
-
-The line is four things in a row, and nothing else:
-
-    whatever Genau is doing
-    a ramp from where that leaves the device down onto the park
-    whatever the funscript is doing
-    a ramp back up to where Genau's motion begins
-
-Green is the script scripting, blue is Genau driving, gray is a ramp or the
-rest between them — nobody drives through those, the device is being handed
-over.
-
-Every boundary is a time the script fixes: a turn opens QUIET_LEAD_IN_MS before
-its cluster, closes QUIET_LEAD_OUT_MS after it, and the funscript does not
-change while it plays.  The devices walk the same ramps — the Main Funestra's driver parks
-over the handoff ramp when it takes the device, Genau climbs back out of the
-park over the same one — so the trace and the wire share one schedule.
-
-Two disciplines keep the trace still while it slides:
-
-* The motion is only ever asked WHAT HEIGHT, never WHEN.  A live motion asked
-  *when* something happens — its next floor-touch, its own let-go — answers
-  differently every publish, and the trace would move with it.
-* Every read is anchored to something that does not move.  The one number that
-  cannot be recomputed — the height Genau was at when it let go — arrives
-  latched in Genau's own publish (``DriveHud.let_go``), captured at the source
-  before the resting phase destroys it.
-
-Shared by every Funestra that hangs the Main Funestra's HUD over a video — the Main Funestra's window on
-the desktop, FunTimeVR's HUD in the headset — so both draw one line by one
-set of rules, and free of Pillow, so the shape of the trace is testable
-without a window or a font.
-"""
+"""What the device is about to be asked to do, and by whom: the trace's model, free of Pillow."""
 from __future__ import annotations
 
 from dataclasses import replace

@@ -12,7 +12,7 @@ from funestra.learned_motion import (
     enable_learned_motion,
     tick_learned_motion,
 )
-from funestra.robot_hand import RobotHandState, bpm_for_speed
+from funestra.robot_hand import MAX_TICK_SECONDS, RobotHandState, bpm_for_speed
 
 
 def _phrase(duration_ms: int, low: int, high: int, swings: int = 16) -> Phrase:
@@ -103,6 +103,15 @@ class TestPlayingThePhrases:
 
         assert state.clock == 0.0
         assert learned_motion.position(state, hand) == pytest.approx(0.0)
+
+    def test_a_clock_that_stalled_owes_the_motion_one_capped_tick_and_no_more(self):
+        stalled_hand, stalled = _playing(_model(_phrase(500, 20, 80)))
+        steady_hand, steady = _playing(_model(_phrase(500, 20, 80)))
+
+        tick_learned_motion(stalled_hand, stalled, now=160.0)
+        tick_learned_motion(steady_hand, steady, now=100.0 + MAX_TICK_SECONDS)
+
+        assert stalled.clock == pytest.approx(steady.clock)
 
     def test_the_first_phrase_begins_where_the_device_already_is(self):
         hand = RobotHandState(playing=True)

@@ -1,18 +1,4 @@
-"""The OSR2 visualizer itself — the motion being sent, drawn.
-
-Each axis is one object: its controls, its bar and its number together.  Center
-sits down the left — its number, then a −/+ pair beside the dotted line it moves.
-Amplitude sits down the right — a −/+ pair at the ends of its bar, then its
-number.  Speed sits under the trace, out of the way of the other two.
-
-Origenerator floats this over its slideshows: the painter is shared and the
-toolkit is not — a caller with no Pillow surface of its own renders this into
-one (:class:`funestra.hud.Hud`) and blits the result, so a second
-app shows this drawing instead of its own idea of it.
-
-It is a block, not a HUD: it hosts inside whatever slab is showing it rather
-than carrying one of its own, so a Main Funestra's HUD is one HUD and not two stacked.
-"""
+"""The OSR2 visualizer itself: the motion being sent, drawn as a block that hosts inside whatever HUD shows it."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -79,13 +65,7 @@ _ETCH_PITCH = 4
 
 DISABLED_INK = (*BORDER_SUBTLE, 255)
 
-# The trace is drawn this many times larger and scaled back down, which is what
-# smooths it: Pillow's line has no antialiasing of its own, so drawn at HUD
-# size every segment was a hard-edged pixel staircase, and a wave at low
-# amplitude — a few pixel rows tall — scrolled as chunks.  Supersampled, the
-# edges come back as intensity ramps and positions land on quarter-pixels, so
-# the line reads as a curve and slides instead of stepping.  The block is 120×96;
-# sixteen times the pixels is still far under a millisecond a repaint.
+# Pillow's line has no antialiasing of its own, so the trace is drawn this many times larger and scaled back down.
 _SUPERSAMPLE = 4
 
 
@@ -309,9 +289,7 @@ class DriveSection:
             pitch = (w * s - 1) / (len(points) - 1)
 
             def at(index: float, value: float, shift: float) -> tuple[int, int]:
-                # Shifted left by the leftover knot fraction: the values never
-                # change between knots, so this shift is what slides the stable
-                # shape (PIL clips what leaves the block).
+                # PIL clips what the shift pushes out of the block.
                 return (round((index - shift) * pitch),
                         round((1 - value) * (h * s - 1)))
 
