@@ -1,5 +1,4 @@
-# setuptools' default editable install lets the repo root win as a namespace package,
-# so funestra/__init__.py never runs.
+# pip's plain editable install leaves a namespace portion that shadows the sibling package.
 from __future__ import annotations
 
 import subprocess
