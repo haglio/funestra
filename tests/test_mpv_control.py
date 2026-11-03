@@ -1,10 +1,4 @@
-"""The shared mpv control surface: how it trims mpv's playlist.
-
-``_MpvControl`` is the half of the engine that needs no window and no DLL — it
-only drives an mpv handle — so the playlist bookkeeping every Funestra depends on
-is testable against a fake handle here, rather than only through an app's
-integration suite.
-"""
+"""The shared mpv control surface, driven against a fake mpv handle."""
 from __future__ import annotations
 
 import ctypes
@@ -588,6 +582,40 @@ def test_every_engine_keeps_an_image_centered_along_a_side_it_fits_inside():
     options = _shared_options(muted=False, loop_file=False, prefetch=True)
 
     assert options["video_recenter"] == "yes"
+
+
+def test_an_audio_device_that_cannot_open_never_stops_the_video():
+    options = _shared_options(muted=False, loop_file=False, prefetch=False)
+
+    assert options["audio_fallback_to_null"] == "yes"
+
+
+def test_mpv_is_asked_for_warnings_and_worse_only():
+    options = _shared_options(muted=False, loop_file=False, prefetch=False)
+
+    assert options["loglevel"] == "warn"
+
+
+@pytest.mark.parametrize(("level", "logged"), [("fatal", 50), ("error", 40), ("warn", 30)])
+def test_an_mpv_message_reaches_the_log_at_the_matching_level(caplog, level, logged):
+    with caplog.at_level(1, logger=mpv_engine.logger.name):
+        mpv_engine._log_mpv(level, "vo", "made-up trouble  ")
+
+    assert [(r.levelno, r.getMessage()) for r in caplog.records] == [(logged, "mpv vo: made-up trouble")]
+
+
+def test_the_next_entry_is_opened_ahead_only_where_asked_for():
+    ahead = _shared_options(muted=False, loop_file=False, prefetch=True)
+    alone = _shared_options(muted=False, loop_file=False, prefetch=False)
+
+    assert (ahead.get("prefetch_playlist"), "prefetch_playlist" in alone) == ("yes", False)
+
+
+def test_a_looping_engine_repeats_its_file_and_another_walks_on():
+    looping = _shared_options(muted=False, loop_file=True, prefetch=False)
+    walking = _shared_options(muted=False, loop_file=False, prefetch=False)
+
+    assert (looping["loop_file"], walking["loop_file"]) == ("inf", "no")
 
 
 def test_a_zoom_about_the_middle_asks_mpv_for_the_zoom_alone():

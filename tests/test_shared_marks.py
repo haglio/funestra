@@ -1,12 +1,4 @@
-"""The HUD wears the family's icons, not lookalikes of them.
-
-A HUD is painted into the video frame with Pillow and there is no Qt in a Funestra
-process, so for a long time every mark here was whatever a symbol font happened
-to carry, or something hand-drawn on the spot.  The bin on this Main Funestra's HUD had
-nothing to do with the bin on Origenerator's toolbar.  Both sides now render one
-list of geometry out of shared_ui, and these hold the painter to drawing it; the
-marks a source names for its buttons are held to it where they are named.
-"""
+"""The HUD wears the family's icons, not lookalikes of them."""
 from __future__ import annotations
 
 import numpy as np

@@ -1,15 +1,4 @@
-"""The lease that stops an engine's mpv being freed under a live call.
-
-The crash this guards is a real one, reproduced on demand: close an engine from
-one thread while another reads ``time-pos`` and the reader takes an access
-violation inside ``mpv_get_property`` — python-mpv's ``terminate()`` nulls its
-handle before destroying the core, so the read dereferences NULL.  The shutdown
-that let it happen was ``join(timeout=...)`` followed by ``close()``, and a join
-that times out returns anyway.
-
-Everything here is the gate's own logic, which needs no libmpv: what the real
-handles do once it says "free" is the integration suites' job.
-"""
+"""The lease that stops an engine's mpv being freed under a live call."""
 from __future__ import annotations
 
 import threading

@@ -1,20 +1,6 @@
-"""Fetch the libmpv build this family runs against, at the pinned version.
+"""Fetch the pinned libmpv build into the user folder's .haglio/libmpv.
 
-    python tools/fetch_libmpv.py            # fetch it if absent
-    python tools/fetch_libmpv.py --require  # ...and exit non-zero unless it is there
-
-``libmpv-2.dll`` is ~117 MB, is in no package, and is the engine every player in
-the suite stands on.  ``tools/libmpv.lock`` pins which build: the asset's digest
-is verified and a mismatch is refused outright.  Upstream keeps about a month of
-releases, so a pinned tag eventually stops existing; that case is loud, names the
-lock file, and falls back to resolving the newest build.  Standard library only,
-so this runs before anything is installed.
-
-It lands in ``%USERPROFILE%\\.haglio\\libmpv``, the one copy every install finds:
-an app pins a version of funestra, so its venv holds a copy of the package
-beside no ``vendor/`` of its own.  ``funestra.libmpv_loader`` spells the same
-path, and ``tests/test_fetch_libmpv.py`` holds the two together.
-"""
+    python tools/fetch_libmpv.py [--require]"""
 from __future__ import annotations
 
 import argparse
@@ -146,7 +132,7 @@ def fetch() -> Path:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(description="Fetch the libmpv build this family runs against, at the pinned version.")
     parser.add_argument("--require", action="store_true",
                         help="exit non-zero unless the DLL is in place afterwards")
     arguments = parser.parse_args()

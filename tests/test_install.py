@@ -1,25 +1,4 @@
-"""Guard the one way this package can be installed wrong.
-
-Sibling repos sit in a directory that is itself on ``sys.path`` (fun_time's venv
-carries a ``shared_ui.pth`` naming ``projects/``), and this repo's directory is
-called ``funestra`` — the same name as its package. So ``import funestra`` has
-two candidates: the package, and the repo root as an implicit *namespace*
-package.
-
-Setuptools' default editable install resolves the top-level name through a
-meta-path finder that ``PathFinder`` never reaches, so the namespace shadow
-wins: ``funestra/__init__.py`` never executes, and no module under it imports.
-
-``pip install -e ... --config-settings editable_mode=compat`` puts the repo root
-on ``sys.path`` instead, and a real package beats a namespace portion, so the
-shadow cannot form. This test is what makes a wrong reinstall fail loudly rather
-than years later.
-
-The check runs in a subprocess with its working directory outside every repo,
-because a run started *from* a repo root finds the package through the cwd and
-would pass whatever the install did — which is exactly the false green this
-guard exists to avoid.
-"""
+"""An editable install must not let the repo root shadow the package as a namespace package."""
 from __future__ import annotations
 
 import subprocess
