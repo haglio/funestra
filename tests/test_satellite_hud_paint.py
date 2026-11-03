@@ -161,7 +161,7 @@ def test_the_hud_stops_where_its_last_controls_do(funestra, shape, video_thumb):
     height, width = rendered.bgra.shape[:2]
 
     ex, _ey, ew, _eh = rendered.targets.expand
-    loop = dict((kind, rect) for rect, kind in rendered.targets.loop)
+    loop = {kind: rect for rect, kind in rendered.targets.loop}
     _lx, ly, _lw, lh = loop["action"]
     assert ex + ew == width - PAD
     assert ly + lh == height - PAD
@@ -203,7 +203,7 @@ def test_the_column_loop_button_stays_at_the_foot_of_the_nav_map_however_long_th
         HudCell(path="a2.mp4", thumb=thumb, label="gamma"))))
 
     def column_loop(rendered):
-        return dict((kind, rect) for rect, kind in rendered.targets.loop)["action"]
+        return {kind: rect for rect, kind in rendered.targets.loop}["action"]
 
     assert column_loop(one) == column_loop(three)
     assert column_loop(one)[1] + column_loop(one)[3] == one.bgra.shape[0] - PAD
@@ -496,7 +496,7 @@ def test_f_mode_wears_its_own_badge_rather_than_a_typed_letter():
 
 def test_a_running_loops_button_fills_white_and_not_the_locks_green(thumb):
     rendered = HudRenderer("portrait").render(_loop_model(thumb, ("corner", 0)))
-    x, y, w, h = dict((kind, rect) for rect, kind in rendered.targets.loop)["seed"]
+    x, y, w, h = {kind: rect for rect, kind in rendered.targets.loop}["seed"]
     rgb = _rgb(rendered.bgra)[y:y + h, x:x + w].astype(int)
 
     assert (rgb > 240).all(axis=2).any()
@@ -720,7 +720,7 @@ def test_the_filtered_actions_label_is_lit(thumb):
 
 def _filter_button_fill(rendered, action: str) -> int:
     want = (colors.BLUE.red(), colors.BLUE.green(), colors.BLUE.blue())
-    x, y, w, h = dict((name, rect) for rect, name in rendered.targets.filter)[action]
+    x, y, w, h = {name: rect for rect, name in rendered.targets.filter}[action]
     rgb = _rgb(rendered.bgra)[y:y + h, x:x + w].astype(int)
     return int((abs(rgb - want).max(axis=2) <= 2).sum())
 
@@ -819,7 +819,7 @@ def test_the_filter_button_carries_a_funnel_and_not_an_empty_square(thumb):
     rendered = HudRenderer("portrait").render(
         _model(corner=HudCell(path="c.mp4", thumb=thumb), current_action="alpha"))
 
-    x, y, w, h = dict((name, rect) for rect, name in rendered.targets.filter)["alpha"]
+    x, y, w, h = {name: rect for rect, name in rendered.targets.filter}["alpha"]
     inside = _rgb(rendered.bgra)[y + 3:y + h - 3, x + 3:x + w - 3]
     assert (inside > 80).all(axis=2).sum() > 0
 
@@ -830,7 +830,7 @@ def test_a_long_action_name_is_never_drawn_over_its_filter_button(thumb):
     def button_pixels(action: str) -> np.ndarray:
         rendered = renderer.render(
             _model(corner=HudCell(path="c.mp4", thumb=thumb), current_action=action))
-        x, y, w, h = dict((name, rect) for rect, name in rendered.targets.filter)[action]
+        x, y, w, h = {name: rect for rect, name in rendered.targets.filter}[action]
         return _rgb(rendered.bgra)[y:y + h, x:x + w]
 
     assert np.array_equal(button_pixels("motion"), button_pixels("iota"))
