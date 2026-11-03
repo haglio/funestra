@@ -8,11 +8,10 @@ ignore = ["E501", "BLE001", "S110",
     "PLR0913",  # 62
     "PLR0917",  # 23
     "RUF059",  # 23
-    "RUF002",  # 6
+    "RUF002",  # 2
     "RUF001",  # 7
     "C402",  # 11
     "C408",  # 7
-    "RUF003",  # 1
     "PLR0911",  # 2
     "SIM105",  # 3
     "PT006",  # 5
@@ -20,7 +19,7 @@ ignore = ["E501", "BLE001", "S110",
     "RUF046",  # 2
     "E731",  # 1
 ]
-external = ["ARG", "N", "S", "E501", "BLE001", "S110", "PLR0913", "PLR0917", "RUF059", "RUF002", "RUF001", "C402", "C408", "RUF003", "PLR0911", "SIM105", "PT006", "PLR0915", "RUF046", "E731"]
+external = ["ARG", "N", "S", "E501", "BLE001", "S110", "PLR0913", "PLR0917", "RUF059", "RUF002", "RUF001", "C402", "C408", "PLR0911", "SIM105", "PT006", "PLR0915", "RUF046", "E731"]
 
 [lint.per-file-ignores]
 "**/vulture_whitelist.py" = ["B018", "F821"]
