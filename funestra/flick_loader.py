@@ -2,29 +2,26 @@ from __future__ import annotations
 
 import time
 from pathlib import Path
+from typing import Any, NamedTuple
+
+
+class FlickLoadParts(NamedTuple):
+    flick_store: Any
+    load_state: Any
+    prefetch_state: Any
+    current_flick_path_getter: Any
+    decode_flick: Any
+    start_thread: Any
+    logger: Any
+    on_active_flick_loaded: Any
 
 
 class FlickLoadController:
-    def __init__(
-        self,
-        *,
-        flick_store,
-        load_state,
-        prefetch_state,
-        current_flick_path_getter,
-        decode_flick,
-        start_thread,
-        logger,
-        on_active_flick_loaded,
-    ):
-        self.flick_store = flick_store
-        self.load_state = load_state
-        self.prefetch_state = prefetch_state
-        self.current_flick_path_getter = current_flick_path_getter
-        self.decode_flick = decode_flick
-        self.start_thread = start_thread
-        self.logger = logger
-        self.on_active_flick_loaded = on_active_flick_loaded
+    def __init__(self, parts: FlickLoadParts | None = None, **old):
+        parts = FlickLoadParts(**old) if parts is None else parts
+        (self.flick_store, self.load_state, self.prefetch_state,
+         self.current_flick_path_getter, self.decode_flick, self.start_thread,
+         self.logger, self.on_active_flick_loaded) = parts
 
     @property
     def is_busy(self) -> bool:

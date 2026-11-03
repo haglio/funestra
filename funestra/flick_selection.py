@@ -1,25 +1,23 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any, NamedTuple
+
+
+class FlickSelectionParts(NamedTuple):
+    sequence: Any
+    flick_store: Any
+    loader: Any
+    renderer: Any
+    notifier: Any
+    condemn_flick: Any = lambda _path: None
 
 
 class FlickSelectionController:
-    def __init__(
-        self,
-        *,
-        sequence,
-        flick_store,
-        loader,
-        renderer,
-        notifier,
-        condemn_flick=lambda _path: None,
-    ):
-        self.sequence = sequence
-        self.flick_store = flick_store
-        self.loader = loader
-        self.renderer = renderer
-        self.notifier = notifier
-        self.condemn_flick = condemn_flick
+    def __init__(self, parts: FlickSelectionParts | None = None, **old):
+        parts = FlickSelectionParts(**old) if parts is None else parts
+        (self.sequence, self.flick_store, self.loader, self.renderer, self.notifier,
+         self.condemn_flick) = parts
         self._pending_path: Path | None = None
 
     @property

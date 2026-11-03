@@ -3,9 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from funestra.flick_cache import DecodeRequestState, FlickCacheStore
-from funestra.flick_loader import FlickLoadController
+from funestra.flick_loader import FlickLoadController, FlickLoadParts
 from funestra.flick_renderer import FlickRenderController
-from funestra.flick_selection import FlickSelectionController
+from funestra.flick_selection import FlickSelectionController, FlickSelectionParts
 from funestra.flick_sequence import FlickSequenceController
 
 CACHE_LIMIT = 2
@@ -29,7 +29,7 @@ class Pipeline:
             flick_store=self.flick_store, blit_frame=self.blits.append,
         )
         self.notifier = FakeNotifier()
-        self.loader = FlickLoadController(
+        self.loader = FlickLoadController(FlickLoadParts(
             flick_store=self.flick_store,
             load_state=DecodeRequestState(),
             prefetch_state=DecodeRequestState(),
@@ -38,14 +38,14 @@ class Pipeline:
             start_thread=self._start_decode,
             logger=logger if logger is not None else _SilentLog(),
             on_active_flick_loaded=self.renderer.prepare_active_flick_for_current_size,
-        )
-        self.selection = FlickSelectionController(
+        ))
+        self.selection = FlickSelectionController(FlickSelectionParts(
             sequence=FlickSequenceController([Path(name) for name in names]),
             flick_store=self.flick_store,
             loader=self.loader,
             renderer=self.renderer,
             notifier=self.notifier,
-        )
+        ))
 
     def _decode(self, path: Path) -> list[str]:
         self.decodes.append(path.name)
