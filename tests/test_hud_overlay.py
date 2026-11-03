@@ -396,7 +396,7 @@ def test_a_loop_button_click_posts_at_once(tmp_path: Path, hud: Path):
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
     overlay.tick()
-    rect = dict((kind, r) for r, kind in overlay.targets.loop)["seed"]
+    rect = {kind: r for r, kind in overlay.targets.loop}["seed"]
 
     overlay.press(rect[0] + MARGIN + 2, rect[1] + MARGIN + 2)
 
@@ -467,7 +467,7 @@ def test_hovering_a_button_redraws_with_its_tooltip(tmp_path: Path, hud: Path):
     overlay = _overlay(tmp_path, hud, engine)
     overlay.tick()
     plain = engine.overlays[overlay.overlay_id][2]
-    rect = dict((kind, r) for r, kind in overlay.targets.loop)["action"]
+    rect = {kind: r for r, kind in overlay.targets.loop}["action"]
 
     overlay.motion(rect[0] + MARGIN + 2, rect[1] + MARGIN + 2)
 
@@ -486,7 +486,7 @@ def test_pressing_the_lit_filter_button_lifts_the_filter(tmp_path: Path, hud: Pa
     overlay = _overlay(tmp_path, hud, engine)
     overlay.tick()
 
-    rect = dict((name, r) for r, name in overlay.targets.filter)["alpha"]
+    rect = {name: r for r, name in overlay.targets.filter}["alpha"]
     overlay.press(rect[0] + MARGIN + 2, rect[1] + MARGIN + 2)
 
     assert _commands(tmp_path) == ["portrait_no_filter"]
@@ -497,7 +497,7 @@ def test_pressing_an_unlit_filter_button_filters_to_its_act(tmp_path: Path, hud:
     overlay = _overlay(tmp_path, hud, engine)
     overlay.tick()
 
-    rect = dict((name, r) for r, name in overlay.targets.filter)["gamma"]
+    rect = {name: r for r, name in overlay.targets.filter}["gamma"]
     overlay.press(rect[0] + MARGIN + 2, rect[1] + MARGIN + 2)
 
     assert _commands(tmp_path) == ["filter_portrait_gamma"]
@@ -507,7 +507,7 @@ def test_the_published_loop_state_wins_over_the_optimistic_one(tmp_path: Path, h
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
     overlay.tick()
-    rect = dict((kind, r) for r, kind in overlay.targets.loop)["seed"]
+    rect = {kind: r for r, kind in overlay.targets.loop}["seed"]
     overlay.press(rect[0] + MARGIN + 2, rect[1] + MARGIN + 2)
     assert overlay.active_loop == "seed"
 
