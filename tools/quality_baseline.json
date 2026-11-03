@@ -14,8 +14,8 @@
     "funestra/mpv_gate.py": 1,
     "funestra/osr2_visualizer.py": 2,
     "funestra/render_engine.py": 6,
-    "funestra/satellite_hud.py": 1,
-    "funestra/satellite_hud_paint.py": 1,
+    "funestra/satellite_hud_clicks.py": 1,
+    "funestra/satellite_hud_nav_map.py": 1,
     "tests/test_install.py": 1,
     "tests/test_ken_burns.py": 2,
     "tests/test_lost_gpu.py": 1,
@@ -27,7 +27,7 @@
   },
   "library_patches": {},
   "methods": {
-    "funestra/funestra.py::Funestra": 43,
+    "funestra/funestra.py::Funestra": 42,
     "funestra/mpv_engine.py::_MpvControl": 50,
     "funestra/playback.py::Playback": 66,
     "funestra/testing.py::FakeEngine": 31
@@ -85,7 +85,7 @@
     "funestra/flick_overlay.py": 10,
     "funestra/flick_renderer.py": 6,
     "funestra/flick_selection.py": 26,
-    "funestra/funestra.py": 104,
+    "funestra/funestra.py": 103,
     "funestra/funscript_jumps.py": 15,
     "funestra/genau_notifier.py": 2,
     "funestra/genau_refresh.py": 68,
@@ -110,7 +110,6 @@
     "funestra/radio.py": 2,
     "funestra/render_engine.py": 12,
     "funestra/robot_hand_driver.py": 13,
-    "funestra/satellite_hud.py": 4,
     "funestra/satellite_hud_paint.py": 16,
     "funestra/scripted_device.py": 6,
     "funestra/scrubber.py": 3,
@@ -128,11 +127,11 @@
     "tests/test_render_engine.py": 5
   },
   "statements": {
-    "funestra/funestra.py": 354,
+    "funestra/funestra.py": 351,
     "funestra/mpv_engine.py": 340,
     "funestra/playback.py": 328,
-    "funestra/satellite_hud.py": 422,
-    "funestra/satellite_hud_paint.py": 361
+    "funestra/satellite_hud.py": 353,
+    "funestra/satellite_hud_paint.py": 355
   },
   "trailing_comments": {},
   "uncovered_lines": {
@@ -170,8 +169,8 @@
     "funestra/playlist.py": 4,
     "funestra/render_engine.py": 4,
     "funestra/robot_hand_driver.py": 1,
-    "funestra/satellite_hud.py": 2,
-    "funestra/satellite_hud_paint.py": 7,
+    "funestra/satellite_hud.py": 1,
+    "funestra/satellite_hud_paint.py": 6,
     "funestra/scrubber_bar.py": 1,
     "funestra/tcode.py": 1,
     "funestra/tcode_driver.py": 2,
