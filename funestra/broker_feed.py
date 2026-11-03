@@ -55,24 +55,23 @@ def apply_udp_line(feed: BrokerFeed, line: str, logger: logging.Logger) -> None:
 
 def bind_with_retry(
     sock: socket.socket,
-    host: str,
-    port: int,
+    address: tuple[str, int],
     stop_event: threading.Event,
     logger: logging.Logger,
     retry_delays: tuple[float, ...] = _BIND_RETRY_DELAYS,
 ) -> bool:
     for attempt, delay in enumerate(retry_delays, 1):
         try:
-            sock.bind((host, port))
+            sock.bind(address)
             return True
         except OSError as exc:
             logger.warning(
                 "UDP bind attempt %d failed on %s:%s: %s — retrying in %.1fs",
-                attempt, host, port, exc, delay,
+                attempt, *address, exc, delay,
             )
             if stop_event.wait(delay):
                 return False
-    sock.bind((host, port))
+    sock.bind(address)
     return True
 
 
@@ -82,7 +81,7 @@ def udp_reader(host: str, port: int, feed: BrokerFeed, stop_event: threading.Eve
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        if not bind_with_retry(sock, host, port, stop_event, logger, retry_delays):
+        if not bind_with_retry(sock, (host, port), stop_event, logger, retry_delays):
             return
 
         sock.settimeout(_READ_TIMEOUT_S)
