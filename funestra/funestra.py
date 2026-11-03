@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 import threading
-import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from functools import partial
@@ -17,9 +16,9 @@ from .drive_gate import DriveGate
 from .file_channel import consume_command_file, read_paused_state
 from .flick_overlay import FlickFrame, FlickOverlay
 from .funestra_controls import VERBS, FunestraControls
+from .funestra_setup import FunestraSetup
 from .funestra_status import status_fields, volume_fields
 from .funscript_jumps import FunscriptJumps
-from .host_controls import HostControls
 from .hud_corners import HudCorners
 from .hud_minimize import NameFlash
 from .hud_overlay import DrawnOn, DriveFeed, HudOverlay, PublishedHud, WindowsOwnHud
@@ -33,11 +32,12 @@ from .osr2_visualizer import DrivePublisher
 from .outside_buttons import OutsideButtons
 from .play_points import PlayPoints
 from .playback import Playback, funscripts_of, points_of_interest_of
+from .playback_setup import PlaybackSetup
 from .playhead import framed_playhead, time_playhead, video_playhead
 from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
-from .radio import Radio, RadioFile, Tuner, radio_file_for
+from .radio import Radio, RadioFile, radio_file_for
 from .satellite_hud import HudModel
 from .scrubber import Heatmap, LoopThumbCapture, MarkFollow, ThumbRow, loop_thumbnail_xys
 from .session_quit import quit_gesture
@@ -128,10 +128,6 @@ NOBODY = ""
 Users = Mapping[str, Callable[[Playback], User]]
 
 
-def _nothing_of_its_own(_command: str) -> bool:
-    return False
-
-
 def osr2_line(channels: Channels) -> FunscriptTCodeDriver | None:
     if channels.osr2_sender:
         return FunscriptTCodeDriver(Osr2Sender(channels.osr2_sender, port=channels.osr2_port))
@@ -144,28 +140,10 @@ class Funestra:
     IN_FRAME_OVERLAY_ID = 8
     OUT_FRAME_OVERLAY_ID = 9
 
-    def __init__(
-        self,
-        engine,
-        *,
-        channels: Channels,
-        playlist: list[PlaylistItem],
-        tcode=None,
-        audible: bool = True,
-        tiles: bool = False,
-        locked: bool = False,
-        sound_is_the_rooms: bool = False,
-        users: Users | None = None,
-        hud: Callable[[], HudModel | None] | None = None,
-        muted: bool = True,
-        hud_surface: HudSurface | None = None,
-        users_frames: UsersFrames | None = None,
-        window_verbs: Callable[[str], bool] = _nothing_of_its_own,
-        host_controls: HostControls | None = None,
-        radio: Tuner | None = None,
-        on_volume_moved: Callable[[VolumeHud], None] | None = None,
-        clock: Callable[[], float] = time.monotonic,
-    ) -> None:
+    def __init__(self, engine, setup: FunestraSetup | None = None, **old) -> None:
+        (channels, playlist, tcode, audible, tiles, locked, sound_is_the_rooms, users, hud,
+         muted, hud_surface, users_frames, window_verbs, host_controls, radio,
+         on_volume_moved, clock) = FunestraSetup.of(setup, old)
         self._engine = engine
         self._clock = clock
         self._volume_moved = on_volume_moved
@@ -178,11 +156,11 @@ class Funestra:
         start_paused = (channels.paused is not None
                         and read_paused_state(channels.paused, logger=logger))
         self._playback = Playback(
-            [item.path for item in playlist], engine=engine, start_paused=start_paused,
-            locked=locked, play_points=PlayPoints(channels.play_points),
-            funscripts=funscripts_of(playlist), points_of_interest=points_of_interest_of(playlist),
-            tcode=tcode,
-        )
+            [item.path for item in playlist], engine=engine, setup=PlaybackSetup(
+                start_paused=start_paused, locked=locked,
+                play_points=PlayPoints(channels.play_points),
+                funscripts=funscripts_of(playlist),
+                points_of_interest=points_of_interest_of(playlist), tcode=tcode))
         self._follower = (None if channels.playlist is None
                           else PlaylistFollower(channels.playlist, take=self.take_the_list))
         self._users: dict[str, User] = (
@@ -294,17 +272,11 @@ class Funestra:
             frame.seek_loop(turn)
 
     @classmethod
-    def on_window(cls, wid: int, *, channels: Channels, playlist: list[PlaylistItem],
-                  audible: bool = True, tiles: bool = False, locked: bool = False,
-                  sound_is_the_rooms: bool = False, users: Users | None = None,
-                  hud: Callable[[], HudModel | None] | None = None,
-                  muted: bool = True) -> Funestra:
+    def on_window(cls, wid: int, setup: FunestraSetup | None = None, **old) -> Funestra:
+        setup = FunestraSetup.of(setup, old)
         return cls(
-            MpvEngine(wid, muted=muted, loop_file=False, prefetch=True, audio=audible),
-            channels=channels, playlist=playlist, tcode=osr2_line(channels),
-            audible=audible, tiles=tiles, locked=locked, sound_is_the_rooms=sound_is_the_rooms,
-            users=users, hud=hud, muted=muted,
-        )
+            MpvEngine(wid, muted=setup.muted, loop_file=False, prefetch=True, audio=setup.audible),
+            setup._replace(tcode=osr2_line(setup.channels)))
 
     def _where_the_hud_asks(self, channels: Channels) -> Callable[[str], None]:
         if channels.dashboard_cmd is not None:

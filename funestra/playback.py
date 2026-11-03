@@ -10,6 +10,7 @@ from .funscript import Funscript
 from .funscript import load as load_funscript
 from .play_points import PlayPoints
 from .playback_rate import clamp_rate
+from .playback_setup import PlaybackSetup
 from .playlist import PlaylistItem
 from .scripted_device import REWIND_MS, ScriptedDevice
 from .seeking import OwedSeek, seek_if_taken
@@ -36,37 +37,33 @@ class Playback:
         playlist: list[Path],
         *,
         engine,
-        start_paused: bool = False,
-        locked: bool = False,
-        play_points: PlayPoints | None = None,
-        funscripts: Mapping[Path, Path] | None = None,
-        points_of_interest: Mapping[Path, tuple] | None = None,
-        tcode=None,
+        setup: PlaybackSetup | None = None,
+        **old,
     ) -> None:
+        setup = PlaybackSetup(**old) if setup is None else setup
         if not playlist:
             raise ValueError("playlist must not be empty")
-        self._device = ScriptedDevice(tcode, enabled=False)
+        self._device = ScriptedDevice(setup.tcode, enabled=False)
         self._last_pos_ms = 0.0
-        self._playlist = list(playlist)
-        self._funscripts = dict(funscripts or {})
-        self._points_of_interest = dict(points_of_interest or {})
+        self._engine, self._playlist = engine, list(playlist)
+        self._funscripts = dict(setup.funscripts or {})
+        self._points_of_interest = dict(setup.points_of_interest or {})
         self._points_told: tuple = ()
         self._loaded_funscript: tuple[Path | None, Funscript | None] = (None, None)
-        self._engine = engine
-        self._paused = start_paused
-        self._locked = locked
+        self._paused = setup.start_paused
+        self._locked = setup.locked
         self._held_by_the_pace = False
         self._speed = 1.0
         self._index = 0
         self._loads = 0
-        self._play_points = play_points or PlayPoints(None)
+        self._play_points = setup.play_points or PlayPoints(None)
         self._owed_seek = OwedSeek()
         self._versions: dict[Path, Path] = {}
         self._switching_versions = False
         self._mark: int | None = None
         self._ab_loop: tuple[int, int] | None = None
         self._held_at: float | None = None
-        if locked:
+        if setup.locked:
             engine.set_loop_file(True)
         self.load(0)
 

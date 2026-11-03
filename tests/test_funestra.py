@@ -18,6 +18,7 @@ from main_hud_rows import main_hud_rows
 
 from funestra.flick_overlay import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, FlickFrame
 from funestra.funestra import Channels, Funestra, User, _Nobody, osr2_line
+from funestra.funestra_setup import FunestraSetup
 from funestra.hud_button import Button
 from funestra.hud_corners import CORNER_PLUS_OVERLAY_ID
 from funestra.hud_minimize import BUTTON, FLASH_S, collapsed_hud
@@ -91,8 +92,12 @@ def _funestra(tmp_path: Path, lines: list[str], *, audible: bool = True, tiles: 
               **channel_choices) -> tuple[Funestra, FakeEngine]:
     channels = _channels(tmp_path, lines, **channel_choices)
     engine = FakeEngine()
-    return Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                    audible=audible, tiles=tiles), engine
+    return Funestra(engine,
+        FunestraSetup(
+            channels=channels,
+            playlist=read_playlist(channels.playlist),
+            audible=audible,
+            tiles=tiles)), engine
 
 
 def _status(tmp_path: Path) -> str:
@@ -497,7 +502,10 @@ def test_a_paused_flag_already_up_opens_the_engine_paused(tmp_path):
     channels = _channels(tmp_path, [str(videos[0])])
     channels.paused.write_text("1", encoding="utf-8")
 
-    funestra = Funestra(FakeEngine(), channels=channels, playlist=read_playlist(channels.playlist))
+    funestra = Funestra(FakeEngine(),
+        FunestraSetup(
+            channels=channels,
+            playlist=read_playlist(channels.playlist)))
 
     assert funestra.playback.is_paused is True
 
@@ -635,8 +643,11 @@ def _minimized_satellite(tmp_path: Path, clock: _Clock) -> tuple[Funestra, FakeE
                          commands="", hud=True)
     _publish_hud(tmp_path, hud_minimized=True)
     engine = FakeEngine()
-    return Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                    clock=clock), engine
+    return Funestra(engine,
+        FunestraSetup(
+            channels=channels,
+            playlist=read_playlist(channels.playlist),
+            clock=clock)), engine
 
 
 class TestTheNameOfWhatHasJustStarted:
@@ -716,7 +727,10 @@ def test_a_satellite_handed_a_place_for_the_osr2_visualizer_hands_on_its_motion(
                        drive=tmp_path / "drive.txt", osr2_readout=tmp_path / "visualizer.txt")
     _publish_hud(tmp_path, osr2=Osr2State.ROBOT_HAND)
     publish_drive(tmp_path / "drive.txt", DriveHud(speed=40))
-    funestra = Funestra(FakeEngine(), channels=channels, playlist=read_playlist(channels.playlist))
+    funestra = Funestra(FakeEngine(),
+        FunestraSetup(
+            channels=channels,
+            playlist=read_playlist(channels.playlist)))
 
     funestra.tick(viewport=WINDOW)
 
@@ -780,9 +794,21 @@ def test_on_a_window_the_way_of_playing_is_mpv_opened_on_that_window(tmp_path):
     engine = FakeEngine()
 
     with patch("funestra.funestra.MpvEngine", return_value=engine) as mpv:
-        funestra = Funestra.on_window(4242, channels=channels, playlist=read_playlist(channels.playlist))
+        funestra = Funestra.on_window(4242,
+            FunestraSetup(
+                channels=channels,
+                playlist=read_playlist(channels.playlist)))
 
     mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True, audio=True)
+    assert funestra.playback.current_video == videos[0]
+
+
+def test_the_old_keywords_open_a_funestra_that_plays_the_same_playlist(tmp_path):
+    videos = _videos(tmp_path, "v0")
+    channels = _channels(tmp_path, [str(videos[0])])
+
+    funestra = Funestra(FakeEngine(), channels=channels, playlist=read_playlist(channels.playlist))
+
     assert funestra.playback.current_video == videos[0]
 
 
@@ -870,9 +896,14 @@ def _main(tmp_path: Path, *, commands: str = "", user=Kino, genau: bool = False,
         return made[-1]
 
     users = {"kino": make, **({"genau": Genau} if genau else {})}
-    funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                        locked=True, sound_is_the_rooms=True, users=users,
-                        **funestra_options)
+    funestra = Funestra(engine,
+        FunestraSetup(
+            channels=channels,
+            playlist=read_playlist(channels.playlist),
+            locked=True,
+            sound_is_the_rooms=True,
+            users=users,
+            **funestra_options))
     return funestra, engine, made[0]
 
 
@@ -1032,8 +1063,13 @@ def _scripted_main(tmp_path: Path) -> tuple[Funestra, FakeEngine]:
     _publish_main_hud(tmp_path)
     engine = FakeEngine(duration_ms=600_000.0)
     engine.screenshot = np.zeros((10, 20, 4), dtype=np.uint8)
-    return Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                    locked=True, sound_is_the_rooms=True, users={"kino": Kino}), engine
+    return Funestra(engine,
+        FunestraSetup(
+            channels=channels,
+            playlist=read_playlist(channels.playlist),
+            locked=True,
+            sound_is_the_rooms=True,
+            users={"kino": Kino})), engine
 
 
 class TestAStretchOfTheItem:
@@ -1254,9 +1290,14 @@ class TestAWindowsOwnHud:
 
         hud = [HudModel(funestra="portrait", title="Unlocked",
                         rows=((Button("portrait_next", "N", "Next"),),))]
-        funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                            users={"slideshow": make}, hud=lambda: hud[0], muted=muted,
-                            **handed)
+        funestra = Funestra(engine,
+            FunestraSetup(
+                channels=channels,
+                playlist=read_playlist(channels.playlist),
+                users={"slideshow": make},
+                hud=lambda: hud[0],
+                muted=muted,
+                **handed))
         return funestra, engine, made[0], hud
 
     def test_it_is_drawn_over_the_item_where_no_session_published_one(self, tmp_path):
@@ -1386,8 +1427,11 @@ def test_on_a_window_the_way_of_playing_can_be_heard(tmp_path):
     channels = _channels(tmp_path, [str(videos[0])])
 
     with patch("funestra.funestra.MpvEngine", return_value=FakeEngine()) as mpv:
-        Funestra.on_window(4242, channels=channels, playlist=read_playlist(channels.playlist),
-                           muted=False)
+        Funestra.on_window(4242,
+            FunestraSetup(
+                channels=channels,
+                playlist=read_playlist(channels.playlist),
+                muted=False))
 
     mpv.assert_called_once_with(4242, muted=False, loop_file=False, prefetch=True, audio=True)
 
@@ -1397,8 +1441,11 @@ def test_on_a_window_that_can_never_be_heard_the_way_of_playing_takes_no_sound(t
     channels = _channels(tmp_path, [str(videos[0])])
 
     with patch("funestra.funestra.MpvEngine", return_value=FakeEngine()) as mpv:
-        Funestra.on_window(4242, channels=channels, playlist=read_playlist(channels.playlist),
-                           audible=False)
+        Funestra.on_window(4242,
+            FunestraSetup(
+                channels=channels,
+                playlist=read_playlist(channels.playlist),
+                audible=False))
 
     mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True, audio=False)
 
@@ -1433,8 +1480,12 @@ class TestAHudBesideTheItem:
         channels = _channels(tmp_path, [str(videos[0])], hud=True, commands="")
         _publish_hud(tmp_path)
         engine = FakeEngine()
-        funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                            hud_surface=surface, clock=_Clock())
+        funestra = Funestra(engine,
+            FunestraSetup(
+                channels=channels,
+                playlist=read_playlist(channels.playlist),
+                hud_surface=surface,
+                clock=_Clock()))
         funestra.tick(viewport=WINDOW)
         return funestra, engine, surface
 
@@ -1450,8 +1501,11 @@ class TestAHudBesideTheItem:
         videos = _videos(tmp_path, "v0")
         channels = _channels(tmp_path, [str(videos[0])], hud=True, commands="")
         surface = _ASurface()
-        funestra = Funestra(FakeEngine(), channels=channels,
-                            playlist=read_playlist(channels.playlist), hud_surface=surface)
+        funestra = Funestra(FakeEngine(),
+            FunestraSetup(
+                channels=channels,
+                playlist=read_playlist(channels.playlist),
+                hud_surface=surface))
 
         funestra.tick(viewport=WINDOW)
 
@@ -1464,9 +1518,15 @@ class TestAHudBesideTheItem:
         _publish_main_hud(tmp_path)
         engine = FakeEngine()
         users = {"kino": Kino, **({"genau": Genau} if genau else {})}
-        funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                            locked=True, sound_is_the_rooms=True, users=users,
-                            hud_surface=surface, users_frames=users_frames)
+        funestra = Funestra(engine,
+            FunestraSetup(
+                channels=channels,
+                playlist=read_playlist(channels.playlist),
+                locked=True,
+                sound_is_the_rooms=True,
+                users=users,
+                hud_surface=surface,
+                users_frames=users_frames))
         funestra.tick(viewport=WINDOW)
         return funestra, engine
 
@@ -1549,8 +1609,11 @@ class TestAHudBesideTheItem:
     def test_before_its_hud_has_been_read_nothing_hangs_outside_it(self, tmp_path):
         videos = _videos(tmp_path, "v0")
         channels = _channels(tmp_path, [str(videos[0])], hud=True, commands="")
-        funestra = Funestra(FakeEngine(), channels=channels,
-                            playlist=read_playlist(channels.playlist), hud_surface=_ASurface())
+        funestra = Funestra(FakeEngine(),
+            FunestraSetup(
+                channels=channels,
+                playlist=read_playlist(channels.playlist),
+                hud_surface=_ASurface()))
 
         assert funestra.outside_buttons is None
 
@@ -1627,9 +1690,14 @@ class TestTheWindowsOwnVerbs:
             tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1")], commands=commands)
         _publish_main_hud(tmp_path)
         engine = FakeEngine()
-        funestra = Funestra(engine, channels=channels, playlist=read_playlist(channels.playlist),
-                            locked=True, sound_is_the_rooms=True, users={"kino": Kino},
-                            window_verbs=window_verbs)
+        funestra = Funestra(engine,
+            FunestraSetup(
+                channels=channels,
+                playlist=read_playlist(channels.playlist),
+                locked=True,
+                sound_is_the_rooms=True,
+                users={"kino": Kino},
+                window_verbs=window_verbs))
         return funestra, engine, heard
 
     def test_a_verb_of_the_windows_own_is_answered_and_not_refused(self, tmp_path, caplog):
