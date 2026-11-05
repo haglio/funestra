@@ -14,7 +14,7 @@ BAR_INSET_Y = 3
 BAR_FILL = (*palette.BG_SECONDARY, 165)
 BAR_BORDER = (*palette.BORDER_DEFAULT, 235)
 BAR_EDGE = (*palette.BLACK, 235)
-HEATMAP_ALPHA = 178
+HEATMAP_ALPHA_PRESENT_BUT_UNOBTRUSIVE_UNDER_THE_VIDEO = 178
 BORDER_W = 2
 CURSOR = (*palette.WHITE, 255)
 CURSOR_W = 3
@@ -102,7 +102,7 @@ def progress_bar_bgra(marks: TrackMarks, width, height=SCRUBBER_HEIGHT, *, heatm
         paint_rect(bar, box, BAR_FILL)
     else:
         bar[box.y0:box.y1, box.x0:box.x1, :3] = np.asarray(heatmap, dtype=np.uint8)[np.newaxis, :, ::-1]
-        bar[box.y0:box.y1, box.x0:box.x1, 3] = HEATMAP_ALPHA
+        bar[box.y0:box.y1, box.x0:box.x1, 3] = HEATMAP_ALPHA_PRESENT_BUT_UNOBTRUSIVE_UNDER_THE_VIDEO
     draw_border(bar, box, BORDER_W, BAR_BORDER)
     draw_track_marks(bar, box, marks)
     return bar

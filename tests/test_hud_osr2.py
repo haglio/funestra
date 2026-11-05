@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 from shared_ui.palette import BLUE, GREEN, TEXT_MUTED
 
+from funestra import hud_osr2
 from funestra.hud import Hud
 from funestra.hud_button import Button
 from funestra.hud_osr2 import (
@@ -33,6 +34,10 @@ def _drawn(line: Osr2Line) -> tuple[Hud, list]:
 def _has(hud: Hud, color) -> bool:
     pixels = np.array(hud.image.convert("RGB"))
     return bool((pixels == np.array(color)).all(axis=-1).any())
+
+
+def test_buffer_is_the_pill_s_own_word_drawn_and_never_one_of_the_states_the_wire_carries():
+    assert hud_osr2.BUFFER not in {state.value for state in Osr2State}
 
 
 class TestTheLine:
@@ -205,7 +210,7 @@ class TestTheVisualizerUnderIt:
 
         assert drive.driven == DRIVEN_BY_NOTHING
 
-    def test_a_composed_trace_names_whoever_it_drew_at_the_playhead(self):
+    def test_a_composed_trace_names_whoever_it_drew_at_the_playhead_since_the_wire_s_word_lags_the_arbiter_by_seconds(self):
         handoff = ((0, "funscript"), (40, "robot_hand"))
         for driven, word in (("funscript", Osr2State.FUNSCRIPT),
                              ("robot_hand", Osr2State.ROBOT_HAND), ("neutral", BUFFER)):

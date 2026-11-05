@@ -167,7 +167,7 @@ class TestApplyCommand:
         assert apply_command(step_version(-1, [video, other]), controls) is True
         assert controls.playback.showing == video
 
-    def test_two_quick_steps_carrying_one_family_both_land(self, tmp_path):
+    def test_two_quick_steps_carrying_one_family_both_land_since_fun_time_reads_what_is_on_screen_off_a_status_that_lags(self, tmp_path):
         controls = _controls(tmp_path)
         video = controls.playback.current_video
         family = [video, tmp_path / "v0_sorted.mp4", tmp_path / "v0_small.mp4"]
@@ -195,7 +195,7 @@ class TestApplyCommand:
         assert apply_command(QUIT, _controls(tmp_path, stop_event=stop)) is True
         assert stop.is_set()
 
-    def test_a_build_with_no_stop_event_refuses_quit(self, tmp_path):
+    def test_a_build_with_no_stop_event_refuses_quit_as_the_headset_s_funestras_end_only_with_the_session(self, tmp_path):
         controls = _controls(tmp_path, stop_event=None)
         assert apply_command(QUIT, controls) is False
 

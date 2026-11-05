@@ -26,6 +26,8 @@ from .hud_placement import HudCorner
 BUTTON = BUTTON_SIZE_HUD
 ROOM = BUTTON + BUTTON_GAP
 
+# Windows' own minimize mark lives in Segoe MDL2 Assets, a face this HUD does not load, so the
+# button wears the family's minus.
 MINIMIZE_ICON = shared_icon("minus")
 RESTORE_ICON = shared_icon("plus")
 MINIMIZE_TOOLTIP = "Minimize this HUD"
@@ -33,7 +35,7 @@ RESTORE_TOOLTIP = "Show this HUD again"
 
 FLASH_S = 3.0
 
-_TOOLTIP_ROOM_W = 118
+_ROOM_FOR_THE_RESTORE_TOOLTIP_ON_ONE_LINE_W = 118
 _TOOLTIP_ROOM_H = 26
 
 
@@ -102,7 +104,7 @@ def _collapsed_size(*, room_for_the_tooltip: bool,
         return ROOM + beside.width, BUTTON
     if not room_for_the_tooltip:
         return BUTTON, BUTTON
-    return BUTTON + _TOOLTIP_ROOM_W, BUTTON + _TOOLTIP_ROOM_H
+    return BUTTON + _ROOM_FOR_THE_RESTORE_TOOLTIP_ON_ONE_LINE_W, BUTTON + _TOOLTIP_ROOM_H
 
 
 def collapsed_button(funestra: str, corner: HudCorner = HudCorner.UPPER_LEFT, *,

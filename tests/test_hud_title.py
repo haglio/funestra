@@ -41,7 +41,7 @@ def test_the_two_browse_orders_are_named_once_for_every_funestra():
     assert (LATEST_LABEL, SHUFFLE_LABEL) == ("Latest", "Shuffle")
 
 
-def test_the_enhanced_narrowing_has_a_slot_of_its_own_after_f_mode():
+def test_the_enhanced_narrowing_has_a_slot_of_its_own_after_f_mode_named_like_every_filter_for_what_it_keeps():
     assert hud_title(HudTitleFacts(locked=False, order=SHUFFLE_LABEL, enhanced=True)) == (
         f"{UNLOCKED_LABEL} · Shuffle · {ENHANCED_LABEL}")
     assert hud_title(HudTitleFacts(

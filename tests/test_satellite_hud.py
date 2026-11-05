@@ -9,6 +9,7 @@ from shared_ui.spacing import BUTTON_GAP, BUTTON_GROUP_GAP
 from shared_ui.testing import icons_lacking
 from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL, SIZE_TINY
 
+from funestra import satellite_hud
 from funestra.hud import load_font
 from funestra.hud_button import Button
 from funestra.hud_icons import MINIMIZE_ICON, shared_icon
@@ -343,7 +344,7 @@ def test_filter_button_rects_puts_one_at_the_head_of_each_row():
     assert filter_button_rects(None, [], 10, "", []) == []
 
 
-def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it():
+def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it_but_for_the_empty_filter_which_lights_no_row_here_with_fun_time_s_tests_holding_the_two_in_step():
     cases = [
         ("Gamma", "gamma", True),
         ("Side Gamma", "gamma", True),
@@ -741,3 +742,18 @@ def test_a_tooltip_where_a_wrong_action_a_filter_and_an_expand_overlap_is_the_wr
     assert button_tooltip(targets, 5, 5) == tooltip_for(
         "cross", "Wrong action — strike it, and it gets asked about again")
     assert button_tooltip(_targets(filter=[(square, "Gamma")], expand=square), 5, 5) == "Filter to this action"
+
+
+def test_the_wrong_act_button_is_smaller_than_a_control_and_sits_right_under_the_act_s_name_since_it_is_about_that_name():
+    assert satellite_hud.WRONG_BTN < CTRL_BTN
+    assert satellite_hud.wrong_action_rect(100, 40) == (
+        100 - satellite_hud.WRONG_BTN, 40 + satellite_hud.WRONG_GAP,
+        satellite_hud.WRONG_BTN, satellite_hud.WRONG_BTN)
+
+
+def test_a_column_header_carries_the_seed_s_real_number_so_a_window_opened_partway_along_does_not_restart_at_one():
+    assert satellite_hud.seed_column_label(6) == "Seed 7"
+
+
+def test_the_star_is_as_tall_as_the_line_beside_it_since_a_smaller_mark_reads_as_a_speck_and_not_a_state():
+    assert satellite_hud.favorite_icon_rect(0, 0, 17)[2:] == (17, 17)

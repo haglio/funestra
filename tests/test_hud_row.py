@@ -29,7 +29,7 @@ from funestra.hud_row import (
 from funestra.loop_dial import DIAL_SIZE
 from funestra.playhead import PlayheadHud, framed_playhead, time_text_width, video_playhead
 from funestra.scrubber_bar import (
-    HEATMAP_ALPHA,
+    HEATMAP_ALPHA_PRESENT_BUT_UNOBTRUSIVE_UNDER_THE_VIDEO,
     RED,
     SCRUBBER_HEIGHT,
     YELLOW,
@@ -169,10 +169,10 @@ def test_a_host_with_a_funscript_fills_the_track_with_its_colors():
 
     middle = painted[ROW_H // 2]
     assert middle[x0 + 10:x1 - 10].tolist() == [
-        [*color, HEATMAP_ALPHA] for color in colors[10:-10].tolist()]
+        [*color, HEATMAP_ALPHA_PRESENT_BUT_UNOBTRUSIVE_UNDER_THE_VIDEO] for color in colors[10:-10].tolist()]
 
 
-def test_colors_measured_across_some_other_track_leave_it_plain():
+def test_colors_measured_across_some_other_track_leave_it_plain_since_a_fill_of_the_wrong_length_raises_and_blanks_the_window():
     x0, x1 = _layout(VIDEO).track
     colors = np.array([(200, 40, 30)] * (x1 - x0 + 7), dtype=np.uint8)
 
@@ -228,7 +228,7 @@ class TestWhatAPressOnTheRowIsOn:
         assert self._part(volume_control_x + 4, volume_control_y + VOLUME_CONTROL_H // 2) == MUTE
         assert self._part(volume_control_x + VOLUME_CONTROL_W - 6, volume_control_y + VOLUME_CONTROL_H // 2) == VOLUME
 
-    def test_left_of_the_track_is_the_time_text(self):
+    def test_left_of_the_track_is_the_time_text_which_does_nothing_since_as_a_margin_a_press_there_would_throw_the_item_back_to_its_start(self):
         assert self._part(self.LAYOUT.track[0] - 1, ROW_H // 2) == TIME_TEXT
         assert self._part(self.LAYOUT.time_text[0] + 3, ROW_H // 2) == TIME_TEXT
 
