@@ -111,7 +111,7 @@ class TestFunscriptTCodeDriver:
 
 
 class TestTakingOver:
-    def test_the_first_waypoint_after_taking_over_is_given_time_to_glide(self):
+    def test_the_first_waypoint_of_a_session_or_after_taking_over_is_given_time_to_glide_since_the_osr2_moves_from_wherever_it_is_in_the_time_it_is_told(self):
         sink = FakeSink()
         driver = FunscriptTCodeDriver(sink)
         fs = Funscript(actions=[(0, 0), (40, 100), (2000, 0)])
@@ -128,7 +128,7 @@ class TestTakingOver:
 
         assert sink.sent[0] == "L09999I1000"
 
-    def test_the_script_is_back_on_its_own_clock_once_the_glide_runs_out(self):
+    def test_the_script_is_back_on_its_own_clock_once_the_glide_runs_out_within_a_beat(self):
         sink = FakeSink()
         driver = FunscriptTCodeDriver(sink)
         fs = Funscript(actions=[(0, 0), (40, 100), (80, 0), (2000, 50)])
@@ -138,7 +138,7 @@ class TestTakingOver:
 
         assert sink.sent[1] == "L00000I39"
 
-    def test_a_waypoint_inside_the_glide_is_stretched_too(self):
+    def test_a_waypoint_inside_the_glide_is_stretched_too_arriving_late_rather_than_snapping_there_on_time(self):
         sink = FakeSink()
         driver = FunscriptTCodeDriver(sink)
         fs = Funscript(actions=[(0, 0), (40, 100), (80, 0), (2000, 50)])
@@ -234,7 +234,7 @@ class TestPark:
 
         assert sink.sent == ["L00000I2000"]
 
-    def test_edge_gated_then_resends(self):
+    def test_edge_gated_then_resends_only_the_time_left_since_a_full_interval_resent_restarts_the_osr2_s_glide_and_lands_it_early(self):
         sink = FakeSink()
         driver = FunscriptTCodeDriver(sink)
 

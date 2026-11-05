@@ -122,7 +122,7 @@ class TestTurnBoundsAt:
             (40000, 0), (40300, 100), (40600, 0),
         ])
 
-    def test_a_stretch_opens_a_long_buffer_ahead_of_its_cluster(self):
+    def test_a_stretch_opens_a_long_buffer_ahead_of_its_cluster_so_the_other_driver_can_put_the_device_down_and_the_script_can_walk_it_up(self):
         assert self._two_clusters().turn_bounds_at(10300)[0] == 5000
 
     def test_a_stretch_closes_in_time_for_the_next_driver_s_climb(self):
@@ -425,7 +425,7 @@ class TestThePlanAsADrawing:
     def test_an_unscripted_video_has_no_drawing_at_all(self):
         assert Funscript(actions=[]).planned_trace_window(0, 1000, 4) == ((), 0.0)
 
-    def test_a_span_of_no_time_is_all_park_rather_than_a_division_by_zero(self):
+    def test_a_span_of_no_time_as_a_funestra_stopped_dead_publishes_is_all_park_rather_than_a_division_by_zero(self):
         assert _gapped().planned_trace_window(0, 0, 3) == ((0.0,) * 4, 0.0)
 
 

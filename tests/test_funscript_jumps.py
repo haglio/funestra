@@ -59,7 +59,7 @@ def _scripted(tmp_path: Path, name: str) -> tuple[Path, Path]:
 
 
 class TestJumpToFunscript:
-    def test_a_lull_is_skipped_to_where_the_action_resumes(self, tmp_path):
+    def test_a_lull_is_skipped_to_where_the_action_resumes_and_said_at_the_highlight_level_fun_time_flashes_green_as_it_does_favorites_and_funscripts(self, tmp_path):
         video, script = _scripted(tmp_path, "alpha")
         session = FakeSession([(video, script)], funscripts={script: _TWO_RUNS})
         session.position_ms = 25000.0
@@ -139,7 +139,7 @@ class TestNextFunscripted:
 
         assert session.seeks == [60000]
 
-    def test_a_clip_scripted_from_the_top_is_not_seeked_into(self, tmp_path):
+    def test_a_clip_scripted_from_the_top_is_not_seeked_into_which_would_drop_its_first_cycles(self, tmp_path):
         video0 = tmp_path / "alpha.mp4"
         video1, script1 = _scripted(tmp_path, "beta")
         session = FakeSession(
@@ -166,7 +166,7 @@ class TestNextFunscripted:
 
         assert session.loads == [0]
 
-    def test_the_clip_on_screen_is_never_the_answer(self, tmp_path):
+    def test_the_clip_on_screen_is_never_the_answer_since_reloading_it_would_read_as_a_restart_for_nothing(self, tmp_path):
         video0 = tmp_path / "alpha.mp4"
         video1, script1 = _scripted(tmp_path, "beta")
         session = FakeSession(

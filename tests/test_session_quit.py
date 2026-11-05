@@ -6,7 +6,7 @@ from funestra.session_quit import SESSION_QUIT, quit_gesture
 
 
 class TestQuitGesture:
-    def test_in_a_session_it_asks_and_this_funestra_stays(self, tmp_path: Path):
+    def test_in_a_session_it_asks_in_the_dashboard_s_own_quit_word_and_this_funestra_stays_so_the_session_comes_down_whole_and_no_window_leaves_a_gap(self, tmp_path: Path):
         cmd_file = tmp_path / "dashboard_cmd.txt"
 
         assert quit_gesture(cmd_file) is False

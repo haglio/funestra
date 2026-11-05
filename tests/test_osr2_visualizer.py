@@ -38,6 +38,7 @@ from funestra.osr2_visualizer import (
 from funestra.robot_hand import amplitude_ceiling, speed_ceiling
 
 PAD = 10
+WITHIN_A_ROW_SINCE_THE_TRACE_HAS_FEWER_ROWS_THAN_VALUES = 1
 
 
 def _hud(**overrides) -> DriveHud:
@@ -71,7 +72,7 @@ class TestControls:
         assert {by_command[a] for a in
                 ("robot_hand_speed_down", "robot_hand_amplitude_down", "robot_hand_center_down")} == {"minus"}
 
-    def test_the_speed_controls_sit_below_the_trace(self):
+    def test_the_speed_controls_sit_below_the_trace_so_the_three_axes_do_not_crowd_one_bar(self):
         by_command = {c.command: c.rect for c in controls(0, 0, _hud())}
         _x, trace_y, _w, trace_h = next(t.rect for t in tracks(0, 0, _hud()) if t.axis == CENTER)
         wave_lower = trace_y + trace_h
@@ -196,14 +197,16 @@ class TestTracks:
 
         assert track_value(bar, x + w // 2, y) == 100
         assert track_value(bar, x + w // 2, y + h - 1) == 0
-        assert abs(track_value(bar, x + w // 2, y + (h - 1) // 2) - 50) <= 1
+        assert abs(track_value(bar, x + w // 2, y + (h - 1) // 2) - 50) <= (
+            WITHIN_A_ROW_SINCE_THE_TRACE_HAS_FEWER_ROWS_THAN_VALUES)
 
     def test_a_press_up_the_amplitude_bar_asks_for_a_motion_that_reaches_it(self):
         bar = self._bar(_hud(amplitude=50, center=50), AMPLITUDE)
         x, y, w, h = bar.rect
         top_of_bar = y + round(0.25 * (h - 1))
 
-        assert abs(track_value(bar, x + w // 2, top_of_bar) - 50) <= 1
+        assert abs(track_value(bar, x + w // 2, top_of_bar) - 50) <= (
+            WITHIN_A_ROW_SINCE_THE_TRACE_HAS_FEWER_ROWS_THAN_VALUES)
         assert track_value(bar, x + w // 2, y) == 100
         assert track_value(bar, x + w // 2, y + h - 1) == 100
         assert abs(track_value(bar, x + w // 2, y + (h - 1) // 2)) <= 2
@@ -254,7 +257,7 @@ class TestTracks:
 
 class TestVisualizer:
     @pytest.mark.parametrize("center", [0, 100])
-    def test_it_draws_nothing_outside_the_block_it_declares(self, center):
+    def test_it_draws_nothing_outside_the_block_it_declares_so_a_host_can_blit_it_into_its_own_hud_and_every_app_shows_this_one_drawing(self, center):
         size = (SECTION_W + 2 * PAD, SECTION_H + 4 * PAD)
         drawn = Hud(*size)
         DriveSection().draw(drawn.image, PAD, PAD, _hud(center=center))
@@ -504,6 +507,7 @@ class TestSwitchedOff:
                                     if track.axis == SPEED)
         muted = max(TEXT_MUTED)
 
+        # Pillow smooths digits this small into edge alone, so no pixel of one is the exact ink.
         def brightest_digit(driven: str) -> int:
             fifty = _rendered(_hud(driven=driven, speed=50, waveform=()))
             fifty_one = _rendered(_hud(driven=driven, speed=51, waveform=()))

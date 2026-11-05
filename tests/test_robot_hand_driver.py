@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import random
+import re
+from pathlib import Path
 
+from funestra import robot_hand_driver
 from funestra.funscript import HANDOFF_RAMP_MS
 from funestra.learned_model import LearnedModel, Phrase, classify
 from funestra.learned_motion import (
@@ -304,6 +307,29 @@ class TestLetGoThroughTheRoundTrip:
         sender.take_over()
 
         assert sender.let_go_position is None
+
+
+    def test_a_takeover_with_nothing_to_climb_ends_a_climb_it_interrupted_or_every_position_after_would_be_shrunk(self):
+        sink = FakeTCodeSink()
+        state = RobotHandState(amplitude=30, center=50)
+        sender = RobotHandTCodeDriver(sink, robot_hand=state, min_interval=0.0)
+        sender.maybe_send(phase=0.5, now=0.5)
+        sender.take_over()
+        sender.maybe_send(phase=0.7, now=1.0)
+        sender.maybe_send(phase=0.8, now=1.0 + HANDOFF_RAMP_MS / 4000)
+        state.amplitude = 100
+
+        sender.take_over()
+        sender.maybe_send(phase=0.2, now=2.0)
+
+        assert int(sink.sent[-1][2:6]) > 9000
+
+
+class TestWhatTheHandoffMoves:
+    def test_it_moves_the_senders_alone_since_the_broker_is_the_orchestrator_s_to_park_and_resume(self):
+        source = Path(robot_hand_driver.__file__).read_text(encoding="utf-8")
+
+        assert re.findall(r"^\s*(?:from|import) .*broker", source, re.MULTILINE) == []
 
 
 class TestSenderWithDirectState:
