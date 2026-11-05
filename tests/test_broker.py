@@ -13,7 +13,7 @@ from app_support.process_identity import ProcessNamer
 
 from funestra import broker
 
-PUBLISHED = {
+WHAT_AN_INVENTED_BROKER_PUBLISHES = {
     "app_name": "Relay",
     "package_dir": "relay_pkg",
     "broker_module": "relay_pkg.app",
@@ -24,7 +24,7 @@ PUBLISHED = {
 
 
 def _a_broker_checkout(checkout: Path, **published: str | None) -> Path:
-    named = {key: value for key, value in {**PUBLISHED, **published}.items() if value is not None}
+    named = {key: value for key, value in {**WHAT_AN_INVENTED_BROKER_PUBLISHES, **published}.items() if value is not None}
     checkout.mkdir(parents=True, exist_ok=True)
     (checkout / broker.CONTRACT_FILE).write_text(json.dumps(named), encoding="utf-8")
     launcher = checkout / named["tray_launcher"]
@@ -36,12 +36,22 @@ def _stamped(path: Path, age: float, *, now: float = 1000.0) -> None:
     path.write_text(str(now - age), encoding="utf-8")
 
 
+class TestNoAppImportsTheBroker:
+    def test_nothing_here_imports_the_brokers_code_so_what_is_known_of_it_is_read_from_the_file_it_publishes(
+            self):
+        importing = [module.name for module in sorted(Path(broker.__file__).parent.rglob("*.py"))
+                     if re.search(r"^\s*(from|import)\s+osr2_broker\b",
+                                  module.read_text(encoding="utf-8"), re.MULTILINE)]
+
+        assert importing == []
+
+
 class TestTheImagePattern:
     def test_it_matches_the_names_a_broker_of_that_name_launches_under(self, tmp_path):
         pattern = broker.read_contract(_a_broker_checkout(tmp_path)).image_pattern
 
         for role in ("Broker", "Tray"):
-            name = ProcessNamer(PUBLISHED["app_name"]).exe_name("pythonw.exe", role)
+            name = ProcessNamer(WHAT_AN_INVENTED_BROKER_PUBLISHES["app_name"]).exe_name("pythonw.exe", role)
             assert re.match(pattern, name), name
 
     def test_it_still_matches_a_broker_that_could_not_be_named(self, tmp_path):
@@ -78,7 +88,7 @@ class TestReadingTheContract:
     def test_a_broker_older_than_its_stop_request_is_still_read(self, tmp_path):
         contract = broker.read_contract(_a_broker_checkout(tmp_path, stop_request=None))
 
-        assert contract.tray_module == PUBLISHED["tray_module"]
+        assert contract.tray_module == WHAT_AN_INVENTED_BROKER_PUBLISHES["tray_module"]
         assert contract.stop_request is None
 
     def test_a_host_that_knows_only_the_checkout_finds_the_launcher_the_broker_names(
@@ -124,6 +134,16 @@ class TestStarting:
         assert kwargs["creationflags"] & broker.CREATE_BREAKAWAY_FROM_JOB
         assert kwargs["creationflags"] & subprocess.CREATE_NO_WINDOW
 
+    def test_it_starts_over_a_live_tray_too_since_the_tray_itself_refuses_a_second_copy(
+            self, tmp_path):
+        launcher = _a_broker_checkout(tmp_path)
+        _stamped(tmp_path / state_files.BROKER_HEARTBEAT, 1.0, now=time.time())
+
+        with patch("funestra.broker.subprocess.Popen") as popen:
+            broker.start(launcher)
+
+        popen.assert_called_once()
+
     def test_with_no_launcher_nothing_is_started(self, tmp_path):
         with patch("funestra.broker.subprocess.Popen") as popen:
             broker.start(None)
@@ -146,7 +166,7 @@ class TestStopping:
 
         broker.stop(state, launcher)
 
-        assert (state / PUBLISHED["stop_request"]).is_file()
+        assert (state / WHAT_AN_INVENTED_BROKER_PUBLISHES["stop_request"]).is_file()
 
     def test_a_broker_that_names_no_stop_request_is_left_running(self, tmp_path):
         launcher = _a_broker_checkout(tmp_path / "checkout", stop_request=None)
@@ -169,7 +189,7 @@ class TestThePress:
             broker.press(state, launcher)
 
         popen.assert_not_called()
-        assert (state / PUBLISHED["stop_request"]).is_file()
+        assert (state / WHAT_AN_INVENTED_BROKER_PUBLISHES["stop_request"]).is_file()
 
     def test_a_press_on_a_broker_that_is_not_running_starts_it(self, tmp_path):
         launcher = _a_broker_checkout(tmp_path / "checkout")
@@ -180,4 +200,4 @@ class TestThePress:
             broker.press(state, launcher)
 
         popen.assert_called_once()
-        assert not (state / PUBLISHED["stop_request"]).exists()
+        assert not (state / WHAT_AN_INVENTED_BROKER_PUBLISHES["stop_request"]).exists()
