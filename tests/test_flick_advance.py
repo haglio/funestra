@@ -42,7 +42,7 @@ def _series(state, start, stop, on_screen):
 
 
 class TestTickFlickAdvance:
-    def test_a_new_state_holds_its_flick(self):
+    def test_a_new_state_holds_its_flick_as_genau_has_always_opened(self):
         assert FlickAdvanceState().locked is True
         assert _run(FlickAdvanceState(), seconds=60.0) == []
 
@@ -105,7 +105,7 @@ class TestTheInterval:
     def test_it_opens_on_the_default(self):
         assert FlickAdvanceState().interval == DEFAULT_INTERVAL_S
 
-    def test_it_is_clamped_to_the_usable_range(self):
+    def test_it_is_clamped_to_the_usable_range_from_a_second_under_which_flicks_played_once_each_would_strobe_to_a_minute(self):
         state = FlickAdvanceState()
         set_interval(state, 0)
         assert state.interval == MIN_INTERVAL_S
@@ -176,7 +176,7 @@ class TestAPressAlongTheTrack:
 
         assert state.elapsed >= 3.0
 
-    def test_it_moves_twenty_times_a_second_rather_than_every_tick(self):
+    def test_it_moves_twenty_times_a_second_rather_than_every_tick_since_every_move_of_the_count_repaints_the_hud(self):
         state = FlickAdvanceState(locked=False, interval=10)
 
         set_elapsed(state, 4.03)

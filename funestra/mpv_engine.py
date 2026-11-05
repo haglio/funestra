@@ -183,6 +183,7 @@ class _MpvControl:
         handle.observe_property("container-fps", self._note_frame_rate)
         handle.observe_property("current-tracks/video/image", self._note_image_track)
         handle.observe_property("path", self._note_file)
+        # mpv's video-out-params, not dwidth and dheight, so both numbers land in one event.
         handle.observe_property("video-out-params", self._note_video_dims)
         handle.observe_property("video-dec-params", self._note_source_dims)
 

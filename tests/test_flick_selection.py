@@ -283,6 +283,15 @@ class TestDiscardCurrent:
         assert renderer.current_flick_path == Path("b.mp4")
         assert notifier.flick_notifications == [Path("b.mp4")]
 
+    def test_a_condemned_flick_s_successor_goes_up_at_once_without_waiting_to_be_decoded(self):
+        controller, _store, _loader, renderer, _notifier = _build_controller(
+            "a.mp4", "b.mp4", "c.mp4", condemn_flick=lambda _path: None,
+        )
+
+        controller.condemn_current()
+
+        assert renderer.current_flick_path == Path("b.mp4")
+
     def test_the_only_flick_is_never_condemned(self):
         condemned: list[Path] = []
         controller, _store, _loader, renderer, _notifier = _build_controller(
