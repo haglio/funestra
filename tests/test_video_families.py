@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from funestra.video_families import action_group_key, filter_keeps, seed_family, seed_group_key
+from funestra.video_families import (
+    FRAME_OF_VIDEO,
+    action_group_key,
+    filter_keeps,
+    seed_family,
+    seed_group_key,
+)
 
 IMAGE = {
     "positive_prompt": "a lighthouse at dusk",
@@ -109,3 +115,21 @@ def test_an_empty_filter_keeps_everything_even_text_with_no_act():
 
 def test_a_filter_keeps_nothing_where_no_act_was_recorded():
     assert not filter_keeps(None, "alpha")
+
+
+def _from_a_videos_starting_frame(**video):
+    return {"video": {"prompt": "made from the frame"},
+            "source_image": {"positive_prompt": "the frame's own words", "seed": "3",
+                             FRAME_OF_VIDEO: _from_words(**video)["video"]}}
+
+
+def test_a_video_from_a_t2v_videos_starting_frame_shares_that_videos_action_group():
+    assert action_group_key(_from_a_videos_starting_frame()) == action_group_key(_from_words())
+    assert action_group_key(_from_a_videos_starting_frame(seed="8")) != (
+        action_group_key(_from_words()))
+
+
+def test_a_video_from_a_t2v_videos_starting_frame_keeps_its_seed_family():
+    made = _from_a_videos_starting_frame()
+    assert seed_family(made) == seed_family(
+        {"video": made["video"], "source_image": {"positive_prompt": "the frame's own words"}})

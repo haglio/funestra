@@ -20,6 +20,7 @@ VIDEO_BASE_FIELDS = (
 )
 _IMAGE_FAMILY_FIELDS = tuple(field for field in IMAGE_IDENTITY_FIELDS if field != "seed")
 _VIDEO_FAMILY_FIELDS = (*VIDEO_BASE_FIELDS, "action")
+FRAME_OF_VIDEO = "frame_of_video"
 
 
 def normalized_text(value: object) -> str:
@@ -36,9 +37,13 @@ def _field_key(prefix: str, block: dict, fields: tuple[str, ...]) -> str:
 
 def action_group_key(record: dict) -> str | None:
     image = record.get("source_image")
-    if image:
-        return _field_key("img", image, IMAGE_IDENTITY_FIELDS)
-    video = record.get("video") or {}
+    if not image:
+        return _key_of_words(record.get("video") or {})
+    frame_of = image.get(FRAME_OF_VIDEO)
+    return _key_of_words(frame_of) if frame_of else _field_key("img", image, IMAGE_IDENTITY_FIELDS)
+
+
+def _key_of_words(video: dict) -> str | None:
     if not video.get("prompt"):
         return None
     return _field_key("t2v", video, (*VIDEO_BASE_FIELDS, "seed"))
