@@ -14,7 +14,7 @@ the path: that venv holds the release Fun Time pins, not this checkout, and
 collects the checks app_support ships from there.
 
 ```bash
-PYTHONPATH="C:/path/to/funestra" "C:/path/to/fun_time/.venv/Scripts/python.exe" -m pytest -x --import-mode=append tests/
+PYTHONPATH="C:/path/to/funestra" "C:/path/to/fun_time/.venv/Scripts/python.exe" -m pytest -x -q -n 8 --import-mode=append
 ```
 
 ## Installing
