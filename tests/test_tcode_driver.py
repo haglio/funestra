@@ -216,7 +216,7 @@ class TestLeadInPark:
 
 
 class TestPark:
-    def test_a_park_after_scripting_is_the_plan_s_own_settle(self):
+    def test_a_park_after_scripting_is_the_plan_s_own_settle_which_is_the_brokers_own_park_time(self):
         sink = FakeSink()
         driver = FunscriptTCodeDriver(sink)
         fs = Funscript(actions=[(0, 100), (200, 0), (400, 100), (600, 0)])

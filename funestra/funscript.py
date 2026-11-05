@@ -13,11 +13,11 @@ from .robot_hand import FULL_INTENSITY, toward_the_park
 _BASE_THRESHOLD = 95
 _MIN_LOOP_MS = 500
 
-_SNAP_TOLERANCE_MS = 1000
+_SNAP_NO_FARTHER_THAN_A_CYCLE_LASTS_MS = 1000
 
 QUIET_LEAD_IN_MS = 5000
 
-_RISE_MS = 1000
+_RISE_THAT_READS_AS_AN_APPROACH_NOT_A_TWITCH_YET_RESTS_THROUGH_MOST_OF_A_QUIET_MS = 1000
 
 PARK_SETTLE_MS = 500
 
@@ -68,7 +68,7 @@ class Funscript:
         i = bisect.bisect_left(self._dense_times, position_ms)
         nxt = self._dense_times[i] if i < len(self._dense_times) else None
         prv = self._dense_times[i - 1] if i > 0 else None
-        if nxt is not None and nxt - position_ms <= _RISE_MS:
+        if nxt is not None and nxt - position_ms <= _RISE_THAT_READS_AS_AN_APPROACH_NOT_A_TWITCH_YET_RESTS_THROUGH_MOST_OF_A_QUIET_MS:
             return False
         return not (
             prv is not None and nxt is not None and nxt - prv < QUIET_LEAD_IN_MS
@@ -90,7 +90,7 @@ class Funscript:
         )
         if rising:
             return (self.paced_position_at(nxt, speed, max_intensity=max_intensity)
-                    * (1 - (nxt - position_ms) / _RISE_MS))
+                    * (1 - (nxt - position_ms) / _RISE_THAT_READS_AS_AN_APPROACH_NOT_A_TWITCH_YET_RESTS_THROUGH_MOST_OF_A_QUIET_MS))
         return self.paced_position_at(position_ms, speed, max_intensity=max_intensity)
 
     def planned_trace_window(self, start_ms: int, span_ms: int, count: int,
@@ -257,14 +257,14 @@ def snap_loop(fs: Funscript | None, in_ms: int, out_ms: int) -> tuple[int, int]:
 
 def _snap_back(bases: list[int], boundary_ms: int) -> int:
     i = bisect.bisect_right(bases, boundary_ms)
-    if i and boundary_ms - bases[i - 1] <= _SNAP_TOLERANCE_MS:
+    if i and boundary_ms - bases[i - 1] <= _SNAP_NO_FARTHER_THAN_A_CYCLE_LASTS_MS:
         return bases[i - 1]
     return boundary_ms
 
 
 def _snap_forward(bases: list[int], boundary_ms: int) -> int:
     i = bisect.bisect_left(bases, boundary_ms)
-    if i < len(bases) and bases[i] - boundary_ms <= _SNAP_TOLERANCE_MS:
+    if i < len(bases) and bases[i] - boundary_ms <= _SNAP_NO_FARTHER_THAN_A_CYCLE_LASTS_MS:
         return bases[i]
     return boundary_ms
 
