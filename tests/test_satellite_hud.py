@@ -378,7 +378,7 @@ def test_act_is_filtered_picks_out_which_of_a_rows_acts_the_filter_named():
     assert lit("Gamma", "") is False
 
 
-def test_button_tooltip_names_each_button():
+def test_button_tooltip_names_each_button_probed_where_it_was_laid_out_since_the_bar_is_broken_into_groups_and_named_since_its_face_carries_no_word_and_a_painted_hud_has_no_other_tooltip():
     targets = HudTargets(
         click=[],
         loop=[((0, 0, 20, 20), "action"), ((30, 0, 20, 20), "seed")],
@@ -445,7 +445,7 @@ def test_the_speed_row_puts_slower_the_rate_and_faster_after_its_name():
     assert up == (rate[0] + VALUE_W + NAV_MAP_GAP, 40, CTRL_BTN, CTRL_BTN)
 
 
-def test_the_speed_buttons_say_what_a_press_does_to_the_video():
+def test_the_speed_buttons_say_what_a_press_does_to_the_video_in_the_words_the_main_funestra_s_speed_pair_uses():
     buttons, _rate = speed_row("landscape", 0, 0, label_width=70)
     targets = _targets(buttons=buttons)
 
@@ -508,7 +508,7 @@ def test_action_label_blocks_separate_comma_joined_acts():
     assert action_label_blocks("epsilon", CAMERA_WORDS) == [["Epsilon"]]
 
 
-def test_a_source_that_names_no_camera_words_has_a_rows_first_word_read_as_the_act():
+def test_a_source_that_names_no_camera_words_has_a_rows_first_word_read_as_the_act_as_a_hosted_origenerator_s_folder_names_are_the_words_being_the_library_s_vocabulary_and_none_kept_here():
     assert action_label_blocks("side gamma", ()) == [["Side", "Gamma"]]
     assert action_label_blocks("xyz gamma", ()) == [["Xyz", "Gamma"]]
 
@@ -597,14 +597,14 @@ def test_clicking_the_expand_button_posts_more_seeds():
     assert clicks.press(_targets(expand=(0, 0, 18, 18)), 5, 5, now=0.0) == "landscape_more_seeds"
 
 
-def test_pressing_a_filter_button_filters_to_its_row_action():
+def test_pressing_a_filter_button_filters_to_its_row_action_posting_the_command_the_spoken_filter_does():
     clicks = HudClicks("portrait")
     targets = _targets(filter=[((0, 0, FILTER_BTN, 20), "Gamma")])
 
     assert clicks.press(targets, 5, 5, now=0.0) == "filter_portrait_gamma"
 
 
-def test_pressing_the_filter_button_of_a_two_word_action_slugs_it():
+def test_pressing_the_filter_button_of_a_two_word_action_slugs_it_with_underscores_as_fun_time_s_filter_vocabulary_joins_them():
     clicks = HudClicks("landscape")
     targets = _targets(filter=[((0, 0, FILTER_BTN, 20), "Beta Gamma")])
 
@@ -675,7 +675,7 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
         assert parsed.actions == ()
         assert parsed.playing == ("corner", 0)
 
-    def test_the_text_is_the_json_a_funestra_already_reads(self):
+    def test_the_text_is_the_json_a_funestra_already_reads_since_an_older_release_may_be_on_either_side_of_the_file(self):
         raw = json.loads(hud_text(HudModel(
             funestra="portrait", corner=HudCell(path="C:/v/cur.mp4"),
             actions=(HudCell(path="C:/v/a1.mp4", label="gamma"),), playing=("action", 0))))

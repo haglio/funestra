@@ -54,23 +54,23 @@ def text_width(font: ImageFont.FreeTypeFont, text: str) -> int:
     return int(font.getlength(text))
 
 
-_INK_OFFSETS: dict[tuple[str, int, str], tuple[float, float] | None] = {}
+_INK_OFFSETS_PROBED_ONCE_PER_FACE_SIZE_AND_ICON_A_DOZEN_OR_SO_A_SESSION: dict[tuple[str, int, str], tuple[float, float] | None] = {}
 
 
 # Pillow's textbbox and its anchor="mm" both go by the font's layout box, which runs down to the
 # descender line however short the mark, so the ink's own center is found by drawing it.
 def ink_center_offset(font: ImageFont.FreeTypeFont, icon: str) -> tuple[float, float] | None:
     key = (str(getattr(font, "path", "")), int(getattr(font, "size", 0)), icon)
-    if key not in _INK_OFFSETS:
+    if key not in _INK_OFFSETS_PROBED_ONCE_PER_FACE_SIZE_AND_ICON_A_DOZEN_OR_SO_A_SESSION:
         pad = 8
         bounds = font.getbbox(icon)
         probe = Image.new("L", (int(bounds[2]) + 2 * pad, int(bounds[3]) + 2 * pad), 0)
         ImageDraw.Draw(probe).text((pad, pad), icon, font=font, fill=255)
         ink = probe.getbbox()
-        _INK_OFFSETS[key] = None if ink is None else (
+        _INK_OFFSETS_PROBED_ONCE_PER_FACE_SIZE_AND_ICON_A_DOZEN_OR_SO_A_SESSION[key] = None if ink is None else (
             (ink[0] + ink[2] - 1) / 2 - pad, (ink[1] + ink[3] - 1) / 2 - pad,
         )
-    return _INK_OFFSETS[key]
+    return _INK_OFFSETS_PROBED_ONCE_PER_FACE_SIZE_AND_ICON_A_DOZEN_OR_SO_A_SESSION[key]
 
 
 def draw_character(draw: ImageDraw.ImageDraw, center: tuple[float, float], icon: str,
@@ -103,7 +103,7 @@ TOOLTIP_PAD = GAP_SMALL
 TOOLTIP_RADIUS = BUTTON_RADIUS
 TOOLTIP_ALPHA = 240
 _TOOLTIP_EDGE = 2
-_TOOLTIP_OFFSET = (14, 16)
+_TOOLTIP_RIGHT_OF_AND_BELOW_THE_POINTER_CLEAR_OF_ITS_ARROW_OFFSET = (14, 16)
 
 
 def draw_tooltip(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: str,
@@ -116,8 +116,8 @@ def draw_tooltip(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: 
     line_h = ascent + descent
     w = max(text_width(font, line) for line in lines) + 2 * TOOLTIP_PAD
     h = line_h * len(lines) + 2 * TOOLTIP_PAD
-    x = max(_TOOLTIP_EDGE, min(pos[0] + _TOOLTIP_OFFSET[0], bounds[0] - w - _TOOLTIP_EDGE))
-    y = max(_TOOLTIP_EDGE, min(pos[1] + _TOOLTIP_OFFSET[1], bounds[1] - h - _TOOLTIP_EDGE))
+    x = max(_TOOLTIP_EDGE, min(pos[0] + _TOOLTIP_RIGHT_OF_AND_BELOW_THE_POINTER_CLEAR_OF_ITS_ARROW_OFFSET[0], bounds[0] - w - _TOOLTIP_EDGE))
+    y = max(_TOOLTIP_EDGE, min(pos[1] + _TOOLTIP_RIGHT_OF_AND_BELOW_THE_POINTER_CLEAR_OF_ITS_ARROW_OFFSET[1], bounds[1] - h - _TOOLTIP_EDGE))
     draw.rounded_rectangle([x, y, x + w - 1, y + h - 1], radius=TOOLTIP_RADIUS,
                            fill=(*BG_PRIMARY, TOOLTIP_ALPHA),
                            outline=(*BORDER_PANEL, 255), width=1)

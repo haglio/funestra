@@ -61,7 +61,7 @@ class TestPlacement:
 class TestWindowPoints:
     GEOMETRY: ClassVar[dict[str, int]] = {"viewport_w": 1200, "viewport_h": 900, "timeline_h": 40}
 
-    def test_the_chips_own_corner_reads_as_its_origin(self):
+    def test_the_chips_own_corner_reads_as_its_origin_undone_beside_the_placement_so_no_caller_keeps_its_own_copy_of_where_the_control_sits(self):
         assert volume_control_local(*volume_control_xy(**self.GEOMETRY), **self.GEOMETRY) == (0, 0)
 
     def test_a_window_point_over_the_speaker_lands_on_the_mute(self):
@@ -108,7 +108,7 @@ class TestPainter:
     def _volume_control(self, **kw) -> np.ndarray:
         return VolumeHudPainter().bgra(VolumeHud(**kw))
 
-    def test_the_filled_part_of_the_track_grows_with_the_level(self):
+    def test_the_filled_part_of_the_track_grows_with_the_level_counted_above_the_mid_gray_of_the_track_and_its_border(self):
         def filled(volume: int) -> int:
             volume_control = self._volume_control(volume=volume)
             return int((volume_control[:, SPEAKER_W:, :3].sum(axis=2) > 600).sum())
@@ -142,7 +142,7 @@ class TestPainter:
 
         assert painter.bgra(VolumeHud(volume=50)) is painter.bgra(VolumeHud(volume=50))
 
-    def test_a_changed_level_is_repainted(self):
+    def test_a_changed_level_is_repainted_changed_by_several_steps_since_neighboring_levels_share_a_pixel_on_a_slider_this_narrow(self):
         painter = VolumeHudPainter()
 
         assert not np.array_equal(

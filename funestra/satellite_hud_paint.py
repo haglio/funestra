@@ -361,7 +361,7 @@ class HudRenderer:
                  minimize_button(model.funestra))
         draw_button(hud.image, hud.draw, *minus,
             ButtonLook(
-                hovered=self._pointer_is_on(minus[0]),
+                hovered=self._pointer_is_on_read_here_alone_off_the_render_s_hover(minus[0]),
                 icon_font=self._icon,
                 word_font=self._tiny))
         return minus
@@ -376,7 +376,7 @@ class HudRenderer:
             for index, (rect, button) in enumerate(placed):
                 draw_button(hud.image, hud.draw, rect, button,
                     ButtonLook(
-                        hovered=self._pointer_is_on(rect),
+                        hovered=self._pointer_is_on_read_here_alone_off_the_render_s_hover(rect),
                         icon_font=self._icon,
                         word_font=self._tiny,
                         row_label=index == 0))
@@ -395,7 +395,7 @@ class HudRenderer:
         for rect, button in speed_buttons:
             draw_button(hud.image, hud.draw, rect, button,
                 ButtonLook(
-                    hovered=self._pointer_is_on(rect),
+                    hovered=self._pointer_is_on_read_here_alone_off_the_render_s_hover(rect),
                     icon_font=self._icon,
                     word_font=self._tiny))
         rx, ry, rw, rh = rate_rect
@@ -590,14 +590,14 @@ class HudRenderer:
             row(ay, ah, model.actions[i].label if i < len(model.actions) else "")
         return wrong
 
-    def _pointer_is_on(self, rect: Rect) -> bool:
+    def _pointer_is_on_read_here_alone_off_the_render_s_hover(self, rect: Rect) -> bool:
         return self._pointer is not None and contains(rect, *self._pointer)
 
     def _button_square(self, draw, rect: Rect, *, on: bool,
                        on_color=BLUE, ink=None) -> tuple[int, int, int, int]:
         return button_ground(draw, rect, on_color if on else BG_BUTTON,
             ButtonGroundState(
-                hovered=self._pointer_is_on(rect),
+                hovered=self._pointer_is_on_read_here_alone_off_the_render_s_hover(rect),
                 rest_ink=ink))
 
     def _icon_button(self, hud: Hud, rect: Rect, icon: str, *, on: bool = False) -> None:

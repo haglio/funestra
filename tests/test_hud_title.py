@@ -50,6 +50,6 @@ def test_the_enhanced_narrowing_has_a_slot_of_its_own_after_f_mode_named_like_ev
     assert hud_title(HudTitleFacts(locked=True, enhanced=False)) == LOCKED_LABEL
 
 
-def test_a_loop_on_an_axis_is_named_looping_that_axis_in_the_plural():
+def test_a_loop_on_an_axis_is_named_looping_that_axis_in_the_plural_named_once_for_every_funestra_that_draws_a_nav_map():
     assert looping_label("seed") == "Looping seeds"
     assert looping_label("action") == "Looping actions"

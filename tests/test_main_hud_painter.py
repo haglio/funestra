@@ -91,7 +91,7 @@ class TestLine:
         assert _line(locked=True) == "Locked · Shuffle"
         assert _line(locked=False) == "Unlocked · Shuffle"
 
-    def test_says_which_length_mode_the_library_is_in_and_says_it_last(self):
+    def test_says_which_length_mode_the_library_is_in_and_says_it_last_and_says_nothing_for_mixed_since_with_three_kinds_of_video_one_word_would_not_say_which(self):
         assert _line(length_mode=MIXED) == "Locked · Shuffle"
         assert _line(length_mode=FULL) == "Locked · Shuffle · Full"
         assert _line(length_mode=CLIPS) == "Locked · Shuffle · Clips"
@@ -138,7 +138,7 @@ class TestLine:
         assert MainHud(main_hud_model=MainHudModel(main_mode=MainMode.GENAU, locked=False),
                           drive=_drive(advance_interval=5)).title == "Unlocked · 5s"
 
-    def test_names_the_compilation_and_where_you_are_in_it(self):
+    def test_names_the_compilation_and_where_you_are_in_it_keeping_the_length_mode_it_returns_to(self):
         def line(**over) -> str:
             return _line(compilation="Vol6", position=9, total=20, **over)
 
@@ -334,7 +334,7 @@ class TestPainter:
         shades, counts = np.unique(pixels.reshape(-1, 3), axis=0, return_counts=True)
         return tuple(shades[counts.argmax()]), pixels
 
-    def test_the_mode_you_are_in_lights_blue(self):
+    def test_the_mode_you_are_in_lights_blue_as_on_the_satellites_since_a_lighter_ground_could_not_be_found_at_a_glance(self):
         shade, pixels = self._busiest_shade(
             "main_kino_activate",
             MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows("kino")))
@@ -343,7 +343,7 @@ class TestPainter:
         green = (pixels[:, :, 1] > 130) & (pixels[:, :, 0] < 110) & (pixels[:, :, 2] < 110)
         assert not green.any()
 
-    def test_an_ordinary_toggle_that_is_on_fills_the_familys_blue(self):
+    def test_an_ordinary_toggle_that_is_on_fills_the_familys_blue_since_the_active_gray_could_not_be_told_from_off(self):
         blue = BLUE
         shade, _pixels = self._busiest_shade(
             "robot_hand_toggle_learned",
@@ -352,7 +352,7 @@ class TestPainter:
 
         assert shade == blue
 
-    def test_a_choice_the_funestra_is_holding_but_not_applying_fills_the_gray(self):
+    def test_a_choice_the_funestra_is_holding_but_not_applying_fills_the_gray_as_a_compilation_sets_the_browse_order_and_length_aside_and_restores_them(self):
         gray = (colors.BG_BUTTON_ACTIVE.red(), colors.BG_BUTTON_ACTIVE.green(),
                 colors.BG_BUTTON_ACTIVE.blue())
         shade, _pixels = self._busiest_shade(
@@ -376,7 +376,7 @@ class TestPainter:
         edge = pixels[0, 4:bw - 4]
         assert (abs(edge - np.array(muted)).max(axis=1) <= 2).any()
 
-    def test_the_broker_wears_the_face_it_had_on_the_dashboard(self):
+    def test_the_broker_wears_the_face_it_had_on_the_dashboard_since_it_acts_on_the_app_s_service_and_not_on_a_funestra(self):
         for broker, fill in ((True, (48, 128, 224)), (False, (255, 60, 60))):
             pixels = self._broker_pixels(broker)
 
@@ -401,7 +401,7 @@ class TestPainter:
 
             assert drawn == list(grid), action
 
-    def test_minimize_draws_the_familys_minus_rather_than_leaving_it_to_a_font(self):
+    def test_minimize_draws_the_familys_minus_rather_than_leaving_it_to_a_font_counting_only_ink_inside_the_border_and_brighter_than_the_ground(self):
         pixels = self._button_pixels(
             "main_minimize", MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows()))
         inside = pixels[2:-2, 2:-2]
@@ -421,7 +421,7 @@ class TestPainter:
         return self._button_pixels("broker_panel", MainHudModel(
             main_mode=MainMode.KINO, osr2_controls=osr2_controls(broker_running=broker)))
 
-    def test_f_mode_is_the_one_lit_control_that_stays_green(self):
+    def test_f_mode_is_the_one_lit_control_that_stays_green_since_green_here_belongs_to_the_favorites_and_the_funscripts(self):
         pixels = self._button_pixels(
             "main_fmode",
             MainHudModel(main_mode=MainMode.KINO,
@@ -430,7 +430,7 @@ class TestPainter:
         shades, counts = np.unique(pixels.reshape(-1, 3), axis=0, return_counts=True)
         assert tuple(shades[counts.argmax()]) == (48, 160, 48)
 
-    def test_the_enhanced_filter_wears_yellow_off_and_on(self):
+    def test_the_enhanced_filter_wears_yellow_off_and_on_the_yellow_of_the_plus_origenerator_marks_an_enhanced_image_with(self):
         yellow = (255, 200, 120)
         off = self._button_pixels("genau_filter_enhanced", MainHudModel(
             main_mode=MainMode.GENAU, rows=main_hud_rows("genau", enhanced=False)))
@@ -460,7 +460,7 @@ class TestPainter:
 
         assert tuple(first) != tuple(second)
 
-    def test_a_lit_marks_ink_stays_white_over_a_colored_fill(self):
+    def test_a_lit_marks_ink_stays_white_over_a_colored_fill_since_a_mark_that_changed_color_read_as_a_different_button(self):
         painter = MainHudPainter()
         rgb = _rgb(painter.bgra(
             MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO,
@@ -524,7 +524,7 @@ class TestPresses:
 
         assert painter.press_at(*_over(painter, "robot_hand_amplitude_up")) == "robot_hand_amplitude_up"
 
-    def test_the_visualizers_controls_are_dead_while_a_funscript_has_the_device(self):
+    def test_the_visualizers_controls_are_dead_while_a_funscript_has_the_device_since_a_press_there_once_woke_genau_against_the_funscript(self):
         painter = MainHudPainter()
         painter.bgra(MainHud(
             main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.FUNSCRIPT), drive=_drive()))
