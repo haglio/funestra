@@ -630,7 +630,7 @@ class TestNothingToFoldIn:
 
         assert hud.segments == ((0, DRIVEN_BY_FUNSCRIPT),)
 
-    def test_an_unchanging_trace_still_compares_equal_to_itself(self):
+    def test_an_unchanging_trace_still_compares_equal_to_itself_so_the_painter_can_skip_the_repaint(self):
         script = _script(until_ms=120_000)
 
         assert _read(script, at=0) == _read(script, at=0)

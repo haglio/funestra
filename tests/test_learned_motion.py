@@ -104,6 +104,15 @@ class TestPlayingThePhrases:
         assert state.clock == 0.0
         assert learned_motion.position(state, hand) == pytest.approx(0.0)
 
+    def test_a_move_of_the_speed_bar_changes_the_pace_from_here_on_without_a_step(self):
+        hand, state = _playing(_model(_phrase(500, 20, 80)))
+        _run(hand, state, 0.3)
+        before_the_move = learned_motion.position(state, hand)
+
+        hand.speed = 90
+
+        assert learned_motion.position(state, hand) == pytest.approx(before_the_move)
+
     def test_a_clock_that_stalled_owes_the_motion_one_capped_tick_and_no_more(self):
         stalled_hand, stalled = _playing(_model(_phrase(500, 20, 80)))
         steady_hand, steady = _playing(_model(_phrase(500, 20, 80)))
@@ -194,7 +203,7 @@ class TestWhatTheVisualizerDraws:
 
 
 class TestKeepingItGoing:
-    def test_the_phrases_stay_laid_out_ahead_and_the_past_is_let_go(self):
+    def test_the_phrases_stay_laid_out_ahead_for_the_trace_and_a_command_aimed_ahead_and_the_past_is_let_go(self):
         hand, state = _playing(_model(_phrase(500, 20, 80)))
 
         _run(hand, state, 120.0)

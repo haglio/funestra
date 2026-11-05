@@ -263,6 +263,17 @@ class TestLetGoThroughTheRoundTrip:
 
         assert sender.let_go_position == 6499
 
+    def test_handing_over_sends_nothing_since_the_driver_taking_the_device_walks_it_down(self):
+        sink = FakeTCodeSink()
+        sender = RobotHandTCodeDriver(
+            sink, robot_hand=RobotHandState(amplitude=30, center=50), min_interval=0.0)
+        sender.maybe_send(phase=0.5, now=0.5)
+        sent_while_driving = list(sink.sent)
+
+        sender.hand_over()
+
+        assert sink.sent == sent_while_driving
+
     def test_the_latch_survives_the_climb(self):
         sender = self._sender()
         sender.hand_over()
@@ -273,7 +284,7 @@ class TestLetGoThroughTheRoundTrip:
 
         assert sender.let_go_position is not None
 
-    def test_the_latch_clears_when_the_wave_comes_live(self):
+    def test_the_latch_clears_when_the_wave_comes_live_which_is_the_edge_the_trace_re_anchors_its_descent_top_on(self):
         sender = self._sender()
         sender.hand_over()
 

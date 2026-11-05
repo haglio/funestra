@@ -63,7 +63,7 @@ class TestUpdateEngine:
         assert returned is None
         assert engine.phase == pytest.approx(0.4)
 
-    def test_a_sync_pulse_never_pulls_the_phase_backward(self):
+    def test_a_sync_pulse_never_pulls_the_phase_backward_since_a_video_is_scrubbed_by_it_and_must_never_run_backward(self):
         engine = BeatEngine(last_tick=100.0, phase=0.4, seen_sync_pulse_id=1)
 
         advance_beat(

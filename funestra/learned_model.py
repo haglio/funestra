@@ -9,7 +9,7 @@ from pathlib import Path
 from statistics import median
 
 PHRASE_SWINGS = 16
-_TEMPO_FLOOR_MS = 100.0
+_FASTEST_SWING_ANYONE_SCRIPTS_MS = 100.0
 _TEMPO_RATIO = math.sqrt(2)
 TEMPO_BINS = 10
 _RANGE_STEP = 20
@@ -24,10 +24,10 @@ class Phrase:
 
 
 def tempo_bin(duration_ms: float) -> int:
-    if duration_ms <= _TEMPO_FLOOR_MS:
+    if duration_ms <= _FASTEST_SWING_ANYONE_SCRIPTS_MS:
         return 0
     return min(TEMPO_BINS - 1,
-               int(math.log(duration_ms / _TEMPO_FLOOR_MS) / math.log(_TEMPO_RATIO)))
+               int(math.log(duration_ms / _FASTEST_SWING_ANYONE_SCRIPTS_MS) / math.log(_TEMPO_RATIO)))
 
 
 def range_bin(position: float) -> int:
