@@ -1195,6 +1195,19 @@ class TestARowsNameLinesUpWithItsControls:
             rows.setdefault(rect[1], []).append((rect[0], rect[2], button))
         return painter, {y: sorted(items) for y, items in rows.items()}
 
+    def test_the_mode_switch_keeps_its_place_as_the_mode_flips_and_only_the_transport_changes(self):
+        stays_put = {"main_kino_activate", "genau_activate"}
+
+        def places(mode: str) -> dict:
+            painter = MainHudPainter()
+            painter.bgra(MainHud(main_hud_model=MainHudModel(
+                main_mode=mode, rows=main_hud_rows(mode))))
+            return {button.command: rect for rect, button in painter.buttons
+                    if button.command in stays_put}
+
+        assert places(MainMode.KINO) == places(MainMode.GENAU)
+        assert set(places(MainMode.KINO)) == stays_put
+
     def test_the_name_starts_where_the_controls_start(self):
 
         for mode in MainMode:
