@@ -27,6 +27,9 @@ PARK_TOUCH_WAIT_CAP_MS = 2500
 
 QUIET_LEAD_OUT_MS = QUIET_LEAD_IN_MS - HANDOFF_RAMP_MS
 
+# The OSR2's linear axis is driven by a pair of hobby servos. The build's MG996R is rated at 0.13
+# seconds for 60 degrees unloaded, and a full run is more than two of those sweeps, under load,
+# so a quarter of a second is as fast as it goes.
 FASTEST_FULL_TRAVEL_MS = 250
 
 _MAX_TRAVEL_PER_SECOND = 100_000 / FASTEST_FULL_TRAVEL_MS
