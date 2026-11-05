@@ -90,3 +90,7 @@ class TestDrawingWhatComesNext:
         steady = learned_model.classify(_phrase(400, 20, 80))
 
         assert learned_model.draw_phrase(model, random.Random(1), steady) == _phrase(400, 20, 80)
+
+
+def test_a_phrase_holds_an_even_count_of_swings_so_it_ends_coming_down_and_the_next_begins_going_up():
+    assert learned_model.PHRASE_SWINGS % 2 == 0

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import ast
+from pathlib import Path
+
 import pytest
 
+from funestra import robot_hand
 from funestra.robot_hand import (
     MAX_TICK_SECONDS,
     MIN_SPEED,
@@ -604,6 +608,15 @@ class TestTheWaveTracedOnKnots:
         assert later == pytest.approx(at_knot, abs=1e-9)
         assert slide == pytest.approx(0.4)
 
+    def test_the_knots_stay_put_into_the_next_cycle_for_a_phase_counted_up_without_wrapping(self):
+        wave = Waveform(WaveformShape.SINE, 100, 50)
+
+        before_the_cycle_ends, _ = trace_window(wave, TraceSpan(0.95, 60.0, 5, 1.2))
+        a_knot_on_and_into_the_next, _ = trace_window(wave, TraceSpan(1.25, 60.0, 5, 1.2))
+
+        assert a_knot_on_and_into_the_next[:-1] == pytest.approx(
+            before_the_cycle_ends[1:], abs=1e-9)
+
     def test_a_wave_that_is_not_moving_is_drawn_flat_at_where_it_stands(self):
         heights, slide = trace_window(
             Waveform(WaveformShape.SINE, 100, 50), TraceSpan(0.5, 0.0, 3, 1.0))
@@ -628,3 +641,17 @@ class TestTheWaveTracedOnKnots:
         assert len(heights) == 61
         assert min(heights) >= 0.24
         assert max(heights) <= 0.76
+
+
+class TestWhatThisModuleIs:
+    def test_it_is_arithmetic_alone_importing_no_toolkit_and_no_clock_so_each_app_advances_the_phase_by_its_own(self):
+        tree = ast.parse(Path(robot_hand.__file__).read_text(encoding="utf-8"))
+        imported = {alias.name.split(".")[0] for node in ast.walk(tree)
+                    if isinstance(node, ast.Import) for alias in node.names}
+        imported |= {(node.module or "").split(".")[0] for node in ast.walk(tree)
+                     if isinstance(node, ast.ImportFrom)}
+
+        assert imported <= {"__future__", "math", "dataclasses", "enum", "typing", "tcode"}
+
+    def test_a_shape_nothing_handles_yet_still_moves_as_the_sine_does(self):
+        assert robot_hand.position_fraction(0.25, shape="a shape added later") == pytest.approx(0.5)

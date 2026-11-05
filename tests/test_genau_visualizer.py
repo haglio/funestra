@@ -49,7 +49,7 @@ JUST_UNDER_DRIVE = 0.0390625
 JUST_OVER_DRIVE = 0.04296875
 
 
-class TestHowOftenTheVisualizerGoesOut:
+class TestTheVisualizerGoesOutOnATimerSinceItsTraceScrollsWhileNothingElseChanges:
     def _published(self, tmp_path):
         drive = tmp_path / "genau_drive.txt"
         return drive, _visualizer(drive_file=drive)

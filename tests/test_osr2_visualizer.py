@@ -239,7 +239,7 @@ class TestTracks:
 
         assert track_command(bar, x, y + h // 2) == "robot_hand_speed_0"
 
-    def test_every_band_is_dimmed_while_a_funscript_has_the_device(self):
+    def test_every_band_is_dimmed_and_left_in_place_while_a_funscript_has_the_device_since_removing_them_resized_the_hud_at_every_handover(self):
         assert all(t.dim for t in tracks(0, 0, _hud(driven=DRIVEN_BY_FUNSCRIPT)))
         assert not any(t.dim for t in tracks(0, 0, _hud()))
 
@@ -382,7 +382,7 @@ class TestPublishing:
 
         assert read_drive(path).max_intensity == DriveHud.max_intensity
 
-    def test_the_knot_slide_and_the_edge_go_over_the_wire_too(self, tmp_path):
+    def test_the_knot_slide_and_the_edge_go_over_the_wire_too_since_the_learned_motion_is_drawn_on_knots(self, tmp_path):
         path = tmp_path / "genau_drive.txt"
         publish_drive(path, _hud(slide=0.4, edge=0.75))
 
@@ -460,7 +460,7 @@ class TestWhoseMotion:
     def test_a_funscript_s_motion_is_green(self):
         assert GREEN in self._line_colors(_hud(driven=DRIVEN_BY_FUNSCRIPT))
 
-    def test_the_device_s_own_swing_is_neither_driver_s_color(self):
+    def test_the_device_s_own_swing_is_neither_driver_s_color_but_the_magenta_its_auto_label_is_written_in(self):
         colors = self._line_colors(_hud(driven=DRIVEN_BY_AUTO))
 
         assert MAGENTA in colors
@@ -476,7 +476,7 @@ class TestWhoseMotion:
 
         assert not np.array_equal(hand, script)
 
-    def test_only_the_robot_hand_s_motion_leaves_its_controls_live(self):
+    def test_only_the_robot_hand_s_motion_leaves_its_controls_live_since_a_press_during_a_funscript_s_turn_once_put_two_drivers_on_the_device(self):
         for driven in (DRIVEN_BY_FUNSCRIPT, DRIVEN_BY_NOTHING, DRIVEN_BY_AUTO):
             assert all(c.dim for c in controls(0, 0, _hud(driven=driven)))
         assert not all(c.dim for c in controls(0, 0, _hud(driven=DRIVEN_BY_ROBOT_HAND)))
@@ -532,7 +532,7 @@ class TestDimmedForTheScript:
         assert BLUE not in self._colors(_hud(driven=DRIVEN_BY_FUNSCRIPT))
         assert BLUE in self._colors(_hud(driven=DRIVEN_BY_ROBOT_HAND))
 
-    def test_the_dimmed_marks_are_dark_not_translucent(self):
+    def test_the_dimmed_marks_are_dark_not_translucent_since_see_through_ink_glows_over_a_bright_video(self):
         dimmed = _rendered(_hud(driven=DRIVEN_BY_FUNSCRIPT))
         live = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND))
         x, y, w, _h = controls(PAD, PAD, _hud(driven=DRIVEN_BY_FUNSCRIPT))[0].rect
