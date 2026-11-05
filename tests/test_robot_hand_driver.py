@@ -234,7 +234,7 @@ class TestTheRiseOutOfThePark:
 
         assert 1600 < sender.current_position() < 1900
 
-    def test_at_full_amplitude_there_is_no_hold(self):
+    def test_at_full_amplitude_there_is_no_hold_by_the_owners_confirmed_rule(self):
         sink = FakeTCodeSink()
         state = RobotHandState(amplitude=100, center=50)
         sender = RobotHandTCodeDriver(sink, robot_hand=state, min_interval=0.0)

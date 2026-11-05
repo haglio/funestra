@@ -118,7 +118,7 @@ class TestTheVideoUnderGenau:
         assert hud.let_go == 0.44
 
 
-class TestAChoiceThatIsHeld:
+class TestAChoiceIsHeldBecauseRereadEveryFrameTheSeamFlickered:
     def test_a_newer_publish_does_not_move_it(self):
         gate, _session = _gate_holding_a_forecast()
 
@@ -134,7 +134,7 @@ class TestAChoiceThatIsHeld:
 
         assert gate.handoff_touch() == CHOSEN_TOUCH_MS
 
-    def test_a_second_frame_of_playing_does_not_move_it_either(self):
+    def test_a_second_frame_does_not_move_it_either_since_each_step_is_measured_from_the_frame_before_never_from_the_start(self):
         gate, session = _gate_holding_a_forecast()
 
         for ms in (300, 600):
@@ -179,7 +179,7 @@ class TestWhatVoidsAChoice:
 
         assert gate.handoff_touch() != CHOSEN_TOUCH_MS
 
-    def test_a_rewind(self):
+    def test_a_rewind_which_meets_the_same_boundary_with_a_realigned_wave_the_old_touch_would_cut_anywhere(self):
         gate, session = _gate_holding_a_forecast()
 
         session.position_ms = -300
@@ -187,7 +187,7 @@ class TestWhatVoidsAChoice:
 
         assert gate.handoff_touch() is None
 
-    def test_a_jump_forward(self):
+    def test_a_jump_forward_since_a_choice_is_carried_only_through_one_continuous_approach(self):
         gate, session = _gate_holding_a_forecast()
 
         session.position_ms = 900
@@ -310,7 +310,7 @@ class TestWhetherGenauHasBeenSeenLiveHere:
 
         assert hud.let_go is None
 
-    def test_a_stint_with_nothing_published_does_not_re_arm_it(self):
+    def test_a_stint_with_nothing_published_does_not_re_arm_it_since_the_device_is_still_where_genau_left_it(self):
         gate = DriveGate(FakeSession())
         gate.visualizer(_motion())
 
@@ -320,7 +320,7 @@ class TestWhetherGenauHasBeenSeenLiveHere:
         assert hud.let_go == 0.44
 
     @pytest.mark.parametrize("what_moved", ["a rewind", "a jump forward", "a pause"])
-    def test_nothing_that_only_voids_a_forecast_re_arms_it(self, what_moved):
+    def test_nothing_that_only_voids_a_forecast_re_arms_it_since_in_the_same_video_the_published_handoff_still_describes_the_device(self, what_moved):
         session = FakeSession()
         gate = DriveGate(session)
         gate.visualizer(_motion())
@@ -362,7 +362,7 @@ class TestAFunestraHeldDownByTheMaxIntensity:
             0, round(SPAN_S * 1000), TRACE_SAMPLES, max_intensity=30)[0][:TRACE_SAMPLES]
 
 
-class TestAFunestraThatDoesNotSayHowItPlaysItsScript:
+class TestAHostOnABranchOpenedBeforeHostsSaidHowTheyPlayTheirScript:
     def test_is_drawn_from_the_script_it_has(self):
         session = FakeSession()
         session.current_funscript = session.funscript_as_played
@@ -393,10 +393,10 @@ class TestTheTouchTheTraceChose:
     def test_resting_before_a_turn_takes_the_turn_it_is_approaching(self):
         assert next_handoff_touch(_script(), 0, self._latched()) == 3_600
 
-    def test_inside_a_turn_it_takes_the_boundary_just_crossed(self):
+    def test_inside_a_turn_it_takes_the_boundary_just_crossed_which_the_arbiter_is_still_ending(self):
         assert next_handoff_touch(_script(), 5_000, self._latched()) == 3_600
 
-    def test_a_rest_with_no_turn_after_it_has_no_boundary_at_all(self):
+    def test_a_rest_with_no_turn_after_it_has_no_boundary_at_all_whatever_the_latch_still_holds(self):
         assert next_handoff_touch(_script(), 20_000, self._latched()) is None
 
     def test_a_boundary_with_nothing_latched_yet_says_so(self):
