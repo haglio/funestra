@@ -11,6 +11,7 @@ from funestra.hud_controls import (
     LATEST_ICON,
     NONE_FOR_THIS_ONE,
     RESET_ICON,
+    RESET_PUTS_BACK_THE_SPEED,
     RESET_TOOLTIP,
     SHUFFLE_ICON,
     TRASH_ICON,
@@ -212,3 +213,10 @@ class TestTheSwitchesAndTheThingsDone:
         assert (alone.icon, alone.group_break) == (VERSIONS_ICON, True)
         assert (alone.dim, alone.tooltip) == (True, "Another version of this clip" + NONE_FOR_THIS_ONE)
         assert (among.dim, among.tooltip) == (False, "Another version of this clip")
+
+
+def test_resets_tooltip_says_the_speed_goes_back_in_the_words_every_reset_shares():
+    assert RESET_TOOLTIP == (
+        "Reset — no filter, no lock, no loop, no F-Mode, normal speed, shuffled from the top")
+    assert RESET_PUTS_BACK_THE_SPEED == "normal speed"
+    assert RESET_PUTS_BACK_THE_SPEED in RESET_TOOLTIP

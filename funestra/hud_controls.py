@@ -25,7 +25,9 @@ FUNSCRIPT_JUMP_ICON = shared_icon("funscript_jump")
 NONE_FOR_THIS_ONE = " (none for this one)"
 AN_IMAGE = "this is an image"
 TRASH_TOOLTIP = "Unfavorite it — or send it to Trash when it is not a favorite"
-RESET_TOOLTIP = "Reset — no filter, no lock, no loop, no F-Mode, normal speed, shuffled from the top"
+RESET_PUTS_BACK_THE_SPEED = "normal speed"
+RESET_TOOLTIP = (f"Reset — no filter, no lock, no loop, no F-Mode, {RESET_PUTS_BACK_THE_SPEED}, "
+                 "shuffled from the top")
 
 
 def longer_than_a_step(duration_ms: float) -> bool:
