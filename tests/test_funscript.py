@@ -5,7 +5,9 @@ import json
 import pytest
 
 from funestra.funscript import (
+    HANDOFF_RAMP_MS,
     PARK_SETTLE_MS,
+    PARK_TOUCH_WAIT_CAP_MS,
     QUIET_LEAD_IN_MS,
     Funscript,
     load,
@@ -147,6 +149,18 @@ class TestTurnBoundsAt:
         assert fs.is_resting_at(13500) is False
         assert fs.turn_bounds_at(13500) == (5000, 20300)
 
+    def test_a_gap_too_short_for_the_other_driver_to_do_anything_in_is_no_turn_which_the_long_lead_in_measures(self):
+        fs = Funscript(actions=[
+            (10000, 0), (10300, 100),
+            (19500, 0), (19800, 100),
+        ])
+
+        assert fs.turn_bounds_at(14000) == (5000, 22800)
+
+    def test_a_playhead_on_a_stretch_s_first_millisecond_is_inside_it(self):
+        assert self._two_clusters().turn_bounds_at(5000) == (5000, 13600)
+        assert self._two_clusters().is_resting_at(5000) is False
+
     def test_a_script_with_no_dense_action_is_one_long_gap(self):
         fs = Funscript(actions=[(0, 0), (10000, 100), (20000, 0)])
 
@@ -284,6 +298,13 @@ class TestSnapLoop:
 
         assert (in_ms, out_ms) == (30000, 35000)
 
+    def test_a_base_two_seconds_off_belongs_to_another_action_since_a_cycle_lasts_a_second_at_most(self):
+        actions = [(0, 100), (8000, 100)]
+        actions += [(t, 60 if (t // 500) % 2 else 20) for t in range(500, 8000, 500)]
+        fs = Funscript(actions=sorted(actions))
+
+        assert snap_loop(fs, 2000, 6000) == (2000, 6000)
+
     def test_a_script_with_no_base_at_all_keeps_the_mark(self):
         fs = Funscript(actions=[(t, 80 if (t // 500) % 2 else 0)
                                 for t in range(0, 60001, 500)])
@@ -303,7 +324,7 @@ class TestPositionAt:
 
         assert fs.position_at(200) == 40.0
 
-    def test_before_the_first_and_past_the_last_it_holds(self):
+    def test_before_the_first_and_past_the_last_it_holds_as_the_device_does(self):
         fs = Funscript(actions=[(500, 20), (1500, 60)])
 
         assert fs.position_at(0) == 20.0
@@ -451,6 +472,28 @@ class TestDepthAtSpeed:
 
         assert fs.paced_position_at(9000, 2.0) == 50
 
+    def test_the_depth_gives_way_only_just_before_the_burst_that_needs_it(self):
+        fs = Funscript(actions=[
+            (0, 0), (1000, 100), (2000, 0), (3000, 100), (3200, 0), (3400, 100), (3600, 0)])
+
+        assert fs.paced_position_at(1000, 2.0) == 100
+        assert fs.paced_position_at(3000, 2.0) == 50
+
+    def test_after_a_burst_the_depth_stays_given_up_for_cycles_and_walks_back_rather_than_pumping(self):
+        fs = Funscript(actions=[
+            (0, 0), (200, 100), (400, 0),
+            (1400, 100), (2400, 0), (3400, 100), (4400, 0), (5400, 100)])
+
+        assert [fs.paced_position_at(t, 2.0) for t in (1400, 3400, 5400)] == [50, 50, 100]
+
+    def test_between_two_actions_the_depth_changes_gradually_rather_than_jumping_mid_cycle(self):
+        fs = Funscript(actions=[
+            (0, 0), (1000, 100), (2000, 0), (3000, 100), (3200, 0), (3400, 100), (3600, 0)])
+
+        kept = [fs.paced_position_at(t, 2.0) / fs.position_at(t) for t in (2250, 2500, 2750)]
+
+        assert kept[0] > kept[1] > kept[2]
+
     def test_the_drawn_plan_gives_up_the_same_depth_the_device_is_given(self):
         fs = self._fast()
 
@@ -462,26 +505,51 @@ class TestDepthAtSpeed:
 
 
 class TestDepthUnderTheMaxIntensity:
-    def _steady(self):
-        return Funscript(actions=[(0, 0), (1000, 100), (2000, 0), (3000, 100), (4000, 0)])
+    TRAVEL_PER_SECOND = 200.0
+
+    def _faster_than_a_max_intensity_of_30_allows(self):
+        return Funscript(actions=[(0, 0), (500, 100), (1000, 0), (1500, 100), (2000, 0)])
+
+    def test_the_script_here_is_past_the_max_intensity_it_is_read_under(self):
+        assert depth(self.TRAVEL_PER_SECOND, 30) < 1.0
 
     def test_a_script_past_the_max_intensity_keeps_the_share_of_its_depth_it_leaves(self):
-        assert self._steady().paced_position_at(1000, 1.0, max_intensity=30) == pytest.approx(
-            100 * depth(100.0, 30))
+        fs = self._faster_than_a_max_intensity_of_30_allows()
+
+        assert fs.paced_position_at(500, 1.0, max_intensity=30) == pytest.approx(
+            100 * depth(self.TRAVEL_PER_SECOND, 30))
 
 
     def test_the_plan_gives_up_the_same_depth_the_device_is_given(self):
-        fs = self._steady()
+        fs = self._faster_than_a_max_intensity_of_30_allows()
 
-        assert fs.planned_position_at(1000, 1.0, max_intensity=30) == pytest.approx(
-            fs.paced_position_at(1000, 1.0, max_intensity=30))
+        assert fs.planned_position_at(500, 1.0, max_intensity=30) == pytest.approx(
+            fs.paced_position_at(500, 1.0, max_intensity=30))
 
     def test_the_drawn_plan_gives_it_up_too(self):
-        fs = self._steady()
+        fs = self._faster_than_a_max_intensity_of_30_allows()
 
-        drawn, _ = fs.planned_trace_window(0, 3000, 4, speed=1.0, max_intensity=30)
+        drawn, _ = fs.planned_trace_window(0, 1500, 4, speed=1.0, max_intensity=30)
 
-        assert max(drawn) == pytest.approx(depth(100.0, 30))
+        assert max(drawn) == pytest.approx(depth(self.TRAVEL_PER_SECOND, 30))
+
+
+    def test_a_drawing_kept_under_one_max_intensity_is_not_reread_under_another(self):
+        fs = self._faster_than_a_max_intensity_of_30_allows()
+
+        full, _ = fs.planned_trace_window(0, 1500, 4, speed=1.0)
+        held_down, _ = fs.planned_trace_window(0, 1500, 4, speed=1.0, max_intensity=30)
+
+        assert max(full) == 1.0
+        assert max(held_down) == pytest.approx(depth(self.TRAVEL_PER_SECOND, 30))
+
+
+class TestHowLongAHandoffTakes:
+    def test_a_ramp_long_enough_to_read_as_a_hand_over_still_leaves_the_device_resting_for_most_of_the_quiet(self):
+        assert HANDOFF_RAMP_MS < QUIET_LEAD_IN_MS / 2
+
+    def test_the_wait_for_a_touch_spans_a_slow_swing_yet_ends_inside_the_quiet_so_a_motion_that_never_comes_down_cannot_stall_the_script(self):
+        assert PARK_TOUCH_WAIT_CAP_MS < QUIET_LEAD_IN_MS
 
 
 class TestPlayedOnALoop:
