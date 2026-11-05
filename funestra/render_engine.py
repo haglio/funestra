@@ -79,6 +79,8 @@ class MpvRenderEngine(_MpvControl):
         # Without block_for_target_time=False libmpv holds the call until the frame's display time,
         # and a host compositing on its own clock (a 90 Hz headset loop over 30 fps videos) must
         # not inherit that pacing.
+        # mpv keeps the video's shape inside any target, so only a target of the video's own shape
+        # is filled edge to edge.
         self._viewport = (int(width), int(height))
         flags = self._next_frame_flags()
         self._render_context.render(

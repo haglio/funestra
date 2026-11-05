@@ -1028,7 +1028,7 @@ def test_the_size_on_screen_is_the_one_mpv_scaled_the_file_to():
     assert control.video_dims == (1920, 816)
 
 
-def test_between_files_there_is_no_size():
+def test_between_files_there_is_no_size_and_a_caller_keeps_its_last_one_so_the_old_video_s_final_frame_stays_up():
     mpv = FakeMpv()
     control = Control(mpv)
     mpv.report("video-out-params", {"dw": 1920, "dh": 816})
@@ -1181,7 +1181,7 @@ def test_a_locked_image_with_places_is_drawn_on_the_close_up_its_window_frames()
         Fit(WIDE, (832, 1216)).framing(FACE).placement())
 
 
-def test_a_windows_size_is_read_off_windows_itself():
+def test_a_windows_size_is_read_off_windows_itself_by_its_sm_cxscreen_and_sm_cyscreen_metrics():
     user32 = ctypes.windll.user32
     screen = (user32.GetSystemMetrics(0), user32.GetSystemMetrics(1))
 

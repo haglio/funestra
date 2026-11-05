@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import ast
 import email.message
 import io
 import json
 import logging
+import sys
 import urllib.error
 from pathlib import Path
 
@@ -253,7 +255,7 @@ class TestWorkingOutWhereAFileIs:
 
 
 class TestDownloadingAScript:
-    def test_the_file_is_fetched_from_where_its_link_says_without_asking_the_forum_and_without_sending_the_file_host_the_account_s_key(self):
+    def test_the_file_is_fetched_from_where_its_link_says_without_asking_the_forum_and_without_sending_the_file_host_the_account_s_key_since_every_request_to_the_forum_counts_against_a_daily_allowance(self):
         clock = _FakeClock()
         seen: list[tuple[str, str | None]] = []
         found = harvest.file_addresses(_short_link())[1]
@@ -416,3 +418,13 @@ class TestWhichCorpusIsWorkedIn:
         args = harvest.parse_arguments(["--corpus", str(tmp_path / "collection")])
 
         assert args.corpus == tmp_path / "collection"
+
+
+def test_the_tool_imports_the_standard_library_and_app_support_alone():
+    tree = ast.parse(Path(harvest.__file__).read_text(encoding="utf-8"))
+    imported = {alias.name.split(".")[0] for node in ast.walk(tree)
+                if isinstance(node, ast.Import) for alias in node.names}
+    imported |= {(node.module or "").split(".")[0] for node in ast.walk(tree)
+                 if isinstance(node, ast.ImportFrom)}
+
+    assert imported <= sys.stdlib_module_names | {"app_support"}

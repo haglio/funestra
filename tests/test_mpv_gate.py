@@ -42,7 +42,7 @@ def test_a_call_inside_holds_the_close_off_and_then_lets_it_through():
     assert answered == [True]
 
 
-def test_close_gives_up_rather_than_freeing_under_a_live_call():
+def test_close_gives_up_rather_than_freeing_under_a_live_call_which_joining_the_worker_thread_could_not_promise_since_a_timed_out_join_returns_anyway():
     gate = CallGate()
     inside = threading.Event()
     release = threading.Event()
@@ -123,7 +123,7 @@ class Guarded:
         self.calls.append("seek")
 
 
-def test_a_guarded_call_after_the_close_does_nothing_and_says_so():
+def test_a_guarded_call_after_the_close_does_nothing_and_says_so_since_that_race_is_ordinary_at_shutdown_and_a_traceback_would_hide_why_the_session_ended():
     engine = Guarded()
     assert engine.position_ms() == 42.0
     assert engine._gate.close(timeout=5.0)

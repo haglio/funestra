@@ -28,7 +28,7 @@ class TestAListWrittenUnderTheWindow:
 
         assert _names(taken) == [["a show.png"]]
 
-    def test_is_taken_once_however_many_frames_follow(self, tmp_path):
+    def test_is_taken_once_however_many_frames_follow_since_taking_it_again_restarts_the_show(self, tmp_path):
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "its own clip.mp4")
         taken: list[list[PlaylistItem]] = []
@@ -54,7 +54,7 @@ class TestAListWrittenUnderTheWindow:
 
         assert _names(taken) == [["v2.mp4"]]
 
-    def test_the_list_the_window_opened_on_is_not_taken_again(self, tmp_path):
+    def test_the_list_the_window_opened_on_is_not_taken_again_which_would_restart_the_show(self, tmp_path):
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "its own clip.mp4")
         taken: list[list[PlaylistItem]] = []

@@ -86,7 +86,7 @@ WRITTEN_DOWN_VERBS = frozenset({
     "SET_MAX_INTENSITY", "PLAY_FILE",
 })
 
-class TestTheVocabularyIsWrittenDown:
+class TestTheVocabularyIsWrittenDownAsTheOrchestratorsReferenceAndItsSpokenCommandsSpellIt:
     def test_the_registry_declares_exactly_the_verbs_written_down(self):
         assert set(VERBS) == WRITTEN_DOWN_VERBS
 

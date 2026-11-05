@@ -297,6 +297,8 @@ class _MpvControl:
 
     @mpv_call()
     def settle_on_the_next(self) -> None:
+        # mpv leaves the spent entry first in its playlist after rolling onto the next one;
+        # clearing drops it and the current one plays on.
         rolled_onto, self._staged = self._staged, None
         self._mpv.playlist_clear()
         self._begin_the_new_clip(rolled_onto)

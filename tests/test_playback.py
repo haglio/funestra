@@ -328,7 +328,7 @@ class TestVersions:
 
         assert playback.showing == video
 
-    def test_a_family_the_file_on_screen_is_not_in_is_left_alone(self, tmp_path):
+    def test_a_family_the_file_on_screen_is_not_in_is_left_alone_since_the_source_may_have_sent_it_about_an_item_already_rolled_past(self, tmp_path):
         playback, engine = _make_playback(tmp_path, entries=2)
         opened = len(engine.opened)
         stale = tmp_path / "somebody else.mp4"
@@ -573,7 +573,7 @@ class TestTheOsr2:
 
         assert tcode.parks == 1
 
-    def test_an_image_that_has_moved_once_is_not_asked_again(self, tmp_path):
+    def test_an_image_that_has_moved_once_is_not_asked_again_checked_once_and_never_every_tick_since_a_video_between_frames_must_not_stop_the_device(self, tmp_path):
         playback, engine, tcode = _driving(tmp_path)
         playback.set_tcode_enabled(True)
         playback.set_paused(True)

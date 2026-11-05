@@ -91,7 +91,7 @@ class TestApplyRuntimeCommand:
         assert engine.phase == pytest.approx(0.0)
         assert ds.speed == 50
 
-    def test_pause_sets_paused(self):
+    def test_pause_sets_paused_the_flag_the_tick_reads_beside_the_hand_s_playing_flag_the_motion_follows(self):
         engine = BeatEngine(phase=0.0, last_tick=0.0)
         paused = Flag()
 
@@ -573,7 +573,7 @@ class TestFlickAdvanceCommands:
             assert self._apply_volume(bad, shown.append) is False
         assert shown == []
 
-    def test_the_retired_advance_verbs_are_not_answered_to(self):
+    def test_the_retired_advance_verbs_are_not_answered_to_since_two_verbs_for_one_setting_drift_apart(self):
         aa = FlickAdvanceState(interval=10)
         for cmd in ("ADVANCE_UP", "ADVANCE_DOWN", "ADVANCE 30"):
             assert self._apply(cmd, aa) is False, f"{cmd} should no longer be answered"
