@@ -225,8 +225,10 @@ def test_render_rings_the_locked_clip_in_white(thumb):
             _model(locked=locked, title="Locked" if locked else "Unlocked",
                    corner=HudCell(path="c.mp4", thumb=thumb))
         )
-        rgb = _rgb(rendered.bgra)[PAD + TITLE_ROW_H:, :]
-        return int((rgb > 248).all(axis=2).sum())
+        below_the_lock_bar_where_the_word_locked_cannot_pass_for_the_ring = _rgb(
+            rendered.bgra)[PAD + TITLE_ROW_H:, :]
+        return int((below_the_lock_bar_where_the_word_locked_cannot_pass_for_the_ring > 248).all(
+            axis=2).sum())
 
     assert ring_ink(True) > 0
     assert ring_ink(False) == 0
@@ -280,7 +282,8 @@ def test_the_title_starts_clear_of_the_dot(thumb):
         _model(active=True, title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb)))
     rgb = _rgb(rendered.bgra)
 
-    gap = rgb[PAD:PAD + 14, MINUS_ROOM + PAD + ACTIVE_DOT + 2:MINUS_ROOM + TITLE_X]
+    past_the_two_pixels_the_dot_s_edge_feathers_into = MINUS_ROOM + PAD + ACTIVE_DOT + 2
+    gap = rgb[PAD:PAD + 14, past_the_two_pixels_the_dot_s_edge_feathers_into:MINUS_ROOM + TITLE_X]
     assert (gap > 200).all(axis=2).sum() == 0, "text ink in the gap before the text starts"
 
 
@@ -540,7 +543,12 @@ def _tail_ink(rendered) -> int:
     seed_rects = [rect for rect, _p in rendered.targets.click[1:]]
     _before, after = ellipsis_rects(NavMapRects(corner_rect, seed_rects, []), "seed")
     x, y, w, h = after
-    return int((_rgb(rendered.bgra)[y + 2:y + h - 2, x + 2:x + w - 2] > 100).sum())
+    inset_so_the_loop_rectangle_s_own_border_is_not_counted = 2
+    inside = slice(y + inset_so_the_loop_rectangle_s_own_border_is_not_counted,
+                   y + h - inset_so_the_loop_rectangle_s_own_border_is_not_counted), slice(
+        x + inset_so_the_loop_rectangle_s_own_border_is_not_counted,
+        x + w - inset_so_the_loop_rectangle_s_own_border_is_not_counted)
+    return int((_rgb(rendered.bgra)[inside] > 100).sum())
 
 
 def test_a_nav_map_with_more_clips_than_fit_says_so_even_off_a_loop(thumb):
@@ -655,7 +663,7 @@ def test_a_long_loop_marks_that_it_runs_on_past_the_nav_map(thumb):
     assert _tail_ink(short_loop) == 0
 
 
-def test_a_sliding_loop_window_never_shifts_the_nav_map(thumb):
+def test_a_sliding_loop_window_never_shifts_the_nav_map_between_two_mid_loop_frames_since_its_one_move_comes_as_the_loop_leaves_its_head(thumb):
     renderer = HudRenderer("portrait")
     at_start = renderer.render(_loop_model(thumb, ("corner", 0)))
     midway = renderer.render(_loop_model(thumb, ("seed", 5)))
