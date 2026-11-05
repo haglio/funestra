@@ -76,7 +76,7 @@ class TestHeatmap:
         assert strip.window == (0.0, 4000.0)
         assert strip.mark_in_ms is None
 
-    def test_a_mark_zooms_the_strip_into_the_stretch_around_itself(self):
+    def test_a_mark_zooms_the_strip_into_the_stretch_around_itself_so_the_end_of_the_stretch_can_be_judged(self):
         fs = _funscript()
         strip = Heatmap()
 

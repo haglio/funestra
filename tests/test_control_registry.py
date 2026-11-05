@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import ast
+from pathlib import Path
+
+from funestra import control_registry
 from funestra.control_registry import Control, Verb, bind, look_up
 
 
@@ -66,3 +70,15 @@ def test_no_value_on_a_verb_that_wants_one_runs_nothing():
 
     assert look_up("PLAY_FILE", VERBS, controls) is False
     assert controls.opened == []
+
+
+def test_it_says_only_what_a_control_s_record_looks_like_and_holds_no_app_s_controls_so_it_imports_nothing_of_funestra():
+    tree = ast.parse(Path(control_registry.__file__).read_text(encoding="utf-8"))
+    imported = {alias.name.split(".")[0] for node in ast.walk(tree)
+                if isinstance(node, ast.Import) for alias in node.names}
+    imported |= {(node.module or "").split(".")[0] for node in ast.walk(tree)
+                 if isinstance(node, ast.ImportFrom) and not node.level}
+    relative = [node for node in ast.walk(tree) if isinstance(node, ast.ImportFrom) and node.level]
+
+    assert imported <= {"__future__", "collections", "dataclasses", "typing"}
+    assert relative == []

@@ -205,7 +205,7 @@ def test_tick_redraws_only_when_the_published_hud_changes(tmp_path: Path, hud: P
     assert engine.overlays[overlay.overlay_id][2] is not first
 
 
-def test_tick_redraws_when_the_clip_on_screen_changes(tmp_path: Path, hud: Path):
+def test_tick_redraws_when_the_clip_on_screen_changes_since_fun_time_republishes_only_when_the_nav_map_moves(tmp_path: Path, hud: Path):
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
 
@@ -460,7 +460,7 @@ def test_a_button_with_no_tooltip_lights_under_the_pointer_and_draws_no_tooltip(
     assert bytes(on_genau) != bytes(on_kino)
 
 
-def test_hovering_a_button_redraws_with_its_tooltip(tmp_path: Path, hud: Path):
+def test_hovering_a_button_redraws_with_its_tooltip_and_clears_it_to_the_very_pixels_from_before_which_an_identity_check_passed_without(tmp_path: Path, hud: Path):
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
     overlay.tick()
@@ -673,7 +673,7 @@ def _hud_at(tmp_path: Path, hud_path: Path, engine, **hud_changes):
 
 
 @pytest.mark.parametrize("corner", list(HudCorner))
-def test_the_minus_sits_where_the_plus_of_the_minimized_hud_sits(
+def test_the_minus_sits_where_the_plus_of_the_minimized_hud_sits_so_a_second_click_in_the_same_place_opens_it_again(
         tmp_path: Path, hud: Path, corner: HudCorner):
     engine = FakeEngine()
     overlay = _hud_at(tmp_path, hud, engine, hud_corner=corner.value)

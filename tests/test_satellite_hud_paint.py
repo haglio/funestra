@@ -407,7 +407,7 @@ def test_render_draws_the_sides_own_controls_even_with_no_clip():
     ]
 
 
-def test_the_minimize_button_wears_a_bar_rather_than_a_font_icon():
+def test_the_minimize_button_wears_a_bar_rather_than_a_font_icon_counting_only_ink_inside_the_border_and_brighter_than_the_ground():
     rendered = HudRenderer("landscape").render(
         _model(funestra="landscape", title="Unlocked"))
     x, y, w, h = _rects(rendered)["minimize"]
@@ -813,7 +813,7 @@ def test_a_leading_camera_word_stays_gray_when_its_act_is_filtered(camera, thumb
     assert all(half > 0 for half in halves(f"{camera} gamma"))
 
 
-def test_the_filter_button_carries_a_funnel_and_not_an_empty_square(thumb):
+def test_the_filter_button_carries_a_funnel_and_not_an_empty_square_drawn_since_no_installed_face_has_a_funnel_so_only_some_mark_inside_the_border_is_asked(thumb):
     rendered = HudRenderer("portrait").render(
         _model(corner=HudCell(path="c.mp4", thumb=thumb), current_action="alpha"))
 
@@ -897,7 +897,7 @@ def test_a_tooltip_longer_than_the_hud_is_wide_stays_on_the_hud(thumb):
     assert lower - upper > short_lower - short_upper
 
 
-def test_the_reset_button_is_never_lit():
+def test_the_reset_button_is_never_lit_since_only_a_state_lights_and_a_reset_is_a_moment():
     def rendered_with(**state):
         return HudRenderer("landscape").render(_model(
             funestra="landscape", title="Locked", rows=funestra_rows("landscape", **state)))
@@ -938,7 +938,7 @@ def test_the_mode_pair_renders_and_is_pressable(thumb):
                         now=0.0) == "origenerator_activate"
 
 
-def test_the_mode_row_leads_and_minimize_rides_it(thumb):
+def test_the_mode_row_leads_and_minimize_rides_it_since_minimize_acts_on_the_side_s_window_and_not_on_the_video(thumb):
     rendered = HudRenderer("portrait").render(
         _model(corner=HudCell(path="c.mp4", thumb=thumb),
                rows=funestra_rows("portrait", mode="kino"))
@@ -998,7 +998,7 @@ def _order_row(*, newest: bool | None = None, **overrides):
         rows=funestra_rows("landscape", newest=newest), **overrides))
 
 
-def test_exactly_one_of_the_browse_order_pair_is_lit_and_it_lights_blue():
+def test_exactly_one_of_the_browse_order_pair_is_lit_and_it_lights_blue_as_a_mode_does_since_one_order_is_always_in_force():
     shuffled, newest = _order_row(newest=False), _order_row(newest=True)
     rects = _rects(newest)
 
@@ -1090,7 +1090,7 @@ class TestTheDeviceOnAHostThatDrivesItself:
         assert (self._rendered(osr2=Osr2State.ROBOT_HAND).bgra.shape[0]
                 > self._rendered().bgra.shape[0])
 
-    def test_the_line_says_which_driver_has_the_device(self):
+    def test_the_line_says_which_driver_has_the_device_through_the_one_section_every_hud_words_the_device_s_states_in(self):
         rgb = _rgb(self._rendered(osr2=Osr2State.ROBOT_HAND).bgra)
         assert (rgb == np.array(BLUE)).all(axis=-1).any()
 
@@ -1272,7 +1272,7 @@ class _Block:
         return [((x, y, 40, 18), self.button)]
 
 
-class TestTheBlockASourcePaintsAtTheFoot:
+class TestTheBlockASourcePaintsAtTheFootSoAHostWithWorkToReportShowsOneHudNotTwo:
     @staticmethod
     def _rendered(block=None, **extra):
         return HudRenderer("portrait").render(
@@ -1653,7 +1653,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
 
 
 
-def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_its_buttons(
+def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_its_buttons_since_drawing_them_kept_a_standalone_slideshow_busy_three_quarters_of_the_time(
         thumb, monkeypatch):
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb),
                    seeds=(HudCell(path="s1.mp4", thumb=thumb),))

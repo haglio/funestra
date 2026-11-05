@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 from shared_ui.palette import BLUE, GREEN, TEXT_MUTED
@@ -34,6 +36,13 @@ def _drawn(line: Osr2Line) -> tuple[Hud, list]:
 def _has(hud: Hud, color) -> bool:
     pixels = np.array(hud.image.convert("RGB"))
     return bool((pixels == np.array(color)).all(axis=-1).any())
+
+
+def test_only_the_two_hud_painters_in_this_package_draw_the_device_line_a_host_saying_what_its_line_shows_through_its_model():
+    users = {module.name for module in Path(hud_osr2.__file__).parent.glob("*.py")
+             if module.name != "hud_osr2.py" and "Osr2Section" in module.read_text(encoding="utf-8")}
+
+    assert users == {"main_hud_painter.py", "satellite_hud_paint.py"}
 
 
 def test_buffer_is_the_pill_s_own_word_drawn_and_never_one_of_the_states_the_wire_carries():
@@ -160,7 +169,7 @@ def _park() -> Button:
     return Button("robot_hand_park", "P", "Parked")
 
 
-class TestWhoTheLineNames:
+class TestWhoTheLineNamesAsItsHostResolvedItSinceEachHudAnswersThatFromItsOwnInputs:
     def test_the_driver_is_named_when_nothing_is_holding_the_device(self):
         assert state_for(Osr2State.ROBOT_HAND, "") == Osr2State.ROBOT_HAND
 

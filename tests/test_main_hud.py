@@ -133,7 +133,7 @@ class TestTheRowThatAimsTheDevice:
         assert not on.lit
         assert switch.command == OSR2_CONTROL_BUTTONS[OSR2_DRIVING]
 
-    def test_the_switch_offers_only_its_two_positions(self):
+    def test_the_switch_offers_only_its_two_positions_as_data_so_an_app_routing_a_press_reads_the_state_off_the_command(self):
         assert set(OSR2_CONTROL_BUTTONS) == {OSR2_PARKED, OSR2_DRIVING}
 
     def test_the_switch_says_where_the_device_is_and_what_a_press_does(self):
@@ -187,7 +187,7 @@ class TestTheBrokerButton:
 
 
 class TestTheDeviceRunningItself:
-    def test_auto_is_the_device_driving_itself(self):
+    def test_auto_is_the_device_driving_itself_asked_of_the_model_since_two_apps_outside_this_package_draw_from_the_answer(self):
         assert MainHudModel(osr2=Osr2State.AUTO).device_drives_itself is True
 
     @pytest.mark.parametrize("osr2", [Osr2State.OFF, Osr2State.FUNSCRIPT,
@@ -217,7 +217,7 @@ class TestReadMainHud:
                                      osr2_control=OSR2_RETRACTED, locked=False,
                                      latest=True)
 
-    def test_a_hud_that_says_nothing_about_the_lock_reads_as_locked(self, tmp_path: Path):
+    def test_a_hud_that_says_nothing_about_the_lock_reads_as_locked_as_a_file_from_an_older_publisher_may(self, tmp_path: Path):
         path = tmp_path / "main_player_main_hud.json"
         path.write_text(json.dumps({"main_mode": MainMode.KINO}), encoding="utf-8")
 

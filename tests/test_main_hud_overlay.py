@@ -162,7 +162,7 @@ class TestReadingTheMotion:
 
         assert gate.handed[-1].position == 4_000
 
-    def test_a_torn_read_keeps_the_motion_that_was_there(self, tmp_path):
+    def test_a_torn_read_keeps_the_motion_that_was_there_since_a_blank_frame_flickers_on_a_hud_redrawn_sixty_times_a_second(self, tmp_path):
         overlay, _engine, gate = _overlay(tmp_path)
         _main_hud_file(tmp_path / "main_hud.json", GENAU_MODE)
         _drive_file(tmp_path / "drive.txt", position=4_000)
@@ -473,7 +473,7 @@ class TestTheHostsControls:
 
 
 @pytest.mark.parametrize("corner", list(HudCorner))
-def test_the_minus_sits_where_the_plus_of_the_minimized_main_hud_sits(tmp_path, corner):
+def test_the_minus_sits_where_the_plus_of_the_minimized_main_hud_sits_so_a_second_click_in_the_same_place_opens_it_again(tmp_path, corner):
     overlay = _published(tmp_path, corner)
     left, top, _bgra = overlay._engine.overlays[HUD_OVERLAY_ID]
     (x, y, w, h), = [rect for rect, b in overlay._painter.buttons

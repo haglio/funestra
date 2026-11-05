@@ -18,7 +18,7 @@ def _named() -> dict[str, str]:
             "wrong action": WRONG_ACTION_ICON}
 
 
-def test_the_loop_buttons_wear_the_circuit_rather_than_a_single_arc():
+def test_the_loop_buttons_wear_the_circuit_rather_than_a_single_arc_which_means_undo():
     assert _named()["loop"] == "loop"
 
 
@@ -31,7 +31,7 @@ def test_the_marks_the_hud_names_all_exist():
     assert not missing, f"HUD faces naming marks shared_ui does not have: {missing}"
 
 
-def test_the_expand_arrow_is_drawn_rather_than_typed():
+def test_the_expand_arrow_is_drawn_rather_than_typed_since_the_typed_one_was_a_hairline_beside_the_solid_transport_arrows():
     assert _named()["expand"] == "expand_horizontal"
 
 

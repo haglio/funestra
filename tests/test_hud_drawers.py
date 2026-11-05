@@ -144,7 +144,7 @@ def test_a_painter_reached_by_module_counts_as_well_as_one_imported_by_name():
     assert model_only == set()
 
 
-@pytest.mark.parametrize("module", ["hud_icons", "main_hud", "scrubber", "scrubber_bar"])
+@pytest.mark.parametrize("module", ["hud_icons", "hud_title", "main_hud", "scrubber", "scrubber_bar"])
 def test_a_module_that_describes_a_hud_imports_no_drawing_toolkit_so_it_is_built_tested_and_sent_about_without_one(
         module):
     tree = ast.parse((PACKAGE / f"{module}.py").read_text(encoding="utf-8"))
