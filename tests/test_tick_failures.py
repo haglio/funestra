@@ -23,7 +23,7 @@ def _levels(caplog) -> list[str]:
 
 
 class TestWhatFailed:
-    def test_the_name_it_was_given_is_in_every_line(self):
+    def test_the_name_it_was_given_is_in_every_line_since_one_log_can_hold_two_of_them(self):
 
         records = []
 

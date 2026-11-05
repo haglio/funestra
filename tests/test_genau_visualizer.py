@@ -101,6 +101,13 @@ class TestWhatTheLineIsEachTime:
 
         assert visualizer.drive.let_go is None
 
+    def test_under_the_broker_the_numbers_beside_the_line_are_still_the_hand_s_own_which_its_controls_will_move_when_it_takes_the_device_back(self):
+        visualizer = _visualizer()
+
+        visualizer.update(1.0, AutoMotion(phase=0.0, bpm=90.0))
+
+        assert (visualizer.drive.amplitude, visualizer.drive.speed) == (60, 50)
+
     def test_its_line_does_not_jump_where_the_beat_starts_round_again(self):
         wrapping = _visualizer()
         counting = _visualizer()
@@ -125,7 +132,7 @@ class TestTheSpanTheTraceIsDrawnOver:
 
 
 class TestTheTraceHoldsStillAndSlides:
-    def test_the_wave_holds_its_drawing_between_knots(self):
+    def test_the_wave_holds_its_drawing_between_knots_a_twelfth_of_a_knot_on(self):
         sender = FakeSender()
         visualizer = _visualizer(tcode_sender=sender)
         visualizer.update(1.0)

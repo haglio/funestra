@@ -19,7 +19,7 @@ MODULES = tuple(f"funestra.{path.stem}" for path in sorted((ROOT / "funestra").g
 
 
 @pytest.mark.parametrize("module", MODULES)
-def test_a_module_imports_where_ctypes_has_no_windows_half(module):
+def test_a_module_imports_where_ctypes_has_no_windows_half_as_fun_time_s_own_check_imports_every_one_of_them(module):
     body = (f"import ctypes, ctypes.wintypes\n"
             f"for name in {_WIN32_CTYPES_NAMES!r}:\n"
             f"    if hasattr(ctypes, name):\n"

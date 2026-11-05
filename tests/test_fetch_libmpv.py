@@ -43,7 +43,7 @@ class TestWhatIsFetched:
 
         assert archive.read_bytes() == _ARCHIVE
 
-    def test_an_archive_whose_digest_does_not_match_stops_the_fetch(self, tmp_path: Path,
+    def test_an_archive_whose_digest_does_not_match_stops_the_fetch_since_a_rebuilt_tag_and_a_tampered_file_cannot_be_told_apart(self, tmp_path: Path,
                                                                     monkeypatch):
         monkeypatch.setattr(fetch_libmpv.urllib.request, "urlretrieve",
                             lambda _url, target: Path(target).write_bytes(b"something else"))
@@ -73,7 +73,7 @@ class TestWhenThePinExpires:
         assert url.endswith("2026-01-02-abcdef/mpv.7z")
         assert digest == _DIGEST
 
-    def test_a_retired_tag_falls_back_loudly_and_names_the_lock(self, monkeypatch, capsys):
+    def test_a_retired_tag_falls_back_loudly_and_names_the_lock_since_upstream_deletes_a_release_after_about_a_month_and_a_gate_with_no_engine_blocks_every_change(self, monkeypatch, capsys):
         monkeypatch.setattr(fetch_libmpv, "_reachable", lambda _url: False)
         monkeypatch.setattr(fetch_libmpv, "newest_asset",
                             lambda repository: ("https://example.invalid/newest.7z", ""))
@@ -112,7 +112,7 @@ class TestWhenThePinExpires:
         with pytest.raises(SystemExit, match="could not resolve"):
             fetch_libmpv.resolve(pinned)
 
-    def test_the_releases_are_asked_for_with_the_token_the_runner_holds(self, monkeypatch):
+    def test_the_releases_are_asked_for_with_the_token_the_runner_holds_since_github_rations_unauthenticated_requests_by_address(self, monkeypatch):
         sent = []
 
         class _Answer:
@@ -136,7 +136,7 @@ class TestWhenThePinExpires:
         assert sent[0].get_header("Authorization") == "Bearer an-invented-token"
 
 
-def test_the_dll_lands_where_the_loader_looks():
+def test_the_dll_lands_where_the_loader_looks_one_place_for_the_machine_since_an_installed_copy_of_the_package_has_no_vendor_folder_beside_it():
 
     assert fetch_libmpv.dll_path().parent == machine_libmpv_dir()
 
@@ -148,7 +148,7 @@ def test_a_wrong_user_folder_variable_moves_neither(monkeypatch, tmp_path):
     assert fetch_libmpv.dll_path() == before
 
 
-def test_this_repo_s_gate_fetches_the_pin_rather_than_leaving_it_to_a_consumer():
+def test_this_repo_s_gate_fetches_the_pin_rather_than_leaving_it_to_a_consumer_since_a_developer_s_machine_already_has_the_dll_and_would_never_try_the_pin():
     gate = (Path(__file__).resolve().parent.parent
             / ".github" / "workflows" / "merge-gate.yml").read_text(encoding="utf-8")
 

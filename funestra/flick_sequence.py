@@ -8,6 +8,8 @@ from .up_next import put_up_next
 def _index_of(flicks: list[Path], wanted: Path | None) -> int | None:
     if wanted is None:
         return None
+    # Windows paths that differ by case alone name one file, and this one comes back from
+    # another process.
     key = str(wanted).lower()
     for index, flick in enumerate(flicks):
         if str(flick).lower() == key:

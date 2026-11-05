@@ -40,7 +40,7 @@ def test_notify_visible_deduplicates_repeated_state():
     ]
 
 
-def test_the_notifier_has_only_the_two_things_it_says():
+def test_the_notifier_has_only_the_two_things_it_says_since_one_that_said_both_sent_the_same_message_twice_at_every_launch():
     assert not hasattr(GenauNotifier, "announce_visible")
 
 

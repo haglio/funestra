@@ -138,7 +138,7 @@ _COMMAND_DIR: Path | None = None
 
 
 @pytest.fixture(autouse=True)
-def _commands_in_the_tests_own_scratch(tmp_path, monkeypatch):
+def _commands_in_the_tests_own_scratch_since_the_status_file_is_written_beside_them(tmp_path, monkeypatch):
     monkeypatch.setitem(globals(), "_COMMAND_DIR", tmp_path)
 
 
@@ -358,7 +358,7 @@ def test_refresh_calls_adopt_pending_flick():
     assert built["selection"].adopt_calls == 1
 
 
-def test_a_hand_whose_output_is_switched_off_plays_on_unheard():
+def test_a_hand_whose_output_is_switched_off_plays_on_unheard_since_the_hud_draws_that_motion_in_gray():
     dc = RobotHandState(playing=True, bpm=120.0)
     sink = MagicMock()
     clock = [5.0]
@@ -876,7 +876,7 @@ class TestTheRoomHoldingTheDevice:
 
 class TestTheOrderTheTickDoesThingsIn:
     @staticmethod
-    def _steps() -> list[str]:
+    def _steps_in_the_order_written_since_ast_walk_goes_breadth_first() -> list[str]:
         source = (Path(__file__).resolve().parents[1]
                   / "funestra" / "genau_refresh.py").read_text(encoding="utf-8")
         body = next(n for n in ast.walk(ast.parse(source))
@@ -886,7 +886,7 @@ class TestTheOrderTheTickDoesThingsIn:
         return [ast.unparse(n.func) for n in calls]
 
     def _before(self, first: str, second: str) -> None:
-        steps = self._steps()
+        steps = self._steps_in_the_order_written_since_ast_walk_goes_breadth_first()
         assert first in steps, f"{first} is not in the tick"
         assert second in steps, f"{second} is not in the tick"
         assert steps.index(first) < steps.index(second), f"{first} must precede {second}"
@@ -910,7 +910,7 @@ class TestTheOrderTheTickDoesThingsIn:
         self._before("advance_beat", "self._show_the_frame")
 
     def test_the_status_file_goes_out_last_saying_what_this_tick_did(self):
-        steps = self._steps()
+        steps = self._steps_in_the_order_written_since_ast_walk_goes_breadth_first()
 
         assert steps[-1] == "self._publish_status"
 
@@ -1184,3 +1184,13 @@ def test_with_no_status_file_named_the_status_goes_beside_the_command_file_where
     built = _build_controller(command_file=tmp_path / "genau_cmd.txt")
 
     assert built["controller"].status_file == tmp_path / GENAU_STATUS_FILENAME
+
+
+def test_the_controller_cannot_be_built_without_the_hand_s_state_so_no_second_hand_less_mode_can_come_back(
+        tmp_path):
+    parts = _build_controller(command_file=tmp_path / "genau_cmd.txt")["parts"]
+    hand_less = parts._replace(controls=GenauControls(
+        engine=BeatEngine(phase=0.0, last_tick=0.0), paused=Flag(), step_flick=lambda _step: None))
+
+    with pytest.raises(AttributeError):
+        GenauRefreshController(hand_less)

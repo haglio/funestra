@@ -13,7 +13,7 @@ def _spellings() -> dict[str, str]:
             if name.isupper() and not name.startswith("_") and isinstance(value, str)}
 
 
-def test_every_verb_is_spelled_as_a_registry_looks_it_up():
+def test_every_verb_is_spelled_as_a_registry_looks_it_up_upper_cased_and_split_at_the_first_space():
     for name, spelling in _spellings().items():
         assert spelling == name, f"{name} is spelled {spelling!r}"
         assert spelling == spelling.upper()
@@ -50,7 +50,7 @@ def test_a_value_that_names_no_pace_is_refused(value):
 
 
 class TestAStepToAnotherVersionOfTheItemOnScreen:
-    def test_a_step_forward_carries_the_family_in_the_sources_order(self):
+    def test_a_step_forward_carries_the_family_in_the_sources_order_the_whole_family_so_the_funestra_steps_from_whichever_file_it_has_up(self):
         versions = [Path("C:/vids/clip_topaz.mp4"), Path("C:/vids/clip.mp4")]
 
         line = funestra_verbs.step_version(1, versions)

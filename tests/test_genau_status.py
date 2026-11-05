@@ -116,7 +116,7 @@ def test_build_status_text_reports_a_released_flick():
     assert "locked=0" in text
 
 
-def test_build_status_text_names_the_flick_on_screen():
+def test_build_status_text_names_the_flick_on_screen_so_a_reopened_session_can_go_back_to_it():
     text = build_status_text(
         RobotHandState(), on_screen=FlickOnScreen(Path("C:/flicks/alpha.mp4")),
     )

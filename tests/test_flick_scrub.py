@@ -85,7 +85,7 @@ def test_a_reversal_at_the_bottom_wraps_the_loop_forward():
     assert after < 0.5
 
 
-def test_a_wobble_shorter_than_a_frame_holds_the_cursor():
+def test_a_wobble_shorter_than_a_frame_holds_the_cursor_a_frame_being_a_120th_of_the_loop():
     state = _from(0.5)
     up = scrub_flick(state, 0.60, FRAMES)
     held = scrub_flick(state, 0.60 - 0.005, FRAMES)

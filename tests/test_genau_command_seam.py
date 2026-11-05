@@ -24,7 +24,7 @@ from funestra.main_hud import OSR2_PARKED, OSR2_RETRACTED
 from funestra.robot_hand import RobotHandState, WaveformShape
 from funestra.robot_hand_beat import BeatEngine
 
-NOW = 5.0
+NOW_FROZEN_SO_ONLY_A_VERB_MOVES_THE_PHASE = 5.0
 
 
 class Seam:
@@ -46,7 +46,7 @@ class Seam:
             locked=bool(start.get("locked", False)),
             interval=start.get("interval", 20),
         )
-        self.engine = BeatEngine(phase=0.0, last_tick=NOW)
+        self.engine = BeatEngine(phase=0.0, last_tick=NOW_FROZEN_SO_ONLY_A_VERB_MOVES_THE_PHASE)
         self.selection = FakeSelection()
         self.tcode = FakeTCodeSender()
         self.volumes: list[tuple[int, bool]] = []
@@ -89,7 +89,7 @@ class Seam:
             sync_strength=0.5,
             set_loading_text=lambda _text: None,
             logger=MagicMock(),
-            now_source=lambda: NOW,
+            now_source=lambda: NOW_FROZEN_SO_ONLY_A_VERB_MOVES_THE_PHASE,
             read_paused_state=lambda _path, logger=None: self.paused.on,
             tcode_sender=self.tcode,
         ))

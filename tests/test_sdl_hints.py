@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import os
+import re
+from pathlib import Path
 
+from funestra import sdl_hints
 from funestra.sdl_hints import FOCUS_CLICKTHROUGH_HINT, deliver_the_focusing_click
 
 
@@ -22,3 +25,11 @@ class TestDeliverTheFocusingClick:
 
     def test_it_names_sdls_own_variable(self):
         assert FOCUS_CLICKTHROUGH_HINT == "SDL_MOUSE_FOCUS_CLICKTHROUGH"
+
+
+def test_no_module_of_the_package_imports_pygame_which_only_a_host_with_a_window_has():
+    importing = [module.name for module in sorted(Path(sdl_hints.__file__).parent.glob("*.py"))
+                 if re.search(r"^\s*(?:from|import)\s+pygame\b", module.read_text(encoding="utf-8"),
+                              re.MULTILINE)]
+
+    assert importing == []
