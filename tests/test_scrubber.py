@@ -240,7 +240,7 @@ class TestWhereTheLoopsTwoFramesGo:
     WIN_W, TOP = 1000, 564
     FRAME_H, FRAME_W = 10, 20
 
-    def _thumbs_by_path_since_fun_time_names_a_changed_video_s_thumbnail_anew(self, *, out=True):
+    def _thumbs(self, *, out=True):
         thumbs = LoopThumbCapture()
         thumbs.set("in", np.zeros((self.FRAME_H, self.FRAME_W, 4), dtype=np.uint8))
         if out:
@@ -257,16 +257,16 @@ class TestWhereTheLoopsTwoFramesGo:
         return strip
 
     def test_each_frame_sits_centered_under_its_own_mark(self):
-        assert self._xys(self._scripted(), self._thumbs_by_path_since_fun_time_names_a_changed_video_s_thumbnail_anew(), (2000, 3000)) == (
+        assert self._xys(self._scripted(), self._thumbs(), (2000, 3000)) == (
             (444, self.TOP), (651, self.TOP))
 
     def test_a_frame_not_grabbed_yet_has_nowhere_to_go(self):
-        in_at, out_at = self._xys(self._scripted(), self._thumbs_by_path_since_fun_time_names_a_changed_video_s_thumbnail_anew(out=False), (2000, 3000))
+        in_at, out_at = self._xys(self._scripted(), self._thumbs(out=False), (2000, 3000))
 
         assert (in_at, out_at) == ((444, self.TOP), None)
 
     def test_two_marks_too_close_together_push_their_frames_apart(self):
-        (in_x, _y), (out_x, _oy) = self._xys(self._scripted(), self._thumbs_by_path_since_fun_time_names_a_changed_video_s_thumbnail_anew(), (2000, 2050))
+        (in_x, _y), (out_x, _oy) = self._xys(self._scripted(), self._thumbs(), (2000, 2050))
 
         assert out_x >= in_x + self.FRAME_W
 

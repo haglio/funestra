@@ -12,7 +12,7 @@ from shared_ui.type_scale import SIZE_TINY
 from .geometry import Rect, contains
 from .hud import draw_track, load_font
 
-_CLEAR_OF_THE_BUTTONS_SO_THE_LABEL_READS_AS_A_READ_OUT_NOT_A_BUTTON_GAP = BUTTON_GROUP_GAP
+_GROUP_GAP = BUTTON_GROUP_GAP
 _LEAST_BAR_W = 60
 
 
@@ -81,7 +81,7 @@ class HostControlsSection:
     def least_width(self, hud: HostControlsHud) -> int:
         if hud.bar is None:
             return self._field_width(hud)
-        return (self._field_width(hud) + _CLEAR_OF_THE_BUTTONS_SO_THE_LABEL_READS_AS_A_READ_OUT_NOT_A_BUTTON_GAP + self._words_width(hud.bar) + BUTTON_GAP
+        return (self._field_width(hud) + _GROUP_GAP + self._words_width(hud.bar) + BUTTON_GAP
                 + _LEAST_BAR_W)
 
     def layout(self, hud: HostControlsHud, rect: Rect) -> HostControlsLayout:
@@ -91,7 +91,7 @@ class HostControlsSection:
                      for index in range(len(hud.choices)))
         if hud.bar is None:
             return HostControlsLayout(field, None, rows)
-        bar_x = x + field[2] + _CLEAR_OF_THE_BUTTONS_SO_THE_LABEL_READS_AS_A_READ_OUT_NOT_A_BUTTON_GAP + self._words_width(hud.bar) + BUTTON_GAP
+        bar_x = x + field[2] + _GROUP_GAP + self._words_width(hud.bar) + BUTTON_GAP
         return HostControlsLayout(field, (bar_x, y, x + width - bar_x, height), rows)
 
     def draw(self, image: Image.Image, rect: Rect, hud: HostControlsHud) -> HostControlsLayout:
@@ -111,7 +111,7 @@ class HostControlsSection:
         field_x, _y, field_width, _height = placed.field
         x, y, width, height = placed.bar
         middle = y + height / 2
-        pen.text((field_x + field_width + _CLEAR_OF_THE_BUTTONS_SO_THE_LABEL_READS_AS_A_READ_OUT_NOT_A_BUTTON_GAP, middle), bar.label, font=self._font,
+        pen.text((field_x + field_width + _GROUP_GAP, middle), bar.label, font=self._font,
                  anchor="lm", fill=(*TEXT_MUTED, 255))
         pen.text((x - BUTTON_GAP, middle), bar.reading, font=self._font, anchor="rm",
                  fill=(*TEXT_PRIMARY, 255))
