@@ -92,6 +92,15 @@ class TestWhatTheLineIsEachTime:
 
         assert visualizer.drive is not None
 
+    def test_under_the_broker_genau_s_own_handed_over_height_is_left_out_since_it_no_longer_describes_the_device(self):
+        sender = FakeSender()
+        sender.let_go_position = 4_000
+        visualizer = _visualizer(tcode_sender=sender)
+
+        visualizer.update(1.0, AutoMotion(phase=0.0, bpm=90.0))
+
+        assert visualizer.drive.let_go is None
+
     def test_its_line_does_not_jump_where_the_beat_starts_round_again(self):
         wrapping = _visualizer()
         counting = _visualizer()
@@ -106,7 +115,7 @@ class TestWhatTheLineIsEachTime:
 
 class TestTheSpanTheTraceIsDrawnOver:
     @pytest.mark.parametrize("beats_per_loop", [2.0, 4.0, 8.0])
-    def test_it_is_one_whole_cycle_at_the_slowest_speed(self, beats_per_loop):
+    def test_it_is_one_whole_cycle_at_the_slowest_speed_and_published_since_a_funscript_drawn_on_the_trace_is_sampled_over_the_same_stretch(self, beats_per_loop):
         visualizer = _visualizer(beats_per_loop=beats_per_loop)
 
         visualizer.update(1.0)

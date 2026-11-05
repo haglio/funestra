@@ -16,6 +16,7 @@ from funestra.flick_flip import FlickFlip
 from funestra.genau_controls import GenauControls
 from funestra.genau_refresh import GenauRefreshController
 from funestra.genau_refresh_parts import GenauRefreshParts
+from funestra.genau_status import GENAU_STATUS_FILENAME
 from funestra.learned_model import LearnedModel, Phrase, classify
 from funestra.learned_motion import LearnedMotionState
 from funestra.robot_hand import RobotHandState, position_fraction
@@ -1176,3 +1177,10 @@ class TestSeekingTheFlicksTimeOnScreen:
         controller.seek_the_time_on_screen(7.0)
 
         assert advance.elapsed == 7.0
+
+
+def test_with_no_status_file_named_the_status_goes_beside_the_command_file_where_every_release_has_looked_for_it(
+        tmp_path):
+    built = _build_controller(command_file=tmp_path / "genau_cmd.txt")
+
+    assert built["controller"].status_file == tmp_path / GENAU_STATUS_FILENAME

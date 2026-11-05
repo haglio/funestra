@@ -97,7 +97,7 @@ def test_the_same_frame_in_the_same_window_is_not_put_up_twice():
     assert engine.put_up == [BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID]
 
 
-def test_a_frame_shown_before_at_this_size_is_scaled_once(monkeypatch):
+def test_a_frame_shown_before_at_this_size_is_scaled_once_since_scaling_costs_milliseconds_on_the_thread_that_drives_the_device(monkeypatch):
     scaled: list[tuple[int, int]] = []
     real = module.scaled_bgra
     monkeypatch.setattr(module, "scaled_bgra",

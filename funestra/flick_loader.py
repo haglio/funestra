@@ -100,10 +100,10 @@ class FlickLoadController:
         return {self.current_flick_path_getter()}
 
     def _decode_thread_fn(self, path: Path, request_id: int, state, log_error) -> None:
-        t0 = time.monotonic()
+        began_for_the_log_line_alone = time.monotonic()
         try:
             frames = self.decode_flick(path)
-            elapsed = time.monotonic() - t0
+            elapsed = time.monotonic() - began_for_the_log_line_alone
             self.logger.info("Decoded %s: %d frames in %.2fs", path.name, len(frames), elapsed)
             state.record_success(path, frames, request_id)
         except Exception as exc:

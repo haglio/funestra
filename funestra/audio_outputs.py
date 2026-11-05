@@ -3,11 +3,11 @@ from __future__ import annotations
 from typing import NamedTuple
 
 _RENDER_ENDPOINTS = r"SOFTWARE\Microsoft\Windows\CurrentVersion\MMDevices\Audio\Render"
-_DESCRIPTION = "{a45c254e-df1c-4efd-8020-67d146a850e0},2"
+_DESCRIPTION = "{a45c254e-df1c-4efd-8020-67d146a850e0},2"  # Windows' PKEY_Device_DeviceDesc
 _ADAPTER = "{b3f8fa53-0004-438e-9003-51a46e139bfc},6"  # what Windows shows in the brackets
-_BUS = "{a45c254e-df1c-4efd-8020-67d146a850e0},24"
-_STATE_MASK = 0x0F
-_ACTIVE = 0x01
+_BUS = "{a45c254e-df1c-4efd-8020-67d146a850e0},24"  # Windows' PKEY_Device_EnumeratorName
+_STATE_MASK = 0x0F  # Windows' DEVICE_STATEMASK_ALL: the stored value carries flags above these
+_ACTIVE = 0x01  # Windows' DEVICE_STATE_ACTIVE
 _NO_HARDWARE = "ROOT"  # what Windows enumerates a driver that has no device of its own on
 
 

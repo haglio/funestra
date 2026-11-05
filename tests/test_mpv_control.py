@@ -248,6 +248,27 @@ def test_staging_the_clip_already_staged_asks_mpv_nothing():
     assert mpv.calls == []
 
 
+def test_opening_a_file_forgets_whatever_was_staged_after_the_last_one():
+    mpv = FakeMpv(pos=0, count=2)
+    control = Control(mpv)
+    control.stage_next(Path("alpha.mp4"))
+    control.load(Path("beta.mp4"))
+    mpv.calls.clear()
+
+    control.stage_next(Path("alpha.mp4"))
+
+    assert mpv.calls[-1] == ("loadfile", "alpha.mp4", "append")
+
+
+def test_muting_leaves_the_volume_where_it_was():
+    mpv = FakeMpv()
+    mpv.volume = 70
+
+    Control(mpv).set_muted(True)
+
+    assert (mpv.mute, mpv.volume) == (True, 70)
+
+
 def test_clearing_the_staged_entry_keeps_the_clip_on_screen():
     mpv = FakeMpv(pos=0, count=2)
     Control(mpv).clear_next()
@@ -551,7 +572,7 @@ def test_an_mpv_message_reaches_the_log_at_the_matching_level(caplog, level, log
     assert [(r.levelno, r.getMessage()) for r in caplog.records] == [(logged, "mpv vo: made-up trouble")]
 
 
-def test_the_next_entry_is_opened_ahead_only_where_asked_for():
+def test_the_next_entry_is_opened_ahead_only_where_asked_for_so_a_satellite_s_auto_advance_cuts_to_a_video_already_loaded():
     ahead = _shared_options(muted=False, loop_file=False, prefetch=True)
     alone = _shared_options(muted=False, loop_file=False, prefetch=False)
 
@@ -1008,7 +1029,7 @@ def test_between_files_there_is_no_size():
     assert control.video_dims == (0, 0)
 
 
-def test_letting_go_of_the_file_on_screen_unloads_it():
+def test_letting_go_of_the_file_on_screen_unloads_it_so_it_can_be_moved():
     mpv = FakeMpv()
     control = Control(mpv)
 

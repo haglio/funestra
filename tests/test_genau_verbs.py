@@ -682,7 +682,7 @@ class TestPlayFileCommand:
 
 
 class TestBrowseOrderCommands:
-    def test_latest_asks_for_newest_first(self):
+    def test_latest_asks_for_newest_first_by_a_verb_since_genau_owns_its_own_sequence_and_has_no_playlist_file_to_rewrite(self):
         asked: list[bool] = []
 
         handled = _answered(

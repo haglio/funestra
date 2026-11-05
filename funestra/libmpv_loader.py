@@ -4,7 +4,7 @@ import os
 import sys
 from pathlib import Path
 
-_USER_FOLDER_ID = "{5E6C858F-0E22-4760-9AFE-EA3317B67173}"
+_USER_FOLDER_ID = "{5E6C858F-0E22-4760-9AFE-EA3317B67173}"  # Windows' FOLDERID_Profile
 
 
 def user_folder() -> Path:

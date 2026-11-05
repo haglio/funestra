@@ -43,7 +43,7 @@ def test_read_mode_gives_the_entry_a_known_word_names():
 
 
 @pytest.mark.parametrize("raw", ["", "hybrid", None, 3, "KINO", "video"])
-def test_read_mode_answers_the_default_for_a_word_it_does_not_know(raw):
+def test_read_mode_answers_the_default_for_a_word_it_does_not_know_since_the_two_sides_of_the_file_are_not_always_the_same_age(raw):
     assert read_mode(MainMode, raw, MainMode.KINO) is MainMode.KINO
 
 

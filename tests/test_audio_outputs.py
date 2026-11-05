@@ -62,7 +62,7 @@ def test_an_output_on_a_bus_is_not_software():
     assert software_outputs([headset]) == set()
 
 
-def test_a_software_output_that_is_gone_leaves_a_live_device_of_its_name_alone():
+def test_a_software_output_that_is_gone_leaves_a_live_device_of_its_name_alone_since_what_an_output_is_is_read_from_the_machine_never_guessed_from_its_name():
     gone = Endpoint(active=False, description="Headphones", adapter="Example Headset",
                     bus="ROOT")
     live = Endpoint(active=True, description="Headphones", adapter="Example Headset",
