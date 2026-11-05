@@ -41,6 +41,7 @@ from funestra.funestra_verbs import (
     play_next,
     step_version,
 )
+from funestra.playback_rate import NORMAL_RATE
 from funestra.playlist import PlaylistItem
 from funestra.volume import VolumeHud
 from funestra.volume_control import AppVolume, VolumeControl
@@ -256,6 +257,15 @@ class TestApplyCommand:
         assert controls.playback.speed == 0.25
         assert apply_command(f"{SET_SPEED} 1.5", controls) is True
         assert controls.playback.speed == 1.5
+
+    def test_a_changed_speed_is_put_back_by_the_verb_for_the_normal_rate(self, tmp_path):
+        controls = _controls(tmp_path)
+        apply_command(funestra_verbs.set_speed(1.5), controls)
+        assert controls.playback.speed == 1.5
+
+        assert apply_command(funestra_verbs.set_speed(NORMAL_RATE), controls) is True
+
+        assert controls.playback.speed == NORMAL_RATE == 1.0
 
     def test_a_set_speed_naming_no_rate_is_refused_and_leaves_the_rate_alone(self, tmp_path):
         controls = _controls(tmp_path)

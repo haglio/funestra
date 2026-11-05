@@ -58,6 +58,10 @@ def play_next(item: PlaylistItem) -> str:
     return f"{PLAY_NEXT} {item_line(item)}"
 
 
+def set_speed(rate: float) -> str:
+    return f"{SET_SPEED} {rate:g}"
+
+
 def pace_seconds(value: str) -> float | None:
     try:
         seconds = float(value)

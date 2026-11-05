@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .file_channel import publish_whole
+from .playback_rate import NORMAL_RATE
 
 
 @dataclass(frozen=True)
@@ -15,7 +16,7 @@ class FunestraStatus:
     duration_ms: int = 0
     paused: bool = False
     locked: bool = False
-    speed: float = 1.0
+    speed: float = NORMAL_RATE
     image: bool = False
     read_at: float = 0.0
 

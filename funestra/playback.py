@@ -9,7 +9,7 @@ from shared_ui.orientation import PORTRAIT, orientation_of_size
 from .funscript import Funscript
 from .funscript import load as load_funscript
 from .play_points import PlayPoints
-from .playback_rate import clamp_rate
+from .playback_rate import NORMAL_RATE, clamp_rate
 from .playback_setup import PLAIN_PLAYBACK, PlaybackSetup
 from .playlist import PlaylistItem
 from .scripted_device import REWIND_MS, ScriptedDevice
@@ -50,7 +50,7 @@ class Playback:
         self._loaded_funscript: tuple[Path | None, Funscript | None] = (None, None)
         self._paused, self._locked = setup.start_paused, setup.locked
         self._held_by_the_pace = False
-        self._speed = 1.0
+        self._speed = NORMAL_RATE
         self._index = 0
         self._loads = 0
         self._play_points = setup.play_points or PlayPoints(None)
