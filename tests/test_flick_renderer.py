@@ -31,7 +31,7 @@ def test_prepare_active_flick_displays_first_frame():
     assert display_calls == ["f0"]
 
 
-def test_show_frame_at_blits_that_frame():
+def test_show_frame_at_blits_that_frame_through_the_one_drawing_callable_it_was_handed_be_it_a_window_s_or_a_headset_texture_s():
     controller, flick_store, display_calls = _make_controller()
     path = Path("demo.mp4")
     flick_store.flick_cache[path] = {"frames": ["f0", "f1", "f2"]}

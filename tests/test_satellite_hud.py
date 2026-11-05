@@ -81,7 +81,7 @@ def test_parse_hud_reads_whether_this_side_has_the_floor():
     assert parse_hud(json.dumps({"funestra": "portrait"})).active is False
 
 
-def test_parse_hud_reads_the_hud_fun_time_published():
+def test_parse_hud_reads_the_hud_fun_time_published_built_there_since_fun_time_alone_has_the_library_s_metadata():
     text = json.dumps({
         "funestra": "portrait",
         "locked": True,
