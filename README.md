@@ -60,7 +60,7 @@ another application's internals to get it. By what it is:
   (`Channels`), plays what it is handed (`playback`, with `funestra_controls`
   answering the verbs, `funestra_status` publishing the status, `play_points`,
   `seeking` and `scripted_device` under it), and draws the published HUD —
-  a satellite's (`hud_overlay`) or the main place's console (`console_overlay`),
+  a satellite's (`hud_overlay`) or the main place's HUD (`console_overlay`),
   whichever file it was given — the scrubber (`scrubber`: a scripted item's
   colors, the zoom while a stretch is marked, the frames of a running A/B
   range), the volume control (`volume_control`: its own level, or the app's,
