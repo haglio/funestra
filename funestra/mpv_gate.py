@@ -28,13 +28,13 @@ class CallGate:
     @contextmanager
     def entered(self) -> Iterator[bool]:
         with self._idle:
-            admitted = not self._closing
-            if admitted:
+            admitted_and_so_may_touch_mpv = not self._closing
+            if admitted_and_so_may_touch_mpv:
                 self._inside += 1
         try:
-            yield admitted
+            yield admitted_and_so_may_touch_mpv
         finally:
-            if admitted:
+            if admitted_and_so_may_touch_mpv:
                 with self._idle:
                     self._inside -= 1
                     if not self._inside:

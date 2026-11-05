@@ -1322,8 +1322,8 @@ class TestAWindowsOwnHud:
 
     def test_it_is_redrawn_when_the_hud_changes_and_only_then(self, tmp_path):
         funestra, engine, _user, hud = self._own_hud(tmp_path)
-        funestra.tick(viewport=WINDOW)
-        funestra.tick(viewport=WINDOW)
+        for _measuring_the_track_then_filling_it_at_that_width in range(2):
+            funestra.tick(viewport=WINDOW)
         first = engine.overlays[HUD_OVERLAY_ID][2]
         funestra.tick(viewport=WINDOW)
         assert engine.overlays[HUD_OVERLAY_ID][2] is first

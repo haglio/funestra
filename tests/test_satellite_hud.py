@@ -757,3 +757,14 @@ def test_a_column_header_carries_the_seed_s_real_number_so_a_window_opened_partw
 
 def test_the_star_is_as_tall_as_the_line_beside_it_since_a_smaller_mark_reads_as_a_speck_and_not_a_state():
     assert satellite_hud.favorite_icon_rect(0, 0, 17)[2:] == (17, 17)
+
+
+def test_a_label_and_the_strike_under_it_are_centered_in_the_row_together_so_a_two_act_label_never_runs_down_into_the_button():
+    row_y, row_h, two_act_label_h = 100, 60, 30
+    room_for_the_strike = satellite_hud.WRONG_GAP + satellite_hud.WRONG_BTN
+
+    top = satellite_hud.label_stack_top(row_y, row_h, two_act_label_h, room_for_the_strike)
+    _x, strike_y, _w, strike_h = satellite_hud.wrong_action_rect(0, top + two_act_label_h)
+
+    assert strike_y >= top + two_act_label_h
+    assert strike_y + strike_h <= row_y + row_h

@@ -433,8 +433,8 @@ class _MpvControl:
         return np.ascontiguousarray(arr[:, :, [2, 1, 0, 3]], dtype=np.uint8)
 
     @mpv_call()
-    def overlay(self, ident: int, x: int, y: int, rgba) -> None:
-        arr = np.ascontiguousarray(rgba, dtype=np.uint8)
+    def overlay(self, ident: int, x: int, y: int, bgra) -> None:
+        arr = np.ascontiguousarray(bgra, dtype=np.uint8)
         h, w = arr.shape[:2]
         try:
             self._mpv.overlay_add(
