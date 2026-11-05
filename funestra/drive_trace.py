@@ -15,16 +15,14 @@ from funestra.osr2_visualizer import (
 )
 
 from .descent_latch import DescentChoice, DescentLatch, DriveKey
-from .robot_hand import FULL_INTENSITY
+from .robot_hand import FULL_INTENSITY, ON_THE_PARK_WITHIN_FOR_THE_TRACE_AND_THE_SENDER_ALIKE
 from .trace_grid import on_the_grid
 
-_PARK_EPSILON = 0.02
-
-_TOUCH_LAG_MS = 350
+_LAG_IN_WHICH_THE_ARBITER_CANNOT_YET_STOP_THE_DEVICE_MS = 350
 
 _SEAM_FEATHER_MS = 300
 
-_TOUCH_FREEZE_AHEAD_MS = 3000
+_AHEAD_WITHIN_WHICH_THE_PROJECTED_WAVE_HAS_NOT_YET_DRIFTED_MS = 3000
 
 
 class Playhead(NamedTuple):
@@ -53,7 +51,7 @@ class _Reading:
         if motion is not None and base.let_go is None:
             self.resume_base = float(min(range(TRACE_SAMPLES), key=motion.__getitem__))
         self.climb_ms = 0
-        if motion is not None and _motion_at(self, self.resume_base) > _PARK_EPSILON:
+        if motion is not None and _motion_at(self, self.resume_base) > ON_THE_PARK_WITHIN_FOR_THE_TRACE_AND_THE_SENDER_ALIKE:
             self.climb_ms = self.ramp_ms
 
 
@@ -90,16 +88,26 @@ def _genau_height(r: _Reading, sample_ms: int, began: int | None) -> float:
     return _motion_at(r, r.resume_base + (sample_ms - began - r.climb_ms) / r.step)
 
 
+def _eased_onto_its_seam_so_the_join_cannot_flicker(
+        r: _Reading, value: float, ms_to_seam: int, seam_value: float) -> float:
+    weight = 1 - ms_to_seam / _feather_ms(r)
+    return value * (1 - weight) + seam_value * weight
+
+
+def _feather_ms(r: _Reading) -> int:
+    return round(_SEAM_FEATHER_MS * r.speed)
+
+
 def _park_touch_after(r: _Reading, turn_start: int, began: int | None) -> int | None:
-    if r.motion is None or min(r.motion) > _PARK_EPSILON:
+    if r.motion is None or min(r.motion) > ON_THE_PARK_WITHIN_FOR_THE_TRACE_AND_THE_SENDER_ALIKE:
         return None
-    scan_from = turn_start + round(_TOUCH_LAG_MS * r.speed)
+    scan_from = turn_start + round(_LAG_IN_WHICH_THE_ARBITER_CANNOT_YET_STOP_THE_DEVICE_MS * r.speed)
     scan_to = scan_from + round(PARK_TOUCH_WAIT_CAP_MS * r.speed)
     if scan_to > r.position_ms + r.span_ms:
         return turn_start
     at_ms = float(scan_from)
     while at_ms <= scan_to:
-        if _genau_height(r, round(at_ms), began) <= _PARK_EPSILON:
+        if _genau_height(r, round(at_ms), began) <= ON_THE_PARK_WITHIN_FOR_THE_TRACE_AND_THE_SENDER_ALIKE:
             return round(at_ms)
         at_ms += r.step / 4
     return None
@@ -121,12 +129,13 @@ def _descent_entry(r: _Reading, turn_start: int) -> tuple[float, int | None]:
         touch = latched.touch
     else:
         touch = _park_touch_after(r, turn_start, prev_began)
-    frozen = (r.position_ms >= turn_start - round(_TOUCH_FREEZE_AHEAD_MS * r.speed)
+    frozen = (r.position_ms >= turn_start - round(_AHEAD_WITHIN_WHICH_THE_PROJECTED_WAVE_HAS_NOT_YET_DRIFTED_MS * r.speed)
               and (base.let_go is None or r.position_ms >= turn_start))
     if r.latch is not None and (frozen or latched is not None):
-        horizon = round((PARK_TOUCH_WAIT_CAP_MS + _TOUCH_LAG_MS) * r.speed)
+        the_scan_for_a_boundary_is_over_after = round(
+            (PARK_TOUCH_WAIT_CAP_MS + _LAG_IN_WHICH_THE_ARBITER_CANNOT_YET_STOP_THE_DEVICE_MS) * r.speed)
         r.latch.remember(turn_start, DescentChoice(key, top, touch),
-                            stale_before=r.position_ms - horizon)
+                         stale_before=r.position_ms - the_scan_for_a_boundary_is_over_after)
     return top, touch
 
 
@@ -153,12 +162,11 @@ def _resting_at(r: _Reading, sample_ms: int) -> tuple[float, str]:
             top = _motion_at(r, r.resume_base)
             return top * max(0, since) / r.climb_ms, DRIVEN_BY_NEUTRAL
     value = _genau_height(r, sample_ms, began)
-    feather_ms = round(_SEAM_FEATHER_MS * r.speed)
-    if ends_at is not None and ends_at - sample_ms < feather_ms:
+    if ends_at is not None and ends_at - sample_ms < _feather_ms(r):
         seam_top, seam_touch = _descent_entry(r, ends_at)
         if seam_touch is None:
-            weight = 1 - (ends_at - sample_ms) / feather_ms
-            value = value * (1 - weight) + seam_top * weight
+            value = _eased_onto_its_seam_so_the_join_cannot_flicker(
+                r, value, ends_at - sample_ms, seam_top)
     return value, DRIVEN_BY_ROBOT_HAND
 
 
@@ -172,10 +180,9 @@ def _coming_down_at(r: _Reading, sample_ms: int, turn_start: int) -> tuple[float
     if sample_ms <= touch and r.base.let_go is None:
         prev_began, _ = r.script.turn_bounds_at(max(turn_start - 1, 0))
         value = _genau_height(r, sample_ms, prev_began)
-        feather_ms = round(_SEAM_FEATHER_MS * r.speed)
-        if touch - sample_ms < feather_ms:
-            weight = 1 - (touch - sample_ms) / feather_ms
-            value = value * (1 - weight)
+        if touch - sample_ms < _feather_ms(r):
+            value = _eased_onto_its_seam_so_the_join_cannot_flicker(
+                r, value, touch - sample_ms, 0.0)
         return value, DRIVEN_BY_ROBOT_HAND
     return None
 

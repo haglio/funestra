@@ -5,13 +5,17 @@ from typing import TYPE_CHECKING
 from . import learned_motion
 from .flick_flip import HALF_A_LOOP
 from .funscript import HANDOFF_RAMP_MS
-from .robot_hand import POSITION_MAX, phase_to_position
+from .robot_hand import (
+    ON_THE_PARK_WITHIN_FOR_THE_TRACE_AND_THE_SENDER_ALIKE,
+    POSITION_MAX,
+    phase_to_position,
+)
 from .tcode import HandoffGlide, TCodeSink, format_tcode_command
 
 if TYPE_CHECKING:
     from .robot_hand import RobotHandState
 
-_RISE_SKIP_BELOW = 200
+_RISE_SKIP_BELOW = round(ON_THE_PARK_WITHIN_FOR_THE_TRACE_AND_THE_SENDER_ALIKE * POSITION_MAX)
 
 
 class RobotHandTCodeDriver:

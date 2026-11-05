@@ -12,7 +12,7 @@ def _choice(top: float = 0.35, touch: int | None = 3_600) -> DescentChoice:
 
 
 class TestTheWaveAChoiceWasCutFrom:
-    def test_a_key_is_the_five_fields_that_identify_a_wave(self):
+    def test_a_key_is_the_five_fields_that_change_only_when_the_wave_itself_does_and_not_every_frame(self):
         publish = DriveHud(center=50, amplitude=100, speed=40, let_go=0.44, max_intensity=30)
 
         assert DriveKey.cut_from(publish) == DriveKey(
@@ -67,7 +67,7 @@ class TestTurnsThePlayheadHasPassed:
         assert latch.choice_for(9_000) == _choice()
         assert latch.choice_for(17_000) == _choice()
 
-    def test_a_handful_of_turns_is_never_worth_scanning(self):
+    def test_a_handful_of_turns_is_never_scanned_so_a_turn_just_passed_is_still_there_for_a_status_read(self):
         latch = DescentLatch()
 
         latch.remember(1_000, _choice(), stale_before=9_000)

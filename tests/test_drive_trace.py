@@ -24,6 +24,7 @@ from funestra.trace_grid import on_the_grid
 SPAN_S = 7.9
 STEP_MS = 100
 RAMP_STEPS = HANDOFF_RAMP_MS // STEP_MS
+NEWER_PUBLISH_MS_SHARED_SO_ONLY_A_MOVED_CONTROL_EXPLAINS_A_NEW_TOP = 20
 
 
 def _motion(**over) -> DriveHud:
@@ -159,6 +160,13 @@ class TestTheRampDownOntoThePark:
         assert after.waveform[0] == 0.73
         assert after.waveform[RAMP_STEPS] == 0.0
 
+    def test_at_double_speed_the_ramp_takes_as_many_columns_since_the_device_walks_it_in_wall_time(self):
+        hud = osr2_visualizer(_motion(), Playhead(0, 2.0), script=_script_ahead())
+        opens = 3_000 // (2 * STEP_MS)
+
+        assert hud.waveform[opens + RAMP_STEPS - 1] > 0.0
+        assert hud.waveform[opens + RAMP_STEPS] == 0.0
+
     def test_the_dot_walks_down_the_ramp_with_the_device(self):
         script = _script_ahead()
         published = _parked_motion(let_go=0.8)
@@ -209,6 +217,16 @@ class TestTheClimbBackOut:
 
         assert blue_start_ms == 2_000 + 5_000
 
+    def test_with_genau_live_the_next_turn_opens_on_the_waves_floor_wherever_that_has_scrolled_to(self):
+        script = _script(until_ms=2_000)
+
+        first = _read(script, at=1_000, published=_motion_at(0))
+        later = _read(script, at=1_000, published=_motion_at(3 * STEP_MS))
+
+        assert first.waveform[first.runs[-1][0]] == pytest.approx(min(_motion_at(0).waveform))
+        assert later.waveform[later.runs[-1][0]] == pytest.approx(
+            min(_motion_at(3 * STEP_MS).waveform))
+
     def test_a_motion_opening_on_the_park_needs_no_climb(self):
         published = _parked_motion(
             amplitude=100,
@@ -228,7 +246,7 @@ class TestAFloorOnTheParkEndsOnItsTouchDown:
             tuple(0.5 + 0.5 * np.sin(i / 3) for i in range(TRACE_SAMPLES)))
         return _motion(amplitude=100, **over)
 
-    def test_no_ramp_and_the_gray_runs_flat(self):
+    def test_no_ramp_and_the_gray_runs_flat_by_the_owners_rule_for_a_floor_on_the_park(self):
         hud = _read(_script_ahead(), at=0, published=self._touching_motion(),
                     latch=DescentLatch())
         blue_end = hud.runs[0][1]
@@ -246,6 +264,39 @@ class TestAFloorOnTheParkEndsOnItsTouchDown:
         blue_end_ms = hud.runs[0][1] * STEP_MS
 
         assert blue_end_ms > 3_000
+
+    def test_a_touch_too_soon_after_the_boundary_for_the_arbiter_to_stop_at_is_passed_over_for_the_next(self):
+        latch = DescentLatch()
+        touches_down_every_ms = round(2 * np.pi * 3 * STEP_MS)
+        touching_a_tenth_of_a_second_past_the_boundary = self._touching_motion(
+            waveform=tuple(0.5 - 0.5 * np.cos((i - 31) / 3) for i in range(TRACE_SAMPLES)))
+
+        _read(_script_ahead(), at=0, published=touching_a_tenth_of_a_second_past_the_boundary,
+              latch=latch)
+
+        assert latch.choice_for(3_000).touch == pytest.approx(
+            3_100 + touches_down_every_ms, abs=STEP_MS)
+
+    def test_a_motion_too_slow_to_come_down_inside_the_arbiters_wait_ramps_like_a_raised_floor(self):
+        latch = DescentLatch()
+        slow = self._touching_motion(
+            waveform=tuple(0.5 - 0.5 * np.cos(i / 10) for i in range(TRACE_SAMPLES)))
+
+        hud = _read(_script_ahead(), at=0, published=slow, latch=latch)
+
+        assert latch.choice_for(3_000).touch is None
+        assert hud.runs[1][2] == DRIVEN_BY_NEUTRAL
+
+    def test_a_touch_stood_in_for_by_the_boundary_while_its_scan_runs_off_the_published_span_is_never_the_one_held(self):
+        script = _script_ahead(from_ms=18_000, to_ms=19_000)
+        latch = DescentLatch()
+
+        far = _read(script, at=6_000, published=self._touching_motion(), latch=latch)
+        assert 6_000 + far.runs[0][1] * STEP_MS == pytest.approx(13_000, abs=STEP_MS)
+        assert latch.choice_for(13_000) is None
+
+        _read(script, at=10_040, published=self._touching_motion(), latch=latch)
+        assert latch.choice_for(13_000).touch > 13_000
 
     def test_the_touch_is_selected_once(self):
         script = _script_ahead()
@@ -270,7 +321,7 @@ class TestAFloorOnTheParkEndsOnItsTouchDown:
         for column in range(blue_end - feather_columns, blue_end):
             assert 0.0 <= hud.waveform[column] <= published.waveform[column] + 1e-9
 
-    def test_a_far_boundary_stays_a_live_forecast(self):
+    def test_a_far_boundary_stays_a_live_forecast_since_the_projected_wave_drifts_before_the_playhead_gets_there(self):
         script = _script_ahead(from_ms=18_000, to_ms=19_000)
         latch = DescentLatch()
 
@@ -299,7 +350,8 @@ class TestTheDescentTopIsSelectedOnce:
         opens = 3_000 // STEP_MS
 
         first = _read(script, at=0, published=_motion_at(0), latch=latch)
-        later = _read(script, at=0, published=_motion_at(20), latch=latch)
+        later = _read(script, at=0, published=_motion_at(
+            NEWER_PUBLISH_MS_SHARED_SO_ONLY_A_MOVED_CONTROL_EXPLAINS_A_NEW_TOP), latch=latch)
 
         assert later.waveform[opens] == first.waveform[opens]
 
@@ -334,8 +386,8 @@ class TestTheDescentTopIsSelectedOnce:
         latch = DescentLatch()
 
         first = _read(script, at=0, published=_motion_at(0), latch=latch)
-        moved = _read(script, at=0, published=_motion_at(20, **{control: moved_to}),
-                      latch=latch)
+        moved = _read(script, at=0, published=_motion_at(
+            NEWER_PUBLISH_MS_SHARED_SO_ONLY_A_MOVED_CONTROL_EXPLAINS_A_NEW_TOP, **{control: moved_to}), latch=latch)
 
         assert moved.waveform[opens] != first.waveform[opens]
 
@@ -428,7 +480,7 @@ class TestPositionMarker:
 
 
 class TestTheSeamCannotFlicker:
-    def test_the_last_blue_column_sits_on_the_latched_top(self):
+    def test_the_last_blue_column_sits_on_the_latched_top_at_the_cost_of_a_slight_bend_in_the_last_few_columns(self):
         latch = DescentLatch()
         published = _motion()
         hud = _read(_script_ahead(), at=1_000, published=published,
@@ -460,13 +512,23 @@ class TestForecastsDieWithTheirWave:
 
         assert first.runs[0][1] != moved.runs[0][1]
 
-    def test_a_parked_publish_never_seeds_a_pre_turn_latch(self):
+    def test_a_parked_publish_never_seeds_a_pre_turn_latch_since_right_after_a_rewind_it_is_still_the_old_wave(self):
         script = _script_ahead()
         latch = DescentLatch()
 
         _read(script, at=0, published=self._touching(let_go=0.0), latch=latch)
 
         assert latch.choice_for(3_000) is None
+
+    def test_the_touch_chosen_from_the_live_wave_is_kept_through_the_handover_since_the_frozen_wave_cannot_answer_again(self):
+        script = _script_ahead()
+        latch = DescentLatch()
+        _read(script, at=2_800, published=self._touching(), latch=latch)
+        chosen_live = latch.choice_for(3_000).touch
+
+        _read(script, at=3_120, published=self._touching(let_go=0.0), latch=latch)
+
+        assert latch.choice_for(3_000).touch == chosen_live
 
     def test_no_extension_is_drawn_off_a_parked_wave(self):
         script = _script_ahead()
@@ -479,7 +541,7 @@ class TestForecastsDieWithTheirWave:
         assert DRIVEN_BY_ROBOT_HAND not in _colors(landed)
 
 
-class TestThePillFollowsTheLine:
+class TestThePillFollowsTheLineNotTheHudsOwnStateWhichTrailsTheArbiter:
     def test_genau_while_the_dot_rides_the_extension(self):
         published = _motion(
             amplitude=100,
@@ -501,7 +563,7 @@ class TestThePillFollowsTheLine:
 
 
 class TestThePublishedTouch:
-    def test_the_latched_touch_is_what_gets_published(self):
+    def test_the_latched_touch_is_what_gets_published_so_the_arbiter_ends_the_turn_where_the_blue_is_drawn_ending(self):
         script = _script_ahead()
         latch = DescentLatch()
         published = _motion(
@@ -563,7 +625,7 @@ class TestNothingToFoldIn:
 
         assert osr2_visualizer(published, Playhead(0), script=None) == published
 
-    def test_a_single_run_still_names_its_driver(self):
+    def test_a_single_run_still_names_its_driver_or_the_painter_falls_back_on_a_state_that_trails_the_arbiter_and_flashes_green(self):
         hud = _read(_script(until_ms=120_000), at=0)
 
         assert hud.segments == ((0, DRIVEN_BY_FUNSCRIPT),)
@@ -572,6 +634,12 @@ class TestNothingToFoldIn:
         script = _script(until_ms=120_000)
 
         assert _read(script, at=0) == _read(script, at=0)
+
+
+def test_two_playheads_inside_one_step_of_the_grid_draw_the_same_visualizer_so_the_hud_repaints_no_oftener_than_genaus_publishes():
+    script = _script(until_ms=120_000)
+
+    assert _read(script, at=39) == _read(script, at=0)
 
 
 def test_a_playhead_is_read_on_the_forty_millisecond_grid_snapped_down():
