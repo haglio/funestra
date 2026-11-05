@@ -20,6 +20,8 @@ class PlaylistFollower:
         self._follow(again=False)
 
     def _follow(self, *, again: bool) -> None:
+        # Windows can stamp two writes with one time, and a read that lands inside a write comes
+        # back empty there, so a change is told by what the list says and an empty read waits.
         items = read_playlist(self._playlist_file)
         if not items or (items == self._last_taken and not again):
             return

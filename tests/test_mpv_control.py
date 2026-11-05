@@ -260,6 +260,15 @@ def test_opening_a_file_forgets_whatever_was_staged_after_the_last_one():
     assert mpv.calls[-1] == ("loadfile", "alpha.mp4", "append")
 
 
+def test_setting_a_volume_leaves_a_muted_engine_muted_which_the_silent_test_runs_rely_on():
+    mpv = FakeMpv()
+    mpv.mute = True
+
+    Control(mpv).set_volume(80)
+
+    assert (mpv.mute, mpv.volume) == (True, 80)
+
+
 def test_muting_leaves_the_volume_where_it_was():
     mpv = FakeMpv()
     mpv.volume = 70
@@ -354,7 +363,7 @@ def test_a_call_arriving_after_the_close_reaches_no_handle():
     assert mpv.calls == [("terminate",)]
 
 
-def test_closing_twice_frees_once():
+def test_closing_twice_frees_once_since_python_mpv_s_own_free_has_no_guard_against_a_second_call():
     mpv = BlockingMpv()
     mpv.release.set()
     control = Control(mpv)

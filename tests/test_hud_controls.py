@@ -180,7 +180,7 @@ class TestTheSwitchesAndTheThingsDone:
         shuffle, _latest = browse_order_buttons("main", latest=False, remembered=True)
         assert (shuffle.remembered, shuffle.lit) == (True, False)
 
-    def test_the_versions_button_is_dim_where_the_clip_has_only_itself(self):
+    def test_the_versions_button_is_dim_where_the_clip_has_only_itself_and_says_none_for_this_one_so_it_reads_as_not_here_and_not_as_broken(self):
         alone = versions_button("portrait_cycle_version", noun="clip", has_other_versions=False)
         among = versions_button("portrait_cycle_version", noun="clip", has_other_versions=True)
 

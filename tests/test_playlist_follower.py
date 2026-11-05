@@ -17,7 +17,7 @@ def _names(taken: list[list[PlaylistItem]]) -> list[list[str]]:
 
 
 class TestAListWrittenUnderTheWindow:
-    def test_is_taken_with_no_verb_sent(self, tmp_path):
+    def test_is_taken_with_no_verb_sent_since_the_reload_verb_is_dropped_when_the_command_file_is_held_too_long(self, tmp_path):
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "its own clip.mp4")
         taken: list[list[PlaylistItem]] = []
@@ -112,7 +112,7 @@ class TestAListTakenAway:
 
 
 class TestTheReloadVerb:
-    def test_reads_at_once_rather_than_on_the_next_frame(self, tmp_path):
+    def test_reads_at_once_rather_than_on_the_next_frame_or_it_replaces_the_list_the_next_command_s_video_went_into_and_drops_its_funscript(self, tmp_path):
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "a show.png")
         taken: list[list[PlaylistItem]] = []

@@ -61,6 +61,8 @@ def software_outputs(endpoints=None):
     )
 
 
+# Windows gives an output a new id each time it is plugged in again, so one is picked by part
+# of its name.
 def pick_output(outputs, wanted, *, software=None):
     needle = (wanted or "").strip().lower()
     if not needle:

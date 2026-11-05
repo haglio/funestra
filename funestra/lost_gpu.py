@@ -8,7 +8,9 @@ from collections.abc import Callable
 
 logger = logging.getLogger(__name__)
 
-# mpv and FFmpeg print DXGI's device-gone codes 0x887A0005 to 7, with or without the 0x.
+# mpv's video output never recovers by itself once the graphics driver has restarted, so a new
+# one is built. mpv and FFmpeg print DXGI's device-gone codes 0x887A0005 to 7, with or without
+# the 0x.
 _GONE = re.compile(r"887a000[567]", re.IGNORECASE)
 
 FIRST_WAIT_S = 2.0

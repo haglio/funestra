@@ -61,6 +61,7 @@ def time_playhead(position_ms: float, duration_ms: float) -> PlayheadHud | None:
 def video_playhead(position_ms: float, duration_ms: float, frame_rate: float) -> PlayheadHud | None:
     if duration_ms <= 0 or frame_rate <= 0:
         return time_playhead(position_ms, duration_ms)
+    # mpv reports the frame rate as a 32-bit float, so the count is rounded, not cut down.
     return framed_playhead(round(position_ms / 1000 * frame_rate),
                            round(duration_ms / 1000 * frame_rate), position_ms, duration_ms)
 

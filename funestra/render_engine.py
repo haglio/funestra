@@ -12,6 +12,8 @@ _FRAME_PRESENT = 1
 _FRAME_REDRAW = 2
 
 
+# libmpv's render API needs the host's OpenGL context current on the calling thread when this
+# is built, on every render and when it is closed.
 class MpvRenderEngine(_MpvControl):
     def __init__(
         self,
@@ -61,6 +63,7 @@ class MpvRenderEngine(_MpvControl):
             heard(self._path)
 
     def load(self, path: Path) -> None:
+        # mpv may hand over one last frame of the old file after the switch was asked for.
         self._drawn_file.asked_for(str(path))
         super().load(path)
 
@@ -73,7 +76,9 @@ class MpvRenderEngine(_MpvControl):
 
     @mpv_call()
     def render(self, fbo: int, width: int, height: int, *, flip_y: bool = False) -> str | None:
-        # Without block_for_target_time=False libmpv holds the call until the frame's display time.
+        # Without block_for_target_time=False libmpv holds the call until the frame's display time,
+        # and a host compositing on its own clock (a 90 Hz headset loop over 30 fps videos) must
+        # not inherit that pacing.
         self._viewport = (int(width), int(height))
         flags = self._next_frame_flags()
         self._render_context.render(

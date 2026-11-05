@@ -36,7 +36,7 @@ def _frame_bytes(value: int) -> bytes:
     return bytes([value]) * (WIDTH * HEIGHT * 3)
 
 
-def test_every_frame_of_the_flick_comes_back_as_an_image_of_its_size(ffmpeg):
+def test_every_frame_of_the_flick_comes_back_as_an_image_of_its_size_the_whole_flick_in_memory_since_genau_jumps_to_any_frame_at_any_moment(ffmpeg):
     ffmpeg(_frame_bytes(10) + _frame_bytes(20) + _frame_bytes(30))
 
     frames = load_flick_frames(Path("scene one.mp4"))

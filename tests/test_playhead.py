@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import numpy as np
+from shared_ui.type_scale import SIZE_TINY
 
+from funestra.hud import load_font, text_width
 from funestra.playhead import (
     FIGURE_SPACE,
     PlayheadHudPainter,
@@ -109,3 +111,9 @@ class TestTheVisualizer:
 
         assert abs((rows[0] + rows[-1]) / 2 - (VOLUME_CONTROL_H - 1) / 2) <= 0.5
 
+
+
+def test_every_digit_is_as_wide_as_every_other_in_the_time_text_s_face_so_a_counting_clock_never_moves_along_the_row():
+    face = load_font(SIZE_TINY)
+
+    assert len({text_width(face, digit) for digit in "0123456789"}) == 1

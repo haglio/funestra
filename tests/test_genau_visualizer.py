@@ -45,8 +45,8 @@ def _visualizer(**over) -> GenauVisualizer:
     )
 
 
-JUST_UNDER_DRIVE = 0.0390625
-JUST_OVER_DRIVE = 0.04296875
+JUST_UNDER_THE_PUBLISH_INTERVAL_AN_EXACT_BINARY_FRACTION_CLOSE_BY = 0.0390625
+JUST_OVER_THE_PUBLISH_INTERVAL_AN_EXACT_BINARY_FRACTION_CLOSE_BY = 0.04296875
 
 
 class TestTheVisualizerGoesOutOnATimerSinceItsTraceScrollsWhileNothingElseChanges:
@@ -66,7 +66,7 @@ class TestTheVisualizerGoesOutOnATimerSinceItsTraceScrollsWhileNothingElseChange
         visualizer.update(1.0)
         drive.write_text("stale", encoding="utf-8")
 
-        visualizer.update(1.0 + JUST_UNDER_DRIVE)
+        visualizer.update(1.0 + JUST_UNDER_THE_PUBLISH_INTERVAL_AN_EXACT_BINARY_FRACTION_CLOSE_BY)
 
         assert drive.read_text(encoding="utf-8") == "stale"
 
@@ -75,7 +75,7 @@ class TestTheVisualizerGoesOutOnATimerSinceItsTraceScrollsWhileNothingElseChange
         visualizer.update(1.0)
         drive.write_text("stale", encoding="utf-8")
 
-        visualizer.update(1.0 + JUST_OVER_DRIVE)
+        visualizer.update(1.0 + JUST_OVER_THE_PUBLISH_INTERVAL_AN_EXACT_BINARY_FRACTION_CLOSE_BY)
 
         assert drive.read_text(encoding="utf-8") != "stale"
 

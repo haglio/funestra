@@ -33,7 +33,7 @@ class TestStatusFields:
 
         assert status_fields(playback, None)["playlist_length"] == "1"
 
-    def test_a_version_stepped_to_is_published_as_the_clip_it_stands_in_for(self, tmp_path):
+    def test_a_version_stepped_to_is_published_as_the_clip_it_stands_in_for_since_the_nav_map_the_star_and_the_trash_all_go_by_the_original(self, tmp_path):
         playback, _engine = make_playback(tmp_path)
         other = tmp_path / "v0_sorted.mp4"
         other.write_text("fake")
