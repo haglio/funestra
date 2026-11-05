@@ -95,7 +95,7 @@ class Seam:
         ))
 
     def send(self, line: str) -> None:
-        line = line.replace(PICKED, str(self.picked))
+        line = line.replace(PICKED_WHOSE_NAME_HAS_CAPITALS_TO_CATCH_A_READER_THAT_LOWER_CASES_THE_PATH, str(self.picked))
         self.command_file.write_text(line + "\n", encoding="utf-8")
         self.controller.refresh()
 
@@ -138,7 +138,7 @@ class _Stop:
         return self._set
 
 
-PICKED = "<picked flick>"
+PICKED_WHOSE_NAME_HAS_CAPITALS_TO_CATCH_A_READER_THAT_LOWER_CASES_THE_PATH = "<picked flick>"
 
 SEAM = [
     ("QUIT", {}, {"stopping": True}),
@@ -172,7 +172,7 @@ SEAM = [
     ("FLICK_SECONDS_UP", {}, {"interval": 21}),
     ("HUD_ON", {}, {"hud": True}),
     ("HUD_OFF", {"hud": True}, {"hud": False}),
-    (f"PLAY_FILE {PICKED}", {}, {"played": ("Picked Scene.mp4",)}),
+    (f"PLAY_FILE {PICKED_WHOSE_NAME_HAS_CAPITALS_TO_CATCH_A_READER_THAT_LOWER_CASES_THE_PATH}", {}, {"played": ("Picked Scene.mp4",)}),
     ("AMP 80", {}, {"amplitude": 80}),
     ("CENTER 65", {}, {"center": 65, "intended_center": 65}),
     ("SPEED 90", {}, {"speed": 90}),
