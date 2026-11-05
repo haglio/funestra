@@ -4,7 +4,7 @@ from shared_ui.palette import RED, YELLOW
 
 from funestra.scrubber_bar import (
     BAR_INSET_Y,
-    HEATMAP_ALPHA,
+    HEATMAP_ALPHA_PRESENT_BUT_UNOBTRUSIVE_UNDER_THE_VIDEO,
     TrackMarks,
     bar_track_x,
     progress_bar_bgra,
@@ -106,7 +106,7 @@ class TestProgressBar:
 
         middle = bar.shape[0] // 2
         assert [_rgba(bar, middle, x) for x in range(x0 + 10, x1 - 10)] == [
-            (*colors[x - x0], HEATMAP_ALPHA) for x in range(x0 + 10, x1 - 10)]
+            (*colors[x - x0], HEATMAP_ALPHA_PRESENT_BUT_UNOBTRUSIVE_UNDER_THE_VIDEO) for x in range(x0 + 10, x1 - 10)]
 
     def test_the_track_ends_before_the_volume_slot(self):
         bar = progress_bar_bgra(TrackMarks(10_000, 10_000), 1000)

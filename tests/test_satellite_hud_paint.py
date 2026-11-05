@@ -708,7 +708,7 @@ def test_the_filtered_actions_label_is_lit(thumb):
             actions=(HudCell(path="a1.mp4", thumb=thumb, label="gamma"),),
             current_action="alpha", filter_query=filter_query,
         ))
-        bar = _label_band(rendered)
+        bar = _lit_label_ink_past_the_filter_button_whose_fill_is_the_same_white_and_in_all_three_channels_since_the_strike_s_red_is_as_bright(rendered)
         return int(bar.sum())
 
     assert gutter_ink("alpha") > 0
@@ -753,14 +753,14 @@ def test_a_row_the_filter_only_partly_matches_still_lights(thumb):
     assert lit_ink("alpha") == 0
 
 
-def _label_band(rendered):
+def _lit_label_ink_past_the_filter_button_whose_fill_is_the_same_white_and_in_all_three_channels_since_the_strike_s_red_is_as_bright(rendered):
     (cx, cy, _cw, ch), _path = rendered.targets.click[0]
     lower = rendered.targets.wrong_action[1] if rendered.targets.wrong_action else cy + ch
     return (_rgb(rendered.bgra)[cy:lower, PAD + FILTER_BTN + NAV_MAP_GAP:cx - NAV_MAP_GAP] > 200).all(axis=2)
 
 
 def _white_halves(rendered) -> tuple[int, int]:
-    bar = _label_band(rendered)
+    bar = _lit_label_ink_past_the_filter_button_whose_fill_is_the_same_white_and_in_all_three_channels_since_the_strike_s_red_is_as_bright(rendered)
     half = bar.shape[0] // 2
     return int(bar[:half].sum()), int(bar[half:].sum())
 

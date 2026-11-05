@@ -38,7 +38,7 @@ from .robot_hand import FULL_INTENSITY, POSITION_MAX
 HEIGHT = BUTTON
 LABEL = "OSR2"
 _LABEL_GAP = GAP_SMALL
-_GROUP_GAP = BUTTON_GROUP_GAP
+_CLEAR_OF_THE_BUTTONS_SO_THE_LABEL_READS_AS_A_READ_OUT_NOT_A_BUTTON_GAP = BUTTON_GROUP_GAP
 _PILL_PAD = BUTTON_PAD_H_TIGHT
 
 MAX_INTENSITY_LABEL = "Max intensity"
@@ -204,8 +204,10 @@ class Osr2Section:
                   fill=(*TEXT_MUTED, 255))
         word = LABELS.get(line.state, line.state)
         color = COLORS.get(line.state, TEXT_PRIMARY)
-        pill_x = label_x + text_width(self._tiny, LABEL) + _LABEL_GAP
-        draw.text((pill_x + _PILL_PAD // 2, y + HEIGHT / 2), word,
+        left_bare_since_an_outlined_word_would_read_as_a_third_button_x = (
+            label_x + text_width(self._tiny, LABEL) + _LABEL_GAP)
+        draw.text((left_bare_since_an_outlined_word_would_read_as_a_third_button_x + _PILL_PAD // 2,
+                   y + HEIGHT / 2), word,
                   font=self._tiny, anchor="lm", fill=(*color, 255))
         for bar in self.bars(x, y, line):
             self._draw_max_intensity(draw, bar, line.max_intensity)
@@ -227,7 +229,7 @@ class Osr2Section:
     def _controls_width(controls: tuple[Button, ...]) -> int:
         if not controls:
             return 0
-        return sum(b.width for b in controls) + GAP * (len(controls) - 1) + _GROUP_GAP
+        return sum(b.width for b in controls) + GAP * (len(controls) - 1) + _CLEAR_OF_THE_BUTTONS_SO_THE_LABEL_READS_AS_A_READ_OUT_NOT_A_BUTTON_GAP
 
     def bars(self, x: int, y: int, line: Osr2Line) -> list[DriveTrack]:
         if line.max_intensity is None:
@@ -239,7 +241,7 @@ class Osr2Section:
     def _max_intensity_width(self, line: Osr2Line) -> int:
         if line.max_intensity is None:
             return 0
-        return (_GROUP_GAP + text_width(self._tiny, MAX_INTENSITY_LABEL) + _LABEL_GAP
+        return (_CLEAR_OF_THE_BUTTONS_SO_THE_LABEL_READS_AS_A_READ_OUT_NOT_A_BUTTON_GAP + text_width(self._tiny, MAX_INTENSITY_LABEL) + _LABEL_GAP
                 + self._widest_number + _LABEL_GAP + _MAX_INTENSITY_W)
 
     @property

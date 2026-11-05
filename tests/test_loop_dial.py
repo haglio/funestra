@@ -63,7 +63,7 @@ class TestHowItIsDrawn:
         assert alpha[DIAL_SIZE - 1, DIAL_SIZE - 1] == 0
         assert alpha[DIAL_SIZE // 2, DIAL_SIZE // 2] > 0
 
-    def test_it_is_repainted_only_when_the_hand_moves_a_step(self):
+    def test_it_is_repainted_only_when_the_hand_moves_a_step_of_four_degrees_as_fine_as_a_dial_this_size_draws(self):
         assert LoopDialPainter.hand(0.0) == LoopDialPainter.hand(0.001)
         assert LoopDialPainter.hand(0.0) != LoopDialPainter.hand(0.25)
         assert LoopDialPainter.hand(1.0) == LoopDialPainter.hand(0.0)

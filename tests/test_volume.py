@@ -49,7 +49,7 @@ class TestPlacement:
         assert volume_control_xy(viewport_w=1200, viewport_h=900, timeline_h=0) == volume_control_xy(
             viewport_w=1200, viewport_h=900, timeline_h=ROW_H)
 
-    def test_the_row_it_falls_back_to_is_the_one_the_scrubber_draws(self):
+    def test_the_row_it_falls_back_to_is_the_one_the_scrubber_draws_restated_here_since_the_scrubber_imports_this_module(self):
         assert ROW_H == SCRUBBER_HEIGHT
 
     def test_a_window_shorter_than_the_volume_control_still_places_it(self):

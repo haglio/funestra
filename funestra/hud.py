@@ -45,6 +45,7 @@ CORNER_RADIUS = BUTTON_RADIUS
 hovered_fill = hovered
 
 
+# Qt sizes a font in points and Pillow in pixels, and these HUDs were first laid out in Qt's points.
 def load_font(points: int, family: str = BOLD_FACE) -> ImageFont.FreeTypeFont:
     return lettering.load_font(in_pixels(points), family)
 
@@ -56,6 +57,8 @@ def text_width(font: ImageFont.FreeTypeFont, text: str) -> int:
 _INK_OFFSETS: dict[tuple[str, int, str], tuple[float, float] | None] = {}
 
 
+# Pillow's textbbox and its anchor="mm" both go by the font's layout box, which runs down to the
+# descender line however short the mark, so the ink's own center is found by drawing it.
 def ink_center_offset(font: ImageFont.FreeTypeFont, icon: str) -> tuple[float, float] | None:
     key = (str(getattr(font, "path", "")), int(getattr(font, "size", 0)), icon)
     if key not in _INK_OFFSETS:
@@ -89,11 +92,11 @@ def draw_icon(image: Image.Image, name: str, rect: tuple[int, int, int, int],
 
 
 ACTIVE_DOT = 10
-_DISC_FRAME = ACTIVE_DOT + 2
+_FRAME_A_LITTLE_BIGGER_THAN_THE_DOT_SINCE_THE_FAMILY_S_DISC_KEEPS_ITS_FRAME_S_EDGE_CLEAR = ACTIVE_DOT + 2
 
 
 def draw_active_dot(image: Image.Image, x: int, y: int, active: bool) -> None:
-    paste_icon(image, "disc", (x, y, _DISC_FRAME, _DISC_FRAME), WHITE if active else TEXT_MUTED)
+    paste_icon(image, "disc", (x, y, _FRAME_A_LITTLE_BIGGER_THAN_THE_DOT_SINCE_THE_FAMILY_S_DISC_KEEPS_ITS_FRAME_S_EDGE_CLEAR, _FRAME_A_LITTLE_BIGGER_THAN_THE_DOT_SINCE_THE_FAMILY_S_DISC_KEEPS_ITS_FRAME_S_EDGE_CLEAR), WHITE if active else TEXT_MUTED)
 
 
 TOOLTIP_PAD = GAP_SMALL
@@ -129,6 +132,8 @@ def to_bgra(image: Image.Image) -> np.ndarray:
     return np.ascontiguousarray(rgba[:, :, [2, 1, 0, 3]], dtype=np.uint8)
 
 
+# mpv composites this bitmap into the video. A window of its own could fall beneath the video or
+# float above the desktop; an mpv overlay has no z-order to get wrong.
 class Hud:
     def __init__(self, width: int, height: int, *,
                  ground: tuple[int, int, int] = BG_PRIMARY) -> None:

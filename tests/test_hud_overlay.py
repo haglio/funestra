@@ -72,7 +72,7 @@ def _colors_across(row) -> list[tuple[int, int, int]]:
     return [(200, 40, 40)] * (x1 - x0)
 
 
-class TestTheClipsRowAtItsFoot:
+class TestTheClipsRowAtItsFootSinceAlongAWrappedVideosEdgeItSmearsOutOfTheControllersReach:
     _ROW = RowHud(position_ms=0.0, duration_ms=10_000.0,
                   volume=VolumeHud(volume=80, muted=False))
 
@@ -715,7 +715,7 @@ def test_a_press_in_a_lower_corner_reaches_the_button_drawn_there(
     assert _commands(tmp_path) == ["portrait_next"]
 
 
-def test_the_plus_names_itself_where_the_hud_floats_over_an_item(
+def test_the_plus_names_itself_where_the_hud_floats_over_an_item_taking_the_tooltip_s_room_only_while_pointed_at_so_a_press_beside_it_still_reaches_the_video(
         tmp_path: Path, hud: Path):
     engine = FakeEngine()
     overlay = _hud_at(tmp_path, hud, engine, hud_minimized=True,
@@ -730,7 +730,7 @@ def test_the_plus_names_itself_where_the_hud_floats_over_an_item(
     assert (x, y) == (left, top)
 
 
-def test_a_hud_on_its_own_screen_holds_the_tooltips_room_from_the_start(
+def test_a_hud_on_its_own_screen_holds_the_tooltips_room_from_the_start_since_growing_under_the_pointer_would_carry_the_plus_out_from_under_it(
         tmp_path: Path, hud: Path):
     engine = FakeEngine()
     _publish(hud, hud_minimized=True)

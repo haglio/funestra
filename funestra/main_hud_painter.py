@@ -219,6 +219,8 @@ class MainHudPainter:
             osr2=main_hud_model.osr2, control=main_hud_model.osr2_control, paused=main_hud_model.paused,
             composed=kino_shows(main_hud_model.main_mode)))
 
+    # Pillow is nowhere near cheap enough to repaint this sixty times a second, so the bitmap is
+    # kept until the HUD's contents change.
     def _ensure(self, hud: MainHud, hover: tuple[int, int] | None,
                 item_row: RowHud | None = None, heatmap=None,
                 host_controls: HostControlsHud | None = None) -> bool:

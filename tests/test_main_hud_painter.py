@@ -169,7 +169,7 @@ class TestCompilationLabel:
 
 
 class TestPainter:
-    def test_held_to_a_width_it_paints_every_mode_that_wide(self):
+    def test_held_to_a_width_it_paints_every_mode_that_wide_since_a_hud_that_is_a_screen_of_its_own_would_seem_to_move_if_it_grew_and_shrank(self):
         painter = MainHudPainter(width=600)
 
         widths = {
@@ -299,6 +299,16 @@ class TestPainter:
         hud = MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO))
 
         assert painter.bgra(hud) is painter.bgra(MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO)))
+
+    def test_a_heatmap_is_known_by_being_the_same_array_so_a_host_rebuilds_it_rather_than_writing_into_it(self):
+        painter = MainHudPainter()
+        hud = MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO))
+        heatmap = np.zeros((8, 3), dtype=np.uint8)
+        first = painter.bgra(hud, heatmap=heatmap)
+
+        heatmap[:] = 255
+        assert painter.bgra(hud, heatmap=heatmap) is first
+        assert painter.bgra(hud, heatmap=heatmap.copy()) is not first
 
     def test_the_visualizers_arrows_are_hit_targets_even_though_it_draws_them(self):
         painter = MainHudPainter()
@@ -814,7 +824,7 @@ class TestTraceSources:
         assert painter.tracks
         assert not any(t.dim for t in painter.tracks)
 
-    def test_a_funscript_driving_dims_every_control_but_keeps_the_trace(self):
+    def test_a_funscript_driving_dims_every_control_but_keeps_the_trace_since_adjusting_a_motion_genau_is_not_sending_once_woke_it_against_the_funscript(self):
         painter = self._painted(MainMode.KINO, Osr2State.FUNSCRIPT)
 
         assert all(t.dim for t in painter.tracks)
@@ -1100,6 +1110,12 @@ class TestNothingDriving:
         assert np.array_equal(
             painter.bgra(self._off(MainMode.GENAU, 3.0, control=control)), first)
 
+    def test_a_still_visualizer_arriving_as_a_fresh_scroll_of_genau_s_phase_is_not_repainted(self):
+        painter = MainHudPainter()
+        first = painter.bgra(self._off(MainMode.GENAU, 0.0, control=OSR2_PARKED))
+
+        assert painter.bgra(self._off(MainMode.GENAU, 3.0, control=OSR2_PARKED)) is first
+
 
 class TestTheDeviceRunningItselfKeepsMoving:
     def test_the_trace_scrolls_on_its_own_beat(self):
@@ -1145,7 +1161,7 @@ class TestTheHandoffKeepsMoving:
 
 
 class TestTheLockIsGreen:
-    def test_a_held_clip_lights_the_lock_green(self):
+    def test_a_held_clip_lights_the_lock_green_the_one_green_control_since_green_here_means_favorites_and_locking_favorites_the_video(self):
 
         painter = MainHudPainter()
         rgb = _rgb(painter.bgra(MainHud(
@@ -1208,7 +1224,7 @@ class TestARowsNameLinesUpWithItsControls:
         assert name[2] >= text_width(painter._tiny, "Playback speed")
         assert name[0] + name[2] <= slower[0]
 
-    def test_both_named_rows_take_the_same_cell_so_they_line_up(self):
+    def test_both_named_rows_take_the_same_cell_so_they_line_up_a_cell_sized_to_playback_speed_the_longer_of_the_names(self):
         kino, _rows = self._rows("kino")
         genau, _rows = self._rows("genau")
 

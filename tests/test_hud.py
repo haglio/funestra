@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import inspect
+
 import numpy as np
 from PIL import Image, ImageDraw
 from shared_ui import palette
@@ -31,7 +33,7 @@ def test_the_palette_is_shared_uis_own_read_without_qt():
     assert hud.BLUE is palette.BLUE
 
 
-def test_hud_is_a_translucent_rounded_slab_of_the_asked_size():
+def test_hud_is_a_translucent_rounded_slab_of_the_asked_size_see_through_enough_for_the_video_and_solid_enough_for_its_text():
     hud = Hud(60, 40)
 
     bgra = hud.to_bgra()
@@ -78,7 +80,7 @@ def test_the_active_dot_is_lit_or_gray_but_never_absent():
     assert dot(False) == TEXT_MUTED
 
 
-def test_the_active_dot_is_the_familys_disc():
+def test_the_active_dot_is_the_familys_disc_the_same_mark_in_the_same_corner_on_every_hud_for_a_reader_glancing_across_screens():
     def drawn(paint) -> np.ndarray:
         image = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
         paint(image)
@@ -216,3 +218,7 @@ def test_a_tooltip_near_the_far_corner_is_nudged_back_inside_the_hud():
 
     assert (x, y) >= (0, 0)
     assert (x + w, y + h) <= (150, 120)
+
+
+def test_every_label_is_bold_unless_asked_otherwise_since_it_is_read_at_a_glance_over_moving_video():
+    assert inspect.signature(hud.load_font).parameters["family"].default == hud.BOLD_FACE
