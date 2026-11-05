@@ -45,7 +45,7 @@ class TestStatusWriter:
 
         assert status_path.read_text(encoding="utf-8") == "b=2\na=1\n"
 
-    def test_creates_the_state_directory(self, tmp_path):
+    def test_creates_the_state_directory_since_a_funestra_may_publish_before_anything_else_has_made_it(self, tmp_path):
         status_path = tmp_path / "state" / "status.txt"
         writer = StatusWriter(status_path, _fields, now_source=lambda: 0.0)
 
@@ -112,7 +112,7 @@ class TestStatusWriter:
 
         assert not torn, f"the poller read {len(torn)} incomplete records, e.g. {torn[0]!r}"
 
-    def test_an_unwritable_path_is_reported_not_raised(self, tmp_path):
+    def test_an_unwritable_path_is_reported_not_raised_so_a_locked_file_never_takes_down_the_run_loop_and_the_next_tick_tries_again(self, tmp_path):
         status_path = tmp_path / "status.txt"
         status_path.mkdir()
         writer = StatusWriter(status_path, _fields, now_source=lambda: 0.0)
@@ -135,7 +135,7 @@ class TestStatusWriter:
 
 
 class TestWhatEveryFunestraPublishes:
-    def test_the_lines_in_the_order_they_are_written(self):
+    def test_the_lines_every_funestra_shares_in_the_order_they_are_written_each_funestra_s_own_lines_being_its_own_repo_s(self):
         fields = status_fields(FunestraStatus(
             video="C:/vids/a.mp4", position_ms=1500, duration_ms=5000, paused=False, locked=True,
             speed=1.5, read_at=1_000.0))
@@ -150,7 +150,7 @@ class TestWhatEveryFunestraPublishes:
     def test_a_playhead_is_published_as_whole_milliseconds(self):
         assert status_fields(FunestraStatus(position_ms=12345.9))["position_ms"] == "12345"
 
-    def test_a_status_says_when_its_playhead_was_read(self):
+    def test_a_status_says_when_its_playhead_was_read_since_the_file_s_own_time_trails_it_by_every_read_made_after(self):
         status = FunestraStatus(video="C:/vids/a.mp4", position_ms=1500, read_at=1_000.25)
 
         assert status_fields(status)["read_at"] == "1000.250"

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from funestra.descent_latch import DescentChoice, DescentLatch, DriveKey
+from funestra.descent_latch import _CROWDED, DescentChoice, DescentLatch, DriveKey
 from funestra.osr2_visualizer import DriveHud
 
 TURN_MS = 3_000
@@ -48,7 +48,7 @@ class TestWhatIsHeldForATurn:
 
 
 class TestTurnsThePlayheadHasPassed:
-    CROWD = range(1_000, 18_000, 1_000)
+    CROWD = range(1_000, 1_000 * (_CROWDED + 2), 1_000)
 
     def test_a_turn_left_over_goes_once_there_are_enough_to_scan(self):
         latch = DescentLatch()

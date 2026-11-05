@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import re
+from pathlib import Path
+
 import pytest
 from app_support.osr2_hold import HOLD_MOVE_MS, PARK
 
+from funestra import tcode
 from funestra.tcode import (
     PARK_COMMAND,
     POSITION_MAX,
@@ -55,12 +59,30 @@ class TestUdpTCodeSink:
         sink.send("L09999I50")
         assert sock.sent == [(b"L09999I50\n", ("127.0.0.1", 50557))]
 
-    def test_a_send_after_close_is_silence_not_a_raise(self):
+    def test_a_send_after_close_is_silence_not_a_raise_since_another_thread_is_often_still_sending_at_shutdown_and_a_datagram_nobody_hears_was_never_reported_anyway(self):
         sock = RaisingSock()
         sink = UdpTCodeSink(sock=sock)
         sink.close()
         sink.send("L05000I33")
         assert sock.sent == []
+
+    def test_a_close_landing_while_another_thread_s_send_is_in_flight_is_silence_too(self):
+        landed = []
+
+        class ClosedMidSend:
+            def sendto(self, data, address):
+                sink.close()
+                landed.append("the close, mid-send")
+                raise OSError("not a socket")
+
+            def close(self):
+                pass
+
+        sink = UdpTCodeSink(sock=ClosedMidSend())
+
+        sink.send("L05000I33")
+
+        assert landed == ["the close, mid-send"]
 
     def test_a_send_that_fails_while_the_sink_is_open_still_raises(self):
         sink = UdpTCodeSink(sock=RaisingSock())
@@ -93,6 +115,12 @@ class TestToTcodePosition:
     def test_a_position_between_them_scales(self):
         assert to_tcode_position(50) == 5000
         assert to_tcode_position(1) == 100
+
+
+def test_it_says_the_wire_format_for_both_drivers_and_imports_neither():
+    source = Path(tcode.__file__).read_text(encoding="utf-8")
+
+    assert re.findall(r"^\s*(?:from|import) .*(?:tcode_driver|robot_hand)", source, re.MULTILINE) == []
 
 
 def test_the_park_command_rests_the_motion_axis_at_the_floor_over_the_hold_move():

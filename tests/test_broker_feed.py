@@ -36,7 +36,7 @@ class TestBrokerFeed:
 
     def test_has_lock(self):
         s = BrokerFeed()
-        assert isinstance(s.lock, type(threading.Lock()))
+        assert isinstance(s.lock, threading.Lock)
 
 
 def _holds_of_the_lock(feed: BrokerFeed) -> list[str]:
@@ -71,12 +71,12 @@ def _send(port: int, msg: str) -> None:
         s.sendto(msg.encode(), ("127.0.0.1", port))
 
 
-_KNOCK = "SYNC"
+_KNOCK_A_SYNC_SINCE_IT_ONLY_COUNTS_AND_MOVES_NOTHING_A_CASE_ASSERTS = "SYNC"
 
 
-def _wait_until_bound(port: int, state: BrokerFeed) -> None:
+def _knock_until_bound_since_a_datagram_sent_before_the_bind_is_dropped_without_a_trace(port: int, state: BrokerFeed) -> None:
     def _knocked() -> bool:
-        _send(port, _KNOCK)
+        _send(port, _KNOCK_A_SYNC_SINCE_IT_ONLY_COUNTS_AND_MOVES_NOTHING_A_CASE_ASSERTS)
         return state.sync_pulse_id > 0
 
     wait_until(_knocked, timeout=10.0, interval=0.02)
@@ -92,7 +92,7 @@ def _run_reader(state: BrokerFeed, port: int) -> tuple[threading.Thread, threadi
     t = threading.Thread(
         target=udp_reader, args=(UdpListener("127.0.0.1", port, state, stop, logger),), daemon=True)
     t.start()
-    _wait_until_bound(port, state)
+    _knock_until_bound_since_a_datagram_sent_before_the_bind_is_dropped_without_a_trace(port, state)
     return t, stop
 
 
@@ -185,6 +185,8 @@ class TestTheSocketLoop:
         state = BrokerFeed()
         port = _free_udp_port()
 
+        # Windows lets two sockets that both set SO_REUSEADDR share a port, and the reader sets it,
+        # so a blocker that set it too would block nothing.
         blocker = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         blocker.bind(("127.0.0.1", port))
 
@@ -202,7 +204,7 @@ class TestTheSocketLoop:
                 wait_until(lambda: _turned_away(caplog), timeout=10.0)
                 blocker.close()
 
-                _wait_until_bound(port, state)
+                _knock_until_bound_since_a_datagram_sent_before_the_bind_is_dropped_without_a_trace(port, state)
                 _send(port, "AUTO 1")
                 wait_until(lambda: state.auto_active, timeout=10.0, interval=0.02)
         finally:

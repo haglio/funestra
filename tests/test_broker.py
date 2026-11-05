@@ -101,7 +101,7 @@ class TestReadingTheContract:
 
 
 class TestWhetherItIsRunning:
-    def test_its_heartbeat_counts_as_fresh_up_to_three_seconds_old(self, tmp_path):
+    def test_its_heartbeat_counts_as_fresh_up_to_three_seconds_old_six_of_the_half_second_beats_the_broker_writes(self, tmp_path):
         _stamped(tmp_path / state_files.BROKER_HEARTBEAT, 3.0)
         assert broker.is_running(tmp_path, now=1000.0)
 

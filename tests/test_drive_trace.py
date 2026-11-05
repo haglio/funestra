@@ -21,15 +21,18 @@ from funestra.osr2_visualizer import (
 from funestra.playback_rate import MAX_RATE
 from funestra.trace_grid import on_the_grid
 
-SPAN_S = 7.9
 STEP_MS = 100
+SPAN_OF_WHOLE_100_MS_STEPS_SO_A_SLIDE_COMPARES_EXACTLY_S = (TRACE_SAMPLES - 1) * STEP_MS / 1000
+A_FLOOR_ABOVE_THE_PARK_SO_THE_RAMPS_HAVE_SOMEWHERE_TO_GO = {"amplitude": 80, "center": 50}
+FROM_COLUMN_1_SINCE_COLUMN_0_FALLS_BEFORE_THE_PLAYHEAD = slice(1, 20)
 RAMP_STEPS = HANDOFF_RAMP_MS // STEP_MS
 NEWER_PUBLISH_MS_SHARED_SO_ONLY_A_MOVED_CONTROL_EXPLAINS_A_NEW_TOP = 20
 
 
 def _motion(**over) -> DriveHud:
     base = {
-        "speed": 50, "amplitude": 80, "center": 50, "trace_seconds": SPAN_S,
+        "speed": 50, **A_FLOOR_ABOVE_THE_PARK_SO_THE_RAMPS_HAVE_SOMEWHERE_TO_GO,
+        "trace_seconds": SPAN_OF_WHOLE_100_MS_STEPS_SO_A_SLIDE_COMPARES_EXACTLY_S,
         "waveform": tuple(0.5 + 0.4 * np.sin(i / 6) for i in range(TRACE_SAMPLES))}
     base.update(over)
     return DriveHud(**base)
@@ -79,7 +82,7 @@ class TestOneLineTwoDrivers:
 
         assert hud.segments == ((0, DRIVEN_BY_FUNSCRIPT),)
         assert hud.waveform == script.planned_trace_window(
-            0, round(SPAN_S * 1000), TRACE_SAMPLES)[0][:TRACE_SAMPLES]
+            0, round(SPAN_OF_WHOLE_100_MS_STEPS_SO_A_SLIDE_COMPARES_EXACTLY_S * 1000), TRACE_SAMPLES)[0][:TRACE_SAMPLES]
 
     def test_a_script_under_a_max_intensity_is_drawn_as_shallow_as_the_device_is_sent(self):
         script = _script(until_ms=120_000)
@@ -87,7 +90,7 @@ class TestOneLineTwoDrivers:
         hud = osr2_visualizer(_motion(), Playhead(0, max_intensity=30), script=script)
 
         assert hud.waveform == script.planned_trace_window(
-            0, round(SPAN_S * 1000), TRACE_SAMPLES, max_intensity=30)[0][:TRACE_SAMPLES]
+            0, round(SPAN_OF_WHOLE_100_MS_STEPS_SO_A_SLIDE_COMPARES_EXACTLY_S * 1000), TRACE_SAMPLES, max_intensity=30)[0][:TRACE_SAMPLES]
         assert hud.position == round(POSITION_MAX * script.planned_position_at(
             0, 1.0, max_intensity=30) / 100)
 
@@ -392,7 +395,7 @@ class TestTheDescentTopIsSelectedOnce:
         assert moved.waveform[opens] != first.waveform[opens]
 
 
-class TestStillTrace:
+class TestStillTraceTheMotionIsAskedWhatHeightNeverWhen:
     def test_a_motion_published_on_knots_is_read_where_its_knots_sit(self):
         published = _motion(slide=0.5, edge=0.5 + 0.4 * np.sin(TRACE_SAMPLES / 6))
         script = _script_ahead(from_ms=100_000, to_ms=101_000)
@@ -435,7 +438,8 @@ class TestStillTrace:
         script = _script_ahead()
 
         traces = [
-            _read(script, at=at, published=_motion_at(at)).waveform[1:20]
+            _read(script, at=at, published=_motion_at(at)).waveform[
+                FROM_COLUMN_1_SINCE_COLUMN_0_FALLS_BEFORE_THE_PLAYHEAD]
             for at in (0, 40, 80)
         ]
 
