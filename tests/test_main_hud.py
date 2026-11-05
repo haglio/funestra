@@ -301,7 +301,7 @@ class TestLayout:
         assert tooltip_at(place_rows([[button]], x=0, y=0), 1, 1) == button.tooltip_on_hover
 
 
-class TestThePublishedMainHudIsWrittenWhereItIsRead:
+class TestThePublishedMainHudIsWrittenWhereItIsReadAsFunTimeAnswersItSinceTheFunestraDrawingItIsNotAlwaysTheOneItIsAbout:
     def test_every_published_field_survives_the_round_trip(self):
         model = MainHudModel(
             main_mode=MainMode.GENAU, active=True, osr2=Osr2State.AUTO,

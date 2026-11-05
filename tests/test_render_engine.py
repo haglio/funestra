@@ -123,7 +123,7 @@ def test_an_offscreen_engine_that_can_be_heard_leaves_mpv_its_sound_track(monkey
     assert "aid" not in _options_mpv_opened_with(monkeypatch, engine)
 
 
-def test_an_offscreen_engine_frames_its_close_ups_for_the_target_it_last_drew_into(engine):
+def test_an_offscreen_engine_frames_its_close_ups_for_the_target_it_last_drew_into_as_a_host_with_no_window_per_video_such_as_a_headset_needs(engine):
     engine = render_engine.MpvRenderEngine(lambda _name: 0)
 
     engine.render(0, 1600, 900)

@@ -35,7 +35,7 @@ class Pipeline:
             prefetch_state=DecodeRequestState(),
             current_flick_path_getter=lambda: self.renderer.current_flick_path,
             decode_flick=self._decode,
-            start_thread=self._start_decode,
+            start_thread=self._start_decode_finishing_a_turn_later_as_the_real_decode_threads_do,
             logger=logger if logger is not None else _SilentLog(),
             on_active_flick_loaded=self.renderer.prepare_active_flick_for_current_size,
         ))
@@ -51,7 +51,7 @@ class Pipeline:
         self.decodes.append(path.name)
         return [f"{path.name}:0"]
 
-    def _start_decode(self, *, target, args, name) -> None:
+    def _start_decode_finishing_a_turn_later_as_the_real_decode_threads_do(self, *, target, args, name) -> None:
         self._running.append((target, args))
 
     def open_on(self, name: str) -> None:
