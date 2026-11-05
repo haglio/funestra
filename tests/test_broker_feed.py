@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import ast
 import dataclasses
 import logging
 import socket
 import threading
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -35,6 +37,27 @@ class TestBrokerFeed:
     def test_has_lock(self):
         s = BrokerFeed()
         assert isinstance(s.lock, type(threading.Lock()))
+
+
+def _holds_of_the_lock(feed: BrokerFeed) -> list[str]:
+    held: list[str] = []
+    original = feed.lock
+
+    class _Recording:
+        def __enter__(self):
+            held.append("taken")
+            return original.__enter__()
+
+        def __exit__(self, *exc):
+            held.append("given back")
+            return original.__exit__(*exc)
+
+    feed.lock = _Recording()
+    return held
+
+
+_BINDS_THE_MOMENT_THE_PORT_IS_FREED_HOWEVER_LONG_A_STALLED_MACHINE_TAKES = (0.02,) * 500
+_RETRIES_THAT_RUN_OUT_AT_ONCE_SINCE_RUNNING_OUT_IS_WHAT_IS_TESTED = (0, 0, 0)
 
 
 def _free_udp_port() -> int:
@@ -88,7 +111,7 @@ class TestActingOnOneLine:
 
         assert self._applied("AUTO 0", state).auto_active is False
 
-    def test_any_other_payload_takes_the_room_back_too(self):
+    def test_any_other_payload_takes_the_room_back_too_as_the_safe_reading(self):
         state = BrokerFeed(auto_active=True)
 
         assert self._applied("AUTO yes", state).auto_active is False
@@ -96,7 +119,7 @@ class TestActingOnOneLine:
     def test_bpm_parsed(self):
         assert self._applied("BPM 120.5").raw_bpm == pytest.approx(120.5)
 
-    def test_bpm_invalid_leaves_the_last_one_standing(self):
+    def test_an_invalid_bpm_is_a_lost_datagram_so_the_last_one_stands(self):
         state = BrokerFeed(raw_bpm=120.0)
 
         assert self._applied("BPM notanumber", state).raw_bpm == 120.0
@@ -129,19 +152,8 @@ class TestActingOnOneLine:
 
     def test_the_state_is_moved_under_its_own_lock(self):
         state = BrokerFeed()
-        held: list[str] = []
-        original = state.lock
+        held = _holds_of_the_lock(state)
 
-        class _Recording:
-            def __enter__(self):
-                held.append("taken")
-                return original.__enter__()
-
-            def __exit__(self, *exc):
-                held.append("given back")
-                return original.__exit__(*exc)
-
-        state.lock = _Recording()
         apply_udp_line(state, "SYNC", logging.getLogger("test.udp_reader"))
 
         assert held == ["taken", "given back"]
@@ -180,7 +192,8 @@ class TestTheSocketLoop:
         logger = logging.getLogger("test.udp_reader")
         t = threading.Thread(
             target=udp_reader,
-            args=(UdpListener("127.0.0.1", port, state, stop, logger, (0.02,) * 500),),
+            args=(UdpListener("127.0.0.1", port, state, stop, logger,
+                              _BINDS_THE_MOMENT_THE_PORT_IS_FREED_HOWEVER_LONG_A_STALLED_MACHINE_TAKES),),
             daemon=True,
         )
         try:
@@ -225,7 +238,8 @@ class TestTheSocketLoop:
         logger = MagicMock()
         t = threading.Thread(
             target=udp_reader,
-            args=(UdpListener("127.0.0.1", port, state, stop, logger, (0, 0, 0)),),
+            args=(UdpListener("127.0.0.1", port, state, stop, logger,
+                              _RETRIES_THAT_RUN_OUT_AT_ONCE_SINCE_RUNNING_OUT_IS_WHAT_IS_TESTED),),
             daemon=True,
         )
         t.start()
@@ -240,8 +254,26 @@ class TestTheSocketLoop:
 
 
 class TestTheSnapshot:
-    def test_it_copies_the_three_fields_under_the_lock(self):
+    def test_it_copies_the_three_fields(self):
         feed = BrokerFeed(auto_active=True, raw_bpm=120.0, sync_pulse_id=7)
 
         assert snapshot(feed) == BrokerSnapshot(
             auto_active=True, raw_bpm=120.0, sync_pulse_id=7)
+
+    def test_it_copies_them_under_one_hold_of_the_lock_so_a_tick_never_reads_half_of_two_datagrams(
+            self):
+        feed = BrokerFeed()
+        held = _holds_of_the_lock(feed)
+
+        snapshot(feed)
+
+        assert held == ["taken", "given back"]
+
+
+class TestHowTheseTestsWait:
+    def test_every_wait_is_on_something_the_reader_did_never_a_sleep_which_is_slow_and_a_coin_flip_on_a_loaded_runner(
+            self):
+        calls = [node.func for node in ast.walk(ast.parse(Path(__file__).read_text(encoding="utf-8")))
+                 if isinstance(node, ast.Call)]
+
+        assert [func for func in calls if getattr(func, "attr", getattr(func, "id", "")) == "sleep"] == []

@@ -16,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 CONTRACT_FILE = "broker_contract.json"
 HEARTBEAT_FRESH_S = 3.0
+# Windows ignores this flag unless the starting process is in a job that permits breakaway,
+# which only an integration run's does.
 CREATE_BREAKAWAY_FROM_JOB = 0x01000000
 
 
