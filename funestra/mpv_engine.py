@@ -36,6 +36,8 @@ _MPV_SCRIPTS_OFF = {
     "ytdl": "no",
 }
 
+# mpv fails without raising: a file it cannot open leaves a black window over a healthy process.
+# Its own messages are logged, warnings and worse only; at info mpv narrates every file it opens.
 _MPV_LEVELS = {"fatal": logging.CRITICAL, "error": logging.ERROR, "warn": logging.WARNING}
 
 
@@ -77,6 +79,7 @@ def _where_it_looked() -> str:
 
 def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool = True) -> dict:
     options = dict(
+        # python-mpv's own two keywords, not mpv options.
         log_handler=_log_mpv,
         loglevel="warn",
         hwdec="auto-safe",
@@ -269,6 +272,7 @@ class _MpvControl:
     # can take the playing entry out from under it.
     @mpv_call()
     def stop(self) -> None:
+        # Windows refuses to move a file the engine still holds open.
         self._staged = None
         self._mpv.command("stop")
 
@@ -375,10 +379,12 @@ class _MpvControl:
 
     @mpv_call()
     def set_speed(self, speed: float) -> None:
+        # mpv's time_pos clock advances at this rate, so a funscript read off it keeps step.
         self._mpv.speed = speed
 
     @mpv_call()
     def set_volume(self, volume: int) -> None:
+        # mpv's volume and mute are separate properties, so this never unmutes a muted engine.
         self._mpv.volume = volume
 
     @mpv_call()

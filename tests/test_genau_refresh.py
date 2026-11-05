@@ -891,12 +891,12 @@ class TestTheOrderTheTickDoesThingsIn:
         assert second in steps, f"{second} is not in the tick"
         assert steps.index(first) < steps.index(second), f"{first} must precede {second}"
 
-    def test_commands_are_drained_before_anything_reads_what_they_moved(self):
+    def test_commands_are_drained_before_anything_reads_what_they_moved_or_a_pause_lands_a_tick_late_and_the_motion_goes_out_once_more_after_the_hand_stopped(self):
         self._before("self._drain_commands", "self._who_is_driving")
         self._before("self._drain_commands", "self.handoff.watch")
         self._before("self._drain_commands", "self.tcode_sender.maybe_send")
 
-    def test_the_flick_that_finished_decoding_is_adopted_before_it_is_drawn(self):
+    def test_the_flick_that_finished_decoding_is_adopted_before_it_is_drawn_or_it_is_a_tick_late_on_screen_and_the_advance_times_its_interval_against_the_old_one(self):
         self._before("self._adopt_whatever_finished_decoding", "self._show_the_frame")
 
     def test_the_flip_knows_the_flick_on_screen_before_a_command_can_flip_it(self):
@@ -906,7 +906,7 @@ class TestTheOrderTheTickDoesThingsIn:
     def test_who_is_driving_is_settled_before_the_engine_is_told_anything(self):
         self._before("self._who_is_driving", "advance_beat")
 
-    def test_the_engine_moves_before_the_frame_is_chosen_from_its_phase(self):
+    def test_the_engine_moves_before_the_frame_is_chosen_from_its_phase_or_every_frame_is_the_one_the_phase_had_last_tick(self):
         self._before("advance_beat", "self._show_the_frame")
 
     def test_the_status_file_goes_out_last_saying_what_this_tick_did(self):

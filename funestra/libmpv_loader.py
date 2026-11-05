@@ -4,6 +4,8 @@ import os
 import sys
 from pathlib import Path
 
+# Windows gives a packaged app a private copy of AppData that nothing else can see, so the
+# machine-wide copy lives in the user's own folder.
 _USER_FOLDER_ID = "{5E6C858F-0E22-4760-9AFE-EA3317B67173}"  # Windows' FOLDERID_Profile
 
 
@@ -41,6 +43,7 @@ def libmpv_dirs() -> list[Path]:
 
 
 def add_libmpv_to_path() -> None:
+    # python-mpv finds the DLL on PATH alone, so os.add_dll_directory would not reach it.
     wanted = [str(d) for d in libmpv_dirs()]
     rest = [p for p in os.environ.get("PATH", "").split(os.pathsep) if p not in wanted]
     os.environ["PATH"] = os.pathsep.join([*wanted, *rest])

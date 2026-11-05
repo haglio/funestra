@@ -96,6 +96,7 @@ class _ScaledFrames:
         return scaled
 
 
+# mpv owns the window, so a flick's frames go up as mpv overlays.
 class FlickOverlay:
     def __init__(self, engine, *, cache_bytes: int = SCALED_FRAMES_BYTES) -> None:
         self._engine = engine

@@ -3,7 +3,7 @@ from __future__ import annotations
 from funestra.on_screen_history import OnScreenHistory
 
 
-class TestPathAt:
+class TestPathAtSoASpokenCommandThatArrivesLateIsAppliedToWhatWasShowingWhenTheSpeakerBegan:
     def test_one_video_seen_all_session_is_the_whole_history(self):
         history = OnScreenHistory()
         history.observe("a.mp4", now=10.0)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import json
 import random
 from pathlib import Path
@@ -104,6 +105,25 @@ class TestFittingTheModel:
         assert len(model.phrases[cls]) == 2
         assert model.seen == {cls: 5}
         assert model.successions == {cls: {cls: 4}}
+
+    def test_the_model_holds_numbers_alone_so_no_title_or_name_from_a_script_can_reach_it(self):
+        model = train.fit([_script(16 * 5, duration_ms=300, low=10, high=90)], rng=random.Random(1))
+
+        def leaves(value):
+            if dataclasses.is_dataclass(value):
+                for field in dataclasses.fields(value):
+                    yield from leaves(getattr(value, field.name))
+            elif isinstance(value, dict):
+                for key, inner in value.items():
+                    yield from leaves(key)
+                    yield from leaves(inner)
+            elif isinstance(value, (list, tuple, set, frozenset)):
+                for inner in value:
+                    yield from leaves(inner)
+            else:
+                yield value
+
+        assert all(isinstance(leaf, (int, float)) for leaf in leaves(model))
 
     def test_a_rest_in_a_script_separates_what_follows_from_what_came_before(self):
         before = _script(16, duration_ms=300, low=10, high=90)
