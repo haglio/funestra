@@ -45,8 +45,7 @@ from .hud_osr2 import (
     Osr2Line,
     Osr2Section,
     VisualizerResolver,
-    driving_at_the_playhead,
-    state_for,
+    line_shown_for,
 )
 from .hud_placement import block_x
 from .hud_row import ROW_H, RowHud, RowSection, row_layout
@@ -271,13 +270,7 @@ class HudRenderer:
             for row, row_widths in zip(rows + device_rows, widths + device_row_widths, strict=True)
             if row
         ), default=0)
-        composed = (model.drive if model.drive_composed and model.drive is not None
-                    and model.drive.segments else None)
-        osr2_line = Osr2Line(
-            state=state_for(model.osr2, model.osr2_control,
-                            driving=driving_at_the_playhead(composed, model.osr2),
-                            paused=model.paused),
-            controls=model.osr2_controls, max_intensity=model.max_intensity)
+        osr2_line = line_shown_for(model, model.drive, composed=model.drive_composed)
         drive_w, drive_h = section_size() if model.drive is not None else (0, 0)
         device_w = max(self._osr2.width(osr2_line) if model.osr2 else 0, drive_w)
         foot_w, foot_h = model.foot.size() if model.foot is not None else (0, 0)

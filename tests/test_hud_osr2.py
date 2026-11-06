@@ -19,11 +19,13 @@ from funestra.hud_osr2 import (
     Osr2Section,
     VisualizerResolver,
     driving_at_the_playhead,
+    line_shown_for,
     state_for,
 )
-from funestra.main_hud import OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED
+from funestra.main_hud import OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED, MainHudModel
 from funestra.modes import Osr2State
 from funestra.osr2_visualizer import DRIVEN_BY_NOTHING, DriveHud, track_command
+from funestra.satellite_hud import HudModel
 
 
 def _drawn(line: Osr2Line) -> tuple[Hud, list]:
@@ -224,7 +226,45 @@ class TestTheVisualizerUnderIt:
         for driven, word in (("funscript", Osr2State.FUNSCRIPT),
                              ("robot_hand", Osr2State.ROBOT_HAND), ("neutral", BUFFER)):
             drive = DriveHud(driven=driven, segments=handoff)
-            assert driving_at_the_playhead(drive, Osr2State.OFF) == word
+            assert driving_at_the_playhead(drive, Osr2State.OFF, composed=True) == word
 
     def test_no_composed_trace_leaves_the_wire_to_say_it(self):
-        assert driving_at_the_playhead(None, Osr2State.ROBOT_HAND) == ""
+        assert driving_at_the_playhead(None, Osr2State.ROBOT_HAND, composed=True) == ""
+
+    def test_a_trace_with_no_handoffs_drawn_on_it_leaves_the_wire_to_say_it(self):
+        drive = DriveHud(driven="funscript")
+
+        assert driving_at_the_playhead(drive, Osr2State.ROBOT_HAND, composed=True) == ""
+
+    def test_a_trace_the_funestra_did_not_compose_for_its_video_leaves_the_wire_to_say_it(self):
+        drive = DriveHud(driven="funscript", segments=((0, "funscript"), (40, "robot_hand")))
+
+        assert driving_at_the_playhead(drive, Osr2State.ROBOT_HAND, composed=False) == ""
+
+
+class TestTheLineAHudShows:
+    _HANDOFF = ((0, "funscript"), (40, "robot_hand"))
+
+    def test_the_pill_names_whoever_the_composed_trace_has_at_the_playhead_over_the_wire_s_word(self):
+        model = MainHudModel(osr2=Osr2State.FUNSCRIPT, osr2_control=OSR2_DRIVING)
+        drive = DriveHud(driven="neutral", segments=self._HANDOFF)
+
+        assert line_shown_for(model, drive, composed=True).state == BUFFER
+
+    def test_a_hold_is_named_over_whoever_the_trace_has(self):
+        model = HudModel("portrait", osr2=Osr2State.FUNSCRIPT, osr2_control=OSR2_PARKED)
+        drive = DriveHud(driven="robot_hand", segments=self._HANDOFF)
+
+        assert line_shown_for(model, drive, composed=True).state == OSR2_PARKED
+
+    def test_a_paused_funestra_reads_parked(self):
+        model = HudModel("portrait", osr2=Osr2State.ROBOT_HAND, osr2_control=OSR2_DRIVING, paused=True)
+
+        assert line_shown_for(model, None, composed=False).state == OSR2_PARKED
+
+    def test_it_carries_the_hud_s_own_controls_and_max_intensity(self):
+        park = _park()
+        model = MainHudModel(osr2=Osr2State.ROBOT_HAND, osr2_controls=(park,), max_intensity=60)
+
+        assert line_shown_for(model, None, composed=False) == Osr2Line(
+            state=Osr2State.ROBOT_HAND, controls=(park,), max_intensity=60)
