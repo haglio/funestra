@@ -590,6 +590,26 @@ def test_an_audio_device_underrun_is_news_since_mpv_rides_it_out_by_itself(caplo
         (logging.INFO, "mpv cplayer: Audio device underrun detected.")]
 
 
+def test_mpv_s_note_that_audio_and_video_drifted_apart_is_news_since_it_pulls_them_together_by_itself(caplog):
+    paragraph = (
+        "\n\nAudio/Video desynchronisation detected! Possible reasons include too slow\n"
+        "hardware, temporary CPU spikes, broken drivers, and broken files. Audio\n"
+        "position will not match to the video (see A-V status field).\n"
+        "Consider trying `--profile=fast` and/or `--hwdec=auto` as they may help.\n\n")
+    with caplog.at_level(1, logger=mpv_engine.logger.name):
+        for line in paragraph.splitlines(keepends=True):
+            mpv_engine._log_mpv("warn", "cplayer", line)
+
+    assert {r.levelno for r in caplog.records} == {logging.INFO}
+
+
+def test_a_blank_line_from_mpv_writes_nothing(caplog):
+    with caplog.at_level(1, logger=mpv_engine.logger.name):
+        mpv_engine._log_mpv("warn", "cplayer", "\n")
+
+    assert caplog.records == []
+
+
 def test_the_next_entry_is_opened_ahead_only_where_asked_for_so_a_satellite_s_auto_advance_cuts_to_a_video_already_loaded():
     ahead = _shared_options(muted=False, loop_file=False, prefetch=True)
     alone = _shared_options(muted=False, loop_file=False, prefetch=False)
