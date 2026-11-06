@@ -189,7 +189,9 @@ def _hold_image(controls: FunestraControls, value: str) -> bool:
 def _show_frame(controls: FunestraControls, value: str) -> bool:
     if not value.strip():
         return False
-    controls.playback.show_frame(Path(value.strip()))
+    frame = Path(value.strip())
+    if frame.is_file():
+        controls.playback.show_frame(frame)
     return True
 
 
