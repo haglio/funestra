@@ -98,7 +98,7 @@ class Playback:
 
     @property
     def current_funscript(self) -> Funscript | None:
-        path = self._funscripts.get(self.current_video)
+        path = self._funscripts.get(self.showing) or self._funscripts.get(self.current_video)
         if path != self._loaded_funscript[0]:
             self._loaded_funscript = (path, None if path is None else load_funscript(path))
         return self._loaded_funscript[1]
@@ -151,7 +151,8 @@ class Playback:
     def let_go(self) -> None:
         self._engine.stop()
 
-    def step_version(self, versions: list[Path], delta: int) -> None:
+    def step_version(self, versions: Sequence[Path | PlaylistItem], delta: int) -> None:
+        versions = [self._version_file_of(version) for version in versions]
         showing = self.showing
         if len(versions) <= 1 or showing not in versions:
             return
@@ -163,6 +164,15 @@ class Playback:
             self._versions[video] = target
         self.load(self._index)
         self._switching_versions = True
+
+    def _version_file_of(self, version: Path | PlaylistItem) -> Path:
+        if isinstance(version, PlaylistItem):
+            self._take_what_rides_with(version.path, version.funscript, version.points_of_interest)
+            return version.path
+        return Path(version)
+
+    def forget_versions(self) -> None:
+        self._versions = {}
 
     @property
     def name_on_screen(self) -> str:

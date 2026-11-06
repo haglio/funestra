@@ -4,7 +4,7 @@ import math
 from collections.abc import Sequence
 from pathlib import Path
 
-from .playlist import PlaylistItem, item_line
+from .playlist import PlaylistItem, item_from_line, item_line
 
 NEXT = "NEXT"
 PREV = "PREV"
@@ -44,6 +44,7 @@ SHOW = "SHOW"
 
 NEXT_VERSION = "NEXT_VERSION"
 PREV_VERSION = "PREV_VERSION"
+FORGET_VERSIONS = "FORGET_VERSIONS"
 _VERSIONS_SEPARATOR = "|"
 
 QUIT = "QUIT"
@@ -65,10 +66,15 @@ def pace_seconds(value: str) -> float | None:
     return seconds if math.isfinite(seconds) and seconds >= 0 else None
 
 
-def step_version(delta: int, versions: Sequence[str | Path]) -> str:
+def step_version(delta: int, versions: Sequence[str | Path | PlaylistItem]) -> str:
     verb = NEXT_VERSION if delta >= 0 else PREV_VERSION
-    return f"{verb} {_VERSIONS_SEPARATOR.join(str(version) for version in versions)}"
+    return f"{verb} {_VERSIONS_SEPARATOR.join(_version_line(version) for version in versions)}"
 
 
-def version_files(value: str) -> list[Path]:
-    return [Path(part) for part in value.split(_VERSIONS_SEPARATOR) if part.strip()]
+def _version_line(version: str | Path | PlaylistItem) -> str:
+    return item_line(version) if isinstance(version, PlaylistItem) else str(version)
+
+
+def version_items(value: str) -> list[PlaylistItem]:
+    items = (item_from_line(part) for part in value.split(_VERSIONS_SEPARATOR))
+    return [item for item in items if item is not None]

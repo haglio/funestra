@@ -57,7 +57,7 @@ class TestAStepToAnotherVersionOfTheItemOnScreen:
 
         keyword, _, value = line.partition(" ")
         assert keyword == funestra_verbs.NEXT_VERSION
-        assert funestra_verbs.version_files(value) == versions
+        assert funestra_verbs.version_items(value) == [PlaylistItem(path) for path in versions]
 
     def test_a_step_back_is_the_other_verb(self):
         line = funestra_verbs.step_version(-1, [Path("C:/vids/clip_topaz.mp4"), Path("C:/vids/clip.mp4")])
@@ -65,4 +65,13 @@ class TestAStepToAnotherVersionOfTheItemOnScreen:
         assert line.partition(" ")[0] == funestra_verbs.PREV_VERSION
 
     def test_a_value_naming_nothing_carries_no_versions(self):
-        assert funestra_verbs.version_files("") == []
+        assert funestra_verbs.version_items("") == []
+
+    def test_a_family_carries_what_rides_with_each_version_as_a_playlist_line_would(self):
+        family = [PlaylistItem(Path("C:/vids/clip_topaz.mp4"), Path("C:/vids/clip_topaz.funscript"),
+                               ((0.1, 0.2, 0.3, 0.4),)),
+                  PlaylistItem(Path("C:/vids/clip.mp4"))]
+
+        line = funestra_verbs.step_version(1, family)
+
+        assert funestra_verbs.version_items(line.partition(" ")[2]) == family

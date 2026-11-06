@@ -56,6 +56,7 @@ class TestStatusFields:
     def test_key_order_is_the_published_file_order(self):
         class Stub:
             current_video = "v0.mp4"
+            showing = "v0.mp4"
             position_ms = 0.0
             duration_ms = 0.0
             is_paused = False
@@ -71,7 +72,7 @@ class TestStatusFields:
 
         assert list(status_fields(Stub(), None)) == [
             "video", "position_ms", "duration_ms", "paused", "locked",
-            "speed", "picture", "read_at", "playlist_length",
+            "speed", "picture", "read_at", "showing", "playlist_length",
             "has_funscript", "funscript_resting", "handoff_touch_ms", "portrait",
             "loads", "idle",
         ]
@@ -119,3 +120,15 @@ class TestStatusFields:
 
         assert fields["paused"] == "1"
         assert fields["locked"] == "0"
+
+
+    def test_publishes_the_file_on_screen_beside_the_clip_it_stands_in_for(self, tmp_path):
+        playback, _engine = make_playback(tmp_path)
+        other = tmp_path / "v0_sorted.mp4"
+        other.write_text("fake")
+
+        before = status_fields(playback, None)["showing"]
+        playback.step_version([playback.current_video, other], 1)
+
+        assert (before, status_fields(playback, None)["showing"]) == (
+            str(tmp_path / "v0.mp4"), str(other))

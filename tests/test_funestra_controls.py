@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import threading
 
@@ -9,6 +10,7 @@ from funestra import funestra_verbs
 from funestra.funestra_controls import VERBS, FunestraControls, apply_command
 from funestra.funestra_verbs import (
     CLEAR_FRAME,
+    FORGET_VERSIONS,
     HOLD_PICTURE,
     JUMP_TO_FUNSCRIPT,
     LET_GO,
@@ -401,7 +403,7 @@ class TestWhoHasTheWindow:
 
 def test_every_verb_a_funestra_answers_is_spelled_in_the_familys_vocabulary():
     assert set(VERBS) == {
-        NEXT, PREV, LOCK_ON, LOCK_OFF, TOGGLE_LOCK, TRASH, LET_GO, NEXT_VERSION, PREV_VERSION,
+        NEXT, PREV, LOCK_ON, LOCK_OFF, TOGGLE_LOCK, TRASH, LET_GO, NEXT_VERSION, PREV_VERSION, FORGET_VERSIONS,
         SEEK_FWD, SEEK_BACK, SPEED_UP, SPEED_DOWN, SET_SPEED, PLAY_FILE, PLAY_NEXT,
         RELOAD_PLAYLIST, SET_PACE, HOLD_PICTURE, SHOW_FRAME, CLEAR_FRAME, QUIT,
         SET_TCODE_ENABLED,
@@ -409,3 +411,31 @@ def test_every_verb_a_funestra_answers_is_spelled_in_the_familys_vocabulary():
         JUMP_TO_FUNSCRIPT, NEXT_FUNSCRIPTED,
     }
     assert all(getattr(funestra_verbs, verb) == verb for verb in VERBS)
+
+
+class TestVersionVerbs:
+    def test_a_step_carrying_a_versions_script_plays_the_version_with_it(self, tmp_path):
+        controls = _controls(tmp_path)
+        video = controls.playback.current_video
+        other = tmp_path / "v0_sorted.mp4"
+        other.write_text("fake")
+        script = tmp_path / "v0_sorted.funscript"
+        script.write_text(json.dumps({"actions": [{"at": 0, "pos": 10}]}), encoding="utf-8")
+
+        assert apply_command(step_version(1, [video, PlaylistItem(other, script)]), controls) is True
+
+        assert controls.playback.showing == other
+        assert controls.playback.current_funscript.actions == [(0, 10)]
+
+    def test_forget_versions_leaves_the_clips_own_file_for_the_next_load(self, tmp_path):
+        controls = _controls(tmp_path, entries=2)
+        video = controls.playback.current_video
+        other = tmp_path / "v0_sorted.mp4"
+        other.write_text("fake")
+        apply_command(step_version(1, [video, other]), controls)
+
+        assert apply_command(FORGET_VERSIONS, controls) is True
+        controls.playback.step(1)
+        controls.playback.step(-1)
+
+        assert controls.playback.showing == video

@@ -10,6 +10,7 @@ from typing import Any
 from .control_registry import Control, Verb, bind, look_up
 from .funestra_verbs import (
     CLEAR_FRAME,
+    FORGET_VERSIONS,
     HOLD_PICTURE,
     JUMP_TO_FUNSCRIPT,
     LET_GO,
@@ -38,7 +39,7 @@ from .funestra_verbs import (
     TOGGLE_LOCK,
     TRASH,
     pace_seconds,
-    version_files,
+    version_items,
 )
 from .playback import Playback
 from .playback_rate import RATE_STEP, parse_rate
@@ -139,12 +140,17 @@ def _naming_an_item(play: Callable[[Playback, PlaylistItem], None]) -> Act:
 
 def _step_version(delta: int) -> Act:
     def act(controls: FunestraControls, value: str) -> bool:
-        versions = version_files(value)
+        versions = version_items(value)
         if not versions:
             return False
         controls.playback.step_version(versions, delta)
         return True
     return act
+
+
+def _forget_versions(controls: FunestraControls, _value: str) -> bool:
+    controls.playback.forget_versions()
+    return True
 
 
 def _reload_playlist(controls: FunestraControls, _value: str) -> bool:
@@ -230,6 +236,7 @@ CONTROLS: tuple[Control, ...] = (
         verbs=(
             Verb(NEXT_VERSION, _step_version(1), takes_a_value=True),
             Verb(PREV_VERSION, _step_version(-1), takes_a_value=True),
+            Verb(FORGET_VERSIONS, _forget_versions),
         ),
     ),
     Control(
