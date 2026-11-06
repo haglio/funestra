@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import pytest
 
 from funestra.funestra_verbs import SEEK_BACK, SEEK_FWD
@@ -21,12 +23,15 @@ from funestra.hud_controls import (
     lock_button,
     lock_tooltip,
     longer_than_a_step,
+    next_button,
+    previous_button,
     reset_button,
     too_near_the_end_to_step_forward,
     too_near_the_start_to_step_back,
     too_short_to_step,
     transport,
     trash_button,
+    trash_button_under,
     versions_button,
     why_it_cannot_step,
 )
@@ -58,6 +63,20 @@ class TestTheTransport:
         assert [button.tooltip for button in row] == [
             "Previous clip", "Back 10s", "Forward 10s", "Next clip"]
         assert not any(button.dim for button in row)
+
+    def test_a_source_that_steps_under_commands_of_its_own_still_takes_previous_and_next_from_here(self):
+        back = previous_button("made_up_step_back", noun="clip")
+        on = next_button("made_up_step_on", noun="clip")
+
+        assert (back.command, back.icon, back.tooltip) == (
+            "made_up_step_back", PREVIOUS_ICON, "Previous clip")
+        assert (on.command, on.icon, on.tooltip) == ("made_up_step_on", NEXT_ICON, "Next clip")
+
+    def test_its_previous_and_next_are_those_same_two_buttons(self):
+        row = transport("portrait", noun="clip", longer_than_a_step=True)
+
+        assert (row[0], row[3]) == (previous_button("portrait_prev", noun="clip"),
+                                    next_button("portrait_next", noun="clip"))
 
     def test_the_ten_second_steps_are_dim_on_a_clip_of_ten_seconds_or_shorter(self):
         row = _by_name(transport("portrait", noun="clip", longer_than_a_step=False))
@@ -143,6 +162,12 @@ class TestTheSwitchesAndTheThingsDone:
             "portrait_trash", TRASH_ICON,
             "Unfavorite it — or send it to Trash when it is not a favorite")
         assert trash.danger
+
+    def test_a_source_whose_trash_does_something_else_says_so_and_keeps_the_trash_s_face(self):
+        trash = trash_button_under("made_up_trash", "Send to Trash — move it out")
+
+        assert trash == replace(trash_button("portrait"), command="made_up_trash",
+                                tooltip="Send to Trash — move it out")
 
     def test_f_mode_is_the_favorites_green_switch(self):
         fmode = fmode_button("portrait", favorites_only_tooltip(), lit=True)
