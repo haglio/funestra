@@ -61,12 +61,20 @@ def transport(funestra: str, *, noun: str, longer_than_a_step: bool,
     cannot_step = AN_IMAGE if image else "" if longer_than_a_step else too_short_to_step(noun)
     reason = f" ({cannot_step})" if cannot_step else ""
     return (
-        Button(f"{funestra}_prev", PREVIOUS_ICON, f"Previous {noun}"),
+        previous_button(f"{funestra}_prev", noun=noun),
         Button(f"{funestra}_nudge_prev", BACK_ICON, f"Back 10s{reason}", dim=bool(cannot_step)),
         Button(f"{funestra}_nudge_next", FORWARD_ICON, f"Forward 10s{reason}",
                dim=bool(cannot_step)),
-        Button(f"{funestra}_next", NEXT_ICON, f"Next {noun}"),
+        next_button(f"{funestra}_next", noun=noun),
     )
+
+
+def previous_button(command: str, *, noun: str) -> Button:
+    return Button(command, PREVIOUS_ICON, f"Previous {noun}")
+
+
+def next_button(command: str, *, noun: str) -> Button:
+    return Button(command, NEXT_ICON, f"Next {noun}")
 
 
 def funscript_jump_button(command: str, *, noun: str, has_osr2: bool,
@@ -93,7 +101,11 @@ def lock_button(funestra: str, *, locked: bool, tooltip: str) -> Button:
 
 
 def trash_button(funestra: str) -> Button:
-    return Button(f"{funestra}_trash", TRASH_ICON, TRASH_TOOLTIP, danger=True)
+    return trash_button_under(f"{funestra}_trash", TRASH_TOOLTIP)
+
+
+def trash_button_under(command: str, tooltip: str) -> Button:
+    return Button(command, TRASH_ICON, tooltip, danger=True)
 
 
 def favorites_only_tooltip() -> str:
