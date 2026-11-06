@@ -33,6 +33,8 @@ from .hud import (
     text_width,
     to_bgra,
 )
+from .hud_button import reading_its_host_value
+from .hud_controls import PLAYBACK_SPEED
 from .hud_corners import HudPlace
 from .hud_minimize import ROOM as MINUS_ROOM
 from .hud_minimize import collapsed_button, corner_button_rect, minimize_button
@@ -73,13 +75,11 @@ from .osr2_visualizer import (
     section_size,
     visualizer_targets,
 )
+from .playback_rate import format_rate
 
 _LENGTH_LABELS = {LengthMode.FULL: "Full", LengthMode.CLIPS: "Clips"}
 
 _REVISION = re.compile(r"\s*\(v\d+\)$")
-
-def _format_rate(rate: float) -> str:
-    return f"{rate:g}\u00d7"
 
 
 def compilation_label(title: str) -> str:
@@ -470,15 +470,13 @@ class MainHudPainter:
     def _filled(self, button: Button, hud: MainHud) -> Button:
         if button.command:
             return button
-        icon = button.icon
-        if button.host_value == "playback_speed":
-            icon = _format_rate(hud.main_hud_model.playback_speed)
-        elif button.host_value == "advance_interval":
-            icon = f"{hud.advance_interval}s"
-        width = button.width
-        if button.is_a_name:
-            width = max(width, text_width(self._tiny, icon) + BUTTON_GAP)
-        return replace(button, icon=icon, width=width)
+        read = reading_its_host_value(button, {
+            PLAYBACK_SPEED: format_rate(hud.main_hud_model.playback_speed),
+            "advance_interval": f"{hud.advance_interval}s"})
+        width = read.width
+        if read.is_a_name:
+            width = max(width, text_width(self._tiny, read.icon) + BUTTON_GAP)
+        return replace(read, width=width)
 
 
 def with_playback_speed(main_hud_model: MainHudModel, speed: float) -> MainHudModel:

@@ -5,11 +5,13 @@ from dataclasses import replace
 import pytest
 
 from funestra.funestra_verbs import SEEK_BACK, SEEK_FWD
+from funestra.hud_button import FIT_THE_WORD
 from funestra.hud_controls import (
     AN_IMAGE,
     FUNSCRIPT_JUMP_ICON,
     LATEST_ICON,
     NONE_FOR_THIS_ONE,
+    PLAYBACK_SPEED,
     RESET_ICON,
     RESET_PUTS_BACK_THE_SPEED,
     RESET_TOOLTIP,
@@ -25,6 +27,7 @@ from funestra.hud_controls import (
     lock_tooltip,
     longer_than_a_step,
     next_button,
+    playback_speed_buttons,
     previous_button,
     reset_button,
     too_near_the_end_to_step_forward,
@@ -45,7 +48,8 @@ from funestra.hud_icons import (
     PREVIOUS_ICON,
     shared_icon_name,
 )
-from funestra.hud_title import F_MODE_LABEL, LATEST_LABEL, SHUFFLE_LABEL
+from funestra.hud_title import F_MODE_LABEL, LATEST_LABEL, PLAYBACK_SPEED_LABEL, SHUFFLE_LABEL
+from funestra.main_hud import ROW_LABEL_W, VALUE_W
 from funestra.status import FunestraStatus
 
 
@@ -213,6 +217,33 @@ class TestTheSwitchesAndTheThingsDone:
         assert (alone.icon, alone.group_break) == (VERSIONS_ICON, True)
         assert (alone.dim, alone.tooltip) == (True, "Another version of this clip" + NONE_FOR_THIS_ONE)
         assert (among.dim, among.tooltip) == (False, "Another version of this clip")
+
+
+class TestThePlaybackSpeedButtons:
+    def test_they_are_its_name_slower_the_rate_and_faster(self):
+        name, slower, rate, faster = playback_speed_buttons("portrait")
+
+        assert (name.command, name.icon) == ("", PLAYBACK_SPEED_LABEL)
+        assert [slower.command, faster.command] == ["portrait_speed_down", "portrait_speed_up"]
+        assert (rate.command, rate.host_value, rate.width) == ("", PLAYBACK_SPEED, VALUE_W)
+
+    def test_they_say_what_a_press_does_to_the_video_in_the_words_every_funestras_speed_pair_uses(self):
+        _name, slower, _rate, faster = playback_speed_buttons("landscape")
+
+        assert [slower.tooltip, faster.tooltip] == [
+            "Play the video slower", "Play the video faster"]
+
+    def test_they_wear_the_familys_minus_and_plus(self):
+        _name, slower, _rate, faster = playback_speed_buttons("landscape")
+
+        assert [shared_icon_name(slower.icon), shared_icon_name(faster.icon)] == ["minus", "plus"]
+
+    def test_named_after_another_control_on_its_row_the_name_takes_only_its_own_width_and_stands_apart(self):
+        leading, *_rest = playback_speed_buttons("portrait")
+        following, *_others = playback_speed_buttons("portrait", leads_its_row=False)
+
+        assert (leading.width, leading.group_break) == (ROW_LABEL_W, False)
+        assert (following.width, following.group_break) == (FIT_THE_WORD, True)
 
 
 def test_resets_tooltip_says_the_speed_goes_back_in_the_words_every_reset_shares():

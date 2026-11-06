@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from .funestra_controls import SEEK_STEP_MS
 from .funestra_verbs import SEEK_BACK, SEEK_FWD
-from .hud_button import Button
+from .hud_button import FIT_THE_WORD, Button
 from .hud_icons import (
     BACK_ICON,
     FMODE_ICON,
@@ -12,7 +12,8 @@ from .hud_icons import (
     PREVIOUS_ICON,
     shared_icon,
 )
-from .hud_title import F_MODE_LABEL, LATEST_LABEL, SHUFFLE_LABEL
+from .hud_title import F_MODE_LABEL, LATEST_LABEL, PLAYBACK_SPEED_LABEL, SHUFFLE_LABEL
+from .main_hud import ROW_LABEL_W, VALUE_W
 from .status import FunestraStatus
 
 TRASH_ICON = shared_icon("trash")
@@ -137,6 +138,20 @@ def browse_order_buttons(funestra: str, *, latest: bool | None,
                group_break=True, **lit_or_remembered(not latest, remembered)),
         Button(f"{funestra}_latest", LATEST_ICON, f"{LATEST_LABEL} — reload it newest-first",
                **lit_or_remembered(latest, remembered)),
+    )
+
+
+PLAYBACK_SPEED = "playback_speed"
+
+
+def playback_speed_buttons(funestra: str, *, leads_its_row: bool = True) -> tuple[Button, ...]:
+    return (
+        Button("", PLAYBACK_SPEED_LABEL, "", width=ROW_LABEL_W if leads_its_row else FIT_THE_WORD,
+               group_break=not leads_its_row),
+        Button(f"{funestra}_speed_down", shared_icon("minus"), "Play the video slower",
+               group_break=True),
+        Button("", "", "", width=VALUE_W, host_value=PLAYBACK_SPEED),
+        Button(f"{funestra}_speed_up", shared_icon("plus"), "Play the video faster"),
     )
 
 
