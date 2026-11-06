@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ctypes
+import logging
 import math
 import threading
 import time
@@ -579,6 +580,14 @@ def test_an_mpv_message_reaches_the_log_at_the_matching_level(caplog, level, log
         mpv_engine._log_mpv(level, "vo", "made-up trouble  ")
 
     assert [(r.levelno, r.getMessage()) for r in caplog.records] == [(logged, "mpv vo: made-up trouble")]
+
+
+def test_an_audio_device_underrun_is_news_since_mpv_rides_it_out_by_itself(caplog):
+    with caplog.at_level(1, logger=mpv_engine.logger.name):
+        mpv_engine._log_mpv("warn", "cplayer", "Audio device underrun detected.\n")
+
+    assert [(r.levelno, r.getMessage()) for r in caplog.records] == [
+        (logging.INFO, "mpv cplayer: Audio device underrun detected.")]
 
 
 def test_the_next_entry_is_opened_ahead_only_where_asked_for_so_a_satellite_s_auto_advance_cuts_to_a_video_already_loaded():
