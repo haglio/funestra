@@ -41,8 +41,13 @@ _MPV_SCRIPTS_OFF = {
 _MPV_LEVELS = {"fatal": logging.CRITICAL, "error": logging.ERROR, "warn": logging.WARNING}
 
 
+_RIDDEN_OUT_BY_MPV = ("Audio device underrun detected.",)
+
+
 def _log_mpv(level: str, prefix: str, text: str) -> None:
-    logger.log(_MPV_LEVELS.get(level, logging.WARNING), "mpv %s: %s", prefix, text.strip())
+    said = text.strip()
+    at = logging.INFO if said in _RIDDEN_OUT_BY_MPV else _MPV_LEVELS.get(level, logging.WARNING)
+    logger.log(at, "mpv %s: %s", prefix, said)
 
 
 _TRIES_AT_THE_ENGINE = 5
