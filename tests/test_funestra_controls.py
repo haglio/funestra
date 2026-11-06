@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import logging
 import threading
-from pathlib import Path
 
 from funestra_fakes import FakeTCode, make_playback
 
@@ -58,9 +58,22 @@ class TestApplyCommand:
         playback, engine = make_playback(tmp_path)
         controls = FunestraControls(playback, reload_playlist=_never_reloads)
 
-        assert apply_command(f"{SHOW_FRAME} C:/frames/run one-3.png", controls) is True
+        frame = tmp_path / "run one-3.png"
+        frame.write_bytes(b"made-up frame")
+
+        assert apply_command(f"{SHOW_FRAME} {frame}", controls) is True
         assert apply_command(CLEAR_FRAME, controls) is True
-        assert engine.swapped == [Path("C:/frames/run one-3.png"), playback.showing]
+        assert engine.swapped == [frame, playback.showing]
+
+    def test_a_frame_already_taken_away_when_its_verb_arrives_is_passed_over_without_a_word(
+            self, tmp_path, caplog):
+        playback, engine = make_playback(tmp_path)
+        controls = FunestraControls(playback, reload_playlist=_never_reloads)
+
+        with caplog.at_level(logging.INFO):
+            handled = apply_command(f"{SHOW_FRAME} {tmp_path / 'run one-2.png'}", controls)
+
+        assert (handled, engine.swapped, caplog.records) == (True, [], [])
 
     def test_a_frame_verb_naming_no_file_is_refused(self, tmp_path):
         playback, engine = make_playback(tmp_path)
