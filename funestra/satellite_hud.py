@@ -374,7 +374,7 @@ def rows_with_the_speed(model: HudModel) -> list[list[Button]]:
     if model.playback_speed is None:
         return rows
     if not any(button.host_value == PLAYBACK_SPEED for row in rows for button in row):
-        rows.append(list(playback_speed_buttons(model.funestra)))
+        rows.append(list(playback_speed_buttons(model.funestra, in_a_column_of_labels=False)))
     rate = {PLAYBACK_SPEED: format_rate(model.playback_speed)}
     return [[reading_its_host_value(button, rate) for button in row] for row in rows]
 

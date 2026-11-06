@@ -144,12 +144,14 @@ def browse_order_buttons(funestra: str, *, latest: bool | None,
 PLAYBACK_SPEED = "playback_speed"
 
 
-def playback_speed_buttons(funestra: str, *, leads_its_row: bool = True) -> tuple[Button, ...]:
+def playback_speed_buttons(funestra: str, *,
+                           in_a_column_of_labels: bool = True) -> tuple[Button, ...]:
     return (
-        Button("", PLAYBACK_SPEED_LABEL, "", width=ROW_LABEL_W if leads_its_row else FIT_THE_WORD,
-               group_break=not leads_its_row),
+        Button("", PLAYBACK_SPEED_LABEL, "",
+               width=ROW_LABEL_W if in_a_column_of_labels else FIT_THE_WORD,
+               group_break=not in_a_column_of_labels),
         Button(f"{funestra}_speed_down", shared_icon("minus"), "Play the video slower",
-               group_break=True),
+               group_break=in_a_column_of_labels),
         Button("", "", "", width=VALUE_W, host_value=PLAYBACK_SPEED),
         Button(f"{funestra}_speed_up", shared_icon("plus"), "Play the video faster"),
     )

@@ -32,6 +32,7 @@ from funestra.hud_minimize import ROOM as MINUS_ROOM
 from funestra.hud_placement import HudCorner
 from funestra.hud_row import SCRUBBER, RowHud, row_part
 from funestra.hud_sections import DIVIDER_H, SECTION_GAP
+from funestra.hud_title import PLAYBACK_SPEED_LABEL
 from funestra.main_hud import OSR2_DRIVING, OSR2_PARKED, MainHudModel
 from funestra.main_hud_painter import MainHud, MainHudPainter
 from funestra.modes import MainMode, Osr2State
@@ -1177,10 +1178,18 @@ def test_the_speeds_cell_reads_the_funestras_rate():
     assert _rates_read(_order_row(playback_speed=1.5)) == ["1.5×"]
 
 
+def test_the_speed_rows_name_sits_the_ordinary_gap_from_its_minus():
+    rects = {short_name(button) or button.icon: rect
+             for rect, button in _order_row(playback_speed=1.0).targets.buttons}
+    name_x, _y, name_w, _h = rects[PLAYBACK_SPEED_LABEL]
+
+    assert rects["speed_down"][0] == name_x + name_w + BUTTON_GAP
+
+
 def test_a_row_that_places_the_speed_keeps_it_on_its_own_line_and_no_row_is_added_under_it(thumb):
     corner = HudCell(path="c.mp4", thumb=thumb)
     shared = (Button("portrait_clip_seconds_up", "+", "longer tip"),
-              *playback_speed_buttons("portrait", leads_its_row=False))
+              *playback_speed_buttons("portrait", in_a_column_of_labels=False))
     rows = (*funestra_rows("portrait"), shared)
     without = HudRenderer("portrait").render(_model(corner=corner, rows=rows))
     with_rate = HudRenderer("portrait").render(_model(corner=corner, rows=rows, playback_speed=2.0))
