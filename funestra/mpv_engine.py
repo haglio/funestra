@@ -41,12 +41,20 @@ _MPV_SCRIPTS_OFF = {
 _MPV_LEVELS = {"fatal": logging.CRITICAL, "error": logging.ERROR, "warn": logging.WARNING}
 
 
-_RIDDEN_OUT_BY_MPV = ("Audio device underrun detected.",)
+_RIDDEN_OUT_BY_MPV = frozenset({
+    "Audio device underrun detected.",
+    "Audio/Video desynchronisation detected! Possible reasons include too slow",
+    "hardware, temporary CPU spikes, broken drivers, and broken files. Audio",
+    "position will not match to the video (see A-V status field).",
+    "Consider trying `--profile=fast` and/or `--hwdec=auto` as they may help.",
+})
 
 
 def _log_mpv(level: str, prefix: str, text: str) -> None:
     said = text.strip()
-    at = logging.INFO if said in _RIDDEN_OUT_BY_MPV else _MPV_LEVELS.get(level, logging.WARNING)
+    if not said:
+        return
+    at =logging.INFO if said in _RIDDEN_OUT_BY_MPV else _MPV_LEVELS.get(level, logging.WARNING)
     logger.log(at, "mpv %s: %s", prefix, said)
 
 
