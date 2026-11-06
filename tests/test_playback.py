@@ -7,6 +7,7 @@ from funestra_fakes import make_playback as _make_playback
 
 from funestra.play_points import PlayPoints
 from funestra.playback_rate import MAX_RATE, MIN_RATE
+from funestra.playlist import PlaylistItem
 from funestra.seeking import GIVE_UP_AFTER
 
 
@@ -1271,3 +1272,54 @@ def test_an_item_the_engine_would_not_open_reads_as_idle(tmp_path):
     engine.idle = True
 
     assert playback.idle is True
+
+
+class TestWhatRidesWithAVersion:
+    def test_a_version_stepped_to_plays_with_the_script_that_rides_with_it(self, tmp_path):
+        playback, _engine = _make_playback(
+            tmp_path, funscripts={0: _script(tmp_path / "v0.funscript", (0, 0), (100, 99))})
+        video = playback.current_video
+        other = tmp_path / "v0_sorted.mp4"
+        other.write_text("fake")
+        its_own = _script(tmp_path / "v0_sorted.funscript", (0, 50), (200, 60))
+
+        playback.step_version([video, PlaylistItem(other, its_own)], 1)
+
+        assert playback.current_funscript.actions == [(0, 50), (200, 60)]
+        playback.step_version([video, other], 1)
+        assert playback.current_funscript.actions == [(0, 0), (100, 99)]
+
+    def test_a_version_with_no_script_of_its_own_plays_to_the_clips(self, tmp_path):
+        playback, _engine = _make_playback(
+            tmp_path, funscripts={0: _script(tmp_path / "v0.funscript", (0, 0), (100, 99))})
+        other = tmp_path / "v0_sorted.mp4"
+        other.write_text("fake")
+
+        playback.step_version([playback.current_video, other], 1)
+
+        assert playback.current_funscript.actions == [(0, 0), (100, 99)]
+
+    def test_a_version_stepped_to_goes_up_with_the_places_that_ride_with_it(self, tmp_path):
+        playback, engine = _make_playback(tmp_path)
+        other = tmp_path / "v0_sorted.mp4"
+        other.write_text("fake")
+
+        playback.step_version(
+            [playback.current_video, PlaylistItem(other, None, ((0.1, 0.1, 0.5, 0.5),))], 1)
+
+        assert engine.points_told[-1] == ((0.1, 0.1, 0.5, 0.5),)
+
+    def test_forgetting_the_versions_puts_every_clip_back_on_its_own_file_at_its_next_load(
+            self, tmp_path):
+        playback, _engine = _make_playback(tmp_path, entries=2)
+        video = playback.current_video
+        other = tmp_path / "v0_sorted.mp4"
+        other.write_text("fake")
+        playback.step_version([video, other], 1)
+
+        playback.forget_versions()
+        playback.step(1)
+        playback.step(-1)
+
+        assert playback.showing == video
+        assert playback.name_on_screen == "v0"
