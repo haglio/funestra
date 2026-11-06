@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, fields
+from collections.abc import Mapping
+from dataclasses import dataclass, fields, replace
 
 from shared_ui.icon_geometry import tooltip_for
 from shared_ui.spacing import BUTTON_SIZE_HUD
@@ -38,6 +39,11 @@ class Button:
         if not self.icon.startswith(SHARED_ICON):
             return self.tooltip
         return tooltip_for(shared_icon_name(self.icon), self.tooltip)
+
+
+def reading_its_host_value(button: Button, values: Mapping[str, str]) -> Button:
+    read = values.get(button.host_value)
+    return button if read is None else replace(button, icon=read)
 
 
 _FLAGS = tuple(f.name for f in fields(Button) if f.type == "bool")

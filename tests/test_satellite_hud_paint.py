@@ -26,6 +26,7 @@ from funestra.drive_layout import MAX_INTENSITY, SECTION_W
 from funestra.geometry import Rect
 from funestra.hud import ACTIVE_DOT, load_font
 from funestra.hud_button import Button
+from funestra.hud_controls import PLAYBACK_SPEED, playback_speed_buttons
 from funestra.hud_minimize import RESTORE_TOOLTIP, minimize_command
 from funestra.hud_minimize import ROOM as MINUS_ROOM
 from funestra.hud_placement import HudCorner
@@ -1139,7 +1140,7 @@ def test_the_hud_is_wide_enough_for_the_band_it_grew():
 
 def test_a_funestra_that_says_its_rate_carries_a_playback_speed_row():
     def names(**overrides):
-        return _names(_order_row(**overrides))
+        return [name for name in _names(_order_row(**overrides)) if name]
 
     assert "speed_down" not in names()
     assert names(playback_speed=1.0)[-2:] == ["speed_down", "speed_up"]
@@ -1165,6 +1166,29 @@ def test_the_speed_row_draws_its_buttons_and_reads_out_the_rate():
     for name in ("speed_down", "speed_up"):
         x, y, w, h = buttons[name]
         assert (_rgb(normal.bgra)[y:y + h, x:x + w].min(axis=2) > 200).any(), name
+
+
+def _rates_read(rendered) -> list[str]:
+    return [button.icon for _rect, button in rendered.targets.buttons
+            if button.host_value == PLAYBACK_SPEED]
+
+
+def test_the_speeds_cell_reads_the_funestras_rate():
+    assert _rates_read(_order_row(playback_speed=1.5)) == ["1.5×"]
+
+
+def test_a_row_that_places_the_speed_keeps_it_on_its_own_line_and_no_row_is_added_under_it(thumb):
+    corner = HudCell(path="c.mp4", thumb=thumb)
+    shared = (Button("portrait_clip_seconds_up", "+", "longer tip"),
+              *playback_speed_buttons("portrait", leads_its_row=False))
+    rows = (*funestra_rows("portrait"), shared)
+    without = HudRenderer("portrait").render(_model(corner=corner, rows=rows))
+    with_rate = HudRenderer("portrait").render(_model(corner=corner, rows=rows, playback_speed=2.0))
+    tops = {short_name(button): rect[1] for rect, button in with_rate.targets.buttons}
+
+    assert with_rate.bgra.shape[0] == without.bgra.shape[0]
+    assert tops["speed_down"] == tops["speed_up"] == tops["clip_seconds_up"]
+    assert _rates_read(with_rate) == ["2×"]
 
 
 def _yellow_ink(rect, rendered) -> int:

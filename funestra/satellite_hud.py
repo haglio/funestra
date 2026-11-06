@@ -24,15 +24,23 @@ from shared_ui.type_scale import SIZES
 
 from .geometry import Rect, contains
 from .hud import ACTIVE_DOT
-from .hud_button import Button, buttons_from_raw, buttons_raw, rows_from_raw, rows_raw
-from .hud_icons import shared_icon
+from .hud_button import (
+    Button,
+    buttons_from_raw,
+    buttons_raw,
+    reading_its_host_value,
+    rows_from_raw,
+    rows_raw,
+)
+from .hud_controls import PLAYBACK_SPEED, playback_speed_buttons
 from .hud_osr2 import HEIGHT as OSR2_H
 from .hud_placement import HudCorner, HudEdge
 from .hud_sections import blocks_height, stack
 from .hud_title import SEPARATOR
-from .main_hud import VALUE_W, max_intensity_from_raw
+from .main_hud import max_intensity_from_raw
 from .modes import read_mode
 from .osr2_visualizer import DriveHud, DriveTrack
+from .playback_rate import format_rate
 from .video_families import filter_keeps, normalized_text
 
 if TYPE_CHECKING:
@@ -192,7 +200,6 @@ def device_height(osr2: str, drive: DriveHud | None, drive_h: int,
 @dataclass(frozen=True)
 class HudLayout:
     bars: int
-    speed: int
     row: int
     device: int
     foot: int
@@ -208,11 +215,11 @@ class SectionHeights(NamedTuple):
     foot: int = 0
 
 
-def hud_layout(*, heights: SectionHeights, bars: int = 0, speed: bool = False) -> HudLayout:
-    stacked = stack(PAD, [heights.title, blocks_height([CTRL_BTN] * (bars + speed), BLOCK_GAP),
+def hud_layout(*, heights: SectionHeights, bars: int = 0) -> HudLayout:
+    stacked = stack(PAD, [heights.title, blocks_height([CTRL_BTN] * bars, BLOCK_GAP),
                           heights.row, heights.device, heights.foot, NAV_MAP_H])
     _title, bars_top, row_top, device_top, foot_top, nav_map_top = stacked.tops
-    return HudLayout(bars_top, bars_top + bars * CONTROL_ROW_H, row_top, device_top,
+    return HudLayout(bars_top, row_top, device_top,
                      foot_top, nav_map_top, stacked.end + PAD, stacked.dividers)
 
 
@@ -362,26 +369,14 @@ def button_row_rects(x: int, y: int, buttons: Sequence[Button],
     return rects
 
 
-_SPEED_BUTTONS = (
-    ("speed_down", shared_icon("minus"), "Play the video slower"),
-    ("speed_up", shared_icon("plus"), "Play the video faster"),
-)
-
-
-def speed_row_width(label_width: int) -> int:
-    return label_width + 2 * CTRL_BTN + 2 * NAV_MAP_GAP + VALUE_W
-
-
-def speed_row(funestra: str, x: int, y: int, *,
-              label_width: int) -> tuple[list[tuple[Rect, Button]], Rect]:
-    down_x = x + label_width
-    rate_x = down_x + CTRL_BTN + NAV_MAP_GAP
-    up_x = rate_x + VALUE_W + NAV_MAP_GAP
-    buttons = [
-        ((button_x, y, CTRL_BTN, CTRL_BTN), Button(f"{funestra}_{name}", face, tooltip))
-        for button_x, (name, face, tooltip) in zip((down_x, up_x), _SPEED_BUTTONS, strict=True)
-    ]
-    return buttons, (rate_x, y, VALUE_W, CTRL_BTN)
+def rows_with_the_speed(model: HudModel) -> list[list[Button]]:
+    rows = [list(row) for row in model.rows]
+    if model.playback_speed is None:
+        return rows
+    if not any(button.host_value == PLAYBACK_SPEED for row in rows for button in row):
+        rows.append(list(playback_speed_buttons(model.funestra)))
+    rate = {PLAYBACK_SPEED: format_rate(model.playback_speed)}
+    return [[reading_its_host_value(button, rate) for button in row] for row in rows]
 
 
 TITLE_INDENT = TITLE_X - PAD

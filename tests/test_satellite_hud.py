@@ -14,7 +14,7 @@ from funestra.hud import load_font
 from funestra.hud_button import Button
 from funestra.hud_icons import MINIMIZE_ICON, shared_icon
 from funestra.hud_placement import HudCorner, HudEdge
-from funestra.main_hud import OSR2_PARKED, VALUE_W
+from funestra.main_hud import OSR2_PARKED
 from funestra.modes import Osr2State
 from funestra.satellite_hud import (
     CTRL_BTN,
@@ -51,7 +51,6 @@ from funestra.satellite_hud import (
     parse_hud,
     place_rects,
     place_width,
-    speed_row,
     thumbnail_rect,
 )
 from funestra.satellite_hud_clicks import DOUBLE_CLICK_S, HudClicks, button_tooltip
@@ -444,32 +443,6 @@ def test_a_declared_row_is_laid_out_as_wide_as_each_button_says():
         (10 + 52 + BUTTON_GAP, 40, 90, CTRL_BTN),
         (10 + 52 + BUTTON_GAP + 90 + BUTTON_GROUP_GAP, 40, CTRL_BTN, CTRL_BTN),
     ]
-
-
-def test_the_speed_row_puts_slower_the_rate_and_faster_after_its_name():
-
-    buttons, rate = speed_row("portrait", 10, 40, label_width=70)
-
-    assert [button.command for _rect, button in buttons] == [
-        "portrait_speed_down", "portrait_speed_up"]
-    (down, _), (up, _) = buttons
-    assert down == (80, 40, CTRL_BTN, CTRL_BTN)
-    assert rate == (80 + CTRL_BTN + NAV_MAP_GAP, 40, VALUE_W, CTRL_BTN)
-    assert up == (rate[0] + VALUE_W + NAV_MAP_GAP, 40, CTRL_BTN, CTRL_BTN)
-
-
-def test_the_speed_buttons_say_what_a_press_does_to_the_video_in_the_words_the_main_funestra_s_speed_pair_uses():
-    buttons, _rate = speed_row("landscape", 0, 0, label_width=70)
-    targets = _targets(buttons=buttons)
-
-    assert [button_tooltip(targets, x + 5, y + 5) for (x, y, _w, _h), _b in buttons] == [
-        "Play the video slower", "Play the video faster"]
-
-
-def test_the_speed_buttons_wear_the_familys_minus_and_plus():
-    buttons, _rate = speed_row("landscape", 0, 0, label_width=70)
-
-    assert [button.icon for _rect, button in buttons] == [shared_icon("minus"), shared_icon("plus")]
 
 
 _NOTE = "Enhancing…"

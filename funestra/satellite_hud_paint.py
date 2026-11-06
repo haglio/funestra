@@ -16,7 +16,6 @@ from shared_ui.palette import (
     TEXT_PRIMARY,
     WHITE,
 )
-from shared_ui.spacing import BUTTON_GROUP_GAP
 from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
 from funestra.hud import (
@@ -51,16 +50,13 @@ from .hud_osr2 import (
 )
 from .hud_placement import block_x
 from .hud_row import ROW_H, RowHud, RowSection, row_layout
-from .hud_title import PLAYBACK_SPEED_LABEL
 from .osr2_visualizer import DriveSection, DriveTrack, section_size, visualizer_targets
-from .playback_rate import format_rate
 from .satellite_hud import (
     ACT_GAP,
     BLOCK_GAP,
     COL_LABEL_GAP,
     COL_LABEL_H,
     CONTROL_ROW_H,
-    CTRL_BTN,
     ELLIPSIS_ROOM,
     EXPAND_ICON,
     FAVORITE_ICON,
@@ -107,9 +103,8 @@ from .satellite_hud import (
     place_rects,
     place_width,
     playing_rect,
+    rows_with_the_speed,
     seed_column_label,
-    speed_row,
-    speed_row_width,
     thumbnail_rect,
     wrong_action_rect,
 )
@@ -262,7 +257,7 @@ class HudRenderer:
 
     def _measure(self, model: HudModel, item_row: RowHud | None,
                  drawn_with: DrawnWith) -> _Sizes:
-        rows = [list(row) for row in model.rows]
+        rows = rows_with_the_speed(model)
         widths = [[self._button_width(button) for button in row] for row in rows]
         device_rows = [list(row) for row in model.osr2_rows]
         device_row_widths = [[self._button_width(b) for b in row] for row in device_rows]
@@ -287,7 +282,7 @@ class HudRenderer:
             heights=SectionHeights(
                 self._title_height(), row_h,
                 device_height(model.osr2, model.drive, drive_h, len(device_rows)), foot_h),
-            bars=len(rows), speed=model.playback_speed is not None)
+            bars=len(rows))
         return _Sizes(rows, widths, device_rows, device_row_widths, osr2_line, foot_h, width,
                       row_h, layout)
 
@@ -318,8 +313,6 @@ class HudRenderer:
         if drawn_with.minus_on_the_hud:
             buttons.append(self._draw_minus(hud, model))
         buttons.extend(self._draw_button_rows(hud, model, sizes.rows, sizes.widths, layout.bars))
-        if model.playback_speed is not None:
-            buttons.extend(self._draw_speed_row(hud, model, layout.speed))
 
         row = None
         if item_row is not None:
@@ -377,25 +370,6 @@ class HudRenderer:
             buttons.extend(placed)
             y += CONTROL_ROW_H
         return buttons
-
-    def _draw_speed_row(self, hud: Hud, model: HudModel,
-                        y: int) -> list[tuple[Rect, Button]]:
-        label_width = text_width(self._tiny, PLAYBACK_SPEED_LABEL) + BUTTON_GROUP_GAP
-        speed_x = self._block_x(model, hud.image.width, speed_row_width(label_width))
-        speed_buttons, rate_rect = speed_row(model.funestra, speed_x, y,
-                                             label_width=label_width)
-        hud.draw.text((speed_x, y + CTRL_BTN / 2), PLAYBACK_SPEED_LABEL,
-                      font=self._tiny, anchor="lm", fill=(*TEXT_MUTED, 255))
-        for rect, button in speed_buttons:
-            draw_button(hud.image, hud.draw, rect, button,
-                ButtonLook(
-                    hovered=self._pointer_is_on(rect),
-                    icon_font=self._icon,
-                    word_font=self._tiny))
-        rx, ry, rw, rh = rate_rect
-        hud.draw.text((rx + rw / 2, ry + rh / 2), format_rate(model.playback_speed),
-                      font=self._tiny, anchor="mm", fill=(*TEXT_PRIMARY, 255))
-        return speed_buttons
 
     def _all_but_the_row(self, model: HudModel, item_row: RowHud | None,
                          drawn_with: DrawnWith) -> tuple | None:
