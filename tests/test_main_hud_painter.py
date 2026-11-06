@@ -45,6 +45,7 @@ from funestra.main_hud_painter import (
     ModeHud,
     compilation_label,
     hud_xy,
+    osr2_line_on,
     with_playback_speed,
 )
 from funestra.main_hud_painter import _PAD as PAD
@@ -74,6 +75,10 @@ def _line(*, locked: bool = True, order_latest: bool = False, **modes) -> str:
     return MainHud(modes=ModeHud(**modes),
                       main_hud_model=MainHudModel(main_mode=MainMode.KINO, locked=locked,
                                            latest=order_latest)).title
+
+
+def _pill(painter: MainHudPainter) -> str:
+    return osr2_line_on(painter._painted[0]).state
 
 
 def _rect_of(painter: MainHudPainter, command: str) -> Rect:
@@ -833,7 +838,7 @@ class TestTraceSources:
     def test_the_device_running_itself_draws_its_own_swing_and_names_it(self):
         painter, colors = self._drawn("genau", "auto")
 
-        assert painter._osr2_state(MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.AUTO)) == "auto"
+        assert _pill(painter) == "auto"
         assert all(t.dim for t in painter.tracks)
         assert MAGENTA in colors
 
@@ -842,7 +847,7 @@ class TestTraceSources:
             "kino", "auto",
             drive=_drive(segments=((0, "robot_hand"), (40, "funscript"))))
 
-        assert painter._osr2_state(MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.AUTO)) == "auto"
+        assert _pill(painter) == "auto"
         assert MAGENTA in colors
 
     def test_the_hud_keeps_its_size_whoever_has_the_device(self):
@@ -867,7 +872,7 @@ class TestEveryMainHudPaints:
                                    segments=segments))
                 MainHudPainter().rgba(hud)
 
-    def test_the_buffer_pill_is_wider_than_nothing(self):
+    def test_with_a_composed_trace_on_the_hud_the_pill_reads_the_trace_s_own_answer_to_who_has_the_device(self):
         wave = tuple(0.5 for _ in range(80))
         painter = MainHudPainter()
         hud = MainHud(
@@ -877,7 +882,17 @@ class TestEveryMainHudPaints:
                            segments=((0, "robot_hand"), (30, "neutral"))))
         painter.rgba(hud)
 
-        assert painter._osr2_state(hud.main_hud_model) == "buffer"
+        assert _pill(painter) == "buffer"
+
+    def test_the_pill_is_read_off_the_hud_in_hand_never_off_the_one_painted_before_it(self):
+        painter = MainHudPainter()
+        painter.rgba(MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND),
+            drive=_drive(driven="neutral", segments=((0, "robot_hand"), (30, "neutral")))))
+        with_no_trace = MainHud(
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND))
+
+        assert osr2_line_on(with_no_trace).state == Osr2State.ROBOT_HAND
 
 
 class TestHolds:
@@ -897,7 +912,7 @@ class TestHolds:
                 for osr2 in ("robot_hand", "funscript"):
                     hud = self._hud(mode, osr2, control)
                     painter.rgba(hud)
-                    assert painter._osr2_state(hud.main_hud_model) == control, (mode, osr2)
+                    assert _pill(painter) == control, (mode, osr2)
 
     def test_the_pill_says_it_in_words(self):
         assert _OSR2_LABELS[OSR2_PARKED] == "Parked"
@@ -1091,7 +1106,7 @@ class TestNothingDriving:
         hud = self._off(MainMode.KINO, 0.0, driven="funscript", segments=self._HANDOFF)
         painter.rgba(hud)
 
-        assert painter._osr2_state(hud.main_hud_model) == "off"
+        assert _pill(painter) == "off"
 
     @pytest.mark.parametrize("control", [OSR2_PARKED, OSR2_RETRACTED])
     def test_held_with_the_device_off_is_the_dim_gray_of_driving_with_it_off(self, control):
@@ -1136,7 +1151,7 @@ class TestTheDeviceRunningItselfKeepsMoving:
 
         later = painter.bgra(MainHud(main_hud_model=main_hud_model, drive=_drive(3.0)))
 
-        assert painter._osr2_state(main_hud_model) == "auto"
+        assert _pill(painter) == "auto"
         assert not np.array_equal(later, first)
 
 

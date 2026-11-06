@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, replace
+from typing import Protocol
 
 from PIL import Image, ImageDraw
 from shared_ui.palette import (
@@ -85,10 +86,10 @@ _OSR2_AT_THE_PLAYHEAD = {
 }
 
 
-def driving_at_the_playhead(composed: DriveHud | None, osr2: str) -> str:
-    if composed is None:
+def driving_at_the_playhead(drive: DriveHud | None, osr2: str, *, composed: bool) -> str:
+    if not composed or drive is None or not drive.segments:
         return ""
-    return _OSR2_AT_THE_PLAYHEAD.get(composed.driven, osr2)
+    return _OSR2_AT_THE_PLAYHEAD.get(drive.driven, osr2)
 
 
 _DRIVEN_BY_OSR2 = {
@@ -170,6 +171,27 @@ class Osr2Line:
     state: str = Osr2State.OFF
     controls: tuple[Button, ...] = ()
     max_intensity: int | None = None
+
+
+class ShowsTheOsr2(Protocol):
+    @property
+    def osr2(self) -> str: ...
+    @property
+    def osr2_control(self) -> str: ...
+    @property
+    def paused(self) -> bool: ...
+    @property
+    def osr2_controls(self) -> tuple[Button, ...]: ...
+    @property
+    def max_intensity(self) -> int | None: ...
+
+
+def line_shown_for(model: ShowsTheOsr2, drive: DriveHud | None, *, composed: bool) -> Osr2Line:
+    return Osr2Line(
+        state=state_for(model.osr2, model.osr2_control,
+                        driving=driving_at_the_playhead(drive, model.osr2, composed=composed),
+                        paused=model.paused),
+        controls=model.osr2_controls, max_intensity=model.max_intensity)
 
 
 class Osr2Section:

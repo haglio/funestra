@@ -39,8 +39,7 @@ from .hud_osr2 import (
     Osr2Line,
     Osr2Section,
     VisualizerResolver,
-    driving_at_the_playhead,
-    state_for,
+    line_shown_for,
 )
 from .hud_placement import HudCorner, PointerReading, block_x
 from .hud_row import ROW_H, RowHud, RowLayout, RowSection, row_layout
@@ -154,6 +153,7 @@ class _Plan:
     rows: list[list[Button]]
     aim_rows: list[list[Button]]
     top: _TopBlock
+    osr2_line: Osr2Line | None
     item_row: RowHud | None
     host_controls: HostControlsHud | None
     drive_w: int
@@ -171,6 +171,11 @@ def _reserved(widths: list[int], used: tuple[bool, ...], corner: HudCorner,
     return reserves, max(width + reserve for width, reserve in zip(widths, reserves, strict=True))
 
 
+def osr2_line_on(main_hud: MainHud) -> Osr2Line:
+    model = main_hud.main_hud_model
+    return line_shown_for(model, main_hud.drive, composed=kino_shows(model.main_mode))
+
+
 class MainHudPainter:
     def __init__(self, *, width: int | None = None, device_only: bool = False,
                  minus_on_the_hud: bool = True,
@@ -186,7 +191,6 @@ class MainHudPainter:
         self._item_row = RowSection()
         self._host_controls = HostControlsSection()
         self._painted: tuple = (None, None, None, None, None)
-        self._composed_drive: DriveHud | None = None
         self._image: Image.Image | None = None
         self._bgra: np.ndarray | None = None
         self.buttons: list[tuple[Rect, Button]] = []
@@ -323,12 +327,9 @@ class MainHudPainter:
     def _paint(self, main_hud: MainHud, hover: tuple[int, int] | None = None,
                item_row: RowHud | None = None, heatmap=None,
                host_controls: HostControlsHud | None = None) -> Image.Image:
-        main_hud_model, drive = main_hud.main_hud_model, main_hud.drive
+        main_hud_model = main_hud.main_hud_model
         if main_hud_model.hud_minimized:
             return self._paint_minimized(main_hud_model.funestra, main_hud_model.hud_corner, hover, main_hud.flash)
-        self._composed_drive = (
-            drive if (drive is not None and drive.segments
-                      and kino_shows(main_hud_model.main_mode)) else None)
         plan = self._plan(main_hud, item_row, host_controls)
         return self._draw_plan(main_hud, hover, plan, heatmap)
 
@@ -350,9 +351,10 @@ class MainHudPainter:
 
         corner = main_hud_model.hud_corner
         text_x = ACTIVE_DOT + DOT_GAP
+        osr2_line = osr2_line_on(main_hud) if main_hud_model.has_osr2 else None
         widths = [0, _row_width(rows),
                   max(_row_width(aim_rows), drive_w,
-                      self._osr2_width(main_hud_model) if main_hud_model.has_osr2 else 0),
+                      self._osr2.width(osr2_line) if osr2_line is not None else 0),
                   self._item_row.least_width(item_row) if item_row is not None else 0,
                   self._host_controls.least_width(host_controls) if host_controls is not None else 0]
         minus_room = MINUS_ROOM if whole and self._minus_on_the_hud else 0
@@ -376,13 +378,13 @@ class MainHudPainter:
         sections = stack(_PAD, [
             top_h + filename_h,
             rows_height(rows),
-            blocks_height([rows_height(aim_rows), _OSR2_H if main_hud_model.has_osr2 else 0,
+            blocks_height([rows_height(aim_rows), _OSR2_H if osr2_line is not None else 0,
                            drive_h], _BLOCK_GAP),
             row_h,
             HostControlsSection.height if host_controls is not None else 0,
         ])
         return _Plan(whole, rows, aim_rows, _TopBlock(title, filename, main_hud_model.active),
-                     item_row, host_controls, drive_w, row_h, width, reserves, sections)
+                     osr2_line, item_row, host_controls, drive_w, row_h, width, reserves, sections)
 
     def _draw_plan(self, main_hud: MainHud, hover: tuple[int, int] | None, plan: _Plan,
                    heatmap) -> Image.Image:
@@ -427,12 +429,11 @@ class MainHudPainter:
                                                 hover))
             y += rows_height(plan.aim_rows) + _BLOCK_GAP
 
-        if main_hud_model.has_osr2:
-            osr2_line = self._osr2_line(main_hud_model)
-            osr2_x = self._block_x(corner, width, self._osr2.width(osr2_line), reserve)
-            self.buttons.extend(self._osr2.draw(hud.image, hud.draw, (osr2_x, y), osr2_line,
+        if plan.osr2_line is not None:
+            osr2_x = self._block_x(corner, width, self._osr2.width(plan.osr2_line), reserve)
+            self.buttons.extend(self._osr2.draw(hud.image, hud.draw, (osr2_x, y), plan.osr2_line,
                                                 hover=hover))
-            self.tracks.extend(self._osr2.bars(osr2_x, y, osr2_line))
+            self.tracks.extend(self._osr2.bars(osr2_x, y, plan.osr2_line))
             y += _OSR2_H + _BLOCK_GAP
 
         if drive is not None:
@@ -463,18 +464,6 @@ class MainHudPainter:
                                           flash=flash)
         self.buttons, self.tracks, self.row, self.host_controls_layout = buttons, [], None, None
         return image
-
-    def _osr2_state(self, model: MainHudModel) -> str:
-        return state_for(model.osr2, model.osr2_control,
-                         driving=driving_at_the_playhead(self._composed_drive, model.osr2),
-                         paused=model.paused)
-
-    def _osr2_line(self, model: MainHudModel) -> Osr2Line:
-        return Osr2Line(state=self._osr2_state(model), controls=model.osr2_controls,
-                        max_intensity=model.max_intensity)
-
-    def _osr2_width(self, model: MainHudModel) -> int:
-        return self._osr2.width(self._osr2_line(model))
 
     def _filled(self, button: Button, hud: MainHud) -> Button:
         if button.command:
