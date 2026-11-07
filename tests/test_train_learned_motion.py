@@ -115,7 +115,7 @@ class TestFittingTheModel:
                 train._keep_an_even_sample(model, rng, "steady", phrase, 2)
             kept_at.update(model.phrases["steady"])
 
-        assert all(30 <= kept_at[phrase] <= 90 for phrase in range(10))
+        assert all(45 <= kept_at[phrase] <= 80 for phrase in range(10))
 
     def test_the_model_holds_numbers_alone_so_no_title_or_name_from_a_script_can_reach_it(self):
         model = train.fit([_script(16 * 5, duration_ms=300, low=10, high=90)], rng=random.Random(1))
@@ -153,10 +153,10 @@ def _write_script(path, actions) -> None:
 
 
 class TestReadingTheCorpus:
-    def test_scripts_a_machine_wrote_or_timed_to_music_or_speech_are_skipped_since_their_swings_are_beats_not_a_persons_motion(self):
-        assert {"ai-generated", "ai-assisted", "pmv", "hmv", "beat-based", "music-based", "music", "joi", "audio-only"} <= set(train.SKIPPED_TAGS)
+    def test_the_default_skip_list_names_scripts_a_machine_wrote_or_timed_to_music_or_speech_since_their_swings_are_beats_not_a_persons_motion(self):
+        assert set(train.SKIPPED_TAGS) == {"ai-generated", "ai-assisted", "pmv", "hmv", "beat-based", "music-based", "music", "joi", "audio-only"}
 
-    def test_only_real_peoples_scripts_are_kept_since_drawn_and_rendered_scenes_move_as_no_person_can(self):
+    def test_the_default_keep_list_names_real_peoples_scripts_alone_since_drawn_and_rendered_scenes_move_as_no_person_can(self):
         assert train.KEPT_TAGS == ("real",)
 
     def test_a_skipped_tag_and_a_duplicate_are_left_out(self, tmp_path):

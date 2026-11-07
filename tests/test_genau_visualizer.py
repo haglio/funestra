@@ -16,7 +16,7 @@ from funestra.learned_motion import (
     tick_learned_motion,
 )
 from funestra.osr2_visualizer import PUBLISH_INTERVAL_S, TRACE_SAMPLES
-from funestra.robot_hand import MIN_BPM, RobotHandState, bpm_for_speed
+from funestra.robot_hand import MIN_BPM, POSITION_MAX, RobotHandState, bpm_for_speed
 from funestra.robot_hand_beat import BeatEngine
 
 
@@ -108,10 +108,12 @@ class TestWhatTheLineIsEachTime:
         sender.let_go_position = 4_000
         visualizer = _visualizer(tcode_sender=sender)
 
-        visualizer.update(1.0, AutoMotion(phase=0.5, bpm=90.0))
+        beat = AutoMotion(phase=0.5, bpm=90.0)
+
+        visualizer.update(1.0, beat)
 
         assert visualizer.drive.let_go is None
-        assert visualizer.drive.position != sender.current_position()
+        assert visualizer.drive.position == round(beat.height * POSITION_MAX) != sender.current_position()
 
     def test_under_the_broker_the_line_is_a_full_centered_swing_since_the_device_reports_its_tempo_and_downbeat_but_never_how_far_it_moves(self):
         heights = [AutoMotion(phase=phase, bpm=90.0).height for phase in (0.0, 0.25, 0.5, 0.75)]
