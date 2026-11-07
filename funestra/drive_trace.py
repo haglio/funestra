@@ -103,6 +103,9 @@ def _park_touch_after(r: _Reading, turn_start: int, began: int | None) -> int | 
         return None
     scan_from = turn_start + round(_ARBITER_LAG_MS * r.speed)
     scan_to = scan_from + round(PARK_TOUCH_WAIT_CAP_MS * r.speed)
+    rise_begins = r.script.rise_begins_after(turn_start)
+    if rise_begins is not None:
+        scan_to = min(scan_to, rise_begins)
     if scan_to > r.position_ms + r.span_ms:
         return turn_start
     at_ms = float(scan_from)

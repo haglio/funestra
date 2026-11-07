@@ -297,6 +297,20 @@ class TestAFloorOnTheParkEndsOnItsTouchDown:
         assert latch.choice_for(3_000).touch is None
         assert hud.runs[1][2] == DRIVEN_BY_NEUTRAL
 
+    def test_at_double_speed_a_touch_that_comes_only_after_the_scripts_rise_has_begun_is_passed_over_so_the_device_is_still_before_the_action(self):
+        latch = DescentLatch()
+        rise_begins_ms = 8_000 - 1_000
+        touch_column_past_the_rise = (rise_begins_ms + 600) // (2 * STEP_MS)
+        comes_down_only_once_the_rise_has_begun = self._touching_motion(
+            waveform=tuple(0.0 if i in (touch_column_past_the_rise, touch_column_past_the_rise + 1)
+                           else 0.9 for i in range(TRACE_SAMPLES)))
+
+        hud = osr2_visualizer(comes_down_only_once_the_rise_has_begun, Playhead(0, MAX_RATE),
+                              script=_script_ahead(), latch=latch)
+
+        assert latch.choice_for(3_000).touch is None
+        assert hud.runs[1][2] == DRIVEN_BY_NEUTRAL
+
     def test_a_touch_stood_in_for_by_the_boundary_while_its_scan_runs_off_the_published_span_is_never_the_one_held(self):
         script = _script_ahead(from_ms=18_000, to_ms=19_000)
         latch = DescentLatch()

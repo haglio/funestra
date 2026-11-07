@@ -197,6 +197,12 @@ class Funscript:
             out.append(travel[fastest[0]] if fastest else 0.0)
         return out
 
+    def rise_begins_after(self, position_ms: int) -> int | None:
+        i = bisect.bisect_left(self._dense_times, position_ms)
+        if i >= len(self._dense_times):
+            return None
+        return self._dense_times[i] - _RISE_MS
+
     def next_active_ms(self, position_ms: int) -> int | None:
         i = bisect.bisect_right(self._onsets, position_ms)
         return self._onsets[i] if i < len(self._onsets) else None
