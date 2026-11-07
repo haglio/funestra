@@ -277,7 +277,7 @@ class TestSetMaxIntensity:
         assert wave_travel(state.amplitude, state.bpm) <= travel_cap(10)
         assert state.amplitude / 90 == pytest.approx(state.speed / 70, abs=0.03)
 
-    def test_from_both_bars_at_the_top_it_leaves_both_at_the_level_it_stands_for(self):
+    def test_from_both_bars_at_the_top_it_leaves_both_at_the_level_it_stands_for_since_a_ceiling_worked_out_on_a_step_comes_back_a_hair_under_it(self):
         state = RobotHandState(amplitude=100, speed=100)
 
         set_max_intensity(state, 10)

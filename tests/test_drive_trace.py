@@ -343,7 +343,7 @@ class TestAFloorOnTheParkEndsOnItsTouchDown:
               latch=latch)
         assert latch.choice_for(13_000) is not None
 
-    def test_the_last_blue_columns_before_a_touch_down_bend_onto_the_park_too(self):
+    def test_the_last_blue_columns_before_a_touch_down_bend_onto_the_park_as_onto_a_seam(self):
         published = self._touching_motion()
         hud = _read(_script_ahead(), at=0, published=published, latch=DescentLatch())
         blue_end = hud.runs[0][1]
@@ -498,7 +498,7 @@ class TestPositionMarker:
 
 
 class TestTheSeamCannotFlicker:
-    def test_the_last_blue_columns_bend_onto_the_latched_top_so_an_older_publish_cannot_move_the_seam(self):
+    def test_only_the_last_blue_columns_bend_onto_the_latched_top_so_a_newer_publish_cannot_move_the_seam(self):
         latch = DescentLatch()
         published = _motion()
         hud = _read(_script_ahead(), at=1_000, published=published,
@@ -506,6 +506,7 @@ class TestTheSeamCannotFlicker:
         seam = hud.runs[0][1]
 
         top = latch.choice_for(3_000).top
+        assert hud.waveform[seam - 4] == published.waveform[seam - 4]
         assert abs(hud.waveform[seam - 1] - top) < abs(published.waveform[seam - 1] - top) / 2
         aged = _read(_script_ahead(), at=1_000, published=_motion_at(20),
                      latch=latch)

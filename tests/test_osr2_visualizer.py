@@ -126,7 +126,7 @@ class TestTheSideLabels:
     def test_each_side_column_fits_its_word_and_not_the_number_beside_it_which_is_stacked_under_it(self, word, width):
         tiny = load_font(SIZE_TINY)
 
-        assert text_width(tiny, word) <= width < text_width(tiny, word) + text_width(tiny, "100")
+        assert width == max(text_width(tiny, word), text_width(tiny, "100"))
 
 
 class TestTheCenterLabel:
@@ -492,12 +492,12 @@ class TestWhoseMotion:
 
     def test_the_center_ruler_is_white_since_yellow_on_these_huds_means_a_warning(self):
         x, y, w, h = geometry(PAD, PAD, 0.5).wave
-        rendered = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND, waveform=())).astype(int)
+        rendered = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND, waveform=(), position=0)).astype(int)
         band = rendered[y + h // 2 - 1:y + h // 2 + 2, x + 1:x + w - 1, :3]
 
         assert (band[:, :, 0] == band[:, :, 1]).all()
         assert (band[:, :, 1] == band[:, :, 2]).all()
-        assert len({tuple(pixel) for row in band for pixel in row}) > 1
+        assert band.max() > 80
 
     def test_the_position_dot_straddles_the_blocks_left_edge_whole(self):
         x, y, _w, h = geometry(PAD, PAD, 0.5).wave
