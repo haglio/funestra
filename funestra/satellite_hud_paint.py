@@ -258,9 +258,9 @@ class HudRenderer:
     def _measure(self, model: HudModel, item_row: RowHud | None,
                  drawn_with: DrawnWith) -> _Sizes:
         rows = rows_with_the_speed(model)
-        widths = [[self._button_width(button) for button in row] for row in rows]
+        widths = [self._row_widths(row) for row in rows]
         device_rows = [list(row) for row in model.osr2_rows]
-        device_row_widths = [[self._button_width(b) for b in row] for row in device_rows]
+        device_row_widths = [self._row_widths(row) for row in device_rows]
         bar_width = max((
             2 * PAD + button_row_width(row, row_widths)
             for row, row_widths in zip(rows + device_rows, widths + device_row_widths, strict=True)
@@ -455,8 +455,13 @@ class HudRenderer:
             buttons.extend(drive_targets)
         return buttons, bars + max_intensity_bars
 
-    def _button_width(self, button: Button) -> int:
-        return button.width or text_width(self._tiny, button.icon) + 2 * MODE_LABEL_PAD
+    def _row_widths(self, row: list[Button]) -> list[int]:
+        return [self._button_width(button, flush_left=index == 0 and not button.command)
+                for index, button in enumerate(row)]
+
+    def _button_width(self, button: Button, *, flush_left: bool) -> int:
+        pads = 1 if flush_left else 2
+        return button.width or text_width(self._tiny, button.icon) + pads * MODE_LABEL_PAD
 
     def _title_font(self, size: int) -> ImageFont.FreeTypeFont:
         if size not in self._titles:

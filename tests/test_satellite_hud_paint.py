@@ -25,7 +25,7 @@ from funestra import satellite_hud_nav_map, satellite_hud_paint
 from funestra.drive_layout import MAX_INTENSITY, SECTION_W
 from funestra.geometry import Rect
 from funestra.hud import ACTIVE_DOT, load_font
-from funestra.hud_button import Button
+from funestra.hud_button import FIT_THE_WORD, Button
 from funestra.hud_controls import PLAYBACK_SPEED, playback_speed_buttons
 from funestra.hud_minimize import RESTORE_TOOLTIP, minimize_command
 from funestra.hud_minimize import ROOM as MINUS_ROOM
@@ -1184,6 +1184,30 @@ def test_the_speed_rows_name_sits_the_ordinary_gap_from_its_minus():
     name_x, _y, name_w, _h = rects[PLAYBACK_SPEED_LABEL]
 
     assert rects["speed_down"][0] == name_x + name_w + BUTTON_GAP
+
+
+def _ink_span(rendered, rect) -> tuple[int, int]:
+    x, y, w, h = rect
+    rgb = _rgb(rendered.bgra).astype(int)
+    ground = rgb[y, x - 1]
+    inked = np.nonzero((np.abs(rgb[y:y + h, x:x + w] - ground).sum(axis=2) > 60).any(axis=0))[0]
+    return x + int(inked.min()), x + int(inked.max())
+
+
+def test_the_word_that_leads_a_row_sits_as_close_to_its_minus_as_a_word_further_along_does():
+    row = (Button("", "Clip seconds", "", width=FIT_THE_WORD),
+           Button("portrait_clip_seconds_down", "−", "Move on sooner"),
+           Button("portrait_clip_seconds_up", "+", "Leave each clip longer"),
+           *playback_speed_buttons("portrait", in_a_column_of_labels=False))
+    rendered = HudRenderer("portrait").render(_model(rows=(row,), playback_speed=1.0))
+    placed = {button.command or button.icon: rect for rect, button in rendered.targets.buttons}
+
+    def clear_space(word: str, minus: str) -> int:
+        return _ink_span(rendered, placed[minus])[0] - _ink_span(rendered, placed[word])[1]
+
+    leading = clear_space("Clip seconds", "portrait_clip_seconds_down")
+    further_along = clear_space(PLAYBACK_SPEED_LABEL, "portrait_speed_down")
+    assert abs(leading - further_along) <= 1, (leading, further_along)
 
 
 def test_a_row_that_places_the_speed_keeps_it_on_its_own_line_and_no_row_is_added_under_it(thumb):
