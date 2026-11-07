@@ -644,14 +644,25 @@ class TestTheWaveTracedOnKnots:
 
 
 class TestWhatThisModuleIs:
-    def test_it_is_arithmetic_alone_importing_no_toolkit_and_no_clock_so_each_app_advances_the_phase_by_its_own(self):
+    def test_it_is_arithmetic_alone_no_toolkit_no_device_and_no_clock_so_each_app_advances_the_phase_by_its_own(self):
         tree = ast.parse(Path(robot_hand.__file__).read_text(encoding="utf-8"))
         imported = {alias.name.split(".")[0] for node in ast.walk(tree)
                     if isinstance(node, ast.Import) for alias in node.names}
         imported |= {(node.module or "").split(".")[0] for node in ast.walk(tree)
                      if isinstance(node, ast.ImportFrom)}
+        from_the_wire = {alias.name for node in ast.walk(tree)
+                         if isinstance(node, ast.ImportFrom) and (node.module or "").endswith("tcode")
+                         for alias in node.names}
 
         assert imported <= {"__future__", "math", "dataclasses", "enum", "typing", "tcode"}
+        assert from_the_wire == {"POSITION_MAX"}
 
-    def test_a_shape_nothing_handles_yet_still_moves_as_the_sine_does(self):
-        assert robot_hand.position_fraction(0.25, shape="a shape added later") == pytest.approx(0.5)
+
+class TestAShapeNothingHandlesYet:
+    def test_it_still_moves_as_the_sine_does(self):
+        phases = (0.0, 0.1, 0.25, 0.4)
+        heights = [robot_hand.position_fraction(phase, shape="a shape added later") for phase in phases]
+
+        assert heights == pytest.approx([robot_hand.position_fraction(phase, shape=WaveformShape.SINE)
+                                         for phase in phases])
+        assert len(set(heights)) > 1

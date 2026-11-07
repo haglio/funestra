@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from funestra.funscript import Funscript
-from funestra.tcode import HANDOFF_MS, to_tcode_position
+from funestra.tcode import to_tcode_position
 from funestra.tcode_driver import FunscriptTCodeDriver
 
 
@@ -118,7 +118,7 @@ class TestTakingOver:
 
         driver.update(0, fs, now=0.0)
 
-        assert sink.sent[0] == f"L09999I{HANDOFF_MS}"
+        assert sink.sent[0] == "L09999I300"
 
     def test_a_waypoint_already_longer_than_the_glide_is_left_alone(self):
         sink = FakeSink()
@@ -134,7 +134,7 @@ class TestTakingOver:
         fs = Funscript(actions=[(0, 0), (40, 100), (80, 0), (2000, 50)])
 
         driver.update(0, fs, now=0.0)
-        driver.update(41, fs, now=HANDOFF_MS / 1000 + 0.01)
+        driver.update(41, fs, now=0.31)
 
         assert sink.sent[1] == "L00000I39"
 
@@ -146,19 +146,19 @@ class TestTakingOver:
         driver.update(0, fs, now=0.0)
         driver.update(41, fs, now=0.05)
 
-        assert sink.sent[1] == f"L00000I{HANDOFF_MS}"
+        assert sink.sent[1] == "L00000I300"
 
     def test_taking_the_device_back_glides_again(self):
         sink = FakeSink()
         driver = FunscriptTCodeDriver(sink)
         fs = Funscript(actions=[(0, 0), (40, 100), (80, 0), (2000, 50)])
         driver.update(0, fs, now=0.0)
-        driver.update(41, fs, now=HANDOFF_MS / 1000 + 0.01)
+        driver.update(41, fs, now=0.31)
 
         driver.reset()
-        driver.update(41, fs, now=HANDOFF_MS / 1000 + 0.02)
+        driver.update(41, fs, now=0.32)
 
-        assert sink.sent[-1] == f"L00000I{HANDOFF_MS}"
+        assert sink.sent[-1] == "L00000I300"
 
 
 class TestLeadInPark:

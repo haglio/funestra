@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import random
-import re
-from pathlib import Path
 
-from funestra import robot_hand_driver
+from import_checks import assert_imports_without
+
 from funestra.funscript import HANDOFF_RAMP_MS
 from funestra.learned_model import LearnedModel, Phrase, classify
 from funestra.learned_motion import (
@@ -327,9 +326,7 @@ class TestLetGoThroughTheRoundTrip:
 
 class TestWhatTheHandoffMoves:
     def test_it_moves_the_senders_alone_since_the_broker_is_the_orchestrator_s_to_park_and_resume(self):
-        source = Path(robot_hand_driver.__file__).read_text(encoding="utf-8")
-
-        assert re.findall(r"^\s*(?:from|import) .*broker", source, re.MULTILINE) == []
+        assert_imports_without("funestra.robot_hand_driver", "funestra.broker")
 
 
 class TestSenderWithDirectState:

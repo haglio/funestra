@@ -203,7 +203,7 @@ class TestWhatTheVisualizerDraws:
 
 
 class TestKeepingItGoing:
-    def test_the_phrases_stay_laid_out_ahead_for_the_trace_and_a_command_aimed_ahead_and_the_past_is_let_go_but_for_the_turning_point_the_position_is_blended_from(self):
+    def test_the_phrases_stay_laid_out_half_a_minute_ahead_and_the_past_is_let_go_but_for_the_turning_point_the_position_is_blended_from(self):
         hand, state = _playing(_model(_phrase(500, 20, 80)))
 
         _run(hand, state, 120.0)
