@@ -247,3 +247,10 @@ def test_action_label_numbers_the_videos_of_one_action_in_a_group():
         "Alpha 1", "Alpha 2"}
     assert action_label(index, paths["twirl"]) == "Twirling"
     assert action_label(index, "C:/never/indexed.mp4") == ""
+
+
+def test_a_videos_labels_stand_as_its_action_ahead_of_the_sites_word():
+    index, paths = _index({"labeled": {"video": {"prompt": "scene", "seed": "1", "action": "Gamma",
+                                                 "labels": ["alpha", "beta"]}}})
+
+    assert action_label(index, paths["labeled"]) == "alpha, beta"
