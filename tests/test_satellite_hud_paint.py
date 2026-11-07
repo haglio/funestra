@@ -282,7 +282,7 @@ def test_the_dot_lights_up_only_on_the_active_side(thumb):
             _model(active=active, title="Unlocked · Shuffle",
                    corner=HudCell(path="c.mp4", thumb=thumb)))
         left = PAD + MINUS_ROOM
-        return _rgb(rendered.bgra)[PAD + 5:PAD + 11, left + 3:left + 9]
+        return _rgb(rendered.bgra)[PAD + 2:PAD + 8, left + 3:left + 9]
 
     assert np.allclose(dot(True).reshape(-1, 3).mean(axis=0), WHITE, atol=40)
     assert np.allclose(dot(False).reshape(-1, 3).mean(axis=0), TEXT_MUTED, atol=40)
@@ -301,7 +301,21 @@ def test_the_dot_sits_in_the_same_corner_at_the_same_size_on_a_satellites_hud_as
 
     assert satellite[0] == main[0]
     assert satellite[2:] == main[2:]
-    assert abs(satellite[1] - main[1]) <= 3
+    assert satellite[1] == main[1]
+
+
+def test_the_title_sits_as_far_from_the_top_on_the_main_funestras_hud_as_on_a_satellites(thumb):
+    def ink_rows(rgb: np.ndarray) -> tuple[int, int]:
+        text = rgb[:TITLE_ROW_H + PAD, TITLE_X + MINUS_ROOM:TITLE_X + MINUS_ROOM + 40]
+        rows = np.nonzero((text > 200).all(axis=2).any(axis=1))[0]
+        return int(rows.min()), int(rows.max())
+
+    satellite = ink_rows(_rgb(HudRenderer("portrait").render(
+        _model(active=True, title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))).bgra))
+    main = ink_rows(_rgb(MainHudPainter().bgra(
+        MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, active=True)))))
+
+    assert satellite == main
 
 
 def test_the_title_starts_clear_of_the_dot(thumb):

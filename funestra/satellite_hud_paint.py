@@ -21,9 +21,11 @@ from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
 from funestra.hud import (
     SYMBOL_FONT,
+    TITLE_BASELINE,
     ButtonGroundState,
     ButtonLook,
     Hud,
+    active_dot_top,
     button_ground,
     draw_active_dot,
     draw_button,
@@ -71,7 +73,6 @@ from .satellite_hud import (
     PAD,
     ROW_LABEL_GUTTER,
     SUBTITLE_GAP,
-    TITLE_BASELINE,
     TITLE_INDENT,
     TITLE_X,
     WRONG_ACTION_ICON,
@@ -493,7 +494,9 @@ class HudRenderer:
         title_x = self._block_x(model, width,
                                 TITLE_INDENT + text_width(title.font, model.title),
                                 reserve=title.reserve)
-        draw_active_dot(image, title_x, y + 2, model.active)
+        draw_active_dot(image, title_x,
+                        active_dot_top(self._title_font(SIZE_BODY), y + TITLE_BASELINE),
+                        model.active)
         draw.text((title_x + TITLE_INDENT, y + TITLE_BASELINE), model.title,
                   font=title.font, anchor="ls", fill=(*TEXT_PRIMARY, 255))
         if not title.subtitle:

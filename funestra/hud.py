@@ -92,11 +92,17 @@ def draw_icon(image: Image.Image, name: str, rect: tuple[int, int, int, int],
 
 
 ACTIVE_DOT = 10
+TITLE_BASELINE = 11
 _DISC_FRAME = ACTIVE_DOT + 2
 
 
 def draw_active_dot(image: Image.Image, x: int, y: int, active: bool) -> None:
     paste_icon(image, "disc", (x, y, _DISC_FRAME, _DISC_FRAME), WHITE if active else TEXT_MUTED)
+
+
+def active_dot_top(font: ImageFont.FreeTypeFont, baseline: int) -> int:
+    ascent, descent = font.getmetrics()
+    return baseline - ascent + (ascent + descent) // 2 - ACTIVE_DOT // 2
 
 
 TOOLTIP_PAD = GAP_SMALL

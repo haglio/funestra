@@ -22,8 +22,10 @@ from .host_controls import HostControlsHud, HostControlsLayout, HostControlsSect
 from .hud import (
     ACTIVE_DOT,
     SYMBOL_FONT,
+    TITLE_BASELINE,
     ButtonLook,
     Hud,
+    active_dot_top,
     draw_active_dot,
     draw_button,
     draw_tooltip,
@@ -292,19 +294,19 @@ class MainHudPainter:
     def _draw_top_block(self, hud: Hud, y: int, block: _TopBlock, slot: _Slot) -> None:
         draw = hud.draw
         width = hud.image.width
-        ascent, descent = self._body.getmetrics()
+        _ascent, descent = self._body.getmetrics()
+        baseline = y + TITLE_BASELINE
         indent = ACTIVE_DOT + DOT_GAP
         title_x = self._block_x(slot.corner, width,
                                  indent + text_width(self._body, block.title), slot.reserve)
-        draw_active_dot(hud.image, title_x, y + (ascent + descent) // 2 - ACTIVE_DOT // 2,
-                        block.active)
+        draw_active_dot(hud.image, title_x, active_dot_top(self._body, baseline), block.active)
         if block.title:
-            draw.text((title_x + indent, y + ascent), block.title, font=self._body,
+            draw.text((title_x + indent, baseline), block.title, font=self._body,
                       anchor="ls", fill=(*TEXT_PRIMARY, 255))
         if block.filename:
             name_x = self._block_x(slot.corner, width,
                                    indent + text_width(self._tiny, block.filename), slot.reserve)
-            draw.text((name_x + indent, y + ascent + descent + _SUBTITLE_GAP), block.filename,
+            draw.text((name_x + indent, baseline + descent + _SUBTITLE_GAP), block.filename,
                       font=self._tiny, anchor="la", fill=(*TEXT_MUTED, 255))
 
     def _draw_rows(self, hud: Hud, rows: list[list[Button]], y: int, slot: _Slot,
@@ -344,8 +346,8 @@ class MainHudPainter:
         filename = main_hud.modes.video if whole else ""
         item_row = item_row if whole else None
         drive_w, drive_h = section_size() if drive is not None else (0, 0)
-        body_ascent, body_descent = self._body.getmetrics()
-        top_h = body_ascent + body_descent if whole else 0
+        _body_ascent, body_descent = self._body.getmetrics()
+        top_h = TITLE_BASELINE + body_descent if whole else 0
         tiny_h = sum(self._tiny.getmetrics())
         filename_h = (_SUBTITLE_GAP + tiny_h) if filename else 0
 
