@@ -217,7 +217,7 @@ class TestReadMainHud:
                                      osr2_control=OSR2_RETRACTED, locked=False,
                                      latest=True)
 
-    def test_a_hud_that_says_nothing_about_the_lock_reads_as_locked_as_a_file_from_an_older_publisher_may(self, tmp_path: Path):
+    def test_a_hud_that_says_nothing_about_the_lock_reads_as_locked(self, tmp_path: Path):
         path = tmp_path / "main_player_main_hud.json"
         path.write_text(json.dumps({"main_mode": MainMode.KINO}), encoding="utf-8")
 
@@ -233,7 +233,7 @@ class TestReadMainHud:
     def test_a_hud_from_a_fun_time_that_still_says_video_reads_as_kino(self):
         assert parse_main_hud(json.dumps({"main_mode": "video"})).main_mode is MainMode.KINO
 
-    def test_a_key_the_hud_no_longer_carries_is_passed_over_since_an_older_publisher_still_sends_it(self):
+    def test_a_hud_from_an_older_release_reads_the_same_without_the_keys_it_still_sends(self):
         parsed = parse_main_hud(json.dumps({
             "main_mode": MainMode.GENAU, "scripted_filter": True, "broker": True,
             "loop_state": "looping", "cruise": True, "learned": True,

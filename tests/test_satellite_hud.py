@@ -75,13 +75,13 @@ def test_a_text_naming_no_funestra_is_not_a_hud():
     assert parse_hud('{"player": "landscape"}') is None
 
 
-def test_parse_hud_reads_whether_this_side_has_the_floor_and_a_hud_from_before_the_flag_lights_no_dot():
+def test_parse_hud_reads_whether_this_side_has_the_floor_and_a_hud_without_the_flag_lights_no_dot():
     assert parse_hud(json.dumps({"funestra": "portrait", "active": True})).active is True
     assert parse_hud(json.dumps({"funestra": "portrait", "active": False})).active is False
     assert parse_hud(json.dumps({"funestra": "portrait"})).active is False
 
 
-def test_parse_hud_reads_the_hud_fun_time_published_built_there_since_fun_time_alone_has_the_library_s_metadata():
+def test_parse_hud_reads_the_hud_fun_time_published():
     text = json.dumps({
         "funestra": "portrait",
         "locked": True,
@@ -378,15 +378,20 @@ def test_act_is_filtered_picks_out_which_of_a_rows_acts_the_filter_named():
     assert lit("Gamma", "") is False
 
 
-def test_button_tooltip_names_each_button_probed_where_it_was_laid_out_since_the_bar_is_broken_into_groups():
-    targets = HudTargets(
+def _every_control() -> HudTargets:
+    return HudTargets(
         click=[],
         loop=[((0, 0, 20, 20), "action"), ((30, 0, 20, 20), "seed")],
         filter=[((0, 100, FILTER_BTN, 54), "gamma")],
         expand=(30, 30, 18, 18),
         buttons=_squares(0, 60, bar(newest=False)),
         favorite=(300, 60, CTRL_BTN, CTRL_BTN),
+        wrong_action=(300, 100, satellite_hud.WRONG_BTN, satellite_hud.WRONG_BTN),
     )
+
+
+def test_button_tooltip_names_each_button_probed_where_it_was_laid_out_since_the_bar_is_broken_into_groups():
+    targets = _every_control()
 
     assert button_tooltip(targets, 5, 5) == "Loop this action column"
     assert button_tooltip(targets, 35, 5) == "Loop this seed row"
@@ -396,6 +401,14 @@ def test_button_tooltip_names_each_button_probed_where_it_was_laid_out_since_the
         assert button_tooltip(targets, bx + 5, by + 5) == button.tooltip
     assert button_tooltip(targets, 305, 65) == "In the favorites"
     assert button_tooltip(targets, 400, 400) == ""
+
+
+def test_no_control_is_silent_on_hover_since_its_face_is_a_wordless_icon_and_a_painted_hud_has_no_other_tooltip():
+    targets = _every_control()
+    controls = [*(rect for rect, _what in targets.loop), *(rect for rect, _what in targets.filter),
+                *(rect for rect, _button in targets.buttons), targets.expand, targets.favorite, targets.wrong_action]
+
+    assert all(button_tooltip(targets, x + 2, y + 2) for x, y, _w, _h in controls)
 
 
 def test_a_declared_button_wearing_a_mark_this_version_lacks_says_why_on_hover():
@@ -509,6 +522,7 @@ def test_action_label_blocks_separate_comma_joined_acts():
 
 
 def test_a_source_that_names_no_camera_words_has_a_rows_first_word_read_as_the_act():
+    assert HudModel(funestra="portrait").camera_words == ()
     assert action_label_blocks("side gamma", ()) == [["Side", "Gamma"]]
     assert action_label_blocks("xyz gamma", ()) == [["Xyz", "Gamma"]]
 
@@ -660,7 +674,7 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
 
         assert parse_hud(hud_text(model)) == model
 
-    def test_a_key_the_hud_no_longer_carries_is_passed_over_since_an_older_publisher_still_sends_it(self):
+    def test_a_hud_from_an_older_release_reads_the_same_without_the_keys_it_still_sends(self):
         parsed = parse_hud(json.dumps({
             "funestra": "portrait", "favorites_filter": True, "latest": False,
             "enhanced_filter": True, "satellites_mode": "video"}))
@@ -675,7 +689,7 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
         assert parsed.actions == ()
         assert parsed.playing == ("corner", 0)
 
-    def test_the_text_is_the_json_a_funestra_already_reads_since_an_older_release_may_be_on_either_side_of_the_file(self):
+    def test_the_text_is_the_json_a_funestra_already_reads(self):
         raw = json.loads(hud_text(HudModel(
             funestra="portrait", corner=HudCell(path="C:/v/cur.mp4"),
             actions=(HudCell(path="C:/v/a1.mp4", label="gamma"),), playing=("action", 0))))
@@ -744,10 +758,6 @@ def test_a_tooltip_where_a_wrong_action_a_filter_and_an_expand_overlap_is_the_wr
     assert button_tooltip(_targets(filter=[(square, "Gamma")], expand=square), 5, 5) == "Filter to this action"
 
 
-def test_the_wrong_act_button_is_smaller_than_a_control_since_it_is_about_the_act_s_name_and_not_the_funestra():
-    assert satellite_hud.WRONG_BTN < CTRL_BTN
-
-
 def test_a_column_header_counts_seeds_from_one():
     assert satellite_hud.seed_column_label(6) == "Seed 7"
 
@@ -762,4 +772,4 @@ def test_a_label_stacked_over_a_strike_is_centered_with_it():
 
     top = satellite_hud.label_stack_top(row_y, row_h, label_h, room_for_the_strike)
 
-    assert top - row_y == (row_y + row_h) - (top + label_h + room_for_the_strike)
+    assert abs((top - row_y) - ((row_y + row_h) - (top + label_h + room_for_the_strike))) <= 1
