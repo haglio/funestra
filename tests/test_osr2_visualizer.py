@@ -490,7 +490,7 @@ class TestWhoseMotion:
     def test_a_motion_nobody_is_sending_is_the_muted_gray_of_a_dead_control(self):
         assert TEXT_MUTED in self._line_colors(_hud(driven=DRIVEN_BY_NOTHING))
 
-    def test_the_center_ruler_is_white_since_yellow_on_these_huds_means_a_warning(self):
+    def test_the_center_ruler_is_pale_and_gray_since_yellow_on_these_huds_means_a_warning(self):
         x, y, w, h = geometry(PAD, PAD, 0.5).wave
         rendered = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND, waveform=(), position=0)).astype(int)
         band = rendered[y + h // 2 - 1:y + h // 2 + 2, x + 1:x + w - 1, :3]
