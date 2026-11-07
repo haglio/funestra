@@ -66,6 +66,7 @@ def tick_learned_motion(robot_hand: RobotHandState, state: LearnedMotionState, n
 def position(state: LearnedMotionState, robot_hand: RobotHandState | None,
              lead_s: float = 0.0) -> float:
     at = state.clock + lead_s * _pace(state, robot_hand)
+    _laid_out_to(state, at)
     return _into_the_envelope(_raw(state, at), robot_hand)
 
 
@@ -75,6 +76,7 @@ def trace_window(state: LearnedMotionState, robot_hand: RobotHandState | None,
     if grid <= 0:
         return [position(state, robot_hand) / 100.0] * (samples + 1), 0.0
     first = math.floor(state.clock / grid) * grid
+    _laid_out_to(state, first + samples * grid)
     heights = [
         _into_the_envelope(_raw(state, first + i * grid), robot_hand) / 100.0
         for i in range(samples + 1)
@@ -138,6 +140,11 @@ def _lay_out(state: LearnedMotionState, until: float) -> None:
             state.times.append(state.times[-1] + duration_ms / 1000.0)
             state.positions.append(float(end))
         state.phrase_class = cls
+
+
+def _laid_out_to(state: LearnedMotionState, at: float) -> None:
+    if state.model and state.times:
+        _lay_out(state, at)
 
 
 def _forget_the_past(state: LearnedMotionState) -> None:

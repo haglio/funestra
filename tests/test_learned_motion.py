@@ -201,6 +201,15 @@ class TestWhatTheVisualizerDraws:
         assert max(heights) > 0.5
         assert slide == pytest.approx(0.2)
 
+    def test_at_the_top_speed_the_far_end_of_a_long_trace_still_moves(self):
+        hand, state = _playing(_model(_phrase(500, 20, 80)), speed=100)
+        _run(hand, state, 1.0)
+
+        heights, _ = learned_motion.trace_window(state, hand, samples=96, span_s=48.0)
+
+        far_end = heights[-24:]
+        assert max(far_end) - min(far_end) > 0.5
+
 
 class TestKeepingItGoing:
     def test_the_phrases_stay_laid_out_half_a_minute_ahead_and_the_past_is_let_go_but_for_the_turning_point_the_position_is_blended_from(self):
