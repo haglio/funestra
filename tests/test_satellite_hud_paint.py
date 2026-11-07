@@ -68,7 +68,7 @@ from funestra.satellite_hud import (
     nav_map_row_width,
     place_width,
 )
-from funestra.satellite_hud_clicks import HudClicks, button_tooltip
+from funestra.satellite_hud_clicks import FILTER_TOOLTIP, HudClicks, button_tooltip
 from funestra.satellite_hud_nav_map import narrowed_to_window
 from funestra.satellite_hud_paint import DrawnWith, HudRenderer
 from funestra.volume import VolumeHud
@@ -1884,3 +1884,27 @@ def test_playing_an_action_names_the_action_at_the_head_of_its_window():
     narrowed, _seeds, _actions = narrowed_to_window(model)
 
     assert narrowed.current_action == "corner"
+
+
+def test_a_click_on_one_of_a_rows_words_filters_to_that_action_alone(thumb):
+    rendered = HudRenderer("portrait").render(
+        _model(corner=HudCell(path="c.mp4", thumb=thumb),
+               actions=(HudCell(path="a1.mp4", thumb=thumb, label="gamma, XYZ 2"),),
+               current_action="alpha, XYZ"))
+    words = rendered.targets.words
+
+    def press(name: str, nth: int = 0) -> str:
+        x, y, w, h = [rect for rect, word in words if word == name][nth]
+        return HudClicks("portrait").press(rendered.targets, x + w // 2, y + h // 2, now=0.0)
+
+    assert [word for _rect, word in words] == ["alpha", "XYZ", "gamma", "XYZ"]
+    assert (press("alpha"), press("XYZ"), press("XYZ", 1)) == (
+        "filter_portrait_alpha", "filter_portrait_xyz", "filter_portrait_xyz")
+
+
+def test_the_pointer_on_one_of_a_rows_words_says_what_its_click_does(thumb):
+    rendered = HudRenderer("portrait").render(
+        _model(corner=HudCell(path="c.mp4", thumb=thumb), current_action="alpha, XYZ"))
+    x, y, w, h = {word: rect for rect, word in rendered.targets.words}["XYZ"]
+
+    assert button_tooltip(rendered.targets, x + w // 2, y + h // 2) == FILTER_TOOLTIP

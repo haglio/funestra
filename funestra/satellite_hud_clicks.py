@@ -35,7 +35,8 @@ def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
         return tooltip_for(LOOP_ICON, LOOP_TOOLTIPS.get(loop, ""))
     beneath = (
         (_in(targets.wrong_action, px, py), tooltip_for(WRONG_ACTION_ICON, WRONG_ACTION_TOOLTIP)),
-        (bool(hit_test_targets(targets.filter, px, py)), FILTER_TOOLTIP),
+        (bool(hit_test_targets(targets.filter, px, py) or hit_test_targets(targets.words, px, py)),
+         FILTER_TOOLTIP),
         (_in(targets.expand, px, py), tooltip_for(EXPAND_ICON, EXPAND_TOOLTIP)),
         (_in(targets.favorite, px, py), tooltip_for(FAVORITE_ICON, FAVORITE_TOOLTIP)),
     )
@@ -94,7 +95,7 @@ class HudClicks(TrackGrip):
         return f"{self._funestra}_wrong_action" if _in(targets.wrong_action, px, py) else None
 
     def _press_a_filter(self, targets: HudTargets, px: int, py: int) -> str | None:
-        action = hit_test_targets(targets.filter, px, py)
+        action = hit_test_targets(targets.filter, px, py) or hit_test_targets(targets.words, px, py)
         if not action:
             return None
         query = normalized_text(action)
