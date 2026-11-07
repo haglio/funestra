@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import ast
-from pathlib import Path
-
 import pytest
+from import_checks import modules_named_in_imports, packages_named_in_imports
 
 from funestra import robot_hand
 from funestra.robot_hand import (
@@ -653,17 +651,11 @@ class TestACeilingWorkedOutExactlyOnAStep:
 
 class TestWhatThisModuleIs:
     def test_it_is_arithmetic_alone_no_toolkit_no_device_and_no_clock_so_each_app_advances_the_phase_by_its_own(self):
-        tree = ast.parse(Path(robot_hand.__file__).read_text(encoding="utf-8"))
-        imported = {alias.name.split(".")[0] for node in ast.walk(tree)
-                    if isinstance(node, ast.Import) for alias in node.names}
-        imported |= {(node.module or "").split(".")[0] for node in ast.walk(tree)
-                     if isinstance(node, ast.ImportFrom)}
-        from_the_wire = {alias.name for node in ast.walk(tree)
-                         if isinstance(node, ast.ImportFrom) and (node.module or "").endswith("tcode")
-                         for alias in node.names}
+        named = modules_named_in_imports("funestra.robot_hand")
+        of_funestra = {name for name in named if name.startswith("funestra.")}
 
-        assert imported <= {"__future__", "math", "dataclasses", "enum", "typing", "tcode"}
-        assert from_the_wire == {"POSITION_MAX"}
+        assert packages_named_in_imports("funestra.robot_hand") <= {"__future__", "math", "dataclasses", "enum", "typing", "funestra"}
+        assert of_funestra == {"funestra.tcode", "funestra.tcode.POSITION_MAX"}
 
 
 class TestAShapeNothingHandlesYet:

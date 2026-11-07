@@ -39,7 +39,8 @@ def modules_named_in_source(source_file: Path, package: str = "") -> set[str]:
 
 
 def assert_imports_without(module: str, *forbidden: str) -> None:
-    assert modules_named_in_imports(module).isdisjoint(forbidden)
+    assert not any(name == banned or name.startswith(banned + ".")
+                   for name in modules_named_in_imports(module) for banned in forbidden)
     blocked = "".join(f"import sys\nsys.modules[{name!r}] = None\n" for name in forbidden)
     run = imports_in_a_child(module, prelude=blocked)
 

@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 from app_support.dead_code import tracked_python
 from app_support.siblings import checkouts_that_import
-from import_checks import assert_imports_without
+from import_checks import assert_imports_without, packages_named_in_imports
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGE = ROOT / "funestra"
@@ -255,21 +255,15 @@ def test_a_painter_reached_by_module_counts_as_well_as_one_imported_by_name():
     assert model_only == set()
 
 
-@pytest.mark.parametrize("module", ["hud_icons", "hud_title", "main_hud", "scrubber", "scrubber_bar"])
-def test_a_module_that_describes_a_hud_imports_no_drawing_toolkit_so_it_is_built_tested_and_sent_about_without_one(
-        module):
-    tree = ast.parse((PACKAGE / f"{module}.py").read_text(encoding="utf-8"))
-    imported = {alias.name.split(".")[0] for node in ast.walk(tree)
-                if isinstance(node, ast.Import) for alias in node.names}
-    imported |= {(node.module or "").split(".")[0] for node in ast.walk(tree)
-                 if isinstance(node, ast.ImportFrom)}
-
-    assert not imported & {"PIL", "pygame"}
-
-
-@pytest.mark.parametrize(("module", "toolkits"), [
-    ("hud_icons", ("PIL", "pygame")), ("main_hud", ("PIL", "pygame")),
-    ("scrubber", ("PIL", "pygame")), ("scrubber_bar", ("pygame",)),
+@pytest.mark.parametrize(("module", "left_out"), [
+    ("hud_icons", ("PIL", "pygame", "funestra.hud")), ("hud_title", ("PIL", "pygame", "funestra.hud")),
+    ("main_hud", ("PIL", "pygame", "funestra.hud")), ("scrubber", ("PIL", "pygame", "funestra.hud")),
+    ("scrubber_bar", ("pygame",)),
 ])
-def test_a_module_that_describes_a_hud_is_built_tested_and_sent_about_without_its_drawing_toolkit(module, toolkits):
-    assert_imports_without(f"funestra.{module}", *toolkits)
+def test_a_module_that_describes_a_hud_is_built_tested_and_sent_about_without_a_drawing_toolkit_or_the_module_that_draws(
+        module, left_out):
+    assert_imports_without(f"funestra.{module}", *left_out)
+
+
+def test_hud_icons_imports_nothing_so_a_model_module_and_a_painter_can_both_use_it_without_dragging_in_the_others_dependencies():
+    assert packages_named_in_imports("funestra.hud_icons") <= {"__future__"}
