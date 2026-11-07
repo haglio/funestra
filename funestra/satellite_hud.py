@@ -41,7 +41,7 @@ from .main_hud import max_intensity_from_raw
 from .modes import read_mode
 from .osr2_visualizer import DriveHud, DriveTrack
 from .playback_rate import format_rate
-from .video_families import filter_keeps, normalized_text
+from .video_families import filter_keeps, labels_text, normalized_text
 
 if TYPE_CHECKING:
     from .hud_row import RowLayout
@@ -491,6 +491,12 @@ def label_is_filtered(label: str, filter_query: str, camera_words: Sequence[str]
     acts, query = _acts(label, camera_words), _acts(filter_query, camera_words)
     return bool(acts) and bool(query) and all(
         any(filter_keeps(act, part) for act in acts) for part in query)
+
+
+def with_act_toggled(filter_query: str, act: str) -> str:
+    query, toggled = _acts(filter_query), normalized_text(act)
+    kept = [part for part in query if part != toggled]
+    return labels_text(kept if kept != query else [*query, toggled])
 
 
 LOOP_ICON = "loop"

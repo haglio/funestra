@@ -12,6 +12,7 @@ from .satellite_hud import (
     HudTargets,
     button_under,
     hit_test_targets,
+    with_act_toggled,
 )
 from .video_families import normalized_text
 
@@ -95,14 +96,16 @@ class HudClicks(TrackGrip):
         return f"{self._funestra}_wrong_action" if _in(targets.wrong_action, px, py) else None
 
     def _press_a_filter(self, targets: HudTargets, px: int, py: int) -> str | None:
-        action = hit_test_targets(targets.filter, px, py) or hit_test_targets(targets.words, px, py)
-        if not action:
-            return None
-        query = normalized_text(action)
-        if query == normalized_text(self.active_filter):
-            self.active_filter = ""
-            return f"{self._funestra}_no_filter"
+        row = normalized_text(hit_test_targets(targets.filter, px, py))
+        if row:
+            return self._filter_to("" if row == normalized_text(self.active_filter) else row)
+        word = hit_test_targets(targets.words, px, py)
+        return self._filter_to(with_act_toggled(self.active_filter, word)) if word else None
+
+    def _filter_to(self, query: str) -> str:
         self.active_filter = query
+        if not query:
+            return f"{self._funestra}_no_filter"
         return f"filter_{self._funestra}_{query.replace(' ', '_')}"
 
     def due(self, *, now: float) -> str:
