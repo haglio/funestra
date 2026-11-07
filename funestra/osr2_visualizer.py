@@ -65,7 +65,7 @@ _KEY_GAP = GAP_MEDIUM
 _ETCH_PITCH = 4
 
 DISABLED_INK = (*BORDER_SUBTLE, 255)
-_RULER_INK_WHITE_SINCE_YELLOW_HERE_MEANS_A_WARNING = (*WHITE, 150)
+_RULER_INK = (*WHITE, 150)
 
 # Pillow's line has no antialiasing of its own, so the trace is drawn this many times larger and scaled back down.
 _SUPERSAMPLE = 4
@@ -292,7 +292,7 @@ class DriveSection:
             center_y = round((1 - _fraction(hud.center)) * (h * s - 1))
             for dash in range(0, w * s, 6 * s):
                 draw.line([(dash, center_y), (min(dash + 3 * s, w * s - 1), center_y)],
-                          fill=_RULER_INK_WHITE_SINCE_YELLOW_HERE_MEANS_A_WARNING, width=s)
+                          fill=_RULER_INK, width=s)
         points = hud.waveform
         if len(points) > 1:
             pitch = (w * s - 1) / (len(points) - 1)
@@ -313,12 +313,9 @@ class DriveSection:
         image.alpha_composite(block.resize((w, h), Image.LANCZOS), (x, y))
         dot_y = y + round((1 - hud.position / POSITION_MAX) * (h - 1))
         dot_ink = TEXT_PRIMARY if hud.live else TEXT_MUTED
-        on_its_own_image_since_it_straddles_the_block_s_edge = Image.new("RGBA", (7 * s, 7 * s))
-        ImageDraw.Draw(on_its_own_image_since_it_straddles_the_block_s_edge).ellipse(
-            [0, 0, 7 * s - 1, 7 * s - 1], fill=(*dot_ink, 255))
-        image.alpha_composite(
-            on_its_own_image_since_it_straddles_the_block_s_edge.resize((7, 7), Image.LANCZOS),
-            (x - 3, dot_y - 3))
+        dot = Image.new("RGBA", (7 * s, 7 * s))
+        ImageDraw.Draw(dot).ellipse([0, 0, 7 * s - 1, 7 * s - 1], fill=(*dot_ink, 255))
+        image.alpha_composite(dot.resize((7, 7), Image.LANCZOS), (x - 3, dot_y - 3))
 
     @staticmethod
     def _amp_bar(draw, rect: Rect, hud: DriveHud, *, color=(*BLUE, 255)) -> None:

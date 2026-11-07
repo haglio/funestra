@@ -4,7 +4,9 @@ import json
 
 import pytest
 
+from funestra.drive_trace import _ARBITER_LAG_MS
 from funestra.funscript import (
+    _RISE_MS,
     HANDOFF_RAMP_MS,
     PARK_SETTLE_MS,
     PARK_TOUCH_WAIT_CAP_MS,
@@ -365,7 +367,7 @@ class TestPlan:
             fs.position_at(last) / 2)
         assert fs.planned_position_at(last + PARK_SETTLE_MS) == 0.0
 
-    def test_the_rise_starts_a_beat_ahead_and_lands_on_the_opening_action(self):
+    def test_the_rise_takes_a_second_long_enough_to_read_as_an_approach_and_short_enough_to_rest_through_nearly_all_of_a_long_quiet(self):
         fs = _gapped()
 
         assert fs.is_parked_at(19_999) is True
@@ -545,11 +547,11 @@ class TestDepthUnderTheMaxIntensity:
 
 
 class TestHowLongAHandoffTakes:
-    def test_a_ramp_long_enough_to_read_as_a_hand_over_still_leaves_the_device_resting_for_most_of_the_quiet(self):
-        assert HANDOFF_RAMP_MS < QUIET_LEAD_IN_MS / 2
+    def test_the_ramp_down_and_the_rise_both_fit_inside_the_lead_in_with_the_device_at_rest_between(self):
+        assert HANDOFF_RAMP_MS + _RISE_MS < QUIET_LEAD_IN_MS
 
-    def test_the_wait_for_a_touch_spans_a_slow_swing_yet_ends_inside_the_quiet_so_a_motion_that_never_comes_down_cannot_stall_the_script(self):
-        assert PARK_TOUCH_WAIT_CAP_MS < QUIET_LEAD_IN_MS
+    def test_the_wait_for_a_touch_ends_before_the_scripts_rise_begins_so_a_motion_that_never_comes_down_cannot_stall_the_script(self):
+        assert _ARBITER_LAG_MS + PARK_TOUCH_WAIT_CAP_MS <= QUIET_LEAD_IN_MS - _RISE_MS
 
 
 class TestPlayedOnALoop:

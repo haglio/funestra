@@ -24,7 +24,15 @@ from funestra.hud_osr2 import (
 )
 from funestra.main_hud import OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED, MainHudModel
 from funestra.modes import Osr2State
-from funestra.osr2_visualizer import DRIVEN_BY_NOTHING, DriveHud, track_command
+from funestra.osr2_visualizer import (
+    DRIVEN_BY_AUTO,
+    DRIVEN_BY_FUNSCRIPT,
+    DRIVEN_BY_NOTHING,
+    DRIVEN_BY_ROBOT_HAND,
+    DriveHud,
+    trace_ink,
+    track_command,
+)
 from funestra.satellite_hud import HudModel
 
 
@@ -45,6 +53,12 @@ def test_only_the_two_hud_painters_in_this_package_draw_the_device_line_a_host_s
              if module.name != "hud_osr2.py" and "Osr2Section" in module.read_text(encoding="utf-8")}
 
     assert users == {"main_hud_painter.py", "satellite_hud_paint.py"}
+
+
+def test_each_drivers_word_is_written_in_the_ink_its_stretch_of_the_trace_is_drawn_in():
+    assert COLORS[Osr2State.AUTO] == trace_ink(DRIVEN_BY_AUTO)
+    assert COLORS[Osr2State.FUNSCRIPT] == trace_ink(DRIVEN_BY_FUNSCRIPT)
+    assert COLORS[Osr2State.ROBOT_HAND] == trace_ink(DRIVEN_BY_ROBOT_HAND)
 
 
 def test_buffer_is_the_pill_s_own_word_drawn_and_never_one_of_the_states_the_wire_carries():

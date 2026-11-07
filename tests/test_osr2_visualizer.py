@@ -3,13 +3,17 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from shared_ui.palette import BLUE, BORDER_DEFAULT, GREEN, MAGENTA, TEXT_MUTED, TEXT_PRIMARY
+from shared_ui.type_scale import SIZE_TINY
 
 from funestra.drive_layout import (
+    _AMP_LABEL_W,
+    _CENTER_LABEL_W,
     AMPLITUDE,
     CENTER,
     SECTION_H,
     SECTION_W,
     SPEED,
+    geometry,
 )
 from funestra.hud import (
     Hud,
@@ -23,6 +27,7 @@ from funestra.osr2_visualizer import (
     DRIVEN_BY_NEUTRAL,
     DRIVEN_BY_NOTHING,
     DRIVEN_BY_ROBOT_HAND,
+    POSITION_MAX,
     DriveHud,
     DriveSection,
     TrackGrip,
@@ -114,6 +119,14 @@ class TestControls:
 
             assert abs((ink * rows).sum() / ink.sum() - middle_row) <= 0.25, control.command
             assert abs((ink * columns).sum() / ink.sum() - middle_column) <= 0.25, control.command
+
+
+class TestTheSideLabels:
+    @pytest.mark.parametrize(("word", "width"), [("Center", _CENTER_LABEL_W), ("Amp", _AMP_LABEL_W)])
+    def test_each_side_column_fits_its_word_and_not_the_number_beside_it_which_is_stacked_under_it(self, word, width):
+        tiny = load_font(SIZE_TINY)
+
+        assert text_width(tiny, word) <= width < text_width(tiny, word) + text_width(tiny, "100")
 
 
 class TestTheCenterLabel:
@@ -243,8 +256,12 @@ class TestTracks:
         assert track_command(bar, x, y + h // 2) == "robot_hand_speed_0"
 
     def test_every_band_is_dimmed_and_left_in_place_while_a_funscript_has_the_device_since_removing_them_resized_the_hud_at_every_handover(self):
-        assert all(t.dim for t in tracks(0, 0, _hud(driven=DRIVEN_BY_FUNSCRIPT)))
-        assert not any(t.dim for t in tracks(0, 0, _hud()))
+        live = tracks(0, 0, _hud())
+        dimmed = tracks(0, 0, _hud(driven=DRIVEN_BY_FUNSCRIPT))
+
+        assert [t.rect for t in dimmed] == [t.rect for t in live] != []
+        assert all(t.dim for t in dimmed)
+        assert not any(t.dim for t in live)
 
     def test_the_bands_it_offers_all_fall_on_the_block_it_draws(self):
         for center in (0, 50, 100):
@@ -385,7 +402,7 @@ class TestPublishing:
 
         assert read_drive(path).max_intensity == DriveHud.max_intensity
 
-    def test_the_knot_slide_and_the_edge_go_over_the_wire_too_since_the_learned_motion_is_drawn_on_knots(self, tmp_path):
+    def test_the_knot_slide_and_the_edge_go_over_the_wire_too_since_every_motion_is_drawn_on_knots(self, tmp_path):
         path = tmp_path / "genau_drive.txt"
         publish_drive(path, _hud(slide=0.4, edge=0.75))
 
@@ -472,6 +489,22 @@ class TestWhoseMotion:
 
     def test_a_motion_nobody_is_sending_is_the_muted_gray_of_a_dead_control(self):
         assert TEXT_MUTED in self._line_colors(_hud(driven=DRIVEN_BY_NOTHING))
+
+    def test_the_center_ruler_is_white_since_yellow_on_these_huds_means_a_warning(self):
+        x, y, w, h = geometry(PAD, PAD, 0.5).wave
+        rendered = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND, waveform=())).astype(int)
+        band = rendered[y + h // 2 - 1:y + h // 2 + 2, x + 1:x + w - 1, :3]
+
+        assert (band[:, :, 0] == band[:, :, 1]).all()
+        assert (band[:, :, 1] == band[:, :, 2]).all()
+        assert len({tuple(pixel) for row in band for pixel in row}) > 1
+
+    def test_the_position_dot_straddles_the_blocks_left_edge_whole(self):
+        x, y, _w, h = geometry(PAD, PAD, 0.5).wave
+        rendered = _rendered(_hud(position=POSITION_MAX // 2))
+        dot_y = y + round((1 - 0.5) * (h - 1))
+
+        assert min(rendered[dot_y, x - 2][:3]) > 200
 
     def test_only_the_robot_hand_s_motion_carries_the_center_ruler(self):
         hand = _rendered(_hud(driven=DRIVEN_BY_ROBOT_HAND, waveform=()))
