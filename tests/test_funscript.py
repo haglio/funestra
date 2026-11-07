@@ -367,7 +367,7 @@ class TestPlan:
             fs.position_at(last) / 2)
         assert fs.planned_position_at(last + PARK_SETTLE_MS) == 0.0
 
-    def test_the_rise_takes_a_second_long_enough_to_read_as_an_approach_and_short_enough_to_rest_through_nearly_all_of_a_long_quiet(self):
+    def test_the_rise_takes_a_second_before_the_opening_action(self):
         fs = _gapped()
 
         assert fs.is_parked_at(19_999) is True

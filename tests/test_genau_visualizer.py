@@ -145,11 +145,11 @@ class TestTheSpanTheTraceIsDrawnOver:
 class TestTheTraceHoldsStillAndSlides:
     def test_the_wave_holds_its_drawing_between_knots_moved_half_a_knot_on(self):
         sender = FakeSender()
-        visualizer = _visualizer(tcode_sender=sender)
+        beats_per_loop = 4.0
+        visualizer = _visualizer(tcode_sender=sender, beats_per_loop=beats_per_loop)
         visualizer.update(1.0)
         first = visualizer.drive
-        span_s = 60.0 * 4 / MIN_BPM
-        a_knot = span_s / (TRACE_SAMPLES - 1) * bpm_for_speed(50) / 4 / 60.0
+        a_knot = first.trace_seconds / (TRACE_SAMPLES - 1) * bpm_for_speed(50) / beats_per_loop / 60.0
         sender.motion_phase = a_knot / 2
 
         visualizer.update(1.05)
