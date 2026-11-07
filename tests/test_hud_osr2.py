@@ -85,12 +85,15 @@ def test_the_word_for_who_has_the_device_wears_no_frame_since_an_outlined_word_b
     hud, _ = _drawn(Osr2Line(state=Osr2State.FUNSCRIPT))
     pixels = np.array(hud.image.convert("RGB")).astype(int)
     word_x = 10 + text_width(load_font(SIZE_TINY), hud_osr2.LABEL) + hud_osr2._LABEL_GAP
-    pill = pixels[10:10 + HEIGHT, word_x:pixels.shape[1] - 10]
+    pill = pixels[10:10 + HEIGHT, word_x - 4:pixels.shape[1] - 10]
     slab = pixels[5, pixels.shape[1] - 12]
     low, high = np.minimum(slab, GREEN), np.maximum(slab, GREEN)
+    edges = np.concatenate([pill[:2].reshape(-1, 3), pill[-2:].reshape(-1, 3),
+                            pill[:, :2].reshape(-1, 3), pill[:, -2:].reshape(-1, 3)])
 
     assert ((pill >= low) & (pill <= high)).all()
     assert (pill == np.array(GREEN)).all(axis=-1).any()
+    assert (edges == slab).all()
 
 
 def test_buffer_is_the_pill_s_own_word_drawn_and_never_one_of_the_states_the_wire_carries():
