@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from funestra.hud_title import (
-    ENHANCED_LABEL,
     F_MODE_LABEL,
     LATEST_LABEL,
     LOCKED_LABEL,
@@ -43,13 +42,13 @@ def test_the_two_browse_orders_are_named_once_for_every_funestra():
 
 def test_the_enhanced_narrowing_has_a_slot_of_its_own_after_f_mode_named_like_every_filter_for_what_it_keeps():
     assert hud_title(HudTitleFacts(locked=False, order=SHUFFLE_LABEL, enhanced=True)) == (
-        f"{UNLOCKED_LABEL} · Shuffle · {ENHANCED_LABEL}")
+        f"{UNLOCKED_LABEL} · Shuffle · Enhanceds")
     assert hud_title(HudTitleFacts(
         locked=True, f_mode=True, enhanced=True, filters=("alpha",))) == (
-        f"{LOCKED_LABEL} · {F_MODE_LABEL} · {ENHANCED_LABEL} · alpha")
+        f"{LOCKED_LABEL} · {F_MODE_LABEL} · Enhanceds · alpha")
     assert hud_title(HudTitleFacts(locked=True, enhanced=False)) == LOCKED_LABEL
 
 
-def test_a_loop_on_an_axis_is_named_looping_that_axis_in_the_plural_named_once_for_every_funestra_that_draws_a_nav_map():
+def test_a_loop_on_an_axis_is_named_looping_that_axis_in_the_plural():
     assert looping_label("seed") == "Looping seeds"
     assert looping_label("action") == "Looping actions"

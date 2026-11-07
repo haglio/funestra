@@ -1180,7 +1180,7 @@ class TestTheDeviceBlockSoAHostThatBrowsesASetAndDrivesTheDeviceShowsOneHudNotTw
         assert (self._rendered(osr2=Osr2State.ROBOT_HAND).bgra.shape[0]
                 > self._rendered().bgra.shape[0])
 
-    def test_the_line_says_which_driver_has_the_device_through_the_one_section_every_hud_words_the_device_s_states_in(self):
+    def test_the_line_says_which_driver_has_the_device(self):
         rgb = _rgb(self._rendered(osr2=Osr2State.ROBOT_HAND).bgra)
         assert (rgb == np.array(BLUE)).all(axis=-1).any()
 

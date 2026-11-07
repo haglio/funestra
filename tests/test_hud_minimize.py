@@ -2,10 +2,19 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from PIL import Image, ImageDraw
 from shared_ui.type_scale import SIZE_TINY
 
-from funestra.hud import load_font, text_width
-from funestra.hud_minimize import BUTTON, FLASH_S, NameFlash, collapsed_button
+from funestra import hud_minimize
+from funestra.hud import TOOLTIP_PAD, draw_tooltip, load_font, text_width
+from funestra.hud_minimize import (
+    BUTTON,
+    FLASH_S,
+    RESTORE_TOOLTIP,
+    NameFlash,
+    collapsed_button,
+    icon_font,
+)
 from funestra.hud_placement import HudCorner
 
 
@@ -47,6 +56,16 @@ class TestTheNameItFlashes:
         flash.showing("scene one")
 
         assert flash.showing("") == ""
+
+
+class TestTheRoomBesideThePlus:
+    def test_holds_the_restore_tooltip_on_one_line(self):
+        size = hud_minimize._collapsed_size(room_for_the_tooltip=True, beside=None)
+        image = Image.new("RGBA", size, (0, 0, 0, 0))
+
+        _x, _y, _w, h = draw_tooltip(ImageDraw.Draw(image), icon_font(), RESTORE_TOOLTIP, (0, 0), size)
+
+        assert h == sum(icon_font().getmetrics()) + 2 * TOOLTIP_PAD
 
 
 class TestTheNameBesideThePlus:

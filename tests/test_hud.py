@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import inspect
-
 import numpy as np
 from PIL import Image, ImageDraw
 from shared_ui import palette
@@ -12,7 +10,6 @@ from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL
 from funestra import hud
 from funestra.hud import (
     ACTIVE_DOT,
-    HUD_ALPHA,
     TOOLTIP_PAD,
     ButtonLook,
     Hud,
@@ -40,7 +37,8 @@ def test_hud_is_a_translucent_rounded_slab_of_the_asked_size_see_through_enough_
 
     assert bgra.shape == (40, 60, 4)
     middle = bgra[20, 30]
-    assert tuple(middle) == (BG_PRIMARY[2], BG_PRIMARY[1], BG_PRIMARY[0], HUD_ALPHA)
+    assert tuple(middle[:3]) == (BG_PRIMARY[2], BG_PRIMARY[1], BG_PRIMARY[0])
+    assert 200 <= middle[3] < 255
     assert bgra[0, 0, 3] == 0
     assert np.asarray(bgra).dtype == np.uint8
 
@@ -91,6 +89,24 @@ def test_the_active_dot_is_the_familys_disc_the_same_mark_in_the_same_corner_on_
         drawn(lambda image: paste_icon(image, "disc", (10, 10, ACTIVE_DOT + 2, ACTIVE_DOT + 2), WHITE)))
 
 
+def test_the_dot_fills_a_square_of_its_own_size_inside_the_frame_the_familys_disc_keeps_an_edge_clear_in():
+    image = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
+
+    draw_active_dot(image, 10, 10, True)
+
+    solid_columns = np.where((np.asarray(image)[:, :, 3] > 200).any(axis=0))[0]
+    assert solid_columns.max() - solid_columns.min() + 1 == ACTIVE_DOT
+
+
+def test_an_icons_ink_is_probed_once_per_face_size_and_icon():
+    font = load_font(11)
+
+    first = hud.ink_center_offset(font, "zq")
+    again = hud.ink_center_offset(font, "zq")
+
+    assert again is first
+
+
 def test_a_tooltip_wider_than_the_hud_wraps_rather_than_running_off_it():
     hud = Hud(150, 120)
     font = load_font(8)
@@ -104,7 +120,7 @@ def test_a_tooltip_wider_than_the_hud_wraps_rather_than_running_off_it():
     assert h > sum(font.getmetrics()) + 2 * TOOLTIP_PAD
 
 
-def test_a_tooltip_that_fits_stays_on_one_line_beside_the_cursor():
+def test_a_tooltip_that_fits_stays_on_one_line_right_of_and_below_the_pointer_clear_of_its_arrow():
     hud = Hud(300, 200)
     font = load_font(8)
 
@@ -112,7 +128,7 @@ def test_a_tooltip_that_fits_stays_on_one_line_beside_the_cursor():
                                hud.image.size)
 
     assert h == sum(font.getmetrics()) + 2 * TOOLTIP_PAD
-    assert (x, y) > (40, 60)
+    assert (x - 40, y - 60) == (14, 16)
 
 
 def test_a_tooltip_starts_a_new_line_wherever_its_text_does():
@@ -221,4 +237,4 @@ def test_a_tooltip_near_the_far_corner_is_nudged_back_inside_the_hud():
 
 
 def test_every_label_is_bold_unless_asked_otherwise_since_it_is_read_at_a_glance_over_moving_video():
-    assert inspect.signature(hud.load_font).parameters["family"].default == hud.BOLD_FACE
+    assert load_font(SIZE_SMALL).getname()[1] == "Bold"
