@@ -126,7 +126,7 @@ def fit(scripts: Iterable[list[tuple[int, int]]], *, rng: random.Random,
             previous = None
             for phrase in phrases_of(passage):
                 cls = classify(phrase)
-                _keep(model, rng, cls, phrase, kept_per_class)
+                _keep_an_even_sample(model, rng, cls, phrase, kept_per_class)
                 if previous is not None:
                     following = model.successions.setdefault(previous, {})
                     following[cls] = following.get(cls, 0) + 1
@@ -135,7 +135,7 @@ def fit(scripts: Iterable[list[tuple[int, int]]], *, rng: random.Random,
     return model
 
 
-def _keep(model: LearnedModel, rng: random.Random, cls, phrase: Phrase, limit: int) -> None:
+def _keep_an_even_sample(model: LearnedModel, rng: random.Random, cls, phrase: Phrase, limit: int) -> None:
     seen = model.seen.get(cls, 0)
     model.seen[cls] = seen + 1
     kept = model.phrases.setdefault(cls, [])
@@ -148,16 +148,16 @@ def _keep(model: LearnedModel, rng: random.Random, cls, phrase: Phrase, limit: i
 
 
 MIN_ACTIONS = 20
-SKIPPED_TAGS_OF_SCENES_THAT_DO_NOT_MOVE_AS_A_PERSON_DOES = (
+SKIPPED_TAGS = (
     "ai-generated", "ai-assisted",
     "pmv", "hmv", "beat-based", "music-based", "music", "joi", "audio-only",
 )
 SKIP_TAGS_FILENAME = "skip_tags.txt"
-KEPT_TAGS_OF_REAL_PEOPLE_S_SCRIPTS = ("real",)
+KEPT_TAGS = ("real",)
 
 
 def scripts_in(folders: Iterable[Path], *, skip_tags: set[str],
-               keep_tags: set[str] = frozenset(KEPT_TAGS_OF_REAL_PEOPLE_S_SCRIPTS)) -> Iterator[list[tuple[int, int]]]:
+               keep_tags: set[str] = frozenset(KEPT_TAGS)) -> Iterator[list[tuple[int, int]]]:
     seen: set[str] = set()
     for folder in folders:
         tags_of = _tags_by_file(Path(folder) / "index.jsonl")
@@ -211,8 +211,8 @@ def parse_arguments(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--corpus", action="append", type=Path)
     parser.add_argument("--out", required=True, type=Path)
     parser.add_argument("--kept", type=int, default=KEPT_PER_CLASS)
-    parser.add_argument("--skip-tag", action="append", default=list(SKIPPED_TAGS_OF_SCENES_THAT_DO_NOT_MOVE_AS_A_PERSON_DOES))
-    parser.add_argument("--keep-tag", action="append", default=list(KEPT_TAGS_OF_REAL_PEOPLE_S_SCRIPTS))
+    parser.add_argument("--skip-tag", action="append", default=list(SKIPPED_TAGS))
+    parser.add_argument("--keep-tag", action="append", default=list(KEPT_TAGS))
     parser.add_argument("--seed", type=int, default=0)
     args = parser.parse_args(argv)
     if not args.corpus:

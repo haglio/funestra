@@ -1,5 +1,7 @@
 # pip's plain editable install, setuptools' default mode, lets the repo root win as a namespace
-# package, so funestra/__init__.py never runs.
+# package, so funestra/__init__.py never runs. The probe runs from a folder outside every repo:
+# from a repo root, python puts that folder first on its path and finds the package whatever the
+# install did.
 from __future__ import annotations
 
 import subprocess
@@ -14,7 +16,7 @@ print(libmpv_loader.__file__)
 """
 
 
-def _resolve_from_outside_any_repo_since_from_a_repo_root_the_cwd_finds_the_package_whatever_the_install_did() -> dict[str, str]:
+def _resolve_from_a_folder_outside_every_repo() -> dict[str, str]:
     with tempfile.TemporaryDirectory() as neutral_cwd:
         result = subprocess.run(
             [sys.executable, "-c", _PROBE],
@@ -27,7 +29,7 @@ def _resolve_from_outside_any_repo_since_from_a_repo_root_the_cwd_finds_the_pack
 
 
 def test_the_package_is_not_a_namespace_shadow_of_the_repo_root():
-    found = _resolve_from_outside_any_repo_since_from_a_repo_root_the_cwd_finds_the_package_whatever_the_install_did()["funestra"]
+    found = _resolve_from_a_folder_outside_every_repo()["funestra"]
 
     assert found != "None", (
         "funestra resolved to a namespace package (the repo root), so its "
@@ -39,7 +41,7 @@ def test_the_package_is_not_a_namespace_shadow_of_the_repo_root():
 
 
 def test_the_installed_packages_modules_come_from_that_same_package():
-    found = _resolve_from_outside_any_repo_since_from_a_repo_root_the_cwd_finds_the_package_whatever_the_install_did()
+    found = _resolve_from_a_folder_outside_every_repo()
 
     package_dir = found["funestra"].removesuffix("__init__.py")
     assert found["libmpv_loader"].startswith(package_dir)

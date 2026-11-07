@@ -1210,9 +1210,12 @@ def test_a_locked_image_with_places_is_drawn_on_the_close_up_its_window_frames()
         Fit(WIDE, (832, 1216)).framing(FACE).placement())
 
 
-def test_a_windows_size_is_read_off_windows_itself_by_its_sm_cxscreen_and_sm_cyscreen_metrics():
+SM_CXSCREEN, SM_CYSCREEN = 0, 1
+
+
+def test_a_windows_size_is_read_off_windows_itself():
     user32 = ctypes.windll.user32
-    screen = (user32.GetSystemMetrics(0), user32.GetSystemMetrics(1))
+    screen = (user32.GetSystemMetrics(SM_CXSCREEN), user32.GetSystemMetrics(SM_CYSCREEN))
 
     assert _client_size(user32.GetDesktopWindow()) == screen
 

@@ -17,7 +17,7 @@ class TestDeliverTheFocusingClick:
 
         assert os.environ[FOCUS_CLICKTHROUGH_HINT] == "1"
 
-    def test_a_caller_that_set_it_deliberately_keeps_its_answer_being_only_an_environment_hint_which_is_why_it_is_called_before_the_window_is_made(self, monkeypatch):
+    def test_a_caller_that_set_it_deliberately_keeps_its_answer(self, monkeypatch):
         monkeypatch.setenv(FOCUS_CLICKTHROUGH_HINT, "0")
 
         deliver_the_focusing_click()

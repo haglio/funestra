@@ -120,7 +120,7 @@ def test_step_switches_immediately_when_cached():
     assert controller.pending_flick_name is None
 
 
-def test_step_defers_switch_when_not_cached():
+def test_step_waits_for_the_next_flick_to_decode_so_the_screen_never_goes_blank():
     controller, _flick_store, loader, renderer, notifier = _build_controller("a.mp4", "b.mp4")
     renderer.current_flick_path = Path("a.mp4")
 

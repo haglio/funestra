@@ -4,8 +4,9 @@ import os
 import sys
 from pathlib import Path
 
-# Windows gives a packaged app a private copy of AppData that nothing else can see, so the
-# machine-wide copy lives in the user's own folder.
+# Windows gives a packaged app a private copy of AppData that nothing else can see; the Claude app
+# every agent's shell runs inside is one, so a copy under AppData would be found by every agent's run
+# and by nothing the owner launches. The machine-wide copy lives in the user's own folder instead.
 _USER_FOLDER_ID = "{5E6C858F-0E22-4760-9AFE-EA3317B67173}"  # Windows' FOLDERID_Profile
 
 

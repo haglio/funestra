@@ -42,7 +42,7 @@ def test_a_call_inside_holds_the_close_off_and_then_lets_it_through():
     assert answered == [True]
 
 
-def test_close_gives_up_rather_than_freeing_under_a_live_call_which_joining_the_worker_thread_could_not_promise_since_a_timed_out_join_returns_anyway():
+def test_close_gives_up_under_a_live_call_since_a_join_that_timed_out_would_have_returned_anyway():
     gate = CallGate()
     inside = threading.Event()
     release = threading.Event()

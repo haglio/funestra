@@ -180,11 +180,14 @@ def test_a_flick_from_outside_the_flicks_folder_goes_to_the_top_of_the_trash_pil
     )
 
 
-def test_move_takes_the_flick_out_of_rotation_moving_its_file_alone_and_leaving_its_record_and_its_session_where_they_are(tmp_path: Path):
+def test_move_takes_the_flick_out_of_rotation_under_its_own_name_and_leaves_its_record_and_the_session_it_was_cut_from(tmp_path: Path):
     flicks = tmp_path / "flicks"
     flicks.mkdir()
     flick = flicks / "odd.mp4"
     flick.write_bytes(b"flick")
+    beside = [flicks / "odd.json", flicks / "odd.session.json", flicks / "odd.mp4.funscript"]
+    for record in beside:
+        record.write_text("{}", encoding="utf-8")
     trash = tmp_path / "trash"
 
     landed = move_flick_to_trash(flick, trash)
@@ -192,6 +195,8 @@ def test_move_takes_the_flick_out_of_rotation_moving_its_file_alone_and_leaving_
     assert landed == trash / "odd.mp4"
     assert landed.read_bytes() == b"flick"
     assert not flick.exists()
+    assert all(record.exists() for record in beside)
+    assert sorted(p.name for p in trash.iterdir()) == ["odd.mp4"]
 
 
 def test_move_creates_the_trash_dir_on_first_use(tmp_path: Path):

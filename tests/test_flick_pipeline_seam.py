@@ -8,7 +8,7 @@ from funestra.flick_renderer import FlickRenderController
 from funestra.flick_selection import FlickSelectionController, FlickSelectionParts
 from funestra.flick_sequence import FlickSequenceController
 
-CACHE_LIMIT_GENAU_S_OWN_THE_FLICK_ON_SCREEN_AND_ROOM_FOR_ONE_MORE = 2
+CACHE_LIMIT_ON_SCREEN_PLUS_ONE = 2
 
 
 class FakeNotifier:
@@ -24,7 +24,7 @@ class Pipeline:
         self.decodes: list[str] = []
         self.blits: list[object] = []
         self._running: list[tuple] = []
-        self.flick_store = FlickCacheStore(limit=CACHE_LIMIT_GENAU_S_OWN_THE_FLICK_ON_SCREEN_AND_ROOM_FOR_ONE_MORE)
+        self.flick_store = FlickCacheStore(limit=CACHE_LIMIT_ON_SCREEN_PLUS_ONE)
         self.renderer = FlickRenderController(
             flick_store=self.flick_store, blit_frame=self.blits.append,
         )

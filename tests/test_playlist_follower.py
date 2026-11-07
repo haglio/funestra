@@ -112,7 +112,7 @@ class TestAListTakenAway:
 
 
 class TestTheReloadVerb:
-    def test_reads_at_once_rather_than_on_the_next_frame_or_it_replaces_the_list_the_next_command_s_video_went_into_and_drops_its_funscript(self, tmp_path):
+    def test_reads_the_list_when_asked_to_read_now(self, tmp_path):
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "a show.png")
         taken: list[list[PlaylistItem]] = []

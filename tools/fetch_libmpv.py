@@ -20,7 +20,7 @@ _ASSET = re.compile(r"mpv-dev-x86_64-[0-9].*\.7z$")
 _DOWNLOAD_TIMEOUT = 300
 
 
-def _loader_by_file_path_since_this_runs_before_funestra_is_installed():
+def _loader_loaded_from_its_file():
     spec = importlib.util.spec_from_file_location(
         "_funestra_libmpv_loader", LOADER)
     module = importlib.util.module_from_spec(spec)
@@ -29,7 +29,7 @@ def _loader_by_file_path_since_this_runs_before_funestra_is_installed():
 
 
 def dll_path() -> Path:
-    return _loader_by_file_path_since_this_runs_before_funestra_is_installed().machine_libmpv_dir() / "libmpv-2.dll"
+    return _loader_loaded_from_its_file().machine_libmpv_dir() / "libmpv-2.dll"
 
 
 def lock() -> dict[str, str]:

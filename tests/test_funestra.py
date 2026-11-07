@@ -394,7 +394,7 @@ def test_a_list_taken_while_its_image_is_on_screen_brings_that_images_places(tmp
     assert engine.points_told == [((0.1, 0.1, 0.2, 0.2),)]
 
 
-def test_reload_playlist_reads_the_list_it_was_handed_again(tmp_path):
+def test_a_reload_is_acted_on_in_the_tick_it_arrives_or_it_would_wipe_the_video_and_funscript_sent_right_after_it(tmp_path):
     videos = _videos(tmp_path, "v0", "v1", "v2")
     funestra, _engine = _funestra(tmp_path, [str(videos[0])], commands="")
     (tmp_path / "playlist.tsv").write_text(f"{videos[0]}\n{videos[2]}\n", encoding="utf-8")
@@ -1268,6 +1268,11 @@ class _ARadioOfItsHost:
         self.closed = True
 
 
+def _measure_the_track_then_fill_it_at_that_width(funestra) -> None:
+    for _ in range(2):
+        funestra.tick(viewport=WINDOW)
+
+
 class TestAWindowsOwnHud:
     def _own_hud(self, tmp_path, *, user=Kino, muted=True, **handed):
         videos = _videos(tmp_path, "v0", "v1")
@@ -1322,8 +1327,7 @@ class TestAWindowsOwnHud:
 
     def test_it_is_redrawn_when_the_hud_changes_and_only_then(self, tmp_path):
         funestra, engine, _user, hud = self._own_hud(tmp_path)
-        for _measuring_the_track_then_filling_it_at_that_width in range(2):
-            funestra.tick(viewport=WINDOW)
+        _measure_the_track_then_fill_it_at_that_width(funestra)
         first = engine.overlays[HUD_OVERLAY_ID][2]
         funestra.tick(viewport=WINDOW)
         assert engine.overlays[HUD_OVERLAY_ID][2] is first

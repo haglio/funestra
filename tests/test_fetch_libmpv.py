@@ -73,7 +73,7 @@ class TestWhenThePinExpires:
         assert url.endswith("2026-01-02-abcdef/mpv.7z")
         assert digest == _DIGEST
 
-    def test_a_retired_tag_falls_back_loudly_and_names_the_lock_since_upstream_deletes_a_release_after_about_a_month_and_a_gate_with_no_engine_blocks_every_change(self, monkeypatch, capsys):
+    def test_a_retired_tag_falls_back_loudly_since_upstream_drops_releases_within_a_month_and_a_gate_with_no_engine_blocks_everything(self, monkeypatch, capsys):
         monkeypatch.setattr(fetch_libmpv, "_reachable", lambda _url: False)
         monkeypatch.setattr(fetch_libmpv, "newest_asset",
                             lambda repository: ("https://example.invalid/newest.7z", ""))
@@ -148,7 +148,7 @@ def test_a_wrong_user_folder_variable_moves_neither(monkeypatch, tmp_path):
     assert fetch_libmpv.dll_path() == before
 
 
-def test_this_repo_s_gate_fetches_the_pin_rather_than_leaving_it_to_a_consumer_since_a_developer_s_machine_already_has_the_dll_and_would_never_try_the_pin():
+def test_this_repos_gate_fetches_the_pin_itself_since_a_developers_machine_already_has_the_dll_and_would_never_try_it():
     gate = (Path(__file__).resolve().parent.parent
             / ".github" / "workflows" / "merge-gate.yml").read_text(encoding="utf-8")
 

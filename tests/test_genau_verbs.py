@@ -91,7 +91,7 @@ class TestApplyRuntimeCommand:
         assert engine.phase == pytest.approx(0.0)
         assert ds.speed == 50
 
-    def test_pause_sets_paused_the_flag_the_tick_reads_beside_the_hand_s_playing_flag_the_motion_follows(self):
+    def test_pause_answers_with_no_hand_built(self):
         engine = BeatEngine(phase=0.0, last_tick=0.0)
         paused = Flag()
 
@@ -119,7 +119,7 @@ class TestApplyRuntimeCommand:
         assert handled is True
         assert paused.on is False
 
-    def test_pause_sets_direct_state_not_playing(self):
+    def test_pause_moves_both_the_paused_flag_the_tick_reads_and_the_hands_playing_flag_the_motion_follows(self):
         engine = BeatEngine(phase=0.0, last_tick=0.0)
         paused = Flag()
         ds = RobotHandState(playing=True)
@@ -131,6 +131,7 @@ class TestApplyRuntimeCommand:
             robot_hand=ds,
         ))
 
+        assert paused.on is True
         assert ds.playing is False
 
     def test_resume_sets_direct_state_playing(self):
@@ -522,12 +523,14 @@ class TestFlickAdvanceCommands:
         assert self._apply("TOGGLE_LOCK", aa) is True
         assert aa.locked is False
 
-    def test_on_and_off_are_absolute(self):
+    def test_lock_on_and_lock_off_hold_whatever_the_lock_was_since_a_speaker_asks_for_the_state_they_want(self):
         aa = FlickAdvanceState(locked=True)
-        assert self._apply("LOCK_OFF", aa) is True
-        assert aa.locked is False
-        assert self._apply("LOCK_ON", aa) is True
-        assert aa.locked is True
+        for _twice in range(2):
+            assert self._apply("LOCK_OFF", aa) is True
+            assert aa.locked is False
+        for _twice in range(2):
+            assert self._apply("LOCK_ON", aa) is True
+            assert aa.locked is True
 
     def test_a_number_names_the_seconds_and_leaves_the_lock_alone(self):
         aa = FlickAdvanceState(locked=True)

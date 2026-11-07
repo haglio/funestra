@@ -18,8 +18,8 @@ from .robot_hand import (
     trace_window,
 )
 
-_AUTO_AMPLITUDE_A_FULL_SWING_STANDING_IN_FOR_THE_TRAVEL_THE_DEVICE_NEVER_REPORTS = 100
-_AUTO_CENTER_OF_THAT_STAND_IN_SWING = 50
+_AUTO_AMPLITUDE = 100
+_AUTO_CENTER = 50
 
 
 @dataclass(frozen=True)
@@ -29,13 +29,13 @@ class AutoMotion:
 
     @property
     def height(self) -> float:
-        return position_fraction(self.phase, amplitude=_AUTO_AMPLITUDE_A_FULL_SWING_STANDING_IN_FOR_THE_TRAVEL_THE_DEVICE_NEVER_REPORTS,
-                                 center=_AUTO_CENTER_OF_THAT_STAND_IN_SWING)
+        return position_fraction(self.phase, amplitude=_AUTO_AMPLITUDE,
+                                 center=_AUTO_CENTER)
 
     def trace(self, seconds: float, beats_per_loop: float,
               ) -> tuple[list[float], float, float]:
         heights, slide = trace_window(
-            Waveform(WaveformShape.SINE, _AUTO_AMPLITUDE_A_FULL_SWING_STANDING_IN_FOR_THE_TRAVEL_THE_DEVICE_NEVER_REPORTS, _AUTO_CENTER_OF_THAT_STAND_IN_SWING),
+            Waveform(WaveformShape.SINE, _AUTO_AMPLITUDE, _AUTO_CENTER),
             TraceSpan(self.phase, self.bpm / beats_per_loop if self.bpm > 0 else 0.0,
                       TRACE_SAMPLES, seconds))
         return heights[:TRACE_SAMPLES], slide, heights[TRACE_SAMPLES]

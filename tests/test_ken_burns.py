@@ -318,7 +318,8 @@ def test_a_view_reaches_mpv_as_its_zoom_and_how_far_it_leans_each_way():
 
 
 # Mirrors mpv's video/out/aspect.c (aspect_calc_panscan and src_dst_split_scaling, as of
-# v0.41.0-724-g71ebd0840) in single precision, truncated to whole pixels.
+# v0.41.0-724-g71ebd0840) in single precision, truncated to whole pixels, with video-recenter on as
+# mpv_engine's shared options set it: the `align = 0.0` branch below is that option.
 F32 = np.float32
 
 

@@ -139,7 +139,7 @@ _COMMAND_DIR: Path | None = None
 
 
 @pytest.fixture(autouse=True)
-def _commands_in_the_tests_own_scratch_since_the_status_file_is_written_beside_them(tmp_path, monkeypatch):
+def _commands_in_the_tests_own_scratch(tmp_path, monkeypatch):
     monkeypatch.setitem(globals(), "_COMMAND_DIR", tmp_path)
 
 
@@ -885,19 +885,26 @@ class TestTheRoomHoldingTheDevice:
         assert shown == _heights(0.5, 0.25, 0.0)
 
 
-class TestTheOrderTheTickDoesThingsIn:
+def _calls_in_the_order_written(body: ast.AST) -> list[str]:
+    calls = [n for n in ast.walk(body) if isinstance(n, ast.Call)]
+    calls.sort(key=lambda n: (n.lineno, n.col_offset))
+    return [ast.unparse(n.func) for n in calls]
+
+
+class TestTheOrderOfTheTicksStepsWhichNoUnitTestCanTell:
+    def test_a_call_inside_a_branch_keeps_its_place_though_ast_walk_goes_breadth_first(self):
+        assert _calls_in_the_order_written(ast.parse("if x:\n    a()\nb()\n")) == ["a", "b"]
+
     @staticmethod
-    def _steps_in_the_order_written_since_ast_walk_goes_breadth_first() -> list[str]:
+    def _steps_in_the_order_written() -> list[str]:
         source = (Path(__file__).resolve().parents[1]
                   / "funestra" / "genau_refresh.py").read_text(encoding="utf-8")
         body = next(n for n in ast.walk(ast.parse(source))
                     if isinstance(n, ast.FunctionDef) and n.name == "_refresh_once")
-        calls = [n for n in ast.walk(body) if isinstance(n, ast.Call)]
-        calls.sort(key=lambda n: (n.lineno, n.col_offset))
-        return [ast.unparse(n.func) for n in calls]
+        return _calls_in_the_order_written(body)
 
     def _before(self, first: str, second: str) -> None:
-        steps = self._steps_in_the_order_written_since_ast_walk_goes_breadth_first()
+        steps = self._steps_in_the_order_written()
         assert first in steps, f"{first} is not in the tick"
         assert second in steps, f"{second} is not in the tick"
         assert steps.index(first) < steps.index(second), f"{first} must precede {second}"
@@ -921,7 +928,7 @@ class TestTheOrderTheTickDoesThingsIn:
         self._before("advance_beat", "self._show_the_frame")
 
     def test_the_status_file_goes_out_last_saying_what_this_tick_did(self):
-        steps = self._steps_in_the_order_written_since_ast_walk_goes_breadth_first()
+        steps = self._steps_in_the_order_written()
 
         assert steps[-1] == "self._publish_status"
 
@@ -1197,11 +1204,11 @@ def test_with_no_status_file_named_the_status_goes_beside_the_command_file_where
     assert built["controller"].status_file == tmp_path / GENAU_STATUS_FILENAME
 
 
-def test_the_controller_cannot_be_built_without_the_hand_s_state_so_no_second_hand_less_mode_can_come_back(
+def test_the_controller_refuses_to_be_built_without_the_hands_state_so_no_hand_less_mode_can_come_back(
         tmp_path):
     parts = _build_controller(command_file=tmp_path / "genau_cmd.txt")["parts"]
     hand_less = parts._replace(controls=GenauControls(
         engine=BeatEngine(phase=0.0, last_tick=0.0), paused=Flag(), step_flick=lambda _step: None))
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(ValueError, match="hand"):
         GenauRefreshController(hand_less)
