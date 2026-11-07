@@ -620,7 +620,7 @@ class TestDrags:
         return next(track for track in painter.tracks if track.axis == axis)
 
     @staticmethod
-    def _at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(track, along: float) -> tuple[int, int]:
+    def _at(track, along: float) -> tuple[int, int]:
         x, y, w, h = track.rect
         left, top = hud_xy()
         if track.axis in (SPEED, MAX_INTENSITY):
@@ -630,50 +630,50 @@ class TestDrags:
     def test_a_press_along_the_speed_bar_sets_the_speed(self):
         painter = self._painted()
 
-        point = self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(self._bar(painter, SPEED), 1.0)
+        point = self._at(self._bar(painter, SPEED), 1.0)
         assert painter.press_at(*point) == "robot_hand_speed_100"
 
     def test_a_press_in_the_trace_moves_the_motion_s_center(self):
         painter = self._painted()
 
-        point = self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(self._bar(painter, CENTER), 1.0)
+        point = self._at(self._bar(painter, CENTER), 1.0)
         assert painter.press_at(*point) == "robot_hand_center_100"
 
     def test_a_press_up_the_amplitude_bar_sets_how_far_the_motion_reaches(self):
         painter = self._painted()
 
-        point = self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(self._bar(painter, AMPLITUDE), 1.0)
+        point = self._at(self._bar(painter, AMPLITUDE), 1.0)
         assert painter.press_at(*point) == "robot_hand_amp_100"
 
     def test_the_bar_a_press_took_hold_of_keeps_the_drag(self):
         painter = self._painted()
         speed = self._bar(painter, SPEED)
-        painter.press_at(*self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(speed, 1.0))
+        painter.press_at(*self._at(speed, 1.0))
 
         assert painter.holding is True
         left, _top = hud_xy()
         assert painter.drag_to(left + speed.rect[0] - 500, 0) == "robot_hand_speed_0"
-        assert painter.drag_to(*self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(speed, 1.0)) == "robot_hand_speed_100"
+        assert painter.drag_to(*self._at(speed, 1.0)) == "robot_hand_speed_100"
 
     def test_a_drag_says_nothing_while_the_level_under_it_has_not_moved(self):
         painter = self._painted()
         speed = self._bar(painter, SPEED)
-        painter.press_at(*self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(speed, 1.0))
+        painter.press_at(*self._at(speed, 1.0))
 
-        assert painter.drag_to(*self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(speed, 1.0)) == ""
+        assert painter.drag_to(*self._at(speed, 1.0)) == ""
 
     def test_letting_go_ends_the_drag(self):
         painter = self._painted()
-        painter.press_at(*self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(self._bar(painter, SPEED), 0.0))
+        painter.press_at(*self._at(self._bar(painter, SPEED), 0.0))
 
         painter.release()
 
         assert painter.holding is False
-        assert painter.drag_to(*self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(self._bar(painter, SPEED), 1.0)) == ""
+        assert painter.drag_to(*self._at(self._bar(painter, SPEED), 1.0)) == ""
 
     def test_a_press_on_a_button_leaves_no_bar_still_latched(self):
         painter = self._painted()
-        painter.press_at(*self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(self._bar(painter, SPEED), 0.0))
+        painter.press_at(*self._at(self._bar(painter, SPEED), 0.0))
 
         painter.press_at(*_over(painter, "main_next"))
 
@@ -682,7 +682,7 @@ class TestDrags:
     def test_the_bars_are_dead_while_a_funscript_has_the_device(self):
         painter = self._painted(osr2=Osr2State.FUNSCRIPT)
 
-        point = self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(self._bar(painter, SPEED), 1.0)
+        point = self._at(self._bar(painter, SPEED), 1.0)
         assert painter.press_at(*point) == ""
         assert painter.holding is False
 
@@ -694,8 +694,8 @@ class TestDrags:
             drive=_drive()))
         max_intensity = self._bar(painter, MAX_INTENSITY)
 
-        assert painter.press_at(*self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(max_intensity, 1.0)) == "max_intensity_100"
-        assert painter.drag_to(*self._at_reading_speed_and_max_intensity_along_their_width_and_the_trace_and_amplitude_up_their_height(max_intensity, 0.0)) == "max_intensity_0"
+        assert painter.press_at(*self._at(max_intensity, 1.0)) == "max_intensity_100"
+        assert painter.drag_to(*self._at(max_intensity, 0.0)) == "max_intensity_0"
 
     def test_there_are_no_bars_at_all_where_nothing_is_driving(self):
         painter = MainHudPainter()
@@ -1176,7 +1176,7 @@ class TestTheHandoffKeepsMoving:
 
 
 class TestTheLockIsGreen:
-    def test_a_held_clip_lights_the_lock_green_the_one_green_control_since_green_here_means_favorites_and_locking_favorites_the_video(self):
+    def test_a_held_clip_lights_the_lock_green_since_green_here_means_favorites_and_locking_favorites_the_video(self):
 
         painter = MainHudPainter()
         rgb = _rgb(painter.bgra(MainHud(

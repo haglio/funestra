@@ -75,7 +75,7 @@ def test_a_text_naming_no_funestra_is_not_a_hud():
     assert parse_hud('{"player": "landscape"}') is None
 
 
-def test_parse_hud_reads_whether_this_side_has_the_floor():
+def test_parse_hud_reads_whether_this_side_has_the_floor_and_a_hud_from_before_the_flag_lights_no_dot():
     assert parse_hud(json.dumps({"funestra": "portrait", "active": True})).active is True
     assert parse_hud(json.dumps({"funestra": "portrait", "active": False})).active is False
     assert parse_hud(json.dumps({"funestra": "portrait"})).active is False
@@ -344,7 +344,7 @@ def test_filter_button_rects_puts_one_at_the_head_of_each_row():
     assert filter_button_rects(None, [], 10, "", []) == []
 
 
-def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it_but_for_the_empty_filter_which_lights_no_row_here_with_fun_time_s_tests_holding_the_two_in_step():
+def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it_but_for_the_empty_filter_which_lights_no_row_here():
     cases = [
         ("Gamma", "gamma", True),
         ("Side Gamma", "gamma", True),
@@ -378,7 +378,7 @@ def test_act_is_filtered_picks_out_which_of_a_rows_acts_the_filter_named():
     assert lit("Gamma", "") is False
 
 
-def test_button_tooltip_names_each_button_probed_where_it_was_laid_out_since_the_bar_is_broken_into_groups_and_named_since_its_face_carries_no_word_and_a_painted_hud_has_no_other_tooltip():
+def test_button_tooltip_names_each_button_probed_where_it_was_laid_out_since_the_bar_is_broken_into_groups():
     targets = HudTargets(
         click=[],
         loop=[((0, 0, 20, 20), "action"), ((30, 0, 20, 20), "seed")],
@@ -508,7 +508,7 @@ def test_action_label_blocks_separate_comma_joined_acts():
     assert action_label_blocks("epsilon", CAMERA_WORDS) == [["Epsilon"]]
 
 
-def test_a_source_that_names_no_camera_words_has_a_rows_first_word_read_as_the_act_as_a_hosted_origenerator_s_folder_names_are_the_words_being_the_library_s_vocabulary_and_none_kept_here():
+def test_a_source_that_names_no_camera_words_has_a_rows_first_word_read_as_the_act():
     assert action_label_blocks("side gamma", ()) == [["Side", "Gamma"]]
     assert action_label_blocks("xyz gamma", ()) == [["Xyz", "Gamma"]]
 
@@ -660,7 +660,7 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
 
         assert parse_hud(hud_text(model)) == model
 
-    def test_a_key_the_hud_no_longer_carries_is_passed_over(self):
+    def test_a_key_the_hud_no_longer_carries_is_passed_over_since_an_older_publisher_still_sends_it(self):
         parsed = parse_hud(json.dumps({
             "funestra": "portrait", "favorites_filter": True, "latest": False,
             "enhanced_filter": True, "satellites_mode": "video"}))
@@ -744,27 +744,22 @@ def test_a_tooltip_where_a_wrong_action_a_filter_and_an_expand_overlap_is_the_wr
     assert button_tooltip(_targets(filter=[(square, "Gamma")], expand=square), 5, 5) == "Filter to this action"
 
 
-def test_the_wrong_act_button_is_smaller_than_a_control_and_sits_right_under_the_act_s_name_since_it_is_about_that_name():
+def test_the_wrong_act_button_is_smaller_than_a_control_since_it_is_about_the_act_s_name_and_not_the_funestra():
     assert satellite_hud.WRONG_BTN < CTRL_BTN
-    assert satellite_hud.wrong_action_rect(100, 40) == (
-        100 - satellite_hud.WRONG_BTN, 40 + satellite_hud.WRONG_GAP,
-        satellite_hud.WRONG_BTN, satellite_hud.WRONG_BTN)
 
 
-def test_a_column_header_carries_the_seed_s_real_number_so_a_window_opened_partway_along_does_not_restart_at_one():
+def test_a_column_header_counts_seeds_from_one():
     assert satellite_hud.seed_column_label(6) == "Seed 7"
 
 
-def test_the_star_is_as_tall_as_the_line_beside_it_since_a_smaller_mark_reads_as_a_speck_and_not_a_state():
+def test_the_star_is_a_square_as_tall_as_the_line_it_is_handed():
     assert satellite_hud.favorite_icon_rect(0, 0, 17)[2:] == (17, 17)
 
 
-def test_a_label_and_the_strike_under_it_are_centered_in_the_row_together_so_a_two_act_label_never_runs_down_into_the_button():
-    row_y, row_h, two_act_label_h = 100, 60, 30
+def test_a_label_stacked_over_a_strike_is_centered_with_it():
+    row_y, row_h, label_h = 100, 60, 30
     room_for_the_strike = satellite_hud.WRONG_GAP + satellite_hud.WRONG_BTN
 
-    top = satellite_hud.label_stack_top(row_y, row_h, two_act_label_h, room_for_the_strike)
-    _x, strike_y, _w, strike_h = satellite_hud.wrong_action_rect(0, top + two_act_label_h)
+    top = satellite_hud.label_stack_top(row_y, row_h, label_h, room_for_the_strike)
 
-    assert strike_y >= top + two_act_label_h
-    assert strike_y + strike_h <= row_y + row_h
+    assert top - row_y == (row_y + row_h) - (top + label_h + room_for_the_strike)

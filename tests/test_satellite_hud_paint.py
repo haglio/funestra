@@ -8,13 +8,23 @@ from PIL import Image, ImageDraw
 from satellite_rows import funestra_rows, short_name
 from shared_ui import colors
 from shared_ui.app_icon import LETTERS
-from shared_ui.palette import BLUE, BORDER_PANEL, GREEN, TEXT_MUTED, TEXT_PRIMARY, WHITE
+from shared_ui.palette import (
+    BG_BUTTON,
+    BLUE,
+    BORDER_PANEL,
+    GREEN,
+    RED,
+    TEXT_MUTED,
+    TEXT_PRIMARY,
+    WHITE,
+)
 from shared_ui.spacing import BUTTON_GAP
+from shared_ui.type_scale import SIZE_TINY
 
 from funestra import satellite_hud_nav_map, satellite_hud_paint
 from funestra.drive_layout import MAX_INTENSITY, SECTION_W
 from funestra.geometry import Rect
-from funestra.hud import ACTIVE_DOT
+from funestra.hud import ACTIVE_DOT, load_font
 from funestra.hud_button import Button
 from funestra.hud_minimize import RESTORE_TOOLTIP, minimize_command
 from funestra.hud_minimize import ROOM as MINUS_ROOM
@@ -225,9 +235,9 @@ def test_render_rings_the_locked_clip_in_white(thumb):
             _model(locked=locked, title="Locked" if locked else "Unlocked",
                    corner=HudCell(path="c.mp4", thumb=thumb))
         )
-        below_the_lock_bar_where_the_word_locked_cannot_pass_for_the_ring = _rgb(
+        below_the_lock_bar = _rgb(
             rendered.bgra)[PAD + TITLE_ROW_H:, :]
-        return int((below_the_lock_bar_where_the_word_locked_cannot_pass_for_the_ring > 248).all(
+        return int((below_the_lock_bar > 248).all(
             axis=2).sum())
 
     assert ring_ink(True) > 0
@@ -282,8 +292,8 @@ def test_the_title_starts_clear_of_the_dot(thumb):
         _model(active=True, title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb)))
     rgb = _rgb(rendered.bgra)
 
-    past_the_two_pixels_the_dot_s_edge_feathers_into = MINUS_ROOM + PAD + ACTIVE_DOT + 2
-    gap = rgb[PAD:PAD + 14, past_the_two_pixels_the_dot_s_edge_feathers_into:MINUS_ROOM + TITLE_X]
+    past_the_dots_edge = MINUS_ROOM + PAD + ACTIVE_DOT + 2
+    gap = rgb[PAD:PAD + 14, past_the_dots_edge:MINUS_ROOM + TITLE_X]
     assert (gap > 200).all(axis=2).sum() == 0, "text ink in the gap before the text starts"
 
 
@@ -543,11 +553,11 @@ def _tail_ink(rendered) -> int:
     seed_rects = [rect for rect, _p in rendered.targets.click[1:]]
     _before, after = ellipsis_rects(NavMapRects(corner_rect, seed_rects, []), "seed")
     x, y, w, h = after
-    inset_so_the_loop_rectangle_s_own_border_is_not_counted = 2
-    inside = slice(y + inset_so_the_loop_rectangle_s_own_border_is_not_counted,
-                   y + h - inset_so_the_loop_rectangle_s_own_border_is_not_counted), slice(
-        x + inset_so_the_loop_rectangle_s_own_border_is_not_counted,
-        x + w - inset_so_the_loop_rectangle_s_own_border_is_not_counted)
+    inset = 2
+    inside = slice(y + inset,
+                   y + h - inset), slice(
+        x + inset,
+        x + w - inset)
     return int((_rgb(rendered.bgra)[inside] > 100).sum())
 
 
@@ -716,7 +726,7 @@ def test_the_filtered_actions_label_is_lit(thumb):
             actions=(HudCell(path="a1.mp4", thumb=thumb, label="gamma"),),
             current_action="alpha", filter_query=filter_query,
         ))
-        bar = _lit_label_ink_past_the_filter_button_whose_fill_is_the_same_white_and_in_all_three_channels_since_the_strike_s_red_is_as_bright(rendered)
+        bar = _lit_label_ink(rendered)
         return int(bar.sum())
 
     assert gutter_ink("alpha") > 0
@@ -761,16 +771,80 @@ def test_a_row_the_filter_only_partly_matches_still_lights(thumb):
     assert lit_ink("alpha") == 0
 
 
-def _lit_label_ink_past_the_filter_button_whose_fill_is_the_same_white_and_in_all_three_channels_since_the_strike_s_red_is_as_bright(rendered):
+def _lit_label_ink(rendered):
     (cx, cy, _cw, ch), _path = rendered.targets.click[0]
     lower = rendered.targets.wrong_action[1] if rendered.targets.wrong_action else cy + ch
     return (_rgb(rendered.bgra)[cy:lower, PAD + FILTER_BTN + NAV_MAP_GAP:cx - NAV_MAP_GAP] > 200).all(axis=2)
 
 
 def _white_halves(rendered) -> tuple[int, int]:
-    bar = _lit_label_ink_past_the_filter_button_whose_fill_is_the_same_white_and_in_all_three_channels_since_the_strike_s_red_is_as_bright(rendered)
+    bar = _lit_label_ink(rendered)
     half = bar.shape[0] // 2
     return int(bar[:half].sum()), int(bar[half:].sum())
+
+
+def test_an_act_the_filter_matches_inside_a_row_the_filter_drops_is_not_lit_since_that_video_is_not_in_the_playlist(thumb):
+    rendered = HudRenderer("portrait").render(_model(
+        corner=HudCell(path="c.mp4", thumb=thumb), current_action="gamma", filter_query="gamma, theta"))
+
+    assert not _lit_label_ink(rendered).any()
+
+
+def test_a_two_act_label_and_its_strike_stay_inside_the_corner_row_since_they_are_centered_together(thumb):
+    rendered = HudRenderer("portrait").render(_model(
+        corner=HudCell(path="c.mp4", thumb=thumb), current_action="side gamma", camera_words=("Side", "XYZ")))
+    (_cx, cy, _cw, ch), _path = rendered.targets.click[0]
+    _x, strike_y, _w, strike_h = rendered.targets.wrong_action
+
+    assert strike_y + strike_h <= cy + ch
+
+
+def test_the_strike_is_red_and_never_lit_since_it_takes_an_act_away_and_a_strike_is_done_not_a_state(thumb):
+    rendered = HudRenderer("portrait").render(_model(
+        locked=True, corner=HudCell(path="c.mp4", thumb=thumb), current_action="gamma", filter_query="gamma"))
+    x, y, w, h = rendered.targets.wrong_action
+    pixels = _rgb(rendered.bgra)[y:y + h, x:x + w].astype(int)
+    shades, counts = np.unique(pixels.reshape(-1, 3), axis=0, return_counts=True)
+
+    assert (pixels == np.array(RED)).all(axis=-1).any()
+    assert tuple(shades[counts.argmax()]) == BG_BUTTON
+
+
+def test_a_window_opened_partway_along_the_seeds_heads_its_columns_with_their_real_numbers(thumb):
+    def first_header(playing) -> np.ndarray:
+        rendered = HudRenderer("portrait").render(_loop_model(thumb, playing, loop=""))
+        cx, cy, cw, _ch = rendered.targets.click[0][0]
+        top = cy - ELLIPSIS_ROOM - COL_LABEL_GAP - COL_LABEL_H
+        return _rgb(rendered.bgra)[top:top + COL_LABEL_H, cx:cx + cw]
+
+    assert not np.array_equal(first_header(("seed", 0)), first_header(("seed", 9)))
+
+
+def test_the_hover_preview_of_a_loop_is_dashed_so_it_reads_as_provisional_beside_a_running_loops_solid_border(thumb):
+    def top_border(loop: str, hover_loop: str) -> np.ndarray:
+        rendered = HudRenderer("portrait").render(
+            _loop_model(thumb, ("corner", 0), loop=loop), drawn_with=DrawnWith(hover_loop=hover_loop))
+        corner_rect = rendered.targets.click[0][0]
+        seed_rects = [rect for rect, _p in rendered.targets.click[1:]]
+        x, y, w, _h = looped_group_rect(NavMapRects(corner_rect, seed_rects, []), "seed", reserve=ELLIPSIS_ROOM)
+        return (_rgb(rendered.bgra)[y, x:x + w] == np.array(WHITE)).all(axis=-1)
+
+    running = top_border("seed", "")
+    previewed = top_border("", "seed")
+
+    assert running.all()
+    assert previewed.any()
+    assert not previewed.all()
+
+
+def test_the_star_is_as_tall_as_the_name_line_beside_it_since_a_smaller_mark_reads_as_a_speck_and_not_a_state(thumb):
+    rendered = HudRenderer("portrait").render(
+        HudModel(funestra="landscape", title="Unlocked", active=True, is_favorite=True),
+        drawn_with=DrawnWith(video="example - scene one"))
+    _x, _y, w, h = rendered.targets.favorite
+    name_line_h = sum(load_font(SIZE_TINY).getmetrics())
+
+    assert (w, h) == (name_line_h, name_line_h)
 
 
 def test_only_the_act_the_filter_matched_is_lit_on_a_two_act_row(thumb):
@@ -1682,7 +1756,7 @@ def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_it
     assert (moved.targets, drawn_while_moving) == (whole.targets, 0)
 
 
-def test_a_hud_whose_osr2_visualizer_is_still_draws_only_its_row_again_too(thumb, monkeypatch):
+def test_a_hud_whose_osr2_visualizer_is_still_draws_only_its_row_again_too_since_the_standalone_slideshows_hud_carries_one_and_was_drawn_whole(thumb, monkeypatch):
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb), osr2=Osr2State.ROBOT_HAND,
                    drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND))
     renderer = HudRenderer("portrait")

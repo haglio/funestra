@@ -233,7 +233,7 @@ class TestReadMainHud:
     def test_a_hud_from_a_fun_time_that_still_says_video_reads_as_kino(self):
         assert parse_main_hud(json.dumps({"main_mode": "video"})).main_mode is MainMode.KINO
 
-    def test_a_key_the_hud_no_longer_carries_is_passed_over(self):
+    def test_a_key_the_hud_no_longer_carries_is_passed_over_since_an_older_publisher_still_sends_it(self):
         parsed = parse_main_hud(json.dumps({
             "main_mode": MainMode.GENAU, "scripted_filter": True, "broker": True,
             "loop_state": "looping", "cruise": True, "learned": True,

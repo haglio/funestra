@@ -10,7 +10,7 @@ from .geometry import Rect
 from .satellite_hud import HudModel, NavMapRects, NavMapWindow, ellipsis_rects, nav_map_window
 
 
-def dashed_rect_that_reads_as_provisional_beside_a_running_loop_s_solid_border(draw: ImageDraw.ImageDraw, rect: Rect, color, dash: int = 4) -> None:
+def dashed_rect(draw: ImageDraw.ImageDraw, rect: Rect, color, dash: int = 4) -> None:
     # Pillow draws only solid lines.
     x, y, w, h = rect
     for start in range(x, x + w, dash * 2):
