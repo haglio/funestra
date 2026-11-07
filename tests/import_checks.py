@@ -19,10 +19,16 @@ def imports_in_a_child(module: str, *, prelude: str = "", **env: str) -> subproc
 
 
 def modules_named_in_imports(module: str) -> set[str]:
-    source = Path(importlib.util.find_spec(module).origin).read_text(encoding="utf-8")
-    package = module.rpartition(".")[0]
+    return modules_named_in_source(Path(importlib.util.find_spec(module).origin), module.rpartition(".")[0])
+
+
+def packages_named_in_imports(module: str) -> set[str]:
+    return {name.partition(".")[0] for name in modules_named_in_imports(module)}
+
+
+def modules_named_in_source(source_file: Path, package: str = "") -> set[str]:
     named: set[str] = set()
-    for node in ast.walk(ast.parse(source)):
+    for node in ast.walk(ast.parse(source_file.read_text(encoding="utf-8"))):
         if isinstance(node, ast.Import):
             named |= {alias.name for alias in node.names}
         elif isinstance(node, ast.ImportFrom):

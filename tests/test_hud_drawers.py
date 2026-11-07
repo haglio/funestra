@@ -8,6 +8,7 @@ from pathlib import Path
 import pytest
 from app_support.dead_code import tracked_python
 from app_support.siblings import checkouts_that_import
+from import_checks import assert_imports_without
 
 ROOT = Path(__file__).resolve().parent.parent
 PACKAGE = ROOT / "funestra"
@@ -264,3 +265,11 @@ def test_a_module_that_describes_a_hud_imports_no_drawing_toolkit_so_it_is_built
                  if isinstance(node, ast.ImportFrom)}
 
     assert not imported & {"PIL", "pygame"}
+
+
+@pytest.mark.parametrize(("module", "toolkits"), [
+    ("hud_icons", ("PIL", "pygame")), ("main_hud", ("PIL", "pygame")),
+    ("scrubber", ("PIL", "pygame")), ("scrubber_bar", ("pygame",)),
+])
+def test_a_module_that_describes_a_hud_is_built_tested_and_sent_about_without_its_drawing_toolkit(module, toolkits):
+    assert_imports_without(f"funestra.{module}", *toolkits)
