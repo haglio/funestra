@@ -5,6 +5,7 @@ from funestra.video_families import (
     action_group_key,
     actions_text,
     filter_keeps,
+    labels_text,
     seed_family,
     seed_group_key,
 )
@@ -142,3 +143,7 @@ def test_a_records_actions_read_as_its_labels_joined_or_else_the_sites_word():
         {"video": {"action": " Gamma "}},
         {},
     )] == ["alpha, XYZ", "Gamma", ""]
+
+
+def test_a_list_of_labels_reads_as_one_line_in_the_order_given():
+    assert labels_text(("beta", "alpha", "XYZ")) == "beta, alpha, XYZ"

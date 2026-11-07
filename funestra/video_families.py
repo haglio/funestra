@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 from app_support.video_action import ACTION_KEY, VIDEO_BLOCK, labels_of
 
 IMAGE_IDENTITY_FIELDS = (
@@ -29,8 +31,12 @@ def normalized_text(value: object) -> str:
     return " ".join(str(value or "").split()).lower()
 
 
+def labels_text(labels: Iterable[str]) -> str:
+    return ", ".join(labels)
+
+
 def actions_text(record: dict) -> str:
-    return (", ".join(labels_of(record))
+    return (labels_text(labels_of(record))
             or str((record.get(VIDEO_BLOCK) or {}).get(ACTION_KEY) or "").strip())
 
 
