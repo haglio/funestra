@@ -59,7 +59,7 @@ def _scripted(tmp_path: Path, name: str) -> tuple[Path, Path]:
 
 
 class TestJumpToFunscript:
-    def test_a_lull_is_skipped_to_where_the_action_resumes_and_said_at_the_highlight_level_fun_time_flashes_green_as_it_does_favorites_and_funscripts(self, tmp_path):
+    def test_a_lull_is_skipped_to_where_the_action_resumes_and_said_at_the_level_fun_time_flashes_green_for_favorites_and_funscripts(self, tmp_path):
         video, script = _scripted(tmp_path, "alpha")
         session = FakeSession([(video, script)], funscripts={script: _TWO_RUNS})
         session.position_ms = 25000.0
