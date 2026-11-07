@@ -478,7 +478,7 @@ def filter_button_rects(
     return rects
 
 
-def _acts(text: str, camera_words: Sequence[str]) -> list[str]:
+def _acts(text: str, camera_words: Sequence[str] = ()) -> list[str]:
     return [act for act in (normalized_text(part) for part in split_acts(text, camera_words)) if act]
 
 
@@ -486,7 +486,7 @@ def act_is_filtered(act: str, filter_query: str, camera_words: Sequence[str]) ->
     return any(filter_keeps(act, query) for query in _acts(filter_query, camera_words))
 
 
-def label_is_filtered(label: str, filter_query: str, camera_words: Sequence[str]) -> bool:
+def label_is_filtered(label: str, filter_query: str, camera_words: Sequence[str] = ()) -> bool:
     acts, query = _acts(label, camera_words), _acts(filter_query, camera_words)
     return bool(acts) and bool(query) and all(
         any(filter_keeps(act, part) for act in acts) for part in query)
@@ -499,7 +499,7 @@ WRONG_ACTION_ICON = "cross"
 
 
 def _titlecase_word(word: str) -> str:
-    return word[:1].upper() + word[1:].lower()
+    return word if word.isupper() else word[:1].upper() + word[1:].lower()
 
 
 def split_acts(name: str, camera_words: Sequence[str]) -> list[str]:
