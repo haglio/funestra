@@ -432,6 +432,7 @@ class HudTargets:
     buttons: list[tuple[Rect, Button]] = field(default_factory=list)
     favorite: Rect | None = None
     wrong_action: Rect | None = None
+    words: list[tuple[Rect, str]] = field(default_factory=list)
     tracks: list[DriveTrack] = field(default_factory=list)
     row: RowLayout | None = None
     foot: Rect | None = None
@@ -513,6 +514,13 @@ def split_acts(name: str, camera_words: Sequence[str]) -> list[str]:
         if words:
             acts.append(" ".join(words))
     return acts
+
+
+def act_named(act: str) -> str:
+    words = act.split()
+    while len(words) > 1 and words[-1].isdigit():
+        words.pop()
+    return " ".join(words)
 
 
 def action_label_blocks(name: str, camera_words: Sequence[str]) -> list[list[str]]:
