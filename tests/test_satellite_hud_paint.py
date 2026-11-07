@@ -554,10 +554,7 @@ def _tail_ink(rendered) -> int:
     _before, after = ellipsis_rects(NavMapRects(corner_rect, seed_rects, []), "seed")
     x, y, w, h = after
     inset = 2
-    inside = slice(y + inset,
-                   y + h - inset), slice(
-        x + inset,
-        x + w - inset)
+    inside = slice(y + inset, y + h - inset), slice(x + inset, x + w - inset)
     return int((_rgb(rendered.bgra)[inside] > 100).sum())
 
 
@@ -797,6 +794,17 @@ def test_a_two_act_label_and_its_strike_stay_inside_the_corner_row_since_they_ar
     _x, strike_y, _w, strike_h = rendered.targets.wrong_action
 
     assert strike_y + strike_h <= cy + ch
+
+
+def test_the_strike_is_smaller_than_a_control_and_sits_in_the_gutter_under_the_acts_name_since_it_is_about_that_name_and_not_the_funestra(thumb):
+    rendered = HudRenderer("portrait").render(_model(corner=HudCell(path="c.mp4", thumb=thumb), current_action="gamma"))
+    (cx, cy, _cw, ch), _path = rendered.targets.click[0]
+    x, y, w, h = rendered.targets.wrong_action
+
+    assert w < CTRL_BTN
+    assert x + w <= cx - NAV_MAP_GAP
+    assert cy <= y
+    assert y + h <= cy + ch
 
 
 def test_the_strike_is_red_and_never_lit_since_it_takes_an_act_away_and_a_strike_is_done_not_a_state(thumb):
@@ -1161,7 +1169,7 @@ def test_the_enhanced_switch_keeps_its_place_under_a_mode_row(thumb):
     assert by_name["reset"][0] + by_name["reset"][2] + PAD <= width
 
 
-class TestTheDeviceOnAHostThatDrivesItself:
+class TestTheDeviceBlockSoAHostThatBrowsesASetAndDrivesTheDeviceShowsOneHudNotTwo:
     @staticmethod
     def _rendered(**extra):
         return HudRenderer("portrait").render(
@@ -1735,7 +1743,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
 
 
 
-def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_its_buttons_since_drawing_them_kept_a_standalone_slideshow_busy_three_quarters_of_the_time(
+def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_its_buttons(
         thumb, monkeypatch):
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb),
                    seeds=(HudCell(path="s1.mp4", thumb=thumb),))
@@ -1756,7 +1764,7 @@ def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_it
     assert (moved.targets, drawn_while_moving) == (whole.targets, 0)
 
 
-def test_a_hud_whose_osr2_visualizer_is_still_draws_only_its_row_again_too_since_the_standalone_slideshows_hud_carries_one_and_was_drawn_whole(thumb, monkeypatch):
+def test_a_hud_whose_osr2_visualizer_is_still_draws_only_its_row_again_too(thumb, monkeypatch):
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb), osr2=Osr2State.ROBOT_HAND,
                    drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND))
     renderer = HudRenderer("portrait")
