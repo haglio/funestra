@@ -19,6 +19,7 @@ from funestra.robot_hand import (
     adjust_amplitude,
     adjust_center,
     adjust_speed,
+    amplitude_ceiling,
     bpm_for_speed,
     cycle_shape,
     phase_advanced,
@@ -30,6 +31,7 @@ from funestra.robot_hand import (
     set_center,
     set_max_intensity,
     set_speed,
+    speed_ceiling,
     trace_window,
     travel_cap,
     wave_travel,
@@ -277,7 +279,7 @@ class TestSetMaxIntensity:
         assert wave_travel(state.amplitude, state.bpm) <= travel_cap(10)
         assert state.amplitude / 90 == pytest.approx(state.speed / 70, abs=0.03)
 
-    def test_from_both_bars_at_the_top_it_leaves_both_at_the_level_it_stands_for_since_a_ceiling_worked_out_on_a_step_comes_back_a_hair_under_it(self):
+    def test_from_both_bars_at_the_top_it_leaves_both_at_the_level_it_stands_for(self):
         state = RobotHandState(amplitude=100, speed=100)
 
         set_max_intensity(state, 10)
@@ -641,6 +643,12 @@ class TestTheWaveTracedOnKnots:
         assert len(heights) == 61
         assert min(heights) >= 0.24
         assert max(heights) <= 0.76
+
+
+class TestACeilingWorkedOutExactlyOnAStep:
+    def test_is_that_step_since_the_float_comes_back_a_hair_under_it(self):
+        assert amplitude_ceiling(10, 50) == 50
+        assert speed_ceiling(10, 50) == 50
 
 
 class TestWhatThisModuleIs:
