@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from app_support.osr2_hold import HOLD_DELAY_S, HOLD_MOVE_MS, PARK, RETRACT
+from funestra_fakes import holds_of_the_lock
 
 from funestra.broker_feed import BrokerFeed
 from funestra.flag import Flag
@@ -250,6 +251,16 @@ def _build_controller(*, broker: BrokerFeed | None = None,
         "logger": logger,
         "loading_texts": loading_texts,
     }
+
+
+def test_a_tick_reads_the_broker_s_feed_in_one_hold_of_its_lock_never_a_field_at_a_time():
+    state = BrokerFeed(auto_active=True, raw_bpm=120.0)
+    held = holds_of_the_lock(state)
+    built = _build_controller(broker=state, entry={"frames": [object() for _ in range(8)]})
+
+    built["controller"].refresh()
+
+    assert held == ["taken", "given back"]
 
 
 def test_refresh_displays_active_frame():

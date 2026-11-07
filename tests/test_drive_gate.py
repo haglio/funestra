@@ -15,10 +15,10 @@ STEP_MS = 100
 FIRST_VIDEO = Path("videos/Jane Doe - scene one.mp4")
 SECOND_VIDEO = Path("videos/Jane Doe - scene two.mp4")
 CHOSEN_TOUCH_MS = 3_600
-NEWER_BY_MS_NO_CASE_MOVES_THE_PLAYHEAD_BY_OR_A_RE_CHOICE_WOULD_PASS_FOR_A_CARRY = 200
+NEWER_BY_MS = 200
 
 
-def _a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(ms: int = 0, **over) -> DriveHud:
+def _a_motion_on_the_park(ms: int = 0, **over) -> DriveHud:
     steps = ms / STEP_MS
     base = {
         "speed": 50, "amplitude": 100, "center": 50, "trace_seconds": SPAN_S,
@@ -43,20 +43,20 @@ class FakeSession:
 def _gate_holding_a_forecast() -> tuple[DriveGate, FakeSession]:
     session = FakeSession()
     gate = DriveGate(session)
-    gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+    gate.visualizer(_a_motion_on_the_park())
     assert gate.handoff_touch() == CHOSEN_TOUCH_MS
     return gate, session
 
 
 def _a_newer_publish_arrives(gate: DriveGate) -> None:
-    gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(NEWER_BY_MS_NO_CASE_MOVES_THE_PLAYHEAD_BY_OR_A_RE_CHOICE_WOULD_PASS_FOR_A_CARRY))
+    gate.visualizer(_a_motion_on_the_park(NEWER_BY_MS))
 
 
 class TestChoosingAForecast:
     def test_the_trace_chooses_a_touch_down_for_the_boundary_ahead(self):
         gate = DriveGate(FakeSession())
 
-        gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+        gate.visualizer(_a_motion_on_the_park())
 
         assert gate.handoff_touch() == CHOSEN_TOUCH_MS
 
@@ -72,7 +72,7 @@ class TestTheDeviceRunningItself:
     def test_the_publish_is_drawn_whole_rather_than_composed_with_the_script(self):
         session = FakeSession()
         gate = DriveGate(session)
-        published = _a_motion_resting_on_the_park_the_only_kind_with_a_touch_down()
+        published = _a_motion_on_the_park()
 
         hud = gate.visualizer(published, device_drives_itself=True)
 
@@ -87,7 +87,7 @@ class TestTheDeviceRunningItself:
     def test_no_forecast_survives_the_device_taking_itself(self):
         gate, _session = _gate_holding_a_forecast()
 
-        gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(NEWER_BY_MS_NO_CASE_MOVES_THE_PLAYHEAD_BY_OR_A_RE_CHOICE_WOULD_PASS_FOR_A_CARRY), device_drives_itself=True)
+        gate.visualizer(_a_motion_on_the_park(NEWER_BY_MS), device_drives_itself=True)
 
         assert gate.handoff_touch() is None
 
@@ -95,7 +95,7 @@ class TestTheDeviceRunningItself:
 class TestTheVideoUnderGenau:
     def test_genaus_publish_is_drawn_whole_while_genau_has_the_screen(self):
         gate = DriveGate(FakeSession())
-        published = _a_motion_resting_on_the_park_the_only_kind_with_a_touch_down()
+        published = _a_motion_on_the_park()
 
         hud = gate.visualizer(published, video_shows=False)
 
@@ -105,15 +105,15 @@ class TestTheVideoUnderGenau:
     def test_no_forecast_survives_genau_taking_the_screen(self):
         gate, _session = _gate_holding_a_forecast()
 
-        gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(NEWER_BY_MS_NO_CASE_MOVES_THE_PLAYHEAD_BY_OR_A_RE_CHOICE_WOULD_PASS_FOR_A_CARRY), video_shows=False)
+        gate.visualizer(_a_motion_on_the_park(NEWER_BY_MS), video_shows=False)
 
         assert gate.handoff_touch() is None
 
     def test_genau_driving_on_its_own_screen_is_genau_seen_live_for_the_video_under_it(self):
         gate = DriveGate(FakeSession())
-        gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(), video_shows=False)
+        gate.visualizer(_a_motion_on_the_park(), video_shows=False)
 
-        hud = gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(let_go=0.44))
+        hud = gate.visualizer(_a_motion_on_the_park(let_go=0.44))
 
         assert hud.let_go == 0.44
 
@@ -146,7 +146,7 @@ class TestAChoiceIsHeldBecauseRereadEveryFrameTheSeamFlickered:
     def test_a_stall_too_short_to_be_a_pause_does_not_move_it(self):
         gate, session = _gate_holding_a_forecast()
         for _ in range(5):
-            gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+            gate.visualizer(_a_motion_on_the_park())
 
         session.position_ms = 40
         _a_newer_publish_arrives(gate)
@@ -160,6 +160,26 @@ class TestAChoiceIsHeldBecauseRereadEveryFrameTheSeamFlickered:
             _a_newer_publish_arrives(gate)
 
         assert gate.handoff_touch() == CHOSEN_TOUCH_MS
+
+    def test_publishes_whose_age_beats_against_the_frame_clock_do_not_move_it(self):
+        gate, session = _gate_holding_a_forecast()
+
+        for frame, age in enumerate((70, 130, 190, 250, 310), start=1):
+            session.position_ms = 40 * frame
+            gate.visualizer(_a_motion_on_the_park(age))
+
+        assert gate.handoff_touch() == CHOSEN_TOUCH_MS
+
+
+    @pytest.mark.parametrize("moved_to_ms", [40, 300, 600, -300, 900, -250, -251, 400, 401, 940])
+    def test_at_every_playhead_a_case_moves_to_a_re_choice_can_be_told_from_a_carry(self, moved_to_ms):
+        gate, session = _gate_holding_a_forecast()
+        gate.visualizer(None)
+
+        session.position_ms = moved_to_ms
+        _a_newer_publish_arrives(gate)
+
+        assert gate.handoff_touch() != CHOSEN_TOUCH_MS
 
 
 class TestWhatVoidsAChoice:
@@ -179,7 +199,7 @@ class TestWhatVoidsAChoice:
 
         assert gate.handoff_touch() != CHOSEN_TOUCH_MS
 
-    def test_a_rewind_which_meets_the_same_boundary_with_a_realigned_wave_the_old_touch_would_cut_anywhere_and_leaves_nothing_chosen_until_the_boundary_is_near_again(self):
+    def test_a_rewind_leaves_nothing_chosen_since_the_old_touch_would_cut_the_realigned_wave_anywhere(self):
         gate, session = _gate_holding_a_forecast()
 
         session.position_ms = -300
@@ -198,7 +218,7 @@ class TestWhatVoidsAChoice:
     def test_the_end_of_a_pause_long_enough_to_slide_the_wave(self):
         gate, session = _gate_holding_a_forecast()
         for _ in range(26):
-            gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+            gate.visualizer(_a_motion_on_the_park())
 
         session.position_ms = 40
         _a_newer_publish_arrives(gate)
@@ -242,7 +262,7 @@ class TestExactlyWhereTheseRulesBeginEachFigureTunedOnARealDevice:
     def test_twenty_five_standing_frames_are_not_yet_a_pause(self):
         gate, session = _gate_holding_a_forecast()
         for _ in range(24):
-            gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+            gate.visualizer(_a_motion_on_the_park())
 
         session.position_ms = 40
         _a_newer_publish_arrives(gate)
@@ -252,7 +272,7 @@ class TestExactlyWhereTheseRulesBeginEachFigureTunedOnARealDevice:
     def test_twenty_six_of_them_are(self):
         gate, session = _gate_holding_a_forecast()
         for _ in range(25):
-            gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+            gate.visualizer(_a_motion_on_the_park())
 
         session.position_ms = 40
         _a_newer_publish_arrives(gate)
@@ -262,13 +282,13 @@ class TestExactlyWhereTheseRulesBeginEachFigureTunedOnARealDevice:
     def test_a_pause_a_seek_ended_is_voided_once_and_not_again(self):
         gate, session = _gate_holding_a_forecast()
         for _ in range(30):
-            gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+            gate.visualizer(_a_motion_on_the_park())
         session.position_ms = 900
         _a_newer_publish_arrives(gate)
         chosen_where_it_landed = gate.handoff_touch()
 
         session.position_ms = 940
-        gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(NEWER_BY_MS_NO_CASE_MOVES_THE_PLAYHEAD_BY_OR_A_RE_CHOICE_WOULD_PASS_FOR_A_CARRY * 2))
+        gate.visualizer(_a_motion_on_the_park(NEWER_BY_MS * 2))
 
         assert gate.handoff_touch() == chosen_where_it_landed
 
@@ -279,7 +299,7 @@ class TestHowFastTheVideoIsRunning:
         session.speed = 2.0
         gate = DriveGate(session)
 
-        gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+        gate.visualizer(_a_motion_on_the_park())
 
         assert gate.handoff_touch() not in (None, CHOSEN_TOUCH_MS)
 
@@ -288,34 +308,34 @@ class TestWhetherGenauHasBeenSeenLiveHere:
     def test_a_handoff_from_before_this_video_is_read_as_still_live(self):
         gate = DriveGate(FakeSession())
 
-        hud = gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(let_go=0.44))
+        hud = gate.visualizer(_a_motion_on_the_park(let_go=0.44))
 
         assert hud.let_go is None
 
     def test_once_genau_has_been_seen_live_a_handoff_is_honored(self):
         gate = DriveGate(FakeSession())
-        gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+        gate.visualizer(_a_motion_on_the_park())
 
-        hud = gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(let_go=0.44))
+        hud = gate.visualizer(_a_motion_on_the_park(let_go=0.44))
 
         assert hud.let_go == 0.44
 
     def test_a_new_video_makes_genau_prove_itself_live_again(self):
         session = FakeSession()
         gate = DriveGate(session)
-        gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+        gate.visualizer(_a_motion_on_the_park())
 
         session.current_video = SECOND_VIDEO
-        hud = gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(let_go=0.44))
+        hud = gate.visualizer(_a_motion_on_the_park(let_go=0.44))
 
         assert hud.let_go is None
 
     def test_a_stint_with_nothing_published_does_not_re_arm_it_since_the_device_is_still_where_genau_left_it(self):
         gate = DriveGate(FakeSession())
-        gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+        gate.visualizer(_a_motion_on_the_park())
 
         gate.visualizer(None)
-        hud = gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(let_go=0.44))
+        hud = gate.visualizer(_a_motion_on_the_park(let_go=0.44))
 
         assert hud.let_go == 0.44
 
@@ -323,14 +343,14 @@ class TestWhetherGenauHasBeenSeenLiveHere:
     def test_nothing_that_only_voids_a_forecast_re_arms_it_since_in_the_same_video_the_published_handoff_still_describes_the_device(self, what_moved):
         session = FakeSession()
         gate = DriveGate(session)
-        gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+        gate.visualizer(_a_motion_on_the_park())
         if what_moved == "a pause":
             for _ in range(30):
-                gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+                gate.visualizer(_a_motion_on_the_park())
         session.position_ms = {"a rewind": -300, "a jump forward": 900,
                                "a pause": 40}[what_moved]
 
-        hud = gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(NEWER_BY_MS_NO_CASE_MOVES_THE_PLAYHEAD_BY_OR_A_RE_CHOICE_WOULD_PASS_FOR_A_CARRY, let_go=0.44))
+        hud = gate.visualizer(_a_motion_on_the_park(NEWER_BY_MS, let_go=0.44))
 
         assert hud.let_go == 0.44
 
@@ -343,7 +363,7 @@ class TestALoopingFunestra:
         session.funscript_as_played = swings.looped(0, 5_000)
         session.position_ms = 4_000.0
 
-        hud = DriveGate(session).visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down(4_000))
+        hud = DriveGate(session).visualizer(_a_motion_on_the_park(4_000))
 
         assert hud.segments == ((0, DRIVEN_BY_FUNSCRIPT),)
 
@@ -356,20 +376,20 @@ class TestAFunestraHeldDownByTheMaxIntensity:
         session.funscript_as_played = swings
         session.max_intensity = 30
 
-        hud = DriveGate(session).visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+        hud = DriveGate(session).visualizer(_a_motion_on_the_park())
 
         assert hud.waveform == swings.planned_trace_window(
             0, round(SPAN_S * 1000), TRACE_SAMPLES, max_intensity=30)[0][:TRACE_SAMPLES]
 
 
-class TestAHostOnABranchOpenedBeforeHostsSaidHowTheyPlayTheirScript:
+class TestAHostOnAnOlderBranchRunningOnTheSameInstall:
     def test_is_drawn_from_the_script_it_has(self):
         session = FakeSession()
         session.current_funscript = session.funscript_as_played
         del session.funscript_as_played
         gate = DriveGate(session)
 
-        gate.visualizer(_a_motion_resting_on_the_park_the_only_kind_with_a_touch_down())
+        gate.visualizer(_a_motion_on_the_park())
 
         assert gate.handoff_touch() == CHOSEN_TOUCH_MS
 

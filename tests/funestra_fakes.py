@@ -1,10 +1,28 @@
 from __future__ import annotations
 
+from funestra.broker_feed import BrokerFeed
 from funestra.funscript import Funscript
 from funestra.playback import Playback
 from funestra.playback_setup import PlaybackSetup
 from funestra.robot_hand import FULL_INTENSITY
 from funestra.testing import FakeEngine
+
+
+def holds_of_the_lock(feed: BrokerFeed) -> list[str]:
+    held: list[str] = []
+    original = feed.lock
+
+    class _Recording:
+        def __enter__(self):
+            held.append("taken")
+            return original.__enter__()
+
+        def __exit__(self, *exc):
+            held.append("given back")
+            return original.__exit__(*exc)
+
+    feed.lock = _Recording()
+    return held
 
 
 class FakeTCode:

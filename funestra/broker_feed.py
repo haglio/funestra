@@ -30,9 +30,9 @@ def snapshot(feed: BrokerFeed) -> BrokerSnapshot:
         )
 
 
-_WAITS_SHORT_THEN_LONG_FOR_THE_SESSION_THAT_JUST_ENDED_TO_FREE_THE_PORT = (0.5, 1.0, 2.0)
+_BIND_RETRY_DELAYS = (0.5, 1.0, 2.0)
 
-_READ_TIMEOUT_NO_QUIT_FEELS_AND_NO_IDLE_LISTENER_SPINS_ON_S = 0.2
+_READ_TIMEOUT_S = 0.2
 
 
 def apply_udp_line(feed: BrokerFeed, line: str, logger: logging.Logger) -> None:
@@ -58,7 +58,7 @@ def bind_with_retry(
     address: tuple[str, int],
     stop_event: threading.Event,
     logger: logging.Logger,
-    retry_delays: tuple[float, ...] = _WAITS_SHORT_THEN_LONG_FOR_THE_SESSION_THAT_JUST_ENDED_TO_FREE_THE_PORT,
+    retry_delays: tuple[float, ...] = _BIND_RETRY_DELAYS,
 ) -> bool:
     for attempt, delay in enumerate(retry_delays, 1):
         try:
@@ -82,7 +82,7 @@ class UdpListener:
     feed: BrokerFeed
     stop_event: threading.Event
     logger: logging.Logger
-    retry_delays: tuple[float, ...] = _WAITS_SHORT_THEN_LONG_FOR_THE_SESSION_THAT_JUST_ENDED_TO_FREE_THE_PORT
+    retry_delays: tuple[float, ...] = _BIND_RETRY_DELAYS
 
 
 def udp_reader(listener: UdpListener) -> None:
@@ -95,7 +95,7 @@ def udp_reader(listener: UdpListener) -> None:
         if not bind_with_retry(sock, (host, port), stop_event, logger, retry_delays):
             return
 
-        sock.settimeout(_READ_TIMEOUT_NO_QUIT_FEELS_AND_NO_IDLE_LISTENER_SPINS_ON_S)
+        sock.settimeout(_READ_TIMEOUT_S)
         logger.info("Broker UDP listener bound on %s:%s", host, port)
 
         while not stop_event.is_set():
