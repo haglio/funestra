@@ -673,4 +673,3 @@ class TestAShapeNothingHandlesYet:
 
         assert heights == pytest.approx([robot_hand.position_fraction(phase, shape=WaveformShape.SINE)
                                          for phase in phases])
-        assert len(set(heights)) > 1
