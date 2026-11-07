@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import random
 
 from import_checks import assert_imports_without
@@ -327,6 +328,7 @@ class TestLetGoThroughTheRoundTrip:
 class TestWhatTheHandoffMoves:
     def test_it_moves_the_senders_alone_since_the_broker_is_the_orchestrator_s_to_park_and_resume(self):
         assert_imports_without("funestra.robot_hand_driver", "funestra.broker")
+        assert set(inspect.signature(DeviceHandoff).parameters) == {"playing", "tcode_sender"}
 
 
 class TestSenderWithDirectState:
