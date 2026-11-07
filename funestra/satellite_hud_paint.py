@@ -114,7 +114,7 @@ from .satellite_hud import (
 )
 from .satellite_hud_nav_map import (
     count_lines,
-    dashed_rect_that_reads_as_provisional_beside_a_running_loop_s_solid_border,
+    dashed_rect,
     draw_ellipses,
     narrowed_to_window,
 )
@@ -197,7 +197,7 @@ class HudRenderer:
         self._tiny = load_font(SIZE_TINY)
         self._pointer: tuple[int, int] | None = None
         self._icon = load_font(SIZE_BODY, SYMBOL_FONT)
-        self._thumbs_by_path_since_fun_time_names_a_changed_video_s_thumbnail_anew: dict[str, Image.Image] = {}
+        self._thumbs_by_path: dict[str, Image.Image] = {}
         self._osr2 = Osr2Section()
         self._drive = DriveSection()
         self._visualizer = VisualizerResolver()
@@ -207,7 +207,7 @@ class HudRenderer:
     def _thumbnail(self, cell: HudCell) -> Image.Image:
         place_w = place_width(self._funestra)
         if cell.thumb:
-            cached = self._thumbs_by_path_since_fun_time_names_a_changed_video_s_thumbnail_anew.get(cell.thumb)
+            cached = self._thumbs_by_path.get(cell.thumb)
             if cached is None:
                 try:
                     image = Image.open(cell.thumb).convert("RGBA")
@@ -217,7 +217,7 @@ class HudRenderer:
                     scale = min(place_w / max(1, image.width), MAP_THUMB_H / max(1, image.height))
                     cached = image.resize((max(1, round(image.width * scale)),
                                            max(1, round(image.height * scale))))
-                    self._thumbs_by_path_since_fun_time_names_a_changed_video_s_thumbnail_anew[cell.thumb] = cached
+                    self._thumbs_by_path[cell.thumb] = cached
             if cached is not None:
                 return cached
         return Image.new("RGBA", (place_w, MAP_THUMB_H), (*_PLACEHOLDER, 255))
@@ -354,7 +354,7 @@ class HudRenderer:
                  minimize_button(model.funestra))
         draw_button(hud.image, hud.draw, *minus,
             ButtonLook(
-                hovered=self._pointer_is_on_read_here_alone_off_the_render_s_hover(minus[0]),
+                hovered=self._pointer_is_on(minus[0]),
                 icon_font=self._icon,
                 word_font=self._tiny))
         return minus
@@ -369,7 +369,7 @@ class HudRenderer:
             for index, (rect, button) in enumerate(placed):
                 draw_button(hud.image, hud.draw, rect, button,
                     ButtonLook(
-                        hovered=self._pointer_is_on_read_here_alone_off_the_render_s_hover(rect),
+                        hovered=self._pointer_is_on(rect),
                         icon_font=self._icon,
                         word_font=self._tiny,
                         row_label=index == 0))
@@ -388,7 +388,7 @@ class HudRenderer:
         for rect, button in speed_buttons:
             draw_button(hud.image, hud.draw, rect, button,
                 ButtonLook(
-                    hovered=self._pointer_is_on_read_here_alone_off_the_render_s_hover(rect),
+                    hovered=self._pointer_is_on(rect),
                     icon_font=self._icon,
                     word_font=self._tiny))
         rx, ry, rw, rh = rate_rect
@@ -551,7 +551,7 @@ class HudRenderer:
             image.alpha_composite(strip, (cx, y))
 
         def row(row_y: int, row_h: int, text: str, *, extra: int = 0) -> int:
-            row_kept_by_the_filter_so_its_video_is_in_the_playlist = label_is_filtered(text, model.filter_query, model.camera_words)
+            row_kept = label_is_filtered(text, model.filter_query, model.camera_words)
             ascent, descent = self._tiny.getmetrics()
             line_h = ascent + descent - 4
             blocks = action_label_blocks(text, model.camera_words)
@@ -559,7 +559,7 @@ class HudRenderer:
             ty = label_stack_top(row_y, row_h, total, extra)
             words_end = ty + total
             for block in blocks:
-                lit = row_kept_by_the_filter_so_its_video_is_in_the_playlist and act_is_filtered(
+                lit = row_kept and act_is_filtered(
                     " ".join(block), model.filter_query, model.camera_words)
                 color = TEXT_PRIMARY if lit else TEXT_MUTED
                 for line in block:
@@ -576,21 +576,21 @@ class HudRenderer:
         wrong = (wrong_action_rect(x + ROW_LABEL_GUTTER - NAV_MAP_GAP, words_end)
                  if model.current_action else None)
         if wrong is not None:
-            self._strike_button_red_since_it_takes_something_away_and_never_lit_since_a_strike_is_done_not_a_state(hud, wrong)
+            self._strike_button(hud, wrong)
         for i, (sx, _sy, sw, _sh) in enumerate(rects.seeds):
             column(sx, sw, seed_column_label(seed_offset + i + 1))
         for i, (_ax, ay, _aw, ah) in enumerate(rects.actions):
             row(ay, ah, model.actions[i].label if i < len(model.actions) else "")
         return wrong
 
-    def _pointer_is_on_read_here_alone_off_the_render_s_hover(self, rect: Rect) -> bool:
+    def _pointer_is_on(self, rect: Rect) -> bool:
         return self._pointer is not None and contains(rect, *self._pointer)
 
     def _button_square(self, draw, rect: Rect, *, on: bool,
                        on_color=BLUE, ink=None) -> tuple[int, int, int, int]:
         return button_ground(draw, rect, on_color if on else BG_BUTTON,
             ButtonGroundState(
-                hovered=self._pointer_is_on_read_here_alone_off_the_render_s_hover(rect),
+                hovered=self._pointer_is_on(rect),
                 rest_ink=ink))
 
     def _icon_button(self, hud: Hud, rect: Rect, icon: str, *, on: bool = False) -> None:
@@ -604,7 +604,7 @@ class HudRenderer:
     def _filter_button(self, hud: Hud, rect: Rect, *, on: bool = False) -> None:
         draw_icon(hud.image, "filter", rect, self._button_square(hud.draw, rect, on=on))
 
-    def _strike_button_red_since_it_takes_something_away_and_never_lit_since_a_strike_is_done_not_a_state(self, hud: Hud, rect: Rect) -> None:
+    def _strike_button(self, hud: Hud, rect: Rect) -> None:
         self._button_square(hud.draw, rect, on=False, ink=RED)
         draw_icon(hud.image, WRONG_ACTION_ICON, rect, (*RED, 255))
 
@@ -632,4 +632,4 @@ class HudRenderer:
                 hud.draw.rectangle([gx, gy, gx + gw - 1, gy + gh - 1],
                                    outline=(*WHITE, 255), width=2)
             elif hover_loop == kind:
-                dashed_rect_that_reads_as_provisional_beside_a_running_loop_s_solid_border(hud.draw, group_rect, (*WHITE, 255))
+                dashed_rect(hud.draw, group_rect, (*WHITE, 255))
