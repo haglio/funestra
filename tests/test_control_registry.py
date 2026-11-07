@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import sys
+
 from import_checks import packages_named_in_imports
 
 from funestra.control_registry import Control, Verb, bind, look_up
@@ -71,4 +73,4 @@ def test_no_value_on_a_verb_that_wants_one_runs_nothing():
 
 
 def test_it_says_only_what_a_control_s_record_looks_like_and_holds_no_app_s_controls_so_it_imports_nothing_of_funestra():
-    assert packages_named_in_imports("funestra.control_registry") <= {"__future__", "collections", "dataclasses", "typing"}
+    assert packages_named_in_imports("funestra.control_registry") <= sys.stdlib_module_names | {"__future__"}

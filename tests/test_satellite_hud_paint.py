@@ -290,10 +290,9 @@ def test_the_dot_lights_up_only_on_the_active_side(thumb):
 
 def test_the_dot_sits_in_the_same_corner_at_the_same_size_on_a_satellites_hud_as_on_the_main_funestras_for_a_reader_glancing_across_screens(thumb):
     def white_box(rgb: np.ndarray) -> tuple[int, int, int, int]:
-        white = (rgb == np.array(WHITE)).all(axis=-1)
-        left = int(np.where(white.any(axis=0))[0].min())
-        rows, cols = np.where(white[:, left:left + ACTIVE_DOT + 2])
-        return left, int(rows.min()), int(cols.max() - cols.min()), int(rows.max() - rows.min())
+        frame = rgb[:TITLE_ROW_H, PAD + MINUS_ROOM:PAD + MINUS_ROOM + ACTIVE_DOT + 2]
+        rows, cols = np.where((frame == np.array(WHITE)).all(axis=-1))
+        return int(cols.min()), int(rows.min()), int(cols.max() - cols.min()), int(rows.max() - rows.min())
 
     satellite = white_box(_rgb(HudRenderer("portrait").render(
         _model(active=True, title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))).bgra))
@@ -302,7 +301,7 @@ def test_the_dot_sits_in_the_same_corner_at_the_same_size_on_a_satellites_hud_as
 
     assert satellite[0] == main[0]
     assert satellite[2:] == main[2:]
-    assert max(satellite[1], main[1]) < 20
+    assert abs(satellite[1] - main[1]) <= 3
 
 
 def test_the_title_starts_clear_of_the_dot(thumb):

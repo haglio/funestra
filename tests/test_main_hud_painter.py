@@ -342,7 +342,7 @@ class TestPainter:
         shades, counts = np.unique(pixels.reshape(-1, 3), axis=0, return_counts=True)
         return tuple(shades[counts.argmax()]), pixels
 
-    def test_the_mode_you_are_in_lights_blue_as_on_the_satellites_since_a_lighter_ground_could_not_be_found_at_a_glance(self):
+    def test_the_mode_you_are_in_lights_the_familys_blue_since_a_lighter_ground_could_not_be_found_at_a_glance(self):
         shade, pixels = self._busiest_shade(
             "main_kino_activate",
             MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows("kino")))
@@ -442,7 +442,8 @@ class TestPainter:
         painter = MainHudPainter()
         rgb = _rgb(painter.bgra(MainHud(main_hud_model=MainHudModel(
             main_mode=MainMode.KINO,
-            rows=main_hud_rows(lights=RowLights(locked=True, favorites=True, recording=True))))))
+            rows=main_hud_rows(lights=RowLights(locked=True, favorites=True, remembered=True, recording=True),
+                               enhanced=True)))))
 
         def dominant(rect) -> tuple[int, ...]:
             bx, by, bw, bh = rect
@@ -548,7 +549,7 @@ class TestPresses:
 
         assert painter.press_at(*_over(painter, "robot_hand_amplitude_up")) == "robot_hand_amplitude_up"
 
-    @pytest.mark.parametrize("who_has_it", [Osr2State.FUNSCRIPT, Osr2State.AUTO])
+    @pytest.mark.parametrize("who_has_it", [Osr2State.FUNSCRIPT, Osr2State.AUTO, Osr2State.OFF])
     def test_the_visualizers_controls_are_dead_while_anything_but_the_robot_hand_has_the_device_since_a_press_there_once_woke_genau_against_the_funscript(self, who_has_it):
         painter = MainHudPainter()
         painter.bgra(MainHud(
@@ -1232,20 +1233,20 @@ class TestARowsNameLinesUpWithItsControls:
             rows.setdefault(rect[1], []).append((rect[0], rect[2], button))
         return painter, {y: sorted(items) for y, items in rows.items()}
 
-    def test_the_mode_switch_and_the_devices_controls_keep_their_places_as_the_mode_flips(self):
-        stays_put = {"main_kino_activate", "genau_activate",
-                     *(f"robot_hand_{axis}_{way}" for axis in ("speed", "amplitude", "center")
-                       for way in ("up", "down"))}
-
+    def test_everything_but_the_transport_keeps_its_place_as_the_mode_flips(self):
         def places(mode: str) -> dict:
+            transport = {button.command for row in main_hud_rows(mode)[1:] for button in row}
             painter = MainHudPainter()
             painter.bgra(MainHud(main_hud_model=MainHudModel(
-                main_mode=mode, osr2=Osr2State.ROBOT_HAND, rows=main_hud_rows(mode)), drive=_drive()))
+                main_mode=mode, osr2=Osr2State.ROBOT_HAND, rows=main_hud_rows(mode),
+                osr2_controls=osr2_controls(broker_running=True)), drive=_drive()))
             return {button.command: rect for rect, button in painter.buttons
-                    if button.command in stays_put}
+                    if button.command and button.command not in transport}
 
-        assert places(MainMode.KINO) == places(MainMode.GENAU)
-        assert set(places(MainMode.KINO)) == stays_put
+        kino, genau = places(MainMode.KINO), places(MainMode.GENAU)
+        shown_in_both = kino.keys() & genau.keys()
+        assert {c: kino[c] for c in shown_in_both} == {c: genau[c] for c in shown_in_both}
+        assert shown_in_both > {"main_kino_activate", "genau_activate", "robot_hand_amplitude_up", "broker_panel"}
 
     def test_the_cell_is_playback_speed_at_the_tiny_face_plus_the_familys_small_gap(self):
         assert text_width(load_font(SIZE_TINY), PLAYBACK_SPEED_LABEL) + GAP_SMALL == ROW_LABEL_W
