@@ -813,11 +813,11 @@ def _white_halves(rendered) -> tuple[int, int]:
     return int(bar[:half].sum()), int(bar[half:].sum())
 
 
-def test_an_act_the_filter_matches_inside_a_row_the_filter_drops_is_not_lit_since_that_video_is_not_in_the_playlist(thumb):
+def test_an_act_that_is_on_in_the_filter_lights_even_on_a_row_the_filter_leaves_out(thumb):
     rendered = HudRenderer("portrait").render(_model(
         corner=HudCell(path="c.mp4", thumb=thumb), current_action="gamma", filter_query="gamma, theta"))
 
-    assert not _lit_label_ink(rendered).any()
+    assert _lit_label_ink(rendered).any()
 
 
 def test_a_two_act_label_and_its_strike_stay_inside_the_corner_row_since_they_are_centered_together(thumb):

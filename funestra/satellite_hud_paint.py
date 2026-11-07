@@ -538,7 +538,6 @@ class HudRenderer:
             image.alpha_composite(strip, (cx, y))
 
         def row(row_y: int, row_h: int, text: str, *, extra: int = 0) -> int:
-            row_kept = label_is_filtered(text, model.filter_query, model.camera_words)
             ascent, descent = self._tiny.getmetrics()
             line_h = ascent + descent - 4
             blocks = action_label_blocks(text, model.camera_words)
@@ -548,8 +547,7 @@ class HudRenderer:
             right = x + ROW_LABEL_GUTTER - NAV_MAP_GAP
             acts = split_acts(text, model.camera_words)
             for block, act in zip(blocks, acts + [""] * (len(blocks) - len(acts)), strict=True):
-                lit = row_kept and act_is_filtered(
-                    " ".join(block), model.filter_query, model.camera_words)
+                lit = act_is_filtered(" ".join(block), model.filter_query, model.camera_words)
                 color = TEXT_PRIMARY if lit else TEXT_MUTED
                 if act:
                     wide = math.ceil(max(self._tiny.getlength(line) for line in block))
