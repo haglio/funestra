@@ -4,7 +4,7 @@ import math
 
 import pytest
 
-from funestra.loop_dial import DIAL_SIZE, HAND_STEPS, LoopDialPainter, on_dial, turn_at
+from funestra.loop_dial import _HAND_REACH, DIAL_SIZE, HAND_STEPS, LoopDialPainter, on_dial, turn_at
 
 AT = (30, 1)
 CENTER = (AT[0] + DIAL_SIZE // 2, AT[1] + DIAL_SIZE // 2)
@@ -66,7 +66,7 @@ class TestHowItIsDrawn:
         assert alpha[DIAL_SIZE // 2, DIAL_SIZE // 2] > 0
 
     def test_a_step_moves_the_hands_tip_about_a_pixel_as_fine_as_a_dial_this_size_draws(self):
-        assert 0.5 < math.pi * DIAL_SIZE / HAND_STEPS < 2.0
+        assert 0.5 < math.tau * _HAND_REACH / HAND_STEPS < 2.0
 
     def test_it_is_repainted_only_when_the_hand_moves_a_step(self):
         assert LoopDialPainter.hand(0.0) == LoopDialPainter.hand(0.001)

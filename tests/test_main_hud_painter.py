@@ -9,7 +9,8 @@ from main_hud_rows import RowLights, main_hud_rows, motion_rows
 from shared_ui import colors
 from shared_ui.app_icon import LETTERS
 from shared_ui.palette import BG_PRIMARY, BLUE, BORDER_PANEL, GREEN, MAGENTA, TEXT_MUTED, WHITE
-from shared_ui.spacing import BUTTON_GAP
+from shared_ui.spacing import BUTTON_GAP, GAP_SMALL
+from shared_ui.type_scale import SIZE_TINY
 
 from funestra.drive_layout import AMPLITUDE, CENTER, MAX_INTENSITY, SPEED
 from funestra.geometry import Rect
@@ -28,11 +29,13 @@ from funestra.hud_osr2 import COLORS as _OSR2_COLORS
 from funestra.hud_osr2 import LABELS as _OSR2_LABELS
 from funestra.hud_placement import HudCorner
 from funestra.hud_row import SCRUBBER, RowHud, row_part
+from funestra.hud_title import PLAYBACK_SPEED_LABEL
 from funestra.main_hud import (
     BUTTON,
     OSR2_DRIVING,
     OSR2_PARKED,
     OSR2_RETRACTED,
+    ROW_LABEL_W,
     MainHudModel,
     aim_row,
     osr2_controls,
@@ -435,6 +438,22 @@ class TestPainter:
         shades, counts = np.unique(pixels.reshape(-1, 3), axis=0, return_counts=True)
         assert tuple(shades[counts.argmax()]) == (48, 160, 48)
 
+    def test_only_the_lock_and_f_mode_light_green_since_green_here_belongs_to_the_favorites_and_the_funscripts(self):
+        painter = MainHudPainter()
+        rgb = _rgb(painter.bgra(MainHud(main_hud_model=MainHudModel(
+            main_mode=MainMode.KINO,
+            rows=main_hud_rows(lights=RowLights(locked=True, favorites=True, recording=True))))))
+
+        def dominant(rect) -> tuple[int, ...]:
+            bx, by, bw, bh = rect
+            shades, counts = np.unique(rgb[by:by + bh, bx:bx + bw].reshape(-1, 3), axis=0, return_counts=True)
+            return tuple(int(v) for v in shades[counts.argmax()])
+
+        lit = {button.command for rect, button in painter.buttons if button.lit}
+        green = {button.command for rect, button in painter.buttons if dominant(rect) == GREEN}
+        assert lit > {"main_lock", "main_fmode", "main_kino_activate"}
+        assert green == {"main_lock", "main_fmode"}
+
     def test_the_enhanced_filter_wears_yellow_off_and_on_the_yellow_of_the_plus_origenerator_marks_an_enhanced_image_with(self):
         yellow = (255, 200, 120)
         off = self._button_pixels("genau_filter_enhanced", MainHudModel(
@@ -529,14 +548,17 @@ class TestPresses:
 
         assert painter.press_at(*_over(painter, "robot_hand_amplitude_up")) == "robot_hand_amplitude_up"
 
-    def test_the_visualizers_controls_are_dead_while_a_funscript_has_the_device_since_a_press_there_once_woke_genau_against_the_funscript(self):
+    @pytest.mark.parametrize("who_has_it", [Osr2State.FUNSCRIPT, Osr2State.AUTO])
+    def test_the_visualizers_controls_are_dead_while_anything_but_the_robot_hand_has_the_device_since_a_press_there_once_woke_genau_against_the_funscript(self, who_has_it):
         painter = MainHudPainter()
         painter.bgra(MainHud(
-            main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.FUNSCRIPT), drive=_drive()))
+            main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=who_has_it), drive=_drive()))
 
         over = _over(painter, "robot_hand_amplitude_up")
+        the_visualizers = [b for _rect, b in painter.buttons if b.command.startswith("robot_hand_")]
         assert painter.press_at(*over) == ""
-        assert all(b.dim for _rect, b in painter.buttons if b.command.startswith("genau_amplitude"))
+        assert the_visualizers
+        assert all(b.dim for b in the_visualizers)
 
     def test_the_cursor_over_a_button_is_reported_in_hud_coordinates(self):
         painter = self._painted()
@@ -1210,18 +1232,23 @@ class TestARowsNameLinesUpWithItsControls:
             rows.setdefault(rect[1], []).append((rect[0], rect[2], button))
         return painter, {y: sorted(items) for y, items in rows.items()}
 
-    def test_the_mode_switch_keeps_its_place_as_the_mode_flips_and_only_the_transport_changes(self):
-        stays_put = {"main_kino_activate", "genau_activate"}
+    def test_the_mode_switch_and_the_devices_controls_keep_their_places_as_the_mode_flips(self):
+        stays_put = {"main_kino_activate", "genau_activate",
+                     *(f"robot_hand_{axis}_{way}" for axis in ("speed", "amplitude", "center")
+                       for way in ("up", "down"))}
 
         def places(mode: str) -> dict:
             painter = MainHudPainter()
             painter.bgra(MainHud(main_hud_model=MainHudModel(
-                main_mode=mode, rows=main_hud_rows(mode))))
+                main_mode=mode, osr2=Osr2State.ROBOT_HAND, rows=main_hud_rows(mode)), drive=_drive()))
             return {button.command: rect for rect, button in painter.buttons
                     if button.command in stays_put}
 
         assert places(MainMode.KINO) == places(MainMode.GENAU)
         assert set(places(MainMode.KINO)) == stays_put
+
+    def test_the_cell_is_playback_speed_at_the_tiny_face_plus_the_familys_small_gap(self):
+        assert text_width(load_font(SIZE_TINY), PLAYBACK_SPEED_LABEL) + GAP_SMALL == ROW_LABEL_W
 
     def test_the_name_starts_where_the_controls_start(self):
 

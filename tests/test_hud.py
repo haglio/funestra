@@ -78,7 +78,7 @@ def test_the_active_dot_is_lit_or_gray_but_never_absent():
     assert dot(False) == TEXT_MUTED
 
 
-def test_the_active_dot_is_the_familys_disc_the_same_mark_in_the_same_corner_on_every_hud_for_a_reader_glancing_across_screens():
+def test_the_active_dot_is_the_familys_disc():
     def drawn(paint) -> np.ndarray:
         image = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
         paint(image)
@@ -94,8 +94,10 @@ def test_the_dot_fills_a_square_of_its_own_size_inside_the_frame_the_familys_dis
 
     draw_active_dot(image, 10, 10, True)
 
-    solid_columns = np.where((np.asarray(image)[:, :, 3] > 200).any(axis=0))[0]
-    assert solid_columns.max() - solid_columns.min() + 1 == ACTIVE_DOT
+    solid = np.asarray(image)[:, :, 3] > 200
+    columns, rows = np.where(solid.any(axis=0))[0], np.where(solid.any(axis=1))[0]
+    assert columns.max() - columns.min() + 1 == ACTIVE_DOT
+    assert rows.max() - rows.min() + 1 == ACTIVE_DOT
 
 
 def test_an_icons_ink_is_probed_once_per_face_size_and_icon():

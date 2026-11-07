@@ -460,7 +460,7 @@ def test_a_button_with_no_tooltip_lights_under_the_pointer_and_draws_no_tooltip(
     assert bytes(on_genau) != bytes(on_kino)
 
 
-def test_hovering_a_button_redraws_with_its_tooltip_and_clears_it_to_the_very_pixels_from_before_which_an_identity_check_passed_without(tmp_path: Path, hud: Path):
+def test_hovering_a_button_redraws_with_its_tooltip_and_clears_it_to_the_very_pixels_from_before(tmp_path: Path, hud: Path):
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine)
     overlay.tick()

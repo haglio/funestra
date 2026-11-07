@@ -61,7 +61,7 @@ class TestPlacement:
 class TestWindowPoints:
     GEOMETRY: ClassVar[dict[str, int]] = {"viewport_w": 1200, "viewport_h": 900, "timeline_h": 40}
 
-    def test_the_chips_own_corner_reads_as_its_origin_undone_beside_the_placement_so_no_caller_keeps_its_own_copy_of_where_the_control_sits(self):
+    def test_the_chips_own_corner_reads_as_its_origin_undone_beside_the_placement(self):
         assert volume_control_local(*volume_control_xy(**self.GEOMETRY), **self.GEOMETRY) == (0, 0)
 
     def test_a_window_point_over_the_speaker_lands_on_the_mute(self):

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import dataclasses
 import inspect
 from pathlib import Path
@@ -7,9 +8,10 @@ from pathlib import Path
 import numpy as np
 import pytest
 from shared_ui.palette import BLUE, GREEN, TEXT_MUTED
+from shared_ui.type_scale import SIZE_TINY
 
 from funestra import hud_osr2
-from funestra.hud import Hud
+from funestra.hud import Hud, load_font, text_width
 from funestra.hud_button import Button
 from funestra.hud_osr2 import (
     BUFFER,
@@ -69,7 +71,7 @@ def test_the_label_sits_farther_from_the_buttons_than_from_its_word_so_it_reads_
 
     clearance = section.width(Osr2Line(controls=(button,))) - section.width(Osr2Line()) - button.width
 
-    assert clearance > hud_osr2._LABEL_GAP
+    assert clearance > hud_osr2._LABEL_GAP + hud_osr2._PILL_PAD // 2
 
 
 def test_the_devices_buttons_sit_a_plain_gap_apart_since_a_row_layout_would_open_a_group_gap_between_them():
@@ -82,13 +84,13 @@ def test_the_devices_buttons_sit_a_plain_gap_apart_since_a_row_layout_would_open
 def test_the_word_for_who_has_the_device_wears_no_frame_since_an_outlined_word_beside_buttons_reads_as_a_third():
     hud, _ = _drawn(Osr2Line(state=Osr2State.FUNSCRIPT))
     pixels = np.array(hud.image.convert("RGB")).astype(int)
-    rows, cols = np.where((pixels == np.array(GREEN)).all(axis=-1))
-    top, bottom, left, right = rows.min(), rows.max(), cols.min(), cols.max()
-    slab = tuple(pixels[5, right + 10])
-    ring = [tuple(pixels[r, c]) for r in (top - 2, bottom + 2) for c in range(left - 2, right + 3)]
-    ring += [tuple(pixels[r, c]) for c in (left - 2, right + 2) for r in range(top - 2, bottom + 3)]
+    word_x = 10 + text_width(load_font(SIZE_TINY), hud_osr2.LABEL) + hud_osr2._LABEL_GAP
+    pill = pixels[10:10 + HEIGHT, word_x:pixels.shape[1] - 10]
+    slab = pixels[5, pixels.shape[1] - 12]
+    low, high = np.minimum(slab, GREEN), np.maximum(slab, GREEN)
 
-    assert set(ring) == {slab}
+    assert ((pill >= low) & (pill <= high)).all()
+    assert (pill == np.array(GREEN)).all(axis=-1).any()
 
 
 def test_buffer_is_the_pill_s_own_word_drawn_and_never_one_of_the_states_the_wire_carries():
@@ -220,6 +222,13 @@ class TestWhoTheLineNamesIsResolvedByItsHost:
         carried = {field.name for field in dataclasses.fields(Osr2Line)}
 
         assert carried.isdisjoint(inspect.signature(state_for).parameters)
+
+    def test_the_section_never_resolves_for_itself(self):
+        section = next(node for node in ast.parse(Path(hud_osr2.__file__).read_text(encoding="utf-8")).body
+                       if isinstance(node, ast.ClassDef) and node.name == "Osr2Section")
+        named = {node.id for node in ast.walk(section) if isinstance(node, ast.Name)}
+
+        assert named.isdisjoint({"state_for", "ShowsTheOsr2", "_held_by"})
 
     def test_the_driver_is_named_when_nothing_is_holding_the_device(self):
         assert state_for(Osr2State.ROBOT_HAND, "") == Osr2State.ROBOT_HAND

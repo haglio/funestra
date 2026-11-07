@@ -133,7 +133,7 @@ class TestTheRowThatAimsTheDevice:
         assert not on.lit
         assert switch.command == OSR2_CONTROL_BUTTONS[OSR2_DRIVING]
 
-    def test_the_switch_offers_only_its_two_positions_as_data_so_an_app_routing_a_press_reads_the_state_off_the_command(self):
+    def test_the_switch_offers_only_its_two_positions(self):
         assert set(OSR2_CONTROL_BUTTONS) == {OSR2_PARKED, OSR2_DRIVING}
 
     def test_the_switch_says_where_the_device_is_and_what_a_press_does(self):

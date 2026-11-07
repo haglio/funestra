@@ -11,7 +11,7 @@ from shared_ui.palette import (
     TEXT_MUTED,
     TEXT_PRIMARY,
 )
-from shared_ui.spacing import BUTTON_GROUP_GAP, BUTTON_PAD_H_TIGHT, GAP_SMALL
+from shared_ui.spacing import BUTTON_PAD_H_TIGHT, GAP_SMALL
 from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
 from .device_walk import Walk, the_broker_holding, the_hand_taking_back
@@ -19,7 +19,7 @@ from .drive_layout import BAR_H, MAX_INTENSITY, DriveTrack, fraction
 from .geometry import Rect, contains
 from .hud import SYMBOL_FONT, ButtonLook, draw_button, load_font, text_width
 from .hud_button import BUTTON, Button
-from .main_hud import GAP, HELD_HEIGHT, HOLD_VERB, OSR2_PARKED, OSR2_RETRACTED
+from .main_hud import GAP, GROUP_GAP, HELD_HEIGHT, HOLD_VERB, OSR2_PARKED, OSR2_RETRACTED
 from .modes import UNHEARD, Osr2State
 from .osr2_visualizer import (
     DISABLED_INK,
@@ -37,7 +37,6 @@ from .robot_hand import FULL_INTENSITY, POSITION_MAX
 HEIGHT = BUTTON
 LABEL = "OSR2"
 _LABEL_GAP = GAP_SMALL
-_GROUP_GAP = BUTTON_GROUP_GAP
 _PILL_PAD = BUTTON_PAD_H_TIGHT
 
 MAX_INTENSITY_LABEL = "Max intensity"
@@ -248,7 +247,7 @@ class Osr2Section:
     def _controls_width(controls: tuple[Button, ...]) -> int:
         if not controls:
             return 0
-        return sum(b.width for b in controls) + GAP * (len(controls) - 1) + _GROUP_GAP
+        return sum(b.width for b in controls) + GAP * (len(controls) - 1) + GROUP_GAP
 
     def bars(self, x: int, y: int, line: Osr2Line) -> list[DriveTrack]:
         if line.max_intensity is None:
@@ -260,7 +259,7 @@ class Osr2Section:
     def _max_intensity_width(self, line: Osr2Line) -> int:
         if line.max_intensity is None:
             return 0
-        return (_GROUP_GAP + text_width(self._tiny, MAX_INTENSITY_LABEL) + _LABEL_GAP
+        return (GROUP_GAP + text_width(self._tiny, MAX_INTENSITY_LABEL) + _LABEL_GAP
                 + self._widest_number + _LABEL_GAP + _MAX_INTENSITY_W)
 
     @property
