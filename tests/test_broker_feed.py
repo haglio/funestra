@@ -10,7 +10,9 @@ from unittest.mock import MagicMock
 
 import pytest
 from app_support.threading_utils import wait_until
+from funestra_fakes import holds_of_the_lock
 
+from funestra import broker_feed
 from funestra.broker_feed import (
     BrokerFeed,
     BrokerSnapshot,
@@ -39,25 +41,8 @@ class TestBrokerFeed:
         assert isinstance(s.lock, threading.Lock)
 
 
-def _holds_of_the_lock(feed: BrokerFeed) -> list[str]:
-    held: list[str] = []
-    original = feed.lock
-
-    class _Recording:
-        def __enter__(self):
-            held.append("taken")
-            return original.__enter__()
-
-        def __exit__(self, *exc):
-            held.append("given back")
-            return original.__exit__(*exc)
-
-    feed.lock = _Recording()
-    return held
-
-
-_BINDS_THE_MOMENT_THE_PORT_IS_FREED_HOWEVER_LONG_A_STALLED_MACHINE_TAKES = (0.02,) * 500
-_RETRIES_THAT_RUN_OUT_AT_ONCE_SINCE_RUNNING_OUT_IS_WHAT_IS_TESTED = (0, 0, 0)
+_MANY_SHORT_WAITS = (0.02,) * 500
+_RETRIES_THAT_RUN_OUT_AT_ONCE = (0, 0, 0)
 
 
 def _free_udp_port() -> int:
@@ -71,12 +56,12 @@ def _send(port: int, msg: str) -> None:
         s.sendto(msg.encode(), ("127.0.0.1", port))
 
 
-_KNOCK_A_SYNC_SINCE_IT_ONLY_COUNTS_AND_MOVES_NOTHING_A_CASE_ASSERTS = "SYNC"
+_KNOCK = "SYNC"
 
 
-def _knock_until_bound_since_a_datagram_sent_before_the_bind_is_dropped_without_a_trace(port: int, state: BrokerFeed) -> None:
+def _knock_until_bound(port: int, state: BrokerFeed) -> None:
     def _knocked() -> bool:
-        _send(port, _KNOCK_A_SYNC_SINCE_IT_ONLY_COUNTS_AND_MOVES_NOTHING_A_CASE_ASSERTS)
+        _send(port, _KNOCK)
         return state.sync_pulse_id > 0
 
     wait_until(_knocked, timeout=10.0, interval=0.02)
@@ -92,7 +77,7 @@ def _run_reader(state: BrokerFeed, port: int) -> tuple[threading.Thread, threadi
     t = threading.Thread(
         target=udp_reader, args=(UdpListener("127.0.0.1", port, state, stop, logger),), daemon=True)
     t.start()
-    _knock_until_bound_since_a_datagram_sent_before_the_bind_is_dropped_without_a_trace(port, state)
+    _knock_until_bound(port, state)
     return t, stop
 
 
@@ -150,9 +135,14 @@ class TestActingOnOneLine:
 
         assert (state.auto_active, state.raw_bpm, state.sync_pulse_id) == (False, None, 0)
 
+    def test_the_knock_only_counts_and_moves_nothing_a_case_asserts_about(self):
+        state = self._applied(_KNOCK)
+
+        assert (state.auto_active, state.raw_bpm, state.sync_pulse_id) == (False, None, 1)
+
     def test_the_state_is_moved_under_its_own_lock(self):
         state = BrokerFeed()
-        held = _holds_of_the_lock(state)
+        held = holds_of_the_lock(state)
 
         apply_udp_line(state, "SYNC", logging.getLogger("test.udp_reader"))
 
@@ -173,15 +163,20 @@ class TestTheSocketLoop:
 
         assert state.auto_active is True
 
-    def test_stop_event_terminates_reader(self):
+    def test_a_quit_ends_an_idle_reader_within_a_time_nobody_feels(self):
         state = BrokerFeed()
         port = _free_udp_port()
         t, stop = _run_reader(state, port)
         stop.set()
-        t.join(timeout=2.0)
+        t.join(timeout=1.0)
         assert not t.is_alive()
 
-    def test_bind_retries_on_port_conflict(self, caplog):
+    def test_the_bind_waits_grow_since_the_session_before_frees_the_port_quickly_or_after_a_slow_teardown(self):
+        delays = broker_feed._BIND_RETRY_DELAYS
+
+        assert list(delays) == sorted(set(delays))
+
+    def test_a_bind_turned_away_follows_the_port_the_moment_it_is_freed(self, caplog):
         state = BrokerFeed()
         port = _free_udp_port()
 
@@ -195,7 +190,7 @@ class TestTheSocketLoop:
         t = threading.Thread(
             target=udp_reader,
             args=(UdpListener("127.0.0.1", port, state, stop, logger,
-                              _BINDS_THE_MOMENT_THE_PORT_IS_FREED_HOWEVER_LONG_A_STALLED_MACHINE_TAKES),),
+                              _MANY_SHORT_WAITS),),
             daemon=True,
         )
         try:
@@ -204,7 +199,7 @@ class TestTheSocketLoop:
                 wait_until(lambda: _turned_away(caplog), timeout=10.0)
                 blocker.close()
 
-                _knock_until_bound_since_a_datagram_sent_before_the_bind_is_dropped_without_a_trace(port, state)
+                _knock_until_bound(port, state)
                 _send(port, "AUTO 1")
                 wait_until(lambda: state.auto_active, timeout=10.0, interval=0.02)
         finally:
@@ -241,7 +236,7 @@ class TestTheSocketLoop:
         t = threading.Thread(
             target=udp_reader,
             args=(UdpListener("127.0.0.1", port, state, stop, logger,
-                              _RETRIES_THAT_RUN_OUT_AT_ONCE_SINCE_RUNNING_OUT_IS_WHAT_IS_TESTED),),
+                              _RETRIES_THAT_RUN_OUT_AT_ONCE),),
             daemon=True,
         )
         t.start()
@@ -265,7 +260,7 @@ class TestTheSnapshot:
     def test_it_copies_them_under_one_hold_of_the_lock_so_a_tick_never_reads_half_of_two_datagrams(
             self):
         feed = BrokerFeed()
-        held = _holds_of_the_lock(feed)
+        held = holds_of_the_lock(feed)
 
         snapshot(feed)
 
@@ -273,9 +268,16 @@ class TestTheSnapshot:
 
 
 class TestHowTheseTestsWait:
-    def test_every_wait_is_on_something_the_reader_did_never_a_sleep_which_is_slow_and_a_coin_flip_on_a_loaded_runner(
-            self):
-        calls = [node.func for node in ast.walk(ast.parse(Path(__file__).read_text(encoding="utf-8")))
+    def test_no_test_here_naps_since_every_wait_is_on_something_the_reader_did(self):
+        calls = [node for node in ast.walk(ast.parse(Path(__file__).read_text(encoding="utf-8")))
                  if isinstance(node, ast.Call)]
 
-        assert [func for func in calls if getattr(func, "attr", getattr(func, "id", "")) == "sleep"] == []
+        assert [ast.unparse(call) for call in calls if _is_a_nap(call)] == []
+
+
+def _is_a_nap(call: ast.Call) -> bool:
+    called = getattr(call.func, "attr", getattr(call.func, "id", ""))
+    if called == "sleep":
+        return True
+    return (called == "wait" and len(call.args) == 1
+            and isinstance(call.args[0], ast.Constant) and not call.keywords)

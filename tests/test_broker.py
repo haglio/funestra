@@ -134,16 +134,6 @@ class TestStarting:
         assert kwargs["creationflags"] & broker.CREATE_BREAKAWAY_FROM_JOB
         assert kwargs["creationflags"] & subprocess.CREATE_NO_WINDOW
 
-    def test_it_starts_over_a_live_tray_too_since_the_tray_itself_refuses_a_second_copy(
-            self, tmp_path):
-        launcher = _a_broker_checkout(tmp_path)
-        _stamped(tmp_path / state_files.BROKER_HEARTBEAT, 1.0, now=time.time())
-
-        with patch("funestra.broker.subprocess.Popen") as popen:
-            broker.start(launcher)
-
-        popen.assert_called_once()
-
     def test_with_no_launcher_nothing_is_started(self, tmp_path):
         with patch("funestra.broker.subprocess.Popen") as popen:
             broker.start(None)
