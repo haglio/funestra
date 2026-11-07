@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from app_support import watch_weights
 
-from .video_families import action_group_key, normalized_text, seed_group_key
+from .video_families import action_group_key, actions_text, normalized_text, seed_group_key
 
 
 def normalize_path_key(path: str) -> str:
@@ -154,7 +154,7 @@ def action_label(index: GroupIndex, path: str) -> str:
 def _entry_for(path: str, record: dict) -> VideoEntry:
     return VideoEntry(
         path=path,
-        action=str((record.get("video") or {}).get("action") or "").strip(),
+        action=actions_text(record),
         action_key=action_group_key(record),
         seed_key=seed_group_key(record),
         scene_tags=scene_tags(record),

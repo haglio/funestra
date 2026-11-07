@@ -3,7 +3,9 @@ from __future__ import annotations
 from funestra.video_families import (
     FRAME_OF_VIDEO,
     action_group_key,
+    actions_text,
     filter_keeps,
+    labels_text,
     seed_family,
     seed_group_key,
 )
@@ -133,3 +135,15 @@ def test_a_video_from_a_t2v_videos_starting_frame_keeps_its_seed_family():
     made = _from_a_videos_starting_frame()
     assert seed_family(made) == seed_family(
         {"video": made["video"], "source_image": {"positive_prompt": "the frame's own words"}})
+
+
+def test_a_records_actions_read_as_its_labels_joined_or_else_the_sites_word():
+    assert [actions_text(record) for record in (
+        {"video": {"action": "Gamma", "labels": ["alpha", "XYZ"]}},
+        {"video": {"action": " Gamma "}},
+        {},
+    )] == ["alpha, XYZ", "Gamma", ""]
+
+
+def test_a_list_of_labels_reads_as_one_line_in_the_order_given():
+    assert labels_text(("beta", "alpha", "XYZ")) == "beta, alpha, XYZ"

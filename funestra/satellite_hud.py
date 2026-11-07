@@ -41,7 +41,7 @@ from .main_hud import max_intensity_from_raw
 from .modes import read_mode
 from .osr2_visualizer import DriveHud, DriveTrack
 from .playback_rate import format_rate
-from .video_families import filter_keeps, normalized_text
+from .video_families import filter_keeps, labels_text, normalized_text
 
 if TYPE_CHECKING:
     from .hud_row import RowLayout
@@ -432,6 +432,7 @@ class HudTargets:
     buttons: list[tuple[Rect, Button]] = field(default_factory=list)
     favorite: Rect | None = None
     wrong_action: Rect | None = None
+    words: list[tuple[Rect, str]] = field(default_factory=list)
     tracks: list[DriveTrack] = field(default_factory=list)
     row: RowLayout | None = None
     foot: Rect | None = None
@@ -478,7 +479,7 @@ def filter_button_rects(
     return rects
 
 
-def _acts(text: str, camera_words: Sequence[str]) -> list[str]:
+def _acts(text: str, camera_words: Sequence[str] = ()) -> list[str]:
     return [act for act in (normalized_text(part) for part in split_acts(text, camera_words)) if act]
 
 
@@ -486,10 +487,16 @@ def act_is_filtered(act: str, filter_query: str, camera_words: Sequence[str]) ->
     return any(filter_keeps(act, query) for query in _acts(filter_query, camera_words))
 
 
-def label_is_filtered(label: str, filter_query: str, camera_words: Sequence[str]) -> bool:
+def label_is_filtered(label: str, filter_query: str, camera_words: Sequence[str] = ()) -> bool:
     acts, query = _acts(label, camera_words), _acts(filter_query, camera_words)
     return bool(acts) and bool(query) and all(
         any(filter_keeps(act, part) for act in acts) for part in query)
+
+
+def with_act_toggled(filter_query: str, act: str) -> str:
+    query, toggled = _acts(filter_query), normalized_text(act)
+    kept = [part for part in query if part != toggled]
+    return labels_text(kept if kept != query else [*query, toggled])
 
 
 LOOP_ICON = "loop"
@@ -499,7 +506,7 @@ WRONG_ACTION_ICON = "cross"
 
 
 def _titlecase_word(word: str) -> str:
-    return word[:1].upper() + word[1:].lower()
+    return word if word.isupper() else word[:1].upper() + word[1:].lower()
 
 
 def split_acts(name: str, camera_words: Sequence[str]) -> list[str]:
@@ -513,6 +520,13 @@ def split_acts(name: str, camera_words: Sequence[str]) -> list[str]:
         if words:
             acts.append(" ".join(words))
     return acts
+
+
+def act_named(act: str) -> str:
+    words = act.split()
+    while len(words) > 1 and words[-1].isdigit():
+        words.pop()
+    return " ".join(words)
 
 
 def action_label_blocks(name: str, camera_words: Sequence[str]) -> list[list[str]]:
