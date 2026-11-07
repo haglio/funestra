@@ -19,9 +19,9 @@ from app_support import haglio_settings
 
 logger = logging.getLogger(__name__)
 _TIMEOUT_S = 60
-RETRY_GRACE_SO_THE_RETRY_IS_NOT_REFUSED_AGAIN_S = 1.0
+RETRY_GRACE_S = 1.0
 _RETRIES = 6
-NETWORK_WAITS_THAT_OUTLAST_A_ROUTER_RESTART_OR_THE_FORUM_S_NIGHTLY_MAINTENANCE_S = (30.0, 60.0, 120.0, 300.0, 600.0, 900.0, 900.0)
+NETWORK_WAITS_S = (30.0, 60.0, 120.0, 300.0, 600.0, 900.0, 900.0)
 _DEFAULT_WAIT_S = 60.0
 _REDIRECTS = (301, 302, 303, 307, 308)
 _MISSING = (403, 404)
@@ -114,7 +114,7 @@ class Forum:
     def _read(self, url: str, headers: dict[str, str], *, paced: bool = True) -> bytes:
         request = urllib.request.Request(url, headers=headers)
         limited = 0
-        waits_left = list(NETWORK_WAITS_THAT_OUTLAST_A_ROUTER_RESTART_OR_THE_FORUM_S_NIGHTLY_MAINTENANCE_S)
+        waits_left = list(NETWORK_WAITS_S)
         while True:
             if paced:
                 self._wait_the_pace()
@@ -127,7 +127,7 @@ class Forum:
                     if limited == _RETRIES:
                         raise RuntimeError(
                             f"{url}: still rate limited after {_RETRIES} attempts") from error
-                    wait = _wait_named_by(error) + RETRY_GRACE_SO_THE_RETRY_IS_NOT_REFUSED_AGAIN_S
+                    wait = _wait_named_by(error) + RETRY_GRACE_S
                     self._log.info("rate limited at %s: waiting %.0f s", url, wait)
                 elif _may_be_asked_again(error) and waits_left:
                     wait = waits_left.pop(0)

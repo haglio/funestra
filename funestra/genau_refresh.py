@@ -28,6 +28,8 @@ class GenauRefreshController:
         self.engine = controls.engine
         self.paused = controls.paused
         self.robot_hand = controls.robot_hand
+        if self.robot_hand is None:
+            raise ValueError("Genau runs with the hand's state and no hand-less mode")
         self.learned = controls.learned_motion_state
         self.flick_advance = controls.flick_advance_state
         self.hud = controls.hud

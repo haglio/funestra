@@ -55,7 +55,7 @@ def test_step_wraps_forward_and_backward():
 
 
 class TestTakeUp:
-    def test_browses_the_new_list_from_its_top(self):
+    def test_browses_the_new_list_from_its_top_so_its_newest_arrivals_come_round(self):
         controller = FlickSequenceController(_paths())
         controller.step(1)
 

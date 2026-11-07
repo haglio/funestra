@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import dataclasses
 import json
 import random
@@ -106,6 +107,16 @@ class TestFittingTheModel:
         assert model.seen == {cls: 5}
         assert model.successions == {cls: {cls: 4}}
 
+    def test_the_phrases_kept_for_a_class_are_an_even_draw_from_all_seen_however_many_there_were(self):
+        kept_at = collections.Counter()
+        for seed in range(300):
+            model, rng = train.LearnedModel(), random.Random(seed)
+            for phrase in range(10):
+                train._keep_an_even_sample(model, rng, "steady", phrase, 2)
+            kept_at.update(model.phrases["steady"])
+
+        assert all(30 <= kept_at[phrase] <= 90 for phrase in range(10))
+
     def test_the_model_holds_numbers_alone_so_no_title_or_name_from_a_script_can_reach_it(self):
         model = train.fit([_script(16 * 5, duration_ms=300, low=10, high=90)], rng=random.Random(1))
 
@@ -142,6 +153,12 @@ def _write_script(path, actions) -> None:
 
 
 class TestReadingTheCorpus:
+    def test_scripts_a_machine_wrote_or_timed_to_music_or_speech_are_skipped_since_their_swings_are_beats_not_a_persons_motion(self):
+        assert {"ai-generated", "ai-assisted", "pmv", "hmv", "beat-based", "music-based", "music", "joi", "audio-only"} <= set(train.SKIPPED_TAGS)
+
+    def test_only_real_peoples_scripts_are_kept_since_drawn_and_rendered_scenes_move_as_no_person_can(self):
+        assert train.KEPT_TAGS == ("real",)
+
     def test_a_skipped_tag_and_a_duplicate_are_left_out(self, tmp_path):
         harvested = tmp_path / "harvested"
         (harvested / "scripts").mkdir(parents=True)

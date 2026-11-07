@@ -103,14 +103,20 @@ class TestWhatTheLineIsEachTime:
 
         assert visualizer.drive is not None
 
-    def test_under_the_broker_genau_s_own_handed_over_height_is_left_out_since_it_no_longer_describes_the_device(self):
+    def test_under_the_broker_genau_s_own_position_and_handed_over_height_are_left_out_since_they_no_longer_describe_the_device(self):
         sender = FakeSender()
         sender.let_go_position = 4_000
         visualizer = _visualizer(tcode_sender=sender)
 
-        visualizer.update(1.0, AutoMotion(phase=0.0, bpm=90.0))
+        visualizer.update(1.0, AutoMotion(phase=0.5, bpm=90.0))
 
         assert visualizer.drive.let_go is None
+        assert visualizer.drive.position != sender.current_position()
+
+    def test_under_the_broker_the_line_is_a_full_centered_swing_since_the_device_reports_its_tempo_and_downbeat_but_never_how_far_it_moves(self):
+        heights = [AutoMotion(phase=phase, bpm=90.0).height for phase in (0.0, 0.25, 0.5, 0.75)]
+
+        assert heights == pytest.approx([0.0, 0.5, 1.0, 0.5])
 
     def test_under_the_broker_the_numbers_beside_the_line_are_still_the_hand_s_own_which_its_controls_will_move_when_it_takes_the_device_back(self):
         visualizer = _visualizer()

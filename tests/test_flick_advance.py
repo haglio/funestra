@@ -105,12 +105,15 @@ class TestTheInterval:
     def test_it_opens_on_the_default(self):
         assert FlickAdvanceState().interval == DEFAULT_INTERVAL_S
 
-    def test_it_is_clamped_to_the_usable_range_from_a_second_under_which_flicks_played_once_each_would_strobe_to_a_minute(self):
+    def test_the_interval_goes_no_shorter_than_a_second_which_is_already_a_strobe(self):
         state = FlickAdvanceState()
         set_interval(state, 0)
-        assert state.interval == MIN_INTERVAL_S
+        assert state.interval == 1
+
+    def test_the_interval_goes_no_longer_than_a_minute_longer_than_anyone_waits_for_a_switch_they_asked_to_be_automatic(self):
+        state = FlickAdvanceState()
         set_interval(state, 9999)
-        assert state.interval == MAX_INTERVAL_S
+        assert state.interval == 60
 
     def test_the_arrows_stop_at_the_ends_rather_than_wrapping(self):
         state = FlickAdvanceState(interval=MIN_INTERVAL_S)

@@ -57,7 +57,21 @@ def test_request_flick_load_starts_background_job():
     assert [(call[1], call[2]) for call in starter.calls] == [((path, 1), "genau-loader")]
 
 
-def test_adopt_loaded_flick_if_ready_promotes_frames_and_notifies_current_flick_on_the_frame_loop_s_thread_since_a_decode_thread_never_hands_its_frames_over_itself():
+def test_a_decode_thread_hands_nothing_over_itself_so_frames_are_taken_up_only_where_the_frame_loop_adopts_them():
+    path = Path("demo.mp4")
+    controller, flick_store, _load_state, _prefetch_state, starter, _logger, active_loaded = _make_loader(current_flick_path=path)
+    controller.request_flick_load(path)
+    ((decode, args, _name),) = starter.calls
+
+    decode(*args)
+
+    assert path not in flick_store.flick_cache
+    assert active_loaded == []
+    controller.adopt_loaded_flick_if_ready()
+    assert path in flick_store.flick_cache
+
+
+def test_adopt_loaded_flick_if_ready_promotes_frames_and_notifies_current_flick():
     path = Path("demo.mp4")
     controller, flick_store, load_state, _prefetch_state, _starter, _logger, active_loaded = _make_loader(current_flick_path=path)
     request_id = load_state.begin(path)

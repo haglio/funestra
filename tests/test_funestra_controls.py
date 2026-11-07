@@ -106,12 +106,14 @@ class TestApplyCommand:
         assert apply_command(PREV, controls) is True
         assert controls.playback.current_video.name == "v0.mp4"
 
-    def test_the_hold_is_named_absolutely_as_every_funestra_names_it_since_a_speaker_asks_for_the_state_they_want(self, tmp_path):
+    def test_lock_on_and_lock_off_hold_whatever_the_lock_was_since_a_speaker_asks_for_the_state_they_want(self, tmp_path):
         controls = _controls(tmp_path)
-        assert apply_command(LOCK_ON, controls) is True
-        assert controls.playback.is_locked is True
-        assert apply_command(LOCK_OFF, controls) is True
-        assert controls.playback.is_locked is False
+        for _twice in range(2):
+            assert apply_command(LOCK_ON, controls) is True
+            assert controls.playback.is_locked is True
+        for _twice in range(2):
+            assert apply_command(LOCK_OFF, controls) is True
+            assert controls.playback.is_locked is False
 
     def test_trash_discards_the_current_clip(self, tmp_path):
         controls = _controls(tmp_path)

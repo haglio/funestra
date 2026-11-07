@@ -85,7 +85,7 @@ class TestPacingTheForum:
         assert asked == ["https://forum.invalid/a.json", "https://forum.invalid/b.json"]
         assert clock.slept == [2.5]
 
-    def test_a_limit_the_forum_names_is_waited_out_then_retried(self):
+    def test_a_limit_the_forum_names_is_waited_out_a_second_longer_so_the_retry_is_not_refused_again(self):
         clock = _FakeClock()
         calls = 0
 
@@ -101,7 +101,7 @@ class TestPacingTheForum:
 
         assert forum.get_json("/a.json") == {"ok": 1}
         assert calls == 2
-        assert clock.slept == [7.0 + harvest.RETRY_GRACE_SO_THE_RETRY_IS_NOT_REFUSED_AGAIN_S]
+        assert clock.slept == [8.0]
 
     def test_a_limit_being_waited_out_is_said_in_the_log(self, caplog):
         clock = _FakeClock()
@@ -122,7 +122,7 @@ class TestPacingTheForum:
             forum.get_json("/a.json")
 
         assert [record.getMessage() for record in caplog.records] == [
-            f"rate limited at https://forum.invalid/a.json: waiting {3600 + harvest.RETRY_GRACE_SO_THE_RETRY_IS_NOT_REFUSED_AGAIN_S:.0f} s",
+            "rate limited at https://forum.invalid/a.json: waiting 3601 s",
         ]
 
 
@@ -148,9 +148,12 @@ class TestPacingTheForum:
 
         assert calls == 3
         assert [record.getMessage() for record in caplog.records] == [
-            f"no answer from https://forum.invalid/a.json (The read operation timed out): waiting {harvest.NETWORK_WAITS_THAT_OUTLAST_A_ROUTER_RESTART_OR_THE_FORUM_S_NIGHTLY_MAINTENANCE_S[0]:.0f} s",
-            f"no answer from https://forum.invalid/a.json (<urlopen error a connection attempt failed>): waiting {harvest.NETWORK_WAITS_THAT_OUTLAST_A_ROUTER_RESTART_OR_THE_FORUM_S_NIGHTLY_MAINTENANCE_S[1]:.0f} s",
+            f"no answer from https://forum.invalid/a.json (The read operation timed out): waiting {harvest.NETWORK_WAITS_S[0]:.0f} s",
+            f"no answer from https://forum.invalid/a.json (<urlopen error a connection attempt failed>): waiting {harvest.NETWORK_WAITS_S[1]:.0f} s",
         ]
+
+    def test_the_network_waits_add_up_to_more_than_three_quarters_of_an_hour_outlasting_a_router_restart_or_the_forums_nightly_maintenance(self):
+        assert sum(harvest.NETWORK_WAITS_S) >= 45 * 60
 
     def test_a_network_that_stays_down_ends_the_run_with_its_error(self):
         clock = _FakeClock()
@@ -185,7 +188,7 @@ class TestPacingTheForum:
         assert calls == 2
         assert [record.getMessage() for record in caplog.records] == [
             ("no answer from https://forum.invalid/a.json (HTTP Error 503: Service Unavailable):"
-             f" waiting {harvest.NETWORK_WAITS_THAT_OUTLAST_A_ROUTER_RESTART_OR_THE_FORUM_S_NIGHTLY_MAINTENANCE_S[0]:.0f} s"),
+             f" waiting {harvest.NETWORK_WAITS_S[0]:.0f} s"),
         ]
 
     def test_a_file_that_is_simply_not_there_is_not_waited_out(self):
@@ -238,7 +241,7 @@ def _short_link(sha: str = _SHA) -> str:
 
 
 class TestWorkingOutWhereAFileIs:
-    def test_a_short_link_names_the_file_so_its_address_needs_no_asking_by_the_forum_software_s_own_scheme_a_sha1_in_base_62_filed_at_one_of_three_depths(self):
+    def test_a_short_link_gives_the_files_addresses_by_the_forum_softwares_own_scheme_deepest_folder_first_where_most_files_are(self):
         host = harvest.FILE_HOST
 
         assert harvest.file_addresses(_short_link()) == [
@@ -255,7 +258,8 @@ class TestWorkingOutWhereAFileIs:
 
 
 class TestDownloadingAScript:
-    def test_the_file_is_fetched_from_where_its_link_says_without_asking_the_forum_and_without_sending_the_file_host_the_account_s_key_since_every_request_to_the_forum_counts_against_a_daily_allowance(self):
+    @staticmethod
+    def _downloaded_from_the_file_host():
         clock = _FakeClock()
         seen: list[tuple[str, str | None]] = []
         found = harvest.file_addresses(_short_link())[1]
@@ -268,12 +272,20 @@ class TestDownloadingAScript:
 
         forum = harvest.Forum("https://forum.invalid", {"User-Api-Key": "k"}, opener=opener,
                               pacing=harvest.Pacing(1.0, clock.sleep, lambda: clock.now))
-
         body, where = forum.download(_short_link())
+        return body, where, found, seen, clock
+
+    def test_the_file_is_fetched_from_where_its_link_says_without_asking_the_forum_since_every_request_there_counts_against_a_daily_allowance(self):
+        body, where, found, seen, clock = self._downloaded_from_the_file_host()
 
         assert (body, where) == (b'{"actions": []}', found)
-        assert seen == [(harvest.file_addresses(_short_link())[0], None), (found, None)]
+        assert [url for url, _key in seen] == [harvest.file_addresses(_short_link())[0], found]
         assert clock.slept == []
+
+    def test_the_accounts_key_never_goes_to_the_file_host(self):
+        _body, _where, _found, seen, _clock = self._downloaded_from_the_file_host()
+
+        assert [key for _url, key in seen] == [None, None]
 
     def test_a_file_the_host_has_at_no_address_is_asked_of_the_forum(self):
         clock = _FakeClock()
