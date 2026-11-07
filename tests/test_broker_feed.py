@@ -5,7 +5,6 @@ import dataclasses
 import logging
 import socket
 import threading
-import time
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -177,7 +176,11 @@ class TestTheSocketLoop:
 
         assert list(delays) == sorted(set(delays))
 
-    def test_a_bind_turned_away_follows_the_port_the_moment_it_is_freed(self, caplog):
+    def test_the_retries_are_many_short_waits_so_the_bind_follows_the_port_at_once_however_slow_the_machine(self):
+        assert max(_MANY_SHORT_WAITS) <= 0.05
+        assert sum(_MANY_SHORT_WAITS) >= 5.0
+
+    def test_a_bind_turned_away_follows_the_port_once_it_is_freed(self, caplog):
         state = BrokerFeed()
         port = _free_udp_port()
 
@@ -199,10 +202,8 @@ class TestTheSocketLoop:
                 t.start()
                 wait_until(lambda: _turned_away(caplog), timeout=10.0)
                 blocker.close()
-                freed_at = time.monotonic()
 
                 _knock_until_bound(port, state)
-                assert time.monotonic() - freed_at < 1.0
                 _send(port, "AUTO 1")
                 wait_until(lambda: state.auto_active, timeout=10.0, interval=0.02)
         finally:

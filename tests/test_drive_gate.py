@@ -219,9 +219,9 @@ class TestWhatVoidsAChoice:
         session.position_ms = 900
         _a_newer_publish_arrives(gate)
 
-        assert gate.handoff_touch() != CHOSEN_TOUCH_MS
+        assert gate.handoff_touch() not in (None, CHOSEN_TOUCH_MS)
 
-    def test_a_rewind_inside_the_horizon_chooses_again_from_the_realigned_wave_since_a_carry_is_for_one_continuous_approach(self):
+    def test_a_rewind_inside_the_horizon_chooses_again_from_the_realigned_wave(self):
         gate, session = _gate_holding_a_forecast()
         for ms in (300, 600):
             session.position_ms = ms
