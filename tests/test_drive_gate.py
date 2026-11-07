@@ -16,6 +16,7 @@ FIRST_VIDEO = Path("videos/Jane Doe - scene one.mp4")
 SECOND_VIDEO = Path("videos/Jane Doe - scene two.mp4")
 CHOSEN_TOUCH_MS = 3_600
 NEWER_BY_MS = 200
+SHIFTED_SO_AT_DOUBLE_SPEED_IT_TOUCHES_DOWN_BEFORE_THE_SCRIPTS_RISE_MS = 1_270
 
 
 def _a_motion_on_the_park(ms: int = 0, **over) -> DriveHud:
@@ -320,7 +321,8 @@ class TestHowFastTheVideoIsRunning:
         session.speed = 2.0
         gate = DriveGate(session)
 
-        gate.visualizer(_a_motion_on_the_park())
+        gate.visualizer(_a_motion_on_the_park(
+            ms=SHIFTED_SO_AT_DOUBLE_SPEED_IT_TOUCHES_DOWN_BEFORE_THE_SCRIPTS_RISE_MS))
 
         assert gate.handoff_touch() not in (None, CHOSEN_TOUCH_MS)
 
