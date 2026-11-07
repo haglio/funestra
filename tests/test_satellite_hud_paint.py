@@ -1886,20 +1886,23 @@ def test_playing_an_action_names_the_action_at_the_head_of_its_window():
     assert narrowed.current_action == "corner"
 
 
-def test_a_click_on_one_of_a_rows_words_filters_to_that_action_alone(thumb):
+def test_a_click_on_a_word_turns_that_action_on_or_off_leaving_the_others_as_they_are(thumb):
     rendered = HudRenderer("portrait").render(
         _model(corner=HudCell(path="c.mp4", thumb=thumb),
                actions=(HudCell(path="a1.mp4", thumb=thumb, label="gamma, XYZ 2"),),
                current_action="alpha, XYZ"))
     words = rendered.targets.words
+    clicks = HudClicks("portrait")
 
     def press(name: str, nth: int = 0) -> str:
         x, y, w, h = [rect for rect, word in words if word == name][nth]
-        return HudClicks("portrait").press(rendered.targets, x + w // 2, y + h // 2, now=0.0)
+        return clicks.press(rendered.targets, x + w // 2, y + h // 2, now=0.0)
 
     assert [word for _rect, word in words] == ["alpha", "XYZ", "gamma", "XYZ"]
-    assert (press("alpha"), press("XYZ"), press("XYZ", 1)) == (
-        "filter_portrait_alpha", "filter_portrait_xyz", "filter_portrait_xyz")
+    assert [press("alpha"), press("XYZ", 1), press("gamma"),
+            press("alpha"), press("XYZ"), press("gamma")] == [
+        "filter_portrait_alpha", "filter_portrait_alpha,_xyz", "filter_portrait_alpha,_xyz,_gamma",
+        "filter_portrait_xyz,_gamma", "filter_portrait_gamma", "portrait_no_filter"]
 
 
 def test_the_pointer_on_one_of_a_rows_words_says_what_its_click_does(thumb):
