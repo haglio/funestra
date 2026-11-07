@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from import_checks import packages_named_in_imports
 
 import funestra
 from funestra import mpv_engine
@@ -115,3 +116,7 @@ def test_a_folder_that_cannot_be_looked_in_at_all_says_what_it_answered(monkeypa
 
     assert "could not be looked in" in said
     assert "Access is denied" in said
+
+
+def test_the_loader_imports_the_standard_library_alone_so_the_fetch_tool_can_run_it_before_funestra_is_installed():
+    assert packages_named_in_imports("funestra.libmpv_loader") <= sys.stdlib_module_names

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ast
 import email.message
 import io
 import json
@@ -11,6 +10,7 @@ from pathlib import Path
 
 import pytest
 from app_support import haglio_settings
+from import_checks import packages_named_in_imports
 
 from tools import harvest_eroscripts as harvest
 
@@ -421,10 +421,4 @@ class TestWhichCorpusIsWorkedIn:
 
 
 def test_the_tool_imports_the_standard_library_and_app_support_alone():
-    tree = ast.parse(Path(harvest.__file__).read_text(encoding="utf-8"))
-    imported = {alias.name.split(".")[0] for node in ast.walk(tree)
-                if isinstance(node, ast.Import) for alias in node.names}
-    imported |= {(node.module or "").split(".")[0] for node in ast.walk(tree)
-                 if isinstance(node, ast.ImportFrom)}
-
-    assert imported <= sys.stdlib_module_names | {"app_support"}
+    assert packages_named_in_imports("tools.harvest_eroscripts") <= sys.stdlib_module_names | {"app_support"}

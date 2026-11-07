@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import os
-import re
 from pathlib import Path
+
+from import_checks import packages_named_in_imports
 
 from funestra import sdl_hints
 from funestra.sdl_hints import FOCUS_CLICKTHROUGH_HINT, deliver_the_focusing_click
@@ -28,8 +29,7 @@ class TestDeliverTheFocusingClick:
 
 
 def test_no_module_of_the_package_imports_pygame_which_only_a_host_with_a_window_has():
-    importing = [module.name for module in sorted(Path(sdl_hints.__file__).parent.glob("*.py"))
-                 if re.search(r"^\s*(?:from|import)\s+pygame\b", module.read_text(encoding="utf-8"),
-                              re.MULTILINE)]
+    importing = [module.stem for module in sorted(Path(sdl_hints.__file__).parent.glob("*.py"))
+                 if "pygame" in packages_named_in_imports(f"funestra.{module.stem}")]
 
     assert importing == []
