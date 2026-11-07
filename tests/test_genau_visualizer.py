@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from fractions import Fraction
 
 import pytest
 
@@ -14,6 +15,7 @@ from funestra.learned_motion import (
     enable_learned_motion,
     tick_learned_motion,
 )
+from funestra.osr2_visualizer import PUBLISH_INTERVAL_S, TRACE_SAMPLES
 from funestra.robot_hand import MIN_BPM, RobotHandState, bpm_for_speed
 from funestra.robot_hand_beat import BeatEngine
 
@@ -45,8 +47,8 @@ def _visualizer(**over) -> GenauVisualizer:
     )
 
 
-JUST_UNDER_THE_PUBLISH_INTERVAL_AN_EXACT_BINARY_FRACTION_CLOSE_BY = 0.0390625
-JUST_OVER_THE_PUBLISH_INTERVAL_AN_EXACT_BINARY_FRACTION_CLOSE_BY = 0.04296875
+JUST_UNDER_THE_INTERVAL = 0.0390625
+JUST_OVER_THE_INTERVAL = 0.04296875
 
 
 class TestTheVisualizerGoesOutOnATimerSinceItsTraceScrollsWhileNothingElseChanges:
@@ -66,7 +68,7 @@ class TestTheVisualizerGoesOutOnATimerSinceItsTraceScrollsWhileNothingElseChange
         visualizer.update(1.0)
         drive.write_text("stale", encoding="utf-8")
 
-        visualizer.update(1.0 + JUST_UNDER_THE_PUBLISH_INTERVAL_AN_EXACT_BINARY_FRACTION_CLOSE_BY)
+        visualizer.update(1.0 + JUST_UNDER_THE_INTERVAL)
 
         assert drive.read_text(encoding="utf-8") == "stale"
 
@@ -75,12 +77,21 @@ class TestTheVisualizerGoesOutOnATimerSinceItsTraceScrollsWhileNothingElseChange
         visualizer.update(1.0)
         drive.write_text("stale", encoding="utf-8")
 
-        visualizer.update(1.0 + JUST_OVER_THE_PUBLISH_INTERVAL_AN_EXACT_BINARY_FRACTION_CLOSE_BY)
+        visualizer.update(1.0 + JUST_OVER_THE_INTERVAL)
 
         assert drive.read_text(encoding="utf-8") != "stale"
 
     def test_a_build_with_nowhere_to_publish_says_nothing(self):
         _visualizer().update(1.0)
+
+    def test_it_goes_out_oftener_than_motion_reads_as_stepping_and_under_a_sixty_hertz_refresh(self):
+        assert 1 / 60 < PUBLISH_INTERVAL_S < 1 / 10
+
+    def test_the_two_ticks_either_side_of_the_interval_are_exact_in_binary_and_close_to_it(self):
+        for tick in (JUST_UNDER_THE_INTERVAL, JUST_OVER_THE_INTERVAL):
+            assert Fraction(tick).denominator <= 256
+        assert PUBLISH_INTERVAL_S - 0.001 < JUST_UNDER_THE_INTERVAL < PUBLISH_INTERVAL_S
+        assert PUBLISH_INTERVAL_S < JUST_OVER_THE_INTERVAL < PUBLISH_INTERVAL_S + 0.003
 
 
 
@@ -132,12 +143,14 @@ class TestTheSpanTheTraceIsDrawnOver:
 
 
 class TestTheTraceHoldsStillAndSlides:
-    def test_the_wave_holds_its_drawing_between_knots_a_twelfth_of_a_knot_on(self):
+    def test_the_wave_holds_its_drawing_between_knots_moved_half_a_knot_on(self):
         sender = FakeSender()
         visualizer = _visualizer(tcode_sender=sender)
         visualizer.update(1.0)
         first = visualizer.drive
-        sender.motion_phase = 0.0126
+        span_s = 60.0 * 4 / MIN_BPM
+        a_knot = span_s / (TRACE_SAMPLES - 1) * bpm_for_speed(50) / 4 / 60.0
+        sender.motion_phase = a_knot / 2
 
         visualizer.update(1.05)
 

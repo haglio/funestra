@@ -18,7 +18,7 @@ MIN_BPM = 5.0
 MAX_BPM = 200.0
 MIN_SPEED = 5
 MAX_SPEED = 100
-ON_THE_PARK_WITHIN_FOR_THE_TRACE_AND_THE_SENDER_ALIKE = 0.02
+ON_THE_PARK_WITHIN = 0.02
 FULL_INTENSITY = 100
 
 PARK_CENTER = 0
@@ -26,7 +26,7 @@ RETRACT_CENTER = 100
 
 MAX_TICK_SECONDS = 0.1
 
-_HAIR_A_FLOAT_FALLS_SHORT_OF_THE_WHOLE_STEP_IT_STANDS_ON = 1e-9
+_ROUNDING = 1e-9
 _HALVINGS = 40
 _BEND = 80
 
@@ -55,7 +55,7 @@ def amplitude_ceiling(max_intensity: int, speed: int) -> int:
     cap = travel_cap(max_intensity)
     if cap is None:
         return 100
-    return min(100, math.floor(cap / wave_travel(1, bpm_for_speed(speed)) + _HAIR_A_FLOAT_FALLS_SHORT_OF_THE_WHOLE_STEP_IT_STANDS_ON))
+    return min(100, math.floor(cap / wave_travel(1, bpm_for_speed(speed)) + _ROUNDING))
 
 
 def speed_ceiling(max_intensity: int, amplitude: int) -> int:
@@ -69,7 +69,7 @@ def _fastest_speed_within(bpm: float) -> int:
     if bpm <= MIN_BPM:
         return MIN_SPEED
     speed = MIN_SPEED + (MAX_SPEED - MIN_SPEED) * math.log(bpm / MIN_BPM) / math.log(MAX_BPM / MIN_BPM)
-    return min(MAX_SPEED, math.floor(speed + _HAIR_A_FLOAT_FALLS_SHORT_OF_THE_WHOLE_STEP_IT_STANDS_ON))
+    return min(MAX_SPEED, math.floor(speed + _ROUNDING))
 
 
 def _share_of_the_bars_within(cap: float, amplitude: int, speed: int) -> float:
@@ -157,8 +157,8 @@ def _the_bars_before_rounding(state: RobotHandState) -> tuple[float, float, floa
 
 def _rounded(bars: tuple[float, float, float]) -> tuple[int, int, int]:
     amplitude, speed, center = bars
-    return (math.floor(amplitude + _HAIR_A_FLOAT_FALLS_SHORT_OF_THE_WHOLE_STEP_IT_STANDS_ON),
-            max(MIN_SPEED, math.floor(speed + _HAIR_A_FLOAT_FALLS_SHORT_OF_THE_WHOLE_STEP_IT_STANDS_ON)),
+    return (math.floor(amplitude + _ROUNDING),
+            max(MIN_SPEED, math.floor(speed + _ROUNDING)),
             round(center))
 
 

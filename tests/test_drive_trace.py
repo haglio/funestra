@@ -22,17 +22,17 @@ from funestra.playback_rate import MAX_RATE
 from funestra.trace_grid import on_the_grid
 
 STEP_MS = 100
-SPAN_OF_WHOLE_100_MS_STEPS_SO_A_SLIDE_COMPARES_EXACTLY_S = (TRACE_SAMPLES - 1) * STEP_MS / 1000
-A_FLOOR_ABOVE_THE_PARK_SO_THE_RAMPS_HAVE_SOMEWHERE_TO_GO = {"amplitude": 80, "center": 50}
-FROM_COLUMN_1_SINCE_COLUMN_0_FALLS_BEFORE_THE_PLAYHEAD = slice(1, 20)
+SPAN_S = (TRACE_SAMPLES - 1) * STEP_MS / 1000
+A_FLOOR_ABOVE_THE_PARK = {"amplitude": 80, "center": 50}
+FROM_COLUMN_1 = slice(1, 20)
 RAMP_STEPS = HANDOFF_RAMP_MS // STEP_MS
-NEWER_PUBLISH_MS_SHARED_SO_ONLY_A_MOVED_CONTROL_EXPLAINS_A_NEW_TOP = 20
+NEWER_PUBLISH_MS = 20
 
 
 def _motion(**over) -> DriveHud:
     base = {
-        "speed": 50, **A_FLOOR_ABOVE_THE_PARK_SO_THE_RAMPS_HAVE_SOMEWHERE_TO_GO,
-        "trace_seconds": SPAN_OF_WHOLE_100_MS_STEPS_SO_A_SLIDE_COMPARES_EXACTLY_S,
+        "speed": 50, **A_FLOOR_ABOVE_THE_PARK,
+        "trace_seconds": SPAN_S,
         "waveform": tuple(0.5 + 0.4 * np.sin(i / 6) for i in range(TRACE_SAMPLES))}
     base.update(over)
     return DriveHud(**base)
@@ -82,7 +82,7 @@ class TestOneLineTwoDrivers:
 
         assert hud.segments == ((0, DRIVEN_BY_FUNSCRIPT),)
         assert hud.waveform == script.planned_trace_window(
-            0, round(SPAN_OF_WHOLE_100_MS_STEPS_SO_A_SLIDE_COMPARES_EXACTLY_S * 1000), TRACE_SAMPLES)[0][:TRACE_SAMPLES]
+            0, round(SPAN_S * 1000), TRACE_SAMPLES)[0][:TRACE_SAMPLES]
 
     def test_a_script_under_a_max_intensity_is_drawn_as_shallow_as_the_device_is_sent(self):
         script = _script(until_ms=120_000)
@@ -90,7 +90,7 @@ class TestOneLineTwoDrivers:
         hud = osr2_visualizer(_motion(), Playhead(0, max_intensity=30), script=script)
 
         assert hud.waveform == script.planned_trace_window(
-            0, round(SPAN_OF_WHOLE_100_MS_STEPS_SO_A_SLIDE_COMPARES_EXACTLY_S * 1000), TRACE_SAMPLES, max_intensity=30)[0][:TRACE_SAMPLES]
+            0, round(SPAN_S * 1000), TRACE_SAMPLES, max_intensity=30)[0][:TRACE_SAMPLES]
         assert hud.position == round(POSITION_MAX * script.planned_position_at(
             0, 1.0, max_intensity=30) / 100)
 
@@ -169,6 +169,13 @@ class TestTheRampDownOntoThePark:
 
         assert hud.waveform[opens + RAMP_STEPS - 1] > 0.0
         assert hud.waveform[opens + RAMP_STEPS] == 0.0
+
+    def test_at_double_speed_the_climb_back_out_takes_as_many_columns_too(self):
+        hud = osr2_visualizer(_parked_motion(), Playhead(1_000, 2.0), script=_script(until_ms=2_000))
+        blue_start = hud.runs[-1][0]
+
+        assert hud.waveform[blue_start - RAMP_STEPS] == 0.0
+        assert hud.waveform[blue_start - RAMP_STEPS + 1] > 0.0
 
     def test_the_dot_walks_down_the_ramp_with_the_device(self):
         script = _script_ahead()
@@ -268,7 +275,7 @@ class TestAFloorOnTheParkEndsOnItsTouchDown:
 
         assert blue_end_ms > 3_000
 
-    def test_a_touch_too_soon_after_the_boundary_for_the_arbiter_to_stop_at_is_passed_over_for_the_next(self):
+    def test_a_touch_too_soon_after_the_boundary_is_passed_over_since_the_arbiter_learns_of_it_through_the_status_file_and_cannot_stop_there(self):
         latch = DescentLatch()
         touches_down_every_ms = round(2 * np.pi * 3 * STEP_MS)
         touching_a_tenth_of_a_second_past_the_boundary = self._touching_motion(
@@ -324,17 +331,24 @@ class TestAFloorOnTheParkEndsOnItsTouchDown:
         for column in range(blue_end - feather_columns, blue_end):
             assert 0.0 <= hud.waveform[column] <= published.waveform[column] + 1e-9
 
-    def test_a_far_boundary_stays_a_live_forecast_since_the_projected_wave_drifts_before_the_playhead_gets_there(self):
+    def test_a_boundary_more_than_three_seconds_off_stays_a_live_forecast_since_the_projected_wave_drifts_a_swing_wrong_before_the_playhead_gets_there(self):
         script = _script_ahead(from_ms=18_000, to_ms=19_000)
         latch = DescentLatch()
 
-        _read(script, at=2_000, published=self._touching_motion(),
+        _read(script, at=9_960, published=self._touching_motion(),
               latch=latch)
         assert latch.choice_for(13_000) is None
 
         _read(script, at=10_040, published=self._touching_motion(),
               latch=latch)
         assert latch.choice_for(13_000) is not None
+
+    def test_the_last_blue_columns_before_a_touch_down_bend_onto_the_park_too(self):
+        published = self._touching_motion()
+        hud = _read(_script_ahead(), at=0, published=published, latch=DescentLatch())
+        blue_end = hud.runs[0][1]
+
+        assert 0 < hud.waveform[blue_end - 1] < published.waveform[blue_end - 1] / 2
 
     def test_a_raised_floor_still_ramps(self):
         hud = _read(_script_ahead(), at=0, latch=DescentLatch())
@@ -354,7 +368,7 @@ class TestTheDescentTopIsSelectedOnce:
 
         first = _read(script, at=0, published=_motion_at(0), latch=latch)
         later = _read(script, at=0, published=_motion_at(
-            NEWER_PUBLISH_MS_SHARED_SO_ONLY_A_MOVED_CONTROL_EXPLAINS_A_NEW_TOP), latch=latch)
+            NEWER_PUBLISH_MS), latch=latch)
 
         assert later.waveform[opens] == first.waveform[opens]
 
@@ -390,7 +404,7 @@ class TestTheDescentTopIsSelectedOnce:
 
         first = _read(script, at=0, published=_motion_at(0), latch=latch)
         moved = _read(script, at=0, published=_motion_at(
-            NEWER_PUBLISH_MS_SHARED_SO_ONLY_A_MOVED_CONTROL_EXPLAINS_A_NEW_TOP, **{control: moved_to}), latch=latch)
+            NEWER_PUBLISH_MS, **{control: moved_to}), latch=latch)
 
         assert moved.waveform[opens] != first.waveform[opens]
 
@@ -439,7 +453,7 @@ class TestStillTraceTheMotionIsAskedWhatHeightNeverWhen:
 
         traces = [
             _read(script, at=at, published=_motion_at(at)).waveform[
-                FROM_COLUMN_1_SINCE_COLUMN_0_FALLS_BEFORE_THE_PLAYHEAD]
+                FROM_COLUMN_1]
             for at in (0, 40, 80)
         ]
 
@@ -484,7 +498,7 @@ class TestPositionMarker:
 
 
 class TestTheSeamCannotFlicker:
-    def test_the_last_blue_column_sits_on_the_latched_top_at_the_cost_of_a_slight_bend_in_the_last_few_columns(self):
+    def test_the_last_blue_columns_bend_onto_the_latched_top_so_an_older_publish_cannot_move_the_seam(self):
         latch = DescentLatch()
         published = _motion()
         hud = _read(_script_ahead(), at=1_000, published=published,
@@ -492,7 +506,7 @@ class TestTheSeamCannotFlicker:
         seam = hud.runs[0][1]
 
         top = latch.choice_for(3_000).top
-        assert abs(hud.waveform[seam - 1] - top) < 0.12
+        assert abs(hud.waveform[seam - 1] - top) < abs(published.waveform[seam - 1] - top) / 2
         aged = _read(_script_ahead(), at=1_000, published=_motion_at(20),
                      latch=latch)
         assert abs(aged.waveform[seam - 1] - hud.waveform[seam - 1]) < 0.02

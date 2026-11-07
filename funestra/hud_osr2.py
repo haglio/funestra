@@ -8,8 +8,6 @@ from typing import Protocol
 from PIL import Image, ImageDraw
 from shared_ui.palette import (
     BLUE,
-    GREEN,
-    MAGENTA,
     TEXT_MUTED,
     TEXT_PRIMARY,
 )
@@ -57,7 +55,8 @@ LABELS = {
     OSR2_PARKED: "Parked", OSR2_RETRACTED: "Retracted",
 }
 COLORS = {
-    Osr2State.FUNSCRIPT: GREEN, Osr2State.ROBOT_HAND: BLUE, Osr2State.AUTO: MAGENTA,
+    Osr2State.FUNSCRIPT: trace_ink(DRIVEN_BY_FUNSCRIPT), Osr2State.ROBOT_HAND: trace_ink(DRIVEN_BY_ROBOT_HAND),
+    Osr2State.AUTO: trace_ink(DRIVEN_BY_AUTO),
     Osr2State.OFF: TEXT_MUTED, Osr2State.UNPLUGGED: TEXT_MUTED, Osr2State.NO_ANSWER: TEXT_MUTED,
     BUFFER: _NEUTRAL_PILL,
     OSR2_PARKED: _NEUTRAL_PILL, OSR2_RETRACTED: _NEUTRAL_PILL,

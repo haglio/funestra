@@ -17,11 +17,11 @@ _CTRL = 14
 _MARK_GAP = GAP_SMALL
 _GAP = GAP_MEDIUM
 _WAVE_H = 96
-_WIDTH_OF_CENTER_WITH_ITS_NUMBER_STACKED_UNDER_IT = 34
-_WIDTH_OF_AMP_WITH_ITS_NUMBER_STACKED_UNDER_IT = 25
+_CENTER_LABEL_W = 34
+_AMP_LABEL_W = 25
 _WAVE_W = 2 * (_CTRL + _MARK_GAP) + _WAVE_H
 
-SECTION_W = _WIDTH_OF_CENTER_WITH_ITS_NUMBER_STACKED_UNDER_IT + _GAP + _CTRL + _GAP + _WAVE_W + _MARK_GAP + _CTRL + _GAP + _WIDTH_OF_AMP_WITH_ITS_NUMBER_STACKED_UNDER_IT
+SECTION_W = _CENTER_LABEL_W + _GAP + _CTRL + _GAP + _WAVE_W + _MARK_GAP + _CTRL + _GAP + _AMP_LABEL_W
 SECTION_H = _CTRL + _MARK_GAP + _WAVE_H + _MARK_GAP + _CTRL + 2 + _LABEL_H
 
 TRACE_SAMPLES = 80
@@ -74,7 +74,7 @@ class Geometry:
 
 
 def geometry(x: int, y: int, center_frac: float) -> Geometry:
-    ctr_ctrl_x = x + _WIDTH_OF_CENTER_WITH_ITS_NUMBER_STACKED_UNDER_IT + _GAP
+    ctr_ctrl_x = x + _CENTER_LABEL_W + _GAP
     wave_x = ctr_ctrl_x + _CTRL + _GAP
     amp_x = wave_x + _WAVE_W + _MARK_GAP
     wave_y = y + _CTRL + _MARK_GAP
@@ -91,9 +91,9 @@ def geometry(x: int, y: int, center_frac: float) -> Geometry:
     center_up = (ctr_ctrl_x, up_y, _CTRL, _CTRL)
     center_down = (ctr_ctrl_x, up_y + _CTRL + _MARK_GAP, _CTRL, _CTRL)
     label_h = 2 * _CTRL + _MARK_GAP
-    center_label = (x, up_y, _WIDTH_OF_CENTER_WITH_ITS_NUMBER_STACKED_UNDER_IT, label_h)
-    center_handle = (x, up_y, _WIDTH_OF_CENTER_WITH_ITS_NUMBER_STACKED_UNDER_IT + _GAP, label_h)
-    amp_label = (amp_x + _CTRL + _GAP, wave_y + (_WAVE_H - label_h) // 2, _WIDTH_OF_AMP_WITH_ITS_NUMBER_STACKED_UNDER_IT, label_h)
+    center_label = (x, up_y, _CENTER_LABEL_W, label_h)
+    center_handle = (x, up_y, _CENTER_LABEL_W + _GAP, label_h)
+    amp_label = (amp_x + _CTRL + _GAP, wave_y + (_WAVE_H - label_h) // 2, _AMP_LABEL_W, label_h)
 
     speed_y = wave_lower + _MARK_GAP
     bar_x = wave_x + _CTRL + _MARK_GAP
