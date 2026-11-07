@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from app_support.video_action import ACTION_KEY, VIDEO_BLOCK, labels_of
+
 IMAGE_IDENTITY_FIELDS = (
     "positive_prompt",
     "negative_prompt",
@@ -25,6 +27,11 @@ FRAME_OF_VIDEO = "frame_of_video"
 
 def normalized_text(value: object) -> str:
     return " ".join(str(value or "").split()).lower()
+
+
+def actions_text(record: dict) -> str:
+    return (", ".join(labels_of(record))
+            or str((record.get(VIDEO_BLOCK) or {}).get(ACTION_KEY) or "").strip())
 
 
 def filter_keeps(text: object, query: object) -> bool:
