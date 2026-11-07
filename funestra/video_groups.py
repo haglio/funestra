@@ -5,6 +5,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 
 from app_support import watch_weights
+from app_support.video_action import ACTION_KEY, VIDEO_BLOCK, labels_of
 
 from .video_families import action_group_key, normalized_text, seed_group_key
 
@@ -154,7 +155,8 @@ def action_label(index: GroupIndex, path: str) -> str:
 def _entry_for(path: str, record: dict) -> VideoEntry:
     return VideoEntry(
         path=path,
-        action=str((record.get("video") or {}).get("action") or "").strip(),
+        action=", ".join(labels_of(record))
+        or str((record.get(VIDEO_BLOCK) or {}).get(ACTION_KEY) or "").strip(),
         action_key=action_group_key(record),
         seed_key=seed_group_key(record),
         scene_tags=scene_tags(record),
