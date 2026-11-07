@@ -170,16 +170,22 @@ class TestAChoiceIsHeldBecauseRereadEveryFrameTheSeamFlickered:
 
         assert gate.handoff_touch() == CHOSEN_TOUCH_MS
 
-
-    @pytest.mark.parametrize("moved_to_ms", [40, 300, 600, -300, 900, -250, -251, 400, 401, 940])
-    def test_at_every_playhead_a_case_moves_to_a_re_choice_can_be_told_from_a_carry(self, moved_to_ms):
-        gate, session = _gate_holding_a_forecast()
+    @pytest.mark.parametrize(("chosen_at_ms", "moved_to_ms"), [
+        (0, 40), (0, 300), (0, 600), (0, 900), (0, 400), (0, 401), (900, 940),
+    ])
+    def test_at_every_playhead_a_case_moves_to_a_re_choice_can_be_told_from_a_carry(
+            self, chosen_at_ms, moved_to_ms):
+        session = FakeSession()
+        gate = DriveGate(session)
+        session.position_ms = chosen_at_ms
+        gate.visualizer(_a_motion_on_the_park(NEWER_BY_MS if chosen_at_ms else 0))
+        chosen = gate.handoff_touch()
         gate.visualizer(None)
 
         session.position_ms = moved_to_ms
-        _a_newer_publish_arrives(gate)
+        gate.visualizer(_a_motion_on_the_park(2 * NEWER_BY_MS if chosen_at_ms else NEWER_BY_MS))
 
-        assert gate.handoff_touch() != CHOSEN_TOUCH_MS
+        assert gate.handoff_touch() not in (None, chosen)
 
 
 class TestWhatVoidsAChoice:
@@ -199,7 +205,7 @@ class TestWhatVoidsAChoice:
 
         assert gate.handoff_touch() != CHOSEN_TOUCH_MS
 
-    def test_a_rewind_leaves_nothing_chosen_since_the_old_touch_would_cut_the_realigned_wave_anywhere(self):
+    def test_a_rewind_leaves_nothing_chosen_until_the_boundary_is_near_again(self):
         gate, session = _gate_holding_a_forecast()
 
         session.position_ms = -300
@@ -207,13 +213,28 @@ class TestWhatVoidsAChoice:
 
         assert gate.handoff_touch() is None
 
-    def test_a_jump_forward_since_a_choice_is_carried_only_through_one_continuous_approach(self):
+    def test_a_jump_forward_chooses_again(self):
         gate, session = _gate_holding_a_forecast()
 
         session.position_ms = 900
         _a_newer_publish_arrives(gate)
 
         assert gate.handoff_touch() != CHOSEN_TOUCH_MS
+
+    def test_a_rewind_inside_the_horizon_chooses_again_from_the_realigned_wave_since_a_carry_is_for_one_continuous_approach(self):
+        gate, session = _gate_holding_a_forecast()
+        for ms in (300, 600):
+            session.position_ms = ms
+            _a_newer_publish_arrives(gate)
+        fresh_session = FakeSession()
+        fresh_session.position_ms = 100
+        fresh = DriveGate(fresh_session)
+
+        session.position_ms = 100
+        gate.visualizer(_a_motion_on_the_park(900))
+        fresh.visualizer(_a_motion_on_the_park(900))
+
+        assert gate.handoff_touch() == fresh.handoff_touch() != CHOSEN_TOUCH_MS
 
     def test_the_end_of_a_pause_long_enough_to_slide_the_wave(self):
         gate, session = _gate_holding_a_forecast()
