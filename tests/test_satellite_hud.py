@@ -361,6 +361,11 @@ def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it_but_for_th
     assert label_is_filtered("Gamma", "", CAMERA_WORDS) is False
 
 
+def test_a_label_of_comma_joined_names_is_filtered_with_no_camera_words_named():
+    assert [label_is_filtered("alpha, beta, XYZ", query) for query in ("beta", "xyz", "gamma")] == [
+        True, True, False]
+
+
 def test_act_is_filtered_picks_out_which_of_a_rows_acts_the_filter_named():
     def lit(act: str, filter_query: str) -> bool:
         return act_is_filtered(act, filter_query, CAMERA_WORDS)
@@ -498,6 +503,10 @@ def test_a_source_that_names_no_camera_words_has_a_rows_first_word_read_as_the_a
     assert HudModel(funestra="portrait").camera_words == ()
     assert action_label_blocks("side gamma", ()) == [["Side", "Gamma"]]
     assert action_label_blocks("xyz gamma", ()) == [["Xyz", "Gamma"]]
+
+
+def test_a_word_written_in_capitals_keeps_them_in_its_block():
+    assert action_label_blocks("alpha, XYZ", ()) == [["Alpha"], ["XYZ"]]
 
 
 def test_action_label_blocks_split_a_leading_camera_word_into_its_own_act():
