@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, replace
 from typing import NamedTuple
 
@@ -82,6 +83,7 @@ from .satellite_hud import (
     NavMapWindow,
     SectionHeights,
     act_is_filtered,
+    act_named,
     action_label_blocks,
     build_click_targets,
     button_row_rects,
@@ -105,6 +107,7 @@ from .satellite_hud import (
     playing_rect,
     rows_with_the_speed,
     seed_column_label,
+    split_acts,
     thumbnail_rect,
     wrong_action_rect,
 )
@@ -405,8 +408,8 @@ class HudRenderer:
             hx, hy, hw, hh = thumbnails[held]
             draw.rectangle([hx, hy, hx + hw - 1, hy + hh - 1],
                            outline=(*WHITE, 255), width=_BORDER_W)
-        wrong_rect = self._draw_labels(hud, model, (gutter_x, top), rects,
-                                       seed_offset=seed_win.start if seed_win else 0)
+        wrong_rect, word_rects = self._draw_labels(hud, model, (gutter_x, top), rects,
+                                                   seed_offset=seed_win.start if seed_win else 0)
         filter_rects = filter_button_rects(rects.corner, rects.actions, gutter_x,
                                            model.current_action,
                                            [cell.label for cell in model.actions])
@@ -432,6 +435,7 @@ class HudRenderer:
             filter=filter_rects,
             expand=expand_rect,
             wrong_action=wrong_rect,
+            words=word_rects,
         )
 
     def _draw_device(self, hud: Hud, model: HudModel, y: int,
@@ -522,9 +526,10 @@ class HudRenderer:
         return thumbnails
 
     def _draw_labels(self, hud: Hud, model: HudModel, at: tuple[int, int], rects: NavMapRects,
-                     *, seed_offset: int = 0) -> Rect | None:
+                     *, seed_offset: int = 0) -> tuple[Rect | None, list[tuple[Rect, str]]]:
         image, draw = hud.image, hud.draw
         x, y = at
+        words: list[tuple[Rect, str]] = []
 
         def column(cx: int, cw: int, text: str) -> None:
             strip = Image.new("RGBA", (cw, COL_LABEL_H), (0, 0, 0, 0))
@@ -540,12 +545,17 @@ class HudRenderer:
             total = sum(len(block) for block in blocks) * line_h + (len(blocks) - 1) * ACT_GAP
             ty = label_stack_top(row_y, row_h, total, extra)
             words_end = ty + total
-            for block in blocks:
+            right = x + ROW_LABEL_GUTTER - NAV_MAP_GAP
+            acts = split_acts(text, model.camera_words)
+            for block, act in zip(blocks, acts + [""] * (len(blocks) - len(acts)), strict=True):
                 lit = row_kept and act_is_filtered(
                     " ".join(block), model.filter_query, model.camera_words)
                 color = TEXT_PRIMARY if lit else TEXT_MUTED
+                if act:
+                    wide = math.ceil(max(self._tiny.getlength(line) for line in block))
+                    words.append(((right - wide, ty, wide, len(block) * line_h), act_named(act)))
                 for line in block:
-                    draw.text((x + ROW_LABEL_GUTTER - NAV_MAP_GAP, ty + line_h / 2), line,
+                    draw.text((right, ty + line_h / 2), line,
                               font=self._tiny, anchor="rm", fill=(*color, 255))
                     ty += line_h
                 ty += ACT_GAP
@@ -563,7 +573,7 @@ class HudRenderer:
             column(sx, sw, seed_column_label(seed_offset + i + 1))
         for i, (_ax, ay, _aw, ah) in enumerate(rects.actions):
             row(ay, ah, model.actions[i].label if i < len(model.actions) else "")
-        return wrong
+        return wrong, words
 
     def _pointer_is_on(self, rect: Rect) -> bool:
         return self._pointer is not None and contains(rect, *self._pointer)
