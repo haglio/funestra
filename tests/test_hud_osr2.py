@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import dataclasses
+import inspect
 from pathlib import Path
 
 import numpy as np
@@ -22,7 +24,7 @@ from funestra.hud_osr2 import (
     line_shown_for,
     state_for,
 )
-from funestra.main_hud import OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED, MainHudModel
+from funestra.main_hud import GAP, OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED, MainHudModel
 from funestra.modes import Osr2State
 from funestra.osr2_visualizer import (
     DRIVEN_BY_AUTO,
@@ -59,6 +61,34 @@ def test_each_drivers_word_is_written_in_the_ink_its_stretch_of_the_trace_is_dra
     assert COLORS[Osr2State.AUTO] == trace_ink(DRIVEN_BY_AUTO)
     assert COLORS[Osr2State.FUNSCRIPT] == trace_ink(DRIVEN_BY_FUNSCRIPT)
     assert COLORS[Osr2State.ROBOT_HAND] == trace_ink(DRIVEN_BY_ROBOT_HAND)
+
+
+def test_the_label_sits_farther_from_the_buttons_than_from_its_word_so_it_reads_as_a_read_out():
+    section = Osr2Section()
+    button = Button("x", "minus", "tip")
+
+    clearance = section.width(Osr2Line(controls=(button,))) - section.width(Osr2Line()) - button.width
+
+    assert clearance > hud_osr2._LABEL_GAP
+
+
+def test_the_devices_buttons_sit_a_plain_gap_apart_since_a_row_layout_would_open_a_group_gap_between_them():
+    _hud, placed = _drawn(Osr2Line(controls=(Button("x", "minus", "tip"), Button("y", "plus", "tip"))))
+    (x0, _y0, w0, _h0), (x1, _y1, _w1, _h1) = [rect for rect, button in placed if button.command]
+
+    assert x1 - (x0 + w0) == GAP
+
+
+def test_the_word_for_who_has_the_device_wears_no_frame_since_an_outlined_word_beside_buttons_reads_as_a_third():
+    hud, _ = _drawn(Osr2Line(state=Osr2State.FUNSCRIPT))
+    pixels = np.array(hud.image.convert("RGB")).astype(int)
+    rows, cols = np.where((pixels == np.array(GREEN)).all(axis=-1))
+    top, bottom, left, right = rows.min(), rows.max(), cols.min(), cols.max()
+    slab = tuple(pixels[5, right + 10])
+    ring = [tuple(pixels[r, c]) for r in (top - 2, bottom + 2) for c in range(left - 2, right + 3)]
+    ring += [tuple(pixels[r, c]) for c in (left - 2, right + 2) for r in range(top - 2, bottom + 3)]
+
+    assert set(ring) == {slab}
 
 
 def test_buffer_is_the_pill_s_own_word_drawn_and_never_one_of_the_states_the_wire_carries():
@@ -185,7 +215,12 @@ def _park() -> Button:
     return Button("robot_hand_park", "P", "Parked")
 
 
-class TestWhoTheLineNamesAsItsHostResolvedItSinceEachHudAnswersThatFromItsOwnInputs:
+class TestWhoTheLineNamesIsResolvedByItsHost:
+    def test_the_line_carries_the_answer_never_the_resolvers_inputs(self):
+        carried = {field.name for field in dataclasses.fields(Osr2Line)}
+
+        assert carried.isdisjoint(inspect.signature(state_for).parameters)
+
     def test_the_driver_is_named_when_nothing_is_holding_the_device(self):
         assert state_for(Osr2State.ROBOT_HAND, "") == Osr2State.ROBOT_HAND
 
