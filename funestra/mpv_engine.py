@@ -200,8 +200,8 @@ class _MpvControl:
         handle.observe_property("current-tracks/video/image", self._note_image_track)
         handle.observe_property("path", self._note_file)
         # mpv's video-out-params, not dwidth and dheight, so both numbers land in one event; watched,
-# not read, since a property read waits on mpv's core lock, which a file being opened holds for
-# hundreds of milliseconds.
+        # not read, since a property read waits on mpv's core lock, which a file being opened holds
+        # for hundreds of milliseconds.
         handle.observe_property("video-out-params", self._note_video_dims)
         handle.observe_property("video-dec-params", self._note_source_dims)
 

@@ -114,7 +114,7 @@ class TestLine:
 
         assert hud.title == "Locked · Shuffle · Full"
 
-    def test_claims_no_length_mode_without_a_library_backing_the_playlist_since_only_a_funestra_that_names_one_draws_the_length_buttons(self):
+    def test_claims_no_length_mode_without_a_library_backing_the_playlist(self):
         assert _line(length_mode=None) == "Locked · Shuffle"
 
     def test_a_genau_primary_says_its_order_and_the_pace_it_moves_at(self):

@@ -73,7 +73,7 @@ class TestWhenThePinExpires:
         assert url.endswith("2026-01-02-abcdef/mpv.7z")
         assert digest == _DIGEST
 
-    def test_a_retired_tag_falls_back_loudly_since_upstream_drops_releases_within_a_month_and_a_gate_with_no_engine_blocks_everything(self, monkeypatch, capsys):
+    def test_a_retired_tag_falls_back_loudly_since_upstream_drops_releases_within_a_month_and_a_gate_with_no_engine_blocks_every_change(self, monkeypatch, capsys):
         monkeypatch.setattr(fetch_libmpv, "_reachable", lambda _url: False)
         monkeypatch.setattr(fetch_libmpv, "newest_asset",
                             lambda repository: ("https://example.invalid/newest.7z", ""))

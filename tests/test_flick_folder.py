@@ -180,7 +180,7 @@ def test_a_flick_from_outside_the_flicks_folder_goes_to_the_top_of_the_trash_pil
     )
 
 
-def test_move_takes_the_flick_out_of_rotation_under_its_own_name_and_leaves_its_record_and_the_session_it_was_cut_from(tmp_path: Path):
+def test_move_takes_the_flicks_own_file_alone_to_the_trash_under_its_own_name(tmp_path: Path):
     flicks = tmp_path / "flicks"
     flicks.mkdir()
     flick = flicks / "odd.mp4"

@@ -30,7 +30,7 @@ def test_nothing_drawn_while_the_next_file_opens_is_shown():
     assert drawn.drawn(new_frame=False) is None
 
 
-def test_the_next_files_frame_drawn_before_its_start_is_heard_goes_out_again_once_it_is():
+def test_the_next_files_frame_drawn_before_its_start_is_heard_goes_out_again_once_it_is_since_mpv_says_a_file_started_about_when_it_hands_over_its_first_frame():
     drawn = _showing(WIDE)
     drawn.asked_for(FLAT)
     drawn.opened(FLAT)
@@ -42,7 +42,7 @@ def test_the_next_files_frame_drawn_before_its_start_is_heard_goes_out_again_onc
     assert drawn.drawn(new_frame=False) == FLAT
 
 
-def test_a_last_frame_of_the_old_file_is_not_taken_for_the_next_ones():
+def test_a_last_frame_of_the_old_file_is_not_taken_for_the_next_ones_since_mpv_redraws_it_while_the_next_file_opens():
     drawn = _showing(WIDE)
     drawn.asked_for(FLAT)
     assert drawn.drawn(new_frame=True) is None
