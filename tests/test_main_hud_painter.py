@@ -16,6 +16,7 @@ from funestra.drive_layout import AMPLITUDE, CENTER, MAX_INTENSITY, SPEED
 from funestra.geometry import Rect
 from funestra.host_controls import HostControlsSection
 from funestra.hud import (
+    TITLE_BASELINE,
     TOOLTIP_PAD,
     load_font,
     text_width,
@@ -287,8 +288,7 @@ class TestPainter:
         def dot(active: bool):
             bgra = MainHudPainter().bgra(
                 MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, active=active)))
-            body = sum(load_font(11).getmetrics())
-            cx, cy = PAD + MINUS_ROOM + 5, PAD + body // 2
+            cx, cy = PAD + MINUS_ROOM + 5, PAD + TITLE_BASELINE - 6
             return tuple(int(v) for v in _rgb(bgra)[cy, cx])
 
         assert np.allclose(dot(True), WHITE, atol=45)

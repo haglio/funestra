@@ -61,7 +61,6 @@ WIDEST_FULL_HEIGHT_SHAPE = {"portrait": (4, 5), "landscape": (16, 9)}
 
 TITLE_ROW_H = 24
 TITLE_X = PAD + ACTIVE_DOT + 8
-TITLE_BASELINE = 11
 SUBTITLE_GAP = GAP_SMALL
 
 Cell = tuple[str, int]
