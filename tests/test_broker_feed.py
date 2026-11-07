@@ -5,6 +5,7 @@ import dataclasses
 import logging
 import socket
 import threading
+import time
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -198,8 +199,10 @@ class TestTheSocketLoop:
                 t.start()
                 wait_until(lambda: _turned_away(caplog), timeout=10.0)
                 blocker.close()
+                freed_at = time.monotonic()
 
                 _knock_until_bound(port, state)
+                assert time.monotonic() - freed_at < 1.0
                 _send(port, "AUTO 1")
                 wait_until(lambda: state.auto_active, timeout=10.0, interval=0.02)
         finally:
@@ -279,5 +282,4 @@ def _is_a_nap(call: ast.Call) -> bool:
     called = getattr(call.func, "attr", getattr(call.func, "id", ""))
     if called == "sleep":
         return True
-    return (called == "wait" and len(call.args) == 1
-            and isinstance(call.args[0], ast.Constant) and not call.keywords)
+    return called == "wait" and bool(call.args or [k for k in call.keywords if k.arg == "timeout"])

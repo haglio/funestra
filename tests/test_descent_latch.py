@@ -20,9 +20,11 @@ class TestTheWaveAChoiceWasCutFrom:
 
     def test_what_moves_every_frame_is_not_in_the_key(self):
         a_frame = DriveHud(center=50, amplitude=100, speed=40, let_go=0.44, max_intensity=30,
-                           position=1_200, waveform=(0.1, 0.2), slide=0.3, edge=0.7)
+                           position=1_200, waveform=(0.1, 0.2), slide=0.3, edge=0.7,
+                           segments=((0, "robot_hand"),))
         the_next = DriveHud(center=50, amplitude=100, speed=40, let_go=0.44, max_intensity=30,
-                            position=1_240, waveform=(0.2, 0.3), slide=0.4, edge=0.8)
+                            position=1_240, waveform=(0.2, 0.3), slide=0.4, edge=0.8,
+                            segments=((0, "robot_hand"), (3, "funscript")))
 
         assert DriveKey.cut_from(a_frame) == DriveKey.cut_from(the_next)
 
