@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from app_support.video_action import labels_of
+from app_support.video_action import actions_of
 
 IMAGE_IDENTITY_FIELDS = (
     "positive_prompt",
@@ -31,12 +31,12 @@ def normalized_text(value: object) -> str:
     return " ".join(str(value or "").split()).lower()
 
 
-def labels_text(labels: Iterable[str]) -> str:
-    return ", ".join(labels)
+def actions_line(actions: Iterable[str]) -> str:
+    return ", ".join(actions)
 
 
 def actions_text(record: dict) -> str:
-    return labels_text(labels_of(record))
+    return actions_line(actions_of(record))
 
 
 def filter_keeps(text: object, query: object) -> bool:
@@ -79,3 +79,6 @@ def _what_made(record: dict) -> tuple[dict, str, str, tuple[str, ...]]:
     if image:
         return image, "img", "positive_prompt", _IMAGE_SEED_GROUP_FIELDS
     return record.get("video") or {}, "t2v", "prompt", _VIDEO_SEED_GROUP_FIELDS
+
+
+labels_text = actions_line

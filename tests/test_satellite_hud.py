@@ -33,6 +33,7 @@ from funestra.satellite_hud import (
     PaintedFoot,
     act_is_filtered,
     action_label_blocks,
+    actions_are_filtered,
     build_click_targets,
     button_row_rects,
     ellipsis_rects,
@@ -41,7 +42,6 @@ from funestra.satellite_hud import (
     hit_test_targets,
     hud_text,
     hud_width,
-    label_is_filtered,
     largest_size_that_fits,
     loop_button_rects,
     looped_group_rect,
@@ -354,13 +354,13 @@ def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it_but_for_th
         ("Gam", "gamma", False),
     ]
     for label, query, expected in cases:
-        assert label_is_filtered(label, query) is expected, (label, query)
+        assert actions_are_filtered(label, query) is expected, (label, query)
 
-    assert label_is_filtered("Gamma", "") is False
+    assert actions_are_filtered("Gamma", "") is False
 
 
 def test_a_label_of_comma_joined_names_is_filtered_by_each_name():
-    assert [label_is_filtered("alpha, beta, XYZ", query) for query in ("beta", "xyz", "gamma")] == [
+    assert [actions_are_filtered("alpha, beta, XYZ", query) for query in ("beta", "xyz", "gamma")] == [
         True, True, False]
 
 
