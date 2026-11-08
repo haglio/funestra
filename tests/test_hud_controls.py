@@ -180,7 +180,7 @@ class TestTheSwitchesAndTheThingsDone:
         assert (fmode.command, fmode.icon) == ("portrait_fmode", FMODE_ICON)
         assert fmode.tooltip == f"{F_MODE_LABEL} — browse only the favorites on this Funestra"
         assert (fmode.lit, fmode.favorite) == (True, True)
-        assert not fmode_button("portrait", "F-Mode — only the scripted ones", lit=False).lit
+        assert not fmode_button("portrait", "F-mode — only the scripted ones", lit=False).lit
 
     def test_reset_is_a_thing_done_faded_with_nothing_to_put_back(self):
         reset = reset_button("portrait", nothing_to_reset=True, tooltip=RESET_TOOLTIP)
@@ -251,6 +251,6 @@ class TestThePlaybackSpeedButtons:
 
 def test_resets_tooltip_says_the_speed_goes_back_in_the_words_every_reset_shares():
     assert RESET_TOOLTIP == (
-        "Reset — no filter, no lock, no loop, no F-Mode, normal speed, shuffled from the top")
+        "Reset — no filter, no lock, no loop, no F-mode, normal speed, shuffled from the top")
     assert RESET_PUTS_BACK_THE_SPEED == "normal speed"
     assert RESET_PUTS_BACK_THE_SPEED in RESET_TOOLTIP

@@ -162,9 +162,9 @@ class TestLine:
             "Locked · Latest · Clips")
 
     def test_says_when_fun_time_has_narrowed_to_f_mode(self):
-        assert _line(scripted_filter=True) == "Locked · Shuffle · F-Mode"
+        assert _line(scripted_filter=True) == "Locked · Shuffle · F-mode"
         assert _line(length_mode=CLIPS, scripted_filter=True) == (
-            "Locked · Shuffle · F-Mode · Clips")
+            "Locked · Shuffle · F-mode · Clips")
 
 
 class TestCompilationLabel:

@@ -27,7 +27,7 @@ NONE_FOR_THIS_ONE = " (none for this one)"
 AN_IMAGE = "this is an image"
 TRASH_TOOLTIP = "Unfavorite it — or send it to Trash when it is not a favorite"
 RESET_PUTS_BACK_THE_SPEED = "normal speed"
-RESET_TOOLTIP = (f"Reset — no filter, no lock, no loop, no F-Mode, {RESET_PUTS_BACK_THE_SPEED}, "
+RESET_TOOLTIP = (f"Reset — no filter, no lock, no loop, no {F_MODE_LABEL}, {RESET_PUTS_BACK_THE_SPEED}, "
                  "shuffled from the top")
 
 

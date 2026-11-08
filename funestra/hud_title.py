@@ -11,7 +11,7 @@ UNLOCKED_LABEL = "Unlocked"
 LATEST_LABEL = "Latest"
 SHUFFLE_LABEL = "Shuffle"
 
-F_MODE_LABEL = "F-Mode"
+F_MODE_LABEL = "F-mode"
 
 PLAYBACK_SPEED_LABEL = "Playback speed"
 
