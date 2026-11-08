@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+from funestra import video_families, video_groups
 from funestra.video_families import (
     FRAME_OF_VIDEO,
     action_group_key,
     actions_text,
     filter_keeps,
     labels_text,
-    seed_family,
-    seed_group_key,
+    seed_group,
+    seed_group_and_seed,
 )
 
 IMAGE = {
@@ -56,49 +57,49 @@ def test_a_video_whose_record_holds_no_prompt_and_no_image_joins_no_action_group
     assert action_group_key({"video": {"action": "Alpha", "seed": "1"}}) is None
 
 
-def test_videos_from_images_that_differ_only_by_seed_are_one_seed_family():
-    one, two = seed_group_key(_from_an_image(seed="101")), seed_group_key(
+def test_videos_from_images_that_differ_only_by_seed_are_one_seed_group():
+    one, two = seed_group_and_seed(_from_an_image(seed="101")), seed_group_and_seed(
         _from_an_image(seed="202", action="Beta"))
 
     assert one[0] == two[0]
     assert one[1] != two[1]
-    assert seed_group_key(_from_an_image(positive_prompt="a harbor"))[0] != one[0]
+    assert seed_group_and_seed(_from_an_image(positive_prompt="a harbor"))[0] != one[0]
 
 
-def test_a_video_made_from_words_keeps_its_act_in_its_seed_family():
-    assert seed_group_key(_from_words(seed="7"))[0] == seed_group_key(_from_words(seed="8"))[0]
-    assert seed_group_key(_from_words(action="Alpha"))[0] != (
-        seed_group_key(_from_words(action="Beta"))[0])
+def test_a_video_made_from_words_keeps_its_act_in_its_seed_group():
+    assert seed_group_and_seed(_from_words(seed="7"))[0] == seed_group_and_seed(_from_words(seed="8"))[0]
+    assert seed_group_and_seed(_from_words(action="Alpha"))[0] != (
+        seed_group_and_seed(_from_words(action="Beta"))[0])
 
 
 def test_a_record_with_no_seed_or_no_prompt_has_no_seed_to_vary():
-    assert seed_group_key({"video": {"prompt": "a boat on a lake"}}) is None
-    assert seed_group_key({"video": {"seed": "7", "action": "Alpha"}}) is None
-    assert seed_group_key(_from_an_image(seed="")) is None
+    assert seed_group_and_seed({"video": {"prompt": "a boat on a lake"}}) is None
+    assert seed_group_and_seed({"video": {"seed": "7", "action": "Alpha"}}) is None
+    assert seed_group_and_seed(_from_an_image(seed="")) is None
 
 
-def test_the_day_an_image_or_video_was_made_is_no_part_of_its_family():
-    assert seed_family(_from_an_image(created="2025-12-31")) == seed_family(_from_an_image())
+def test_the_day_an_image_or_video_was_made_is_no_part_of_its_groups():
+    assert seed_group(_from_an_image(created="2025-12-31")) == seed_group(_from_an_image())
     assert action_group_key(_from_an_image(created="2025-12-31")) == (
         action_group_key(_from_an_image()))
     later = _from_words()
     later["video"]["created"] = "2026-06-06"
-    assert seed_family(later) == seed_family(_from_words())
+    assert seed_group(later) == seed_group(_from_words())
 
 
-def test_case_and_spacing_never_split_a_family():
-    assert seed_family(_from_words(prompt="A  Boat on a lake ")) == seed_family(_from_words())
+def test_case_and_spacing_never_split_a_group():
+    assert seed_group(_from_words(prompt="A  Boat on a lake ")) == seed_group(_from_words())
 
 
-def test_a_seed_family_is_the_seed_groups_family_and_needs_no_seed():
-    assert seed_family(_from_an_image(seed="303")) == seed_group_key(_from_an_image())[0]
-    assert seed_family(_from_words(seed="")) == seed_group_key(_from_words())[0]
+def test_a_seed_group_is_shared_by_every_seed_and_needs_no_seed():
+    assert seed_group(_from_an_image(seed="303")) == seed_group_and_seed(_from_an_image())[0]
+    assert seed_group(_from_words(seed="")) == seed_group_and_seed(_from_words())[0]
 
 
-def test_a_record_naming_no_prompt_has_no_seed_family_whatever_its_act():
-    assert seed_family({"video": {"action": "Alpha", "duration_seconds": 5}}) is None
-    assert seed_family({"video": {"action": "Beta", "seed": "7"}}) is None
-    assert seed_family(_from_an_image(positive_prompt="")) is None
+def test_a_record_naming_no_prompt_has_no_seed_group_whatever_its_act():
+    assert seed_group({"video": {"action": "Alpha", "duration_seconds": 5}}) is None
+    assert seed_group({"video": {"action": "Beta", "seed": "7"}}) is None
+    assert seed_group(_from_an_image(positive_prompt="")) is None
 
 
 def test_the_filter_keeps_text_holding_the_query_whatever_its_case_and_spacing():
@@ -131,9 +132,9 @@ def test_a_video_from_a_t2v_videos_starting_frame_shares_that_videos_action_grou
         action_group_key(_from_words()))
 
 
-def test_a_video_from_a_t2v_videos_starting_frame_keeps_its_seed_family():
+def test_a_video_from_a_t2v_videos_starting_frame_keeps_its_seed_group():
     made = _from_a_videos_starting_frame()
-    assert seed_family(made) == seed_family(
+    assert seed_group(made) == seed_group(
         {"video": made["video"], "source_image": {"positive_prompt": "the frame's own words"}})
 
 
@@ -147,3 +148,9 @@ def test_a_records_actions_read_as_its_labels_joined_or_else_the_sites_word():
 
 def test_a_list_of_labels_reads_as_one_line_in_the_order_given():
     assert labels_text(("beta", "alpha", "XYZ")) == "beta, alpha, XYZ"
+
+
+def test_the_seed_groups_old_names_answer_until_no_branch_spells_them():
+    assert video_families.seed_family is seed_group
+    assert video_families.seed_group_key is seed_group_and_seed
+    assert video_groups.seed_family_items is video_groups.seed_group_items
