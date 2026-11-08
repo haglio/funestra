@@ -6,7 +6,7 @@ from funestra.video_groups import (
     action_label,
     build_group_index,
     normalize_path_key,
-    seed_family_items,
+    seed_group_items,
     widened_seed_items,
 )
 
@@ -60,8 +60,8 @@ def test_the_index_groups_by_action_and_seed_and_keeps_a_video_with_no_record():
 
     one_key = index.entry(paths["one_zeta"]).action_key
     assert sorted(index.action_items[one_key]) == sorted([paths["one_zeta"], paths["one_alpha"]])
-    family, seed = index.entry(paths["one_alpha"]).seed_key
-    assert set(index.seed_items[family]) == {
+    group, seed = index.entry(paths["one_alpha"]).seed_key
+    assert set(index.seed_items[group]) == {
         paths["one_zeta"], paths["one_alpha"], paths["two_alpha"]}
     assert seed != index.entry(paths["two_alpha"]).seed_key[1]
     assert index.entry(paths["no_record"]).action_key is None
@@ -145,19 +145,19 @@ def test_action_group_items_are_the_same_seeds_other_actions():
     assert action_group_items(index, "C:/never/indexed.mp4") == []
 
 
-def test_seed_family_items_are_the_same_action_under_other_seeds():
+def test_seed_group_items_are_the_same_action_under_other_seeds():
     index, paths = _index({
         "one_a": _t2v("Alpha", "1"),
         "one_b": _t2v("Alpha", "2"),
         "twirl": _t2v("Twirling", "1"),
     })
 
-    assert sorted(seed_family_items(index, paths["one_a"])) == sorted(
+    assert sorted(seed_group_items(index, paths["one_a"])) == sorted(
         [paths["one_a"], paths["one_b"]])
-    assert seed_family_items(index, "C:/never/indexed.mp4") == []
+    assert seed_group_items(index, "C:/never/indexed.mp4") == []
 
 
-def test_seed_family_items_pin_the_action_for_a_video_made_from_an_image():
+def test_seed_group_items_pin_the_action_for_a_video_made_from_an_image():
     def i2v(action: str, image_seed: str) -> dict:
         return {"video": {"prompt": f"do {action}", "action": action, "seed": "77"},
                 "source_image": {"positive_prompt": "made up", "seed": image_seed}}
@@ -168,7 +168,7 @@ def test_seed_family_items_pin_the_action_for_a_video_made_from_an_image():
         "twirl_b": i2v("Twirling", "2"),
     })
 
-    assert sorted(seed_family_items(index, paths["one_a"])) == sorted(
+    assert sorted(seed_group_items(index, paths["one_a"])) == sorted(
         [paths["one_a"], paths["one_b"]])
 
 

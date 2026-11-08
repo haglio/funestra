@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from app_support import watch_weights
 
-from .video_families import action_group_key, actions_text, normalized_text, seed_group_key
+from .video_families import action_group_key, actions_text, normalized_text, seed_group_and_seed
 
 
 def normalize_path_key(path: str) -> str:
@@ -90,15 +90,15 @@ def indexed_act(index: GroupIndex, path: str) -> str:
     return normalized_text(index.act_of(path))
 
 
-def seed_family_items(index: GroupIndex, path: str) -> list[str]:
+def seed_group_items(index: GroupIndex, path: str) -> list[str]:
     seed_key = index.entry(path).seed_key
     if seed_key is None:
         return []
-    family, _seed = seed_key
+    group, _seed = seed_key
     action = indexed_act(index, path)
     return [
         item
-        for item in index.seed_items[family]
+        for item in index.seed_items[group]
         if indexed_act(index, item) == action
     ]
 
@@ -110,7 +110,7 @@ def widened_seed_items(
     index: GroupIndex, path: str, additions: int = WIDEN_ADDITIONS
 ) -> list[str]:
     key = normalize_path_key(path)
-    items = list(seed_family_items(index, path))
+    items = list(seed_group_items(index, path))
     if not any(normalize_path_key(item) == key for item in items):
         items.insert(0, index.indexed_path(key, path))
     seen = {normalize_path_key(item) for item in items} | {key}
@@ -156,7 +156,7 @@ def _entry_for(path: str, record: dict) -> VideoEntry:
         path=path,
         action=actions_text(record),
         action_key=action_group_key(record),
-        seed_key=seed_group_key(record),
+        seed_key=seed_group_and_seed(record),
         scene_tags=scene_tags(record),
         from_image=bool(record.get("source_image")),
         weight=watch_weights.weight_of(record),
@@ -169,3 +169,6 @@ def build_group_index(video_paths: Iterable[str],
     for path in video_paths:
         index.learn(path, record_of)
     return index
+
+
+seed_family_items = seed_group_items
