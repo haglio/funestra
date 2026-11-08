@@ -55,8 +55,6 @@ from funestra.satellite_hud import (
 )
 from funestra.satellite_hud_clicks import DOUBLE_CLICK_S, HudClicks, button_tooltip
 
-CAMERA_WORDS = ("Side", "XYZ")
-
 
 def _squares(x: int, y: int, buttons) -> list:
     return button_row_rects(x, y, buttons, [CTRL_BTN] * len(buttons))
@@ -346,8 +344,8 @@ def test_filter_button_rects_puts_one_at_the_head_of_each_row():
 def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it_but_for_the_empty_filter_which_lights_no_row_here():
     cases = [
         ("Gamma", "gamma", True),
-        ("Side Gamma", "gamma", True),
-        ("Side Gamma", "side gamma", True),
+        ("Theta Gamma", "gamma", True),
+        ("Theta Gamma", "theta gamma", True),
         ("Gamma, Theta", "gamma", True),
         ("Gamma   Theta", "gamma theta", True),
         ("Gamma, Theta", "gamma, theta", True),
@@ -356,29 +354,26 @@ def test_label_is_filtered_reads_a_filter_the_way_fun_time_applies_it_but_for_th
         ("Gam", "gamma", False),
     ]
     for label, query, expected in cases:
-        assert label_is_filtered(label, query, CAMERA_WORDS) is expected, (label, query)
+        assert label_is_filtered(label, query) is expected, (label, query)
 
-    assert label_is_filtered("Gamma", "", CAMERA_WORDS) is False
+    assert label_is_filtered("Gamma", "") is False
 
 
-def test_a_label_of_comma_joined_names_is_filtered_with_no_camera_words_named():
+def test_a_label_of_comma_joined_names_is_filtered_by_each_name():
     assert [label_is_filtered("alpha, beta, XYZ", query) for query in ("beta", "xyz", "gamma")] == [
         True, True, False]
 
 
 def test_act_is_filtered_picks_out_which_of_a_rows_acts_the_filter_named():
     def lit(act: str, filter_query: str) -> bool:
-        return act_is_filtered(act, filter_query, CAMERA_WORDS)
+        return act_is_filtered(act, filter_query)
 
     assert lit("Gamma", "gamma") is True
     assert lit("XYZ", "gamma") is False
-    assert lit("Side", "gamma") is False
     assert lit("Theta Gamma", "gamma") is True
     assert lit("Gamma", "gamma, theta") is True
     assert lit("Theta", "gamma, theta") is True
     assert lit("Alpha", "gamma, theta") is False
-    assert lit("Gamma", "xyz gamma") is True
-    assert lit("XYZ", "xyz gamma") is True
     assert lit("Gamma", "") is False
 
 
@@ -493,28 +488,18 @@ def test_a_title_that_fits_at_none_of_the_familys_sizes_takes_the_tiny_one():
 
 
 def test_action_label_blocks_separate_comma_joined_acts():
-    assert action_label_blocks("alpha, theta motion", CAMERA_WORDS) == [["Alpha"], ["Theta", "Motion"]]
-    assert action_label_blocks("", CAMERA_WORDS) == [["(unknown)"]]
-    assert action_label_blocks("   ", CAMERA_WORDS) == [["(unknown)"]]
-    assert action_label_blocks("epsilon", CAMERA_WORDS) == [["Epsilon"]]
+    assert action_label_blocks("alpha, theta motion") == [["Alpha"], ["Theta", "Motion"]]
+    assert action_label_blocks("") == [["(unknown)"]]
+    assert action_label_blocks("   ") == [["(unknown)"]]
+    assert action_label_blocks("epsilon") == [["Epsilon"]]
 
 
-def test_a_source_that_names_no_camera_words_has_a_rows_first_word_read_as_the_act():
-    assert HudModel(funestra="portrait").camera_words == ()
-    assert action_label_blocks("side gamma", ()) == [["Side", "Gamma"]]
-    assert action_label_blocks("xyz gamma", ()) == [["Xyz", "Gamma"]]
+def test_a_rows_words_up_to_a_comma_read_as_one_act():
+    assert action_label_blocks("side gamma") == [["Side", "Gamma"]]
 
 
 def test_a_word_written_in_capitals_keeps_them_in_its_block():
-    assert action_label_blocks("alpha, XYZ", ()) == [["Alpha"], ["XYZ"]]
-
-
-def test_action_label_blocks_split_a_leading_camera_word_into_its_own_act():
-    assert action_label_blocks("xyz gamma", CAMERA_WORDS) == [["XYZ"], ["Gamma"]]
-    assert action_label_blocks("side gamma", CAMERA_WORDS) == [["Side"], ["Gamma"]]
-    assert action_label_blocks("side theta motion", CAMERA_WORDS) == [["Side"], ["Theta", "Motion"]]
-    assert action_label_blocks("xyz", CAMERA_WORDS) == [["XYZ"]]
-    assert action_label_blocks("theta motion", CAMERA_WORDS) == [["Theta", "Motion"]]
+    assert action_label_blocks("alpha, XYZ") == [["Alpha"], ["XYZ"]]
 
 
 def _targets(**overrides) -> HudTargets:
@@ -624,7 +609,6 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
                    HudCell(path="C:/v/s2.mp4")),
             actions=(HudCell(path="C:/v/a1.mp4", thumb="C:/t/a1.jpg", label="gamma"),),
             current_action="alpha", filter_query="alpha", active_loop="seed",
-            camera_words=CAMERA_WORDS,
             seed_count=7, action_count=3, playing=("seed", 1),
             item_note="Enhance 1 — 1 of 2 · Enhancing…", paused=True,
             rows=((Button("origenerator_activate", "Origenerator", "Shows", width=0),

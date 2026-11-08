@@ -137,12 +137,12 @@ def test_a_video_from_a_t2v_videos_starting_frame_keeps_its_seed_group():
         {"video": made["video"], "source_image": {"positive_prompt": "the frame's own words"}})
 
 
-def test_a_records_actions_read_as_its_labels_joined_or_else_the_sites_word():
+def test_a_records_actions_read_as_its_labels_joined_and_never_the_sites_word():
     assert [actions_text(record) for record in (
         {"video": {"action": "Gamma", "labels": ["alpha", "XYZ"]}},
         {"video": {"action": " Gamma "}},
         {},
-    )] == ["alpha, XYZ", "Gamma", ""]
+    )] == ["alpha, XYZ", "", ""]
 
 
 def test_a_list_of_labels_reads_as_one_line_in_the_order_given():

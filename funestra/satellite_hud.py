@@ -144,7 +144,6 @@ class HudModel:
     actions: tuple[HudCell, ...] = ()
     current_action: str = ""
     filter_query: str = ""
-    camera_words: tuple[str, ...] = ()
     active_loop: str = ""
     seed_count: int = 0
     action_count: int = 0
@@ -479,16 +478,16 @@ def filter_button_rects(
     return rects
 
 
-def _acts(text: str, camera_words: Sequence[str] = ()) -> list[str]:
-    return [act for act in (normalized_text(part) for part in split_acts(text, camera_words)) if act]
+def _acts(text: str) -> list[str]:
+    return [act for act in (normalized_text(part) for part in split_acts(text)) if act]
 
 
-def act_is_filtered(act: str, filter_query: str, camera_words: Sequence[str]) -> bool:
-    return any(filter_keeps(act, query) for query in _acts(filter_query, camera_words))
+def act_is_filtered(act: str, filter_query: str) -> bool:
+    return any(filter_keeps(act, query) for query in _acts(filter_query))
 
 
-def label_is_filtered(label: str, filter_query: str, camera_words: Sequence[str] = ()) -> bool:
-    acts, query = _acts(label, camera_words), _acts(filter_query, camera_words)
+def label_is_filtered(label: str, filter_query: str) -> bool:
+    acts, query = _acts(label), _acts(filter_query)
     return bool(acts) and bool(query) and all(
         any(filter_keeps(act, part) for act in acts) for part in query)
 
@@ -509,17 +508,8 @@ def _titlecase_word(word: str) -> str:
     return word if word.isupper() else word[:1].upper() + word[1:].lower()
 
 
-def split_acts(name: str, camera_words: Sequence[str]) -> list[str]:
-    cameras = {word.lower() for word in camera_words}
-    acts: list[str] = []
-    for part in str(name or "").split(","):
-        words = part.split()
-        if len(words) > 1 and words[0].lower() in cameras:
-            acts.append(words[0])
-            words = words[1:]
-        if words:
-            acts.append(" ".join(words))
-    return acts
+def split_acts(name: str) -> list[str]:
+    return [" ".join(words) for words in (part.split() for part in str(name or "").split(",")) if words]
 
 
 def act_named(act: str) -> str:
@@ -529,10 +519,8 @@ def act_named(act: str) -> str:
     return " ".join(words)
 
 
-def action_label_blocks(name: str, camera_words: Sequence[str]) -> list[list[str]]:
-    as_written = {word.lower(): word for word in camera_words}
-    blocks = [[as_written.get(word.lower()) or _titlecase_word(word) for word in act.split()]
-              for act in split_acts(name, camera_words)]
+def action_label_blocks(name: str) -> list[list[str]]:
+    blocks = [[_titlecase_word(word) for word in act.split()] for act in split_acts(name)]
     return blocks or [["(unknown)"]]
 
 
@@ -565,7 +553,6 @@ def hud_text(model: HudModel) -> str:
         "is_favorite": model.is_favorite,
         "item_note": model.item_note,
         "filter_query": model.filter_query,
-        "camera_words": list(model.camera_words),
         "seed_count": model.seed_count,
         "action_count": model.action_count,
         "active_loop": model.active_loop,
@@ -610,7 +597,6 @@ def parse_hud(text: str) -> HudModel | None:
         actions=tuple(cell for cell in actions if cell is not None),
         current_action=str(raw.get("current_action", "") or ""),
         filter_query=str(raw.get("filter_query", "") or ""),
-        camera_words=tuple(str(word) for word in raw.get("camera_words") or ()),
         active_loop=str(raw.get("active_loop", "") or ""),
         seed_count=int(raw.get("seed_count", 0) or 0),
         action_count=int(raw.get("action_count", 0) or 0),
