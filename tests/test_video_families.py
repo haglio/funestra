@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from funestra import satellite_hud, video_families
 from funestra.video_families import (
     FRAME_OF_VIDEO,
     action_group_key,
@@ -149,7 +148,3 @@ def test_a_records_actions_read_as_its_labels_joined_and_never_the_sites_word():
 def test_a_list_of_labels_reads_as_one_line_in_the_order_given():
     assert actions_line(("beta", "alpha", "XYZ")) == "beta, alpha, XYZ"
 
-
-def test_the_old_names_for_a_line_of_actions_and_its_filter_answer_until_no_app_spells_them():
-    assert video_families.labels_text is video_families.actions_line
-    assert satellite_hud.label_is_filtered is satellite_hud.actions_are_filtered
