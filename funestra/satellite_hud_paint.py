@@ -85,6 +85,7 @@ from .satellite_hud import (
     act_is_filtered,
     act_named,
     action_label_blocks,
+    actions_are_filtered,
     build_click_targets,
     button_row_rects,
     button_row_width,
@@ -94,7 +95,6 @@ from .satellite_hud import (
     filter_button_rects,
     hud_layout,
     hud_width,
-    label_is_filtered,
     label_stack_top,
     largest_size_that_fits,
     loop_button_rects,
@@ -601,7 +601,7 @@ class HudRenderer:
     def _draw_filter_buttons(self, hud: Hud, rects: list[tuple[Rect, str]],
                              model: HudModel) -> None:
         for rect, name in rects:
-            self._filter_button(hud, rect, on=label_is_filtered(name, model.filter_query))
+            self._filter_button(hud, rect, on=actions_are_filtered(name, model.filter_query))
 
     def _draw_loop_controls(self, hud: Hud, rects: NavMapRects,
                             loop_buttons: tuple[Rect | None, Rect | None], active_loop: str,

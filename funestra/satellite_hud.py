@@ -41,7 +41,7 @@ from .main_hud import max_intensity_from_raw
 from .modes import read_mode
 from .osr2_visualizer import DriveHud, DriveTrack
 from .playback_rate import format_rate
-from .video_families import filter_keeps, labels_text, normalized_text
+from .video_families import actions_line, filter_keeps, normalized_text
 
 if TYPE_CHECKING:
     from .hud_row import RowLayout
@@ -486,8 +486,8 @@ def act_is_filtered(act: str, filter_query: str) -> bool:
     return any(filter_keeps(act, query) for query in _acts(filter_query))
 
 
-def label_is_filtered(label: str, filter_query: str) -> bool:
-    acts, query = _acts(label), _acts(filter_query)
+def actions_are_filtered(actions: str, filter_query: str) -> bool:
+    acts, query = _acts(actions), _acts(filter_query)
     return bool(acts) and bool(query) and all(
         any(filter_keeps(act, part) for act in acts) for part in query)
 
@@ -495,7 +495,7 @@ def label_is_filtered(label: str, filter_query: str) -> bool:
 def with_act_toggled(filter_query: str, act: str) -> str:
     query, toggled = _acts(filter_query), normalized_text(act)
     kept = [part for part in query if part != toggled]
-    return labels_text(kept if kept != query else [*query, toggled])
+    return actions_line(kept if kept != query else [*query, toggled])
 
 
 LOOP_ICON = "loop"
@@ -610,3 +610,6 @@ def parse_hud(text: str) -> HudModel | None:
         max_intensity=max_intensity_from_raw(raw.get("max_intensity")),
         foot=PaintedFoot.from_raw(raw.get("foot")),
     )
+
+
+label_is_filtered = actions_are_filtered
