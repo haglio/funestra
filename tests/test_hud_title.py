@@ -12,6 +12,10 @@ from funestra.hud_title import (
 )
 
 
+def test_f_mode_is_spelled_with_a_small_m_in_every_app():
+    assert F_MODE_LABEL == "F-mode"
+
+
 def test_an_idle_funestra_says_only_whether_it_is_holding_what_is_on_screen():
     assert hud_title(HudTitleFacts(locked=True)) == LOCKED_LABEL
     assert hud_title(HudTitleFacts(locked=False)) == UNLOCKED_LABEL
