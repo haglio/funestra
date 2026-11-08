@@ -169,6 +169,3 @@ def build_group_index(video_paths: Iterable[str],
     for path in video_paths:
         index.learn(path, record_of)
     return index
-
-
-seed_family_items = seed_group_items

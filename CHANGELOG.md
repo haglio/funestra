@@ -9,6 +9,13 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-07 — a seed group's old names no longer answer
+
+`video_families.seed_family`, `video_families.seed_group_key` and
+`video_groups.seed_family_items` go, with the test that held them. No open pull
+request of fun_time, origenerator or funestra adds a line using any of them, and
+both apps' mains use the new names.
+
 ## 2026-11-07 — a seed family is a seed group
 
 What the Satellites' seed loop runs through is a seed group, his word for it
