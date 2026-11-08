@@ -9,6 +9,16 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-07 — a video's actions are its labels, and nothing else
+
+`video_families.actions_text` no longer falls back to a record's
+`video.action`, the site's own word, so a video with no labels shows no words
+on its Satellite row, as an Origenerator item with none already did. The camera
+words go with it: `HudModel.camera_words`, its key in the published HUD, and the
+`camera_words` parameter of `split_acts`, `action_label_blocks`,
+`act_is_filtered` and `label_is_filtered`, which no app has passed since
+fun_time#734 and origenerator#792. A row's words up to each comma are one act.
+
 ## 2026-11-07 — a seed group's old names no longer answer
 
 `video_families.seed_family`, `video_families.seed_group_key` and

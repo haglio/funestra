@@ -25,7 +25,7 @@ SOURCE_IMAGE = {
 
 def _i2v(*, action: str, video_seed: str, image_overrides: dict | None = None) -> dict:
     return {
-        "video": {"prompt": f"prompt for {action}", "model": "Realism", "action": action,
+        "video": {"prompt": f"prompt for {action}", "model": "Realism", "action": action, "labels": [action],
                   "resolution": "720x560", "aspect_ratio": "9:7", "quality": "720p",
                   "seed": video_seed},
         "source_image": {**SOURCE_IMAGE, **(image_overrides or {})},
@@ -33,7 +33,7 @@ def _i2v(*, action: str, video_seed: str, image_overrides: dict | None = None) -
 
 
 def _t2v(action: str, seed: str, prompt: str = "scene") -> dict:
-    return {"video": {"prompt": prompt, "action": action, "seed": seed}}
+    return {"video": {"prompt": prompt, "action": action, "labels": [action], "seed": seed}}
 
 
 def _paths(records: dict[str, dict]) -> dict[str, str]:
@@ -159,7 +159,7 @@ def test_seed_group_items_are_the_same_action_under_other_seeds():
 
 def test_seed_group_items_pin_the_action_for_a_video_made_from_an_image():
     def i2v(action: str, image_seed: str) -> dict:
-        return {"video": {"prompt": f"do {action}", "action": action, "seed": "77"},
+        return {"video": {"prompt": f"do {action}", "action": action, "labels": [action], "seed": "77"},
                 "source_image": {"positive_prompt": "made up", "seed": image_seed}}
 
     index, paths = _index({
@@ -215,7 +215,7 @@ def test_widened_seed_items_read_one_action_spelled_two_ways_as_one_action():
 
 def test_widened_seed_items_prefer_their_own_kind_of_making():
     def i2v(action: str, seed: str, prompt: str) -> dict:
-        return {"video": {"prompt": f"do {action}", "action": action, "seed": seed},
+        return {"video": {"prompt": f"do {action}", "action": action, "labels": [action], "seed": seed},
                 "source_image": {"positive_prompt": prompt, "seed": seed}}
 
     index, paths = _index({
@@ -230,8 +230,8 @@ def test_widened_seed_items_prefer_their_own_kind_of_making():
 
 
 def test_a_widening_asked_of_a_video_not_among_its_own_seeds_still_leads_with_it():
-    index, paths = _index({"bare": {"video": {"action": "Alpha"}},
-                           "kin": {"video": {"action": "Alpha"}}})
+    index, paths = _index({"bare": {"video": {"labels": ["Alpha"]}},
+                           "kin": {"video": {"labels": ["Alpha"]}}})
 
     assert widened_seed_items(index, paths["bare"], additions=1) == [paths["bare"], paths["kin"]]
 

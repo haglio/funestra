@@ -822,7 +822,7 @@ def test_an_act_that_is_on_in_the_filter_lights_even_on_a_row_the_filter_leaves_
 
 def test_a_two_act_label_and_its_strike_stay_inside_the_corner_row_since_they_are_centered_together(thumb):
     rendered = HudRenderer("portrait").render(_model(
-        corner=HudCell(path="c.mp4", thumb=thumb), current_action="side gamma", camera_words=("Side", "XYZ")))
+        corner=HudCell(path="c.mp4", thumb=thumb), current_action="side, gamma"))
     (_cx, cy, _cw, ch), _path = rendered.targets.click[0]
     _x, strike_y, _w, strike_h = rendered.targets.wrong_action
 
@@ -917,23 +917,6 @@ def test_a_filter_set_from_a_two_act_clip_lights_both_of_its_acts(thumb):
 
     assert upper > 0
     assert lower > 0
-
-
-@pytest.mark.parametrize("camera", ["xyz", "side"])
-def test_a_leading_camera_word_stays_gray_when_its_act_is_filtered(camera, thumb):
-    renderer = HudRenderer("portrait")
-
-    def halves(filter_query: str) -> tuple[int, int]:
-        return _white_halves(renderer.render(_model(
-            corner=HudCell(path="c.mp4", thumb=thumb), camera_words=("Side", "XYZ"),
-            current_action=f"{camera} gamma", filter_query=filter_query,
-        )))
-
-    scope, gamma = halves("gamma")
-
-    assert scope == 0
-    assert gamma > 0
-    assert all(half > 0 for half in halves(f"{camera} gamma"))
 
 
 def test_the_filter_button_carries_a_funnel_and_not_an_empty_square_drawn_since_no_installed_face_has_a_funnel_so_only_some_mark_inside_the_border_is_asked(thumb):

@@ -540,14 +540,14 @@ class HudRenderer:
         def row(row_y: int, row_h: int, text: str, *, extra: int = 0) -> int:
             ascent, descent = self._tiny.getmetrics()
             line_h = ascent + descent - 4
-            blocks = action_label_blocks(text, model.camera_words)
+            blocks = action_label_blocks(text)
             total = sum(len(block) for block in blocks) * line_h + (len(blocks) - 1) * ACT_GAP
             ty = label_stack_top(row_y, row_h, total, extra)
             words_end = ty + total
             right = x + ROW_LABEL_GUTTER - NAV_MAP_GAP
-            acts = split_acts(text, model.camera_words)
+            acts = split_acts(text)
             for block, act in zip(blocks, acts + [""] * (len(blocks) - len(acts)), strict=True):
-                lit = act_is_filtered(" ".join(block), model.filter_query, model.camera_words)
+                lit = act_is_filtered(" ".join(block), model.filter_query)
                 color = TEXT_PRIMARY if lit else TEXT_MUTED
                 if act:
                     wide = math.ceil(max(self._tiny.getlength(line) for line in block))
@@ -601,8 +601,7 @@ class HudRenderer:
     def _draw_filter_buttons(self, hud: Hud, rects: list[tuple[Rect, str]],
                              model: HudModel) -> None:
         for rect, name in rects:
-            self._filter_button(hud, rect, on=label_is_filtered(
-                name, model.filter_query, model.camera_words))
+            self._filter_button(hud, rect, on=label_is_filtered(name, model.filter_query))
 
     def _draw_loop_controls(self, hud: Hud, rects: NavMapRects,
                             loop_buttons: tuple[Rect | None, Rect | None], active_loop: str,

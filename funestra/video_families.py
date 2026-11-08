@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from app_support.video_action import ACTION_KEY, VIDEO_BLOCK, labels_of
+from app_support.video_action import labels_of
 
 IMAGE_IDENTITY_FIELDS = (
     "positive_prompt",
@@ -36,8 +36,7 @@ def labels_text(labels: Iterable[str]) -> str:
 
 
 def actions_text(record: dict) -> str:
-    return (labels_text(labels_of(record))
-            or str((record.get(VIDEO_BLOCK) or {}).get(ACTION_KEY) or "").strip())
+    return labels_text(labels_of(record))
 
 
 def filter_keeps(text: object, query: object) -> bool:
