@@ -80,5 +80,3 @@ def _what_made(record: dict) -> tuple[dict, str, str, tuple[str, ...]]:
         return image, "img", "positive_prompt", _IMAGE_SEED_GROUP_FIELDS
     return record.get("video") or {}, "t2v", "prompt", _VIDEO_SEED_GROUP_FIELDS
 
-
-labels_text = actions_line

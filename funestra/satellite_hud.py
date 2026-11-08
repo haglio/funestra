@@ -611,5 +611,3 @@ def parse_hud(text: str) -> HudModel | None:
         foot=PaintedFoot.from_raw(raw.get("foot")),
     )
 
-
-label_is_filtered = actions_are_filtered
