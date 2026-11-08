@@ -80,7 +80,3 @@ def _what_made(record: dict) -> tuple[dict, str, str, tuple[str, ...]]:
     if image:
         return image, "img", "positive_prompt", _IMAGE_SEED_GROUP_FIELDS
     return record.get("video") or {}, "t2v", "prompt", _VIDEO_SEED_GROUP_FIELDS
-
-
-seed_family = seed_group
-seed_group_key = seed_group_and_seed

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from funestra import video_families, video_groups
 from funestra.video_families import (
     FRAME_OF_VIDEO,
     action_group_key,
@@ -148,9 +147,3 @@ def test_a_records_actions_read_as_its_labels_joined_or_else_the_sites_word():
 
 def test_a_list_of_labels_reads_as_one_line_in_the_order_given():
     assert labels_text(("beta", "alpha", "XYZ")) == "beta, alpha, XYZ"
-
-
-def test_the_seed_groups_old_names_answer_until_no_branch_spells_them():
-    assert video_families.seed_family is seed_group
-    assert video_families.seed_group_key is seed_group_and_seed
-    assert video_groups.seed_family_items is video_groups.seed_group_items
