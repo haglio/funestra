@@ -54,8 +54,3 @@ def move_to_trash(video: Path, trash_folder: Path) -> Path | None:
     spot = spot_in_trash(trash_folder, video.name)
     video.replace(spot)
     return spot
-
-
-def move_flick_to_trash(flick: Path, trash_folder: Path) -> Path | None:
-    return move_to_trash(flick, trash_folder)
-
