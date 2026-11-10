@@ -10,6 +10,7 @@ from app_support.flick_folder import (
     trash_folder_beside,
     vr_flicks_in,  # noqa: F401
 )
+from app_support.trash_names import spot_in_trash
 
 SUPPORTED_VIDEO_EXTS = {".mp4", ".mkv", ".mov", ".avi", ".webm", ".m4v"}
 
@@ -46,11 +47,15 @@ def trash_folder_for(flick: Path, flicks_folder: Path) -> Path:
         return trash
 
 
-def move_flick_to_trash(flick_path: Path, trash_dir: Path) -> Path | None:
-    if not flick_path.exists():
+def move_to_trash(video: Path, trash_folder: Path) -> Path | None:
+    if not video.exists():
         return None
-    trash_dir.mkdir(parents=True, exist_ok=True)
-    destination = trash_dir / flick_path.name
-    flick_path.replace(destination)
-    return destination
+    trash_folder.mkdir(parents=True, exist_ok=True)
+    spot = spot_in_trash(trash_folder, video.name)
+    video.replace(spot)
+    return spot
+
+
+def move_flick_to_trash(flick: Path, trash_folder: Path) -> Path | None:
+    return move_to_trash(flick, trash_folder)
 

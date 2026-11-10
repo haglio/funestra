@@ -12,7 +12,7 @@ from app_support import haglio_settings
 from funestra.flick_folder import (
     _modified_at,
     flat_flicks_in,
-    move_flick_to_trash,
+    move_to_trash,
     scan_flicks,
     trash_folder_beside,
     trash_folder_for,
@@ -202,7 +202,7 @@ def test_move_takes_the_flicks_own_file_alone_to_the_trash_under_its_own_name(tm
         record.write_text("{}", encoding="utf-8")
     trash = tmp_path / "trash"
 
-    landed = move_flick_to_trash(flick, trash)
+    landed = move_to_trash(flick, trash)
 
     assert landed == trash / "odd.mp4"
     assert landed.read_bytes() == b"flick"
@@ -211,13 +211,27 @@ def test_move_takes_the_flicks_own_file_alone_to_the_trash_under_its_own_name(tm
     assert sorted(p.name for p in trash.iterdir()) == ["odd.mp4"]
 
 
+def test_a_video_sent_to_a_trash_already_holding_its_name_leaves_the_one_there_alone(tmp_path: Path):
+    trash = tmp_path / "trash"
+    trash.mkdir()
+    (trash / "odd.mp4").write_bytes(b"first")
+    second = tmp_path / "odd.mp4"
+    second.write_bytes(b"second")
+
+    landed = move_to_trash(second, trash)
+
+    assert (trash / "odd.mp4").read_bytes() == b"first"
+    assert landed.read_bytes() == b"second"
+    assert landed.parent == trash
+
+
 def test_move_creates_the_trash_dir_on_first_use(tmp_path: Path):
     flick = tmp_path / "odd.mp4"
     flick.write_bytes(b"flick")
     trash = tmp_path / "trash"
     assert not trash.exists()
 
-    move_flick_to_trash(flick, trash)
+    move_to_trash(flick, trash)
 
     assert trash.is_dir()
 
@@ -225,7 +239,7 @@ def test_move_creates_the_trash_dir_on_first_use(tmp_path: Path):
 def test_a_flick_already_gone_is_not_an_error(tmp_path: Path):
     trash = tmp_path / "trash"
 
-    assert move_flick_to_trash(tmp_path / "missing.mp4", trash) is None
+    assert move_to_trash(tmp_path / "missing.mp4", trash) is None
 
 
 class TestSeveralFoldersBrowsedAsOne:
