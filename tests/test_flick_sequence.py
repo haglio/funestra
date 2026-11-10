@@ -11,8 +11,8 @@ def _paths():
     return [Path("a.mp4"), Path("b.mp4"), Path("c.mp4")]
 
 
-def test_requires_at_least_one_flick():
-    with pytest.raises(ValueError, match="requires at least one flick"):
+def test_an_empty_list_is_refused_without_the_code_word():
+    with pytest.raises(ValueError, match="Genau needs at least one video to play"):
         FlickSequenceController([])
 
 
@@ -74,7 +74,7 @@ class TestTakeUp:
     def test_an_empty_scan_is_refused(self):
         controller = FlickSequenceController(_paths())
 
-        with pytest.raises(ValueError, match="requires at least one flick"):
+        with pytest.raises(ValueError, match="Genau needs at least one video to play"):
             controller.take_up([])
 
         assert controller.current_path == Path("a.mp4")

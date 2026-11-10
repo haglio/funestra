@@ -4,6 +4,7 @@ import random
 from collections.abc import Iterable
 from pathlib import Path
 
+from app_support import haglio_settings
 from app_support.flick_folder import (
     flat_flicks_in,  # noqa: F401 -- handed on to the apps, which import it from here
     trash_folder_beside,
@@ -28,7 +29,8 @@ def scan_flicks(
     files = [path for folder in folders for path in sorted(folder.rglob("*"))
              if path.is_file() and path.suffix.lower() in SUPPORTED_VIDEO_EXTS]
     if not files:
-        raise RuntimeError(f"No video flicks found in: {', '.join(str(f) for f in folders)}")
+        raise RuntimeError(f"No video {haglio_settings.value('genau_flick_words', 'many')} found in: "
+                           f"{', '.join(str(f) for f in folders)}")
     if recent:
         return sorted(files, key=_modified_at, reverse=True)
     if shuffle_on_load:
