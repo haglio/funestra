@@ -31,7 +31,7 @@ class FlickLoadController:
             return True
         if self.flick_store.adopt_decoded_frames(
                 path, protected_paths=self._flick_on_screen()):
-            self.logger.info("Adopted prefetched flick %s", path.name)
+            self.logger.info("Adopted the prefetched %s", path.name)
             return True
         return False
 
@@ -39,7 +39,7 @@ class FlickLoadController:
         if self.frames_ready(path) or self._already_decoding(path):
             return
 
-        self.logger.info("Loading flick %s (no prefetch available)", path.name)
+        self.logger.info("Loading %s (no prefetch available)", path.name)
         request_id = self.load_state.begin(path)
         self.start_thread(
             target=self._loader_thread_fn,
@@ -51,7 +51,7 @@ class FlickLoadController:
         if self.flick_store.holds(path) or self.is_busy:
             return
 
-        self.logger.info("Prefetching flick %s", path.name)
+        self.logger.info("Prefetching %s", path.name)
         request_id = self.prefetch_state.begin(path)
         self.start_thread(
             target=self._prefetch_thread_fn,
@@ -113,7 +113,7 @@ class FlickLoadController:
     def _loader_thread_fn(self, path: Path, request_id: int) -> None:
         self._decode_thread_fn(
             path, request_id, self.load_state,
-            lambda p, e: self.logger.exception("Failed to decode flick %s", p),
+            lambda p, e: self.logger.exception("Failed to decode %s", p),
         )
 
     def _prefetch_thread_fn(self, path: Path, request_id: int) -> None:

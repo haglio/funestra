@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import json
 import os
+import re
 from pathlib import Path
 
 import pytest
 from app_support import flick_folder as shared_layout
+from app_support import haglio_settings
 
 from funestra.flick_folder import (
     _modified_at,
@@ -55,13 +58,22 @@ class TestScanFlicks:
         assert sorted(result) == [tmp_path / "AI" / "a.mp4", tmp_path / "c.mp4",
                                   tmp_path / "non_AI" / "b.mp4"]
 
-    def test_raises_when_folder_empty(self, tmp_path: Path):
-        with pytest.raises(RuntimeError, match="No video flicks found"):
+    @pytest.fixture
+    def the_rooms_word_is_pips(self, tmp_path_factory, monkeypatch):
+        settings = tmp_path_factory.mktemp("haglio") / "settings.json"
+        settings.write_text(json.dumps({"genau_flick_words": {"one": "pip", "many": "pips"}}),
+                            encoding="utf-8")
+        monkeypatch.setenv(haglio_settings.SETTINGS_ENV, str(settings))
+
+    def test_an_empty_folder_is_refused_in_the_rooms_own_word(self, tmp_path: Path,
+                                                               the_rooms_word_is_pips):
+        with pytest.raises(RuntimeError, match=f"No video pips found in: {re.escape(str(tmp_path))}"):
             scan_flicks(tmp_path)
 
-    def test_raises_when_only_non_video_files(self, tmp_path: Path):
+    def test_a_folder_of_no_videos_is_refused_in_the_rooms_own_word(self, tmp_path: Path,
+                                                                    the_rooms_word_is_pips):
         (tmp_path / "readme.txt").touch()
-        with pytest.raises(RuntimeError, match="No video flicks found"):
+        with pytest.raises(RuntimeError, match="No video pips found"):
             scan_flicks(tmp_path)
 
     def test_extension_matching_is_case_insensitive(self, tmp_path: Path):

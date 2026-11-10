@@ -20,7 +20,7 @@ def _index_of(flicks: list[Path], wanted: Path | None) -> int | None:
 class FlickSequenceController:
     def __init__(self, flicks: list[Path], *, start_at: Path | None = None):
         if not flicks:
-            raise ValueError("FlickSequenceController requires at least one flick")
+            raise ValueError("Genau needs at least one video to play")
         self._flicks = list(flicks)
         self._index = _index_of(self._flicks, start_at) or 0
 
@@ -38,7 +38,7 @@ class FlickSequenceController:
 
     def take_up(self, flicks: list[Path], *, holding: Path | None = None) -> Path:
         if not flicks:
-            raise ValueError("FlickSequenceController requires at least one flick")
+            raise ValueError("Genau needs at least one video to play")
         self._flicks = list(flicks)
         self._index = _index_of(self._flicks, holding) or 0
         return self.current_path
