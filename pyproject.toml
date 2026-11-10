@@ -33,7 +33,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "app-support @ git+https://github.com/haglio/app_support@v0.1.462",
-    "shared-ui @ git+https://github.com/haglio/shared_ui@v0.1.404",
+    "shared-ui @ git+https://github.com/haglio/shared_ui@v0.1.405",
     "pytest>=9,<10",
     "pytest-cov>=7,<8",
     "pytest-timeout>=2.4,<3",
