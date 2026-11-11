@@ -33,7 +33,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "app-support @ git+https://github.com/haglio/app_support@v0.1.467",
-    "shared-ui @ git+https://github.com/haglio/shared_ui@v0.1.411",
+    "shared-ui @ git+https://github.com/haglio/shared_ui@v0.1.412",
     "pytest>=9,<10",
     "pytest-cov>=7,<8",
     "pytest-timeout>=2.4,<3",
@@ -44,7 +44,7 @@ dev = [
     # colors, and `shared_ui.colors` builds them out of QColor. Nothing funestra
     # ships imports Qt, so it stays out of [project.dependencies] and the three
     # apps that install this package do not get a Qt wheel with it.
-    "PyQt6>=6,<7",
+    "PySide6>=6.11.2,<6.12",
 ]
 
 # Consumers install this editable from a local path (see README); it is never
