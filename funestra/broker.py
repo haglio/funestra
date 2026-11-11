@@ -7,15 +7,14 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from app_support import osr2_device, state_files
-from app_support.file_channel import publish_stamp, stamp_age
+from app_support import broker_heartbeat, osr2_device
+from app_support.file_channel import publish_stamp
 from app_support.process_identity import ProcessNamer
 from app_support.subprocess_utils import hidden_subprocess_kwargs
 
 logger = logging.getLogger(__name__)
 
 CONTRACT_FILE = "broker_contract.json"
-HEARTBEAT_FRESH_S = 3.0
 # Windows ignores this flag unless the starting process is in a job that permits breakaway,
 # which only an integration run's does.
 CREATE_BREAKAWAY_FROM_JOB = 0x01000000
@@ -79,8 +78,7 @@ def _contract_at(published: Path) -> BrokerContract | None:
 
 
 def is_running(state_dir: Path, *, now: float | None = None) -> bool:
-    heartbeat = stamp_age(Path(state_dir) / state_files.BROKER_HEARTBEAT, now)
-    return ((heartbeat is not None and heartbeat <= HEARTBEAT_FRESH_S)
+    return (broker_heartbeat.is_fresh(state_dir, now=now)
             or osr2_device.trouble(Path(state_dir), now=now) is osr2_device.Osr2Trouble.NOT_FOUND)
 
 
