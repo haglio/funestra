@@ -256,12 +256,12 @@
     },
     {
       "id": "mode_selector",
-      "thing": "a pair of buttons that picks a mode: Kino and Genau on the Main Funestra, Kino and Origenerator on a Satellite, Random Favs Browser and Origenerator under the Dashboard's log",
+      "thing": "a pair of buttons that picks a mode: Kino and Genau on the Main Funestra, Kino and Origenerator on a Satellite, Random Faves Browser and Origenerator under the Dashboard's log",
       "screen": [
         "Kino",
         "Genau",
         "Origenerator",
-        "Random Favs Browser"
+        "Random Faves Browser"
       ],
       "his_word": "mode selectors (2026-11-02)",
       "code_today": [
@@ -273,7 +273,7 @@
     },
     {
       "id": "the_app",
-      "thing": "the Main Funestra, the Satellites, the Dashboard and the Random Favs Browser or Core, all running together",
+      "thing": "the Main Funestra, the Satellites, the Dashboard and the Random Faves Browser or Core, all running together",
       "screen": null,
       "his_word": "Fun Time; the app (2026-11-02)",
       "code_today": [
