@@ -44,7 +44,7 @@ dev = [
     # colors, and `shared_ui.colors` builds them out of QColor. Nothing funestra
     # ships imports Qt, so it stays out of [project.dependencies] and the three
     # apps that install this package do not get a Qt wheel with it.
-    "PyQt6>=6,<7",
+    "PySide6>=6.11.2,<6.12",
 ]
 
 # Consumers install this editable from a local path (see README); it is never
