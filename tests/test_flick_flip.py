@@ -204,3 +204,52 @@ def test_a_flipped_flick_is_shown_half_a_loop_over(tmp_path):
     flip.toggle()
 
     assert (as_it_is, flip.applied_to(0.25), flip.applied_to(0.75)) == (0.25, 0.75, 0.25)
+
+
+class _KeptElsewhere:
+    def __init__(self, keeps: Path, flipped: bool = False) -> None:
+        self.keeps_only, self.flipped, self.kept = keeps, flipped, []
+
+    def keeps(self, flick: Path) -> bool:
+        return flick == self.keeps_only
+
+    def is_flipped(self, flick: Path) -> bool:
+        return self.flipped
+
+    def keep(self, flick: Path, flipped: bool) -> None:
+        self.kept.append((flick, flipped))
+
+
+def test_a_flick_whose_flip_is_kept_elsewhere_is_shown_as_it_is_kept_there(tmp_path):
+    flick = _flick(tmp_path)
+    flip = FlickFlip(_metadata_root(tmp_path), kept_elsewhere=_KeptElsewhere(flick, flipped=True))
+
+    flip.follow(flick)
+
+    assert flip.on is True
+
+
+def test_flipping_a_flick_kept_elsewhere_keeps_it_there_and_writes_it_no_record(tmp_path):
+    flick = _flick(tmp_path)
+    elsewhere = _KeptElsewhere(flick)
+    flip = FlickFlip(_metadata_root(tmp_path), kept_elsewhere=elsewhere)
+    flip.follow(flick)
+
+    flip.toggle()
+    flip.toggle()
+
+    assert elsewhere.kept == [(flick, True), (flick, False)]
+    assert flip.on is False
+    assert not _metadata_root(tmp_path).exists()
+
+
+def test_a_flick_the_other_keeper_does_not_keep_keeps_its_flip_in_its_own_record(tmp_path):
+    flick = _flick(tmp_path)
+    elsewhere = _KeptElsewhere(tmp_path / "another flick.mp4")
+    flip = FlickFlip(_metadata_root(tmp_path), kept_elsewhere=elsewhere)
+    flip.follow(flick)
+
+    flip.toggle()
+
+    assert elsewhere.kept == []
+    assert json.loads(_record(tmp_path).read_text(encoding="utf-8")) == {"genau": {"flipped": True}}
