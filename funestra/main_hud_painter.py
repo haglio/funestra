@@ -68,7 +68,7 @@ from .main_hud import (
     tooltip_at,
 )
 from .modes import LengthMode
-from .name_copy import COPY_GAP, COPY_ICON, copy_button, copy_icon_rect
+from .name_copy import COPY_GAP, COPY_ICON, copy_button, copy_icon_ink, copy_icon_rect
 from .osr2_visualizer import (
     DriveHud,
     DriveSection,
@@ -296,7 +296,8 @@ class MainHudPainter:
     def _copy_room(self, filename: str) -> int:
         return COPY_GAP + sum(self._tiny.getmetrics()) if filename else 0
 
-    def _draw_top_block(self, hud: Hud, y: int, block: _TopBlock, slot: _Slot) -> Rect | None:
+    def _draw_top_block(self, hud: Hud, y: int, block: _TopBlock, slot: _Slot,
+                        hover: tuple[int, int] | None) -> Rect | None:
         draw = hud.draw
         width = hud.image.width
         _ascent, descent = self._body.getmetrics()
@@ -317,7 +318,7 @@ class MainHudPainter:
         draw.text((name_x + indent, line_top), block.filename,
                   font=self._tiny, anchor="la", fill=(*TEXT_MUTED, 255))
         copy = copy_icon_rect(name_x + indent + name_w, line_top, sum(self._tiny.getmetrics()))
-        draw_icon(hud.image, COPY_ICON, copy, (*TEXT_MUTED, 255))
+        draw_icon(hud.image, COPY_ICON, copy, copy_icon_ink(copy, hover))
         return copy
 
     def _draw_rows(self, hud: Hud, rows: list[list[Button]], y: int, slot: _Slot,
@@ -410,7 +411,8 @@ class MainHudPainter:
             hud.divide(divider)
         title_top, rows_top, device_top, _row_top, _host_top = plan.sections.tops
 
-        copy = (self._draw_top_block(hud, title_top, plan.top, _Slot(corner, plan.reserves[0]))
+        copy = (self._draw_top_block(hud, title_top, plan.top, _Slot(corner, plan.reserves[0]),
+                                     hover)
                 if plan.whole else None)
         self.buttons = self._draw_rows(hud, plan.rows, rows_top, _Slot(corner, plan.reserves[1]),
                                        hover)

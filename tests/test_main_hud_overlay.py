@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from host_controls_fakes import BAR, AHost, middle_of
 from main_hud_rows import main_hud_rows
-from shared_ui.palette import BG_BUTTON
+from shared_ui.palette import BG_BUTTON, TEXT_MUTED, hovered
 from shared_ui.spacing import BUTTON_SIZE_HUD
 
 from funestra.hud_corners import HudPlace
@@ -511,6 +511,23 @@ def test_a_press_on_the_copy_icon_puts_the_whole_name_on_the_clipboard_and_posts
 
     assert copied == [name]
     assert _asked(tmp_path) == []
+
+
+def test_the_copy_icon_on_the_main_hud_lights_up_under_the_pointer(tmp_path):
+    _publish(tmp_path)
+    overlay, engine, _gate = _overlay(tmp_path, top_block=lambda: ModeHud(video="video one"))
+    _tick(overlay)
+    x, y, w, h = _copy_icon(overlay)
+    left, top, resting = engine.overlays[HUD_OVERLAY_ID]
+
+    overlay.motion(x + w // 2, y + h // 2)
+    _tick(overlay)
+    _left, _top, pointed_at = engine.overlays[HUD_OVERLAY_ID]
+
+    def brightest(bgra) -> int:
+        return int(bgra[y - top:y - top + h, x - left:x - left + w, :3].max())
+
+    assert (brightest(resting), brightest(pointed_at)) == (max(TEXT_MUTED), max(hovered(TEXT_MUTED)))
 
 
 def test_with_no_name_on_the_main_hud_there_is_nothing_to_copy(tmp_path):
