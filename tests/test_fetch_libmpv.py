@@ -191,6 +191,17 @@ class TestAMachineThatAlreadyHasTheDll:
 
         assert fetched == [dll]
 
+    def test_the_new_dll_takes_the_old_ones_place_by_moving_it_aside_since_a_running_funestra_holds_it_open(
+            self, dll: Path, tmp_path: Path):
+        fetched = tmp_path / "fetched" / "libmpv-2.dll"
+        fetched.parent.mkdir()
+        fetched.write_bytes(b"the lgpl engine")
+
+        fetch_libmpv.put_in_place(fetched, dll)
+
+        assert dll.read_bytes() == b"the lgpl engine"
+        assert sorted(path.name for path in dll.parent.iterdir()) == ["fetched", "libmpv-2.dll"]
+
     def test_one_fetched_from_this_pin_is_kept(self, dll: Path, monkeypatch):
         fetch_libmpv.pin_record(dll).write_text(fetch_libmpv.lock()["asset"], encoding="utf-8")
         monkeypatch.setattr(fetch_libmpv, "fetch", _never_called)
