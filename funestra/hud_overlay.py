@@ -211,7 +211,7 @@ class HudOverlay:
             return True
         command = self._clicks.press(self.targets, *self._pointer_at, now=self._clock())
         if command == COPY_NAME:
-            self._clipboard(self._video)
+            self._clipboard(self._name)
         elif command:
             self._post(command)
             self._draw()
@@ -338,7 +338,7 @@ class HudOverlay:
         rendered = self._renderer.render(
             model, item_row=self._item_row, heatmap=self._heatmap,
             drawn_with=DrawnWith(
-                video=self._video, hover_loop=hover.loop, hover_tip=hover.tip, hover_pos=hover.at,
+                video=self._name, hover_loop=hover.loop, hover_tip=hover.tip, hover_pos=hover.at,
                 may_grow_on_hover=self._over_the_video,
                 minus_on_the_hud=self._minus_on_the_hud, flash=self._flash),
         )
@@ -350,6 +350,10 @@ class HudOverlay:
         self._hud_size = (width, height)
         self._origin = origin
         self._shown = True
+
+    @property
+    def _name(self) -> str:
+        return (self._model.item_name if self._model is not None else "") or self._video
 
     def _post(self, command: str) -> None:
         self._source.post(command)

@@ -138,6 +138,7 @@ class HudModel:
     active: bool = False
 
     is_favorite: bool = False
+    item_name: str = ""
     item_note: str = ""
     corner: HudCell | None = None
     seeds: tuple[HudCell, ...] = ()
@@ -551,6 +552,7 @@ def hud_text(model: HudModel) -> str:
         "title": model.title,
         "active": model.active,
         "is_favorite": model.is_favorite,
+        "item_name": model.item_name,
         "item_note": model.item_note,
         "filter_query": model.filter_query,
         "seed_count": model.seed_count,
@@ -591,6 +593,7 @@ def parse_hud(text: str) -> HudModel | None:
         title=str(raw.get("title", "") or ""),
         active=bool(raw.get("active", False)),
         is_favorite=bool(raw.get("is_favorite", False)),
+        item_name=str(raw.get("item_name", "") or ""),
         item_note=str(raw.get("item_note", "") or ""),
         corner=_cell(raw.get("corner")),
         seeds=tuple(cell for cell in seeds if cell is not None),

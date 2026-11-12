@@ -495,6 +495,21 @@ def test_a_press_on_the_copy_icon_puts_the_whole_name_on_the_clipboard_and_posts
     assert _commands(tmp_path) == []
 
 
+def test_a_host_that_names_the_item_has_its_name_shown_and_copied_in_place_of_the_files(
+        tmp_path: Path, hud: Path):
+    hud.write_text(hud.read_text(encoding="utf-8").replace(
+        '"funestra": "portrait"', '"funestra": "portrait", "item_name": "3FA9C0D2 004"'),
+        encoding="utf-8")
+    copied = []
+    overlay = _overlay(tmp_path, hud, FakeEngine(), clipboard=copied.append)
+    overlay.tick(video="wan_loop_00042_")
+
+    x, y, w, h = _copy_icon(overlay.targets)
+    overlay.press(x + w // 2 + MARGIN, y + h // 2 + MARGIN)
+
+    assert copied == ["3FA9C0D2 004"]
+
+
 def test_the_copy_icon_names_what_it_does(tmp_path: Path, hud: Path):
     overlay = _overlay(tmp_path, hud, FakeEngine())
     overlay.tick(video="video one")
