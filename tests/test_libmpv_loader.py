@@ -24,6 +24,14 @@ def test_a_checkouts_own_vendor_dir_is_looked_in_first():
     assert libmpv_dirs()[0] == Path(funestra.__file__).resolve().parent.parent / "vendor"
 
 
+def test_an_installed_copy_looks_only_in_the_machine_wide_folder_since_a_vendor_folder_in_site_packages_is_no_checkouts(
+        tmp_path: Path):
+    installed = tmp_path / "Lib" / "site-packages" / "funestra"
+    installed.mkdir(parents=True)
+
+    assert libmpv_dirs(package_dir=installed) == [machine_libmpv_dir()]
+
+
 def test_the_machine_wide_copy_is_looked_in_after_it():
     assert libmpv_dirs()[1] == machine_libmpv_dir()
 

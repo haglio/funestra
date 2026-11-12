@@ -39,8 +39,13 @@ def machine_libmpv_dir() -> Path:
     return user_folder() / ".haglio" / "libmpv"
 
 
-def libmpv_dirs() -> list[Path]:
-    return [Path(__file__).resolve().parent.parent / "vendor", machine_libmpv_dir()]
+_THIS_PACKAGE = Path(__file__).resolve().parent
+
+
+def libmpv_dirs(*, package_dir: Path = _THIS_PACKAGE) -> list[Path]:
+    checkout = package_dir.parent
+    vendor = [checkout / "vendor"] if (checkout / "pyproject.toml").is_file() else []
+    return [*vendor, machine_libmpv_dir()]
 
 
 def add_libmpv_to_path() -> None:
