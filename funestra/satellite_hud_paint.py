@@ -51,7 +51,7 @@ from .hud_osr2 import (
 )
 from .hud_placement import block_x
 from .hud_row import ROW_H, RowHud, RowSection, row_layout
-from .name_copy import COPY_GAP, COPY_ICON, copy_button, copy_icon_rect
+from .name_copy import COPY_GAP, COPY_ICON, copy_button, copy_icon_ink, copy_icon_rect
 from .osr2_visualizer import DriveSection, DriveTrack, section_size, visualizer_targets
 from .satellite_hud import (
     ACT_GAP,
@@ -517,7 +517,7 @@ class HudRenderer:
         if not title.copy_room:
             return favorite, None
         copy = copy_icon_rect(name_x + TITLE_INDENT + subtitle_w, line_y, self._tiny_line_h())
-        draw_icon(image, COPY_ICON, copy, (*TEXT_MUTED, 255))
+        draw_icon(image, COPY_ICON, copy, copy_icon_ink(copy, self._pointer))
         return favorite, copy
 
     def _name_line_top(self) -> int:

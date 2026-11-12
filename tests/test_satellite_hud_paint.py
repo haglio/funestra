@@ -17,6 +17,7 @@ from shared_ui.palette import (
     TEXT_MUTED,
     TEXT_PRIMARY,
     WHITE,
+    hovered,
 )
 from shared_ui.spacing import BUTTON_GAP
 from shared_ui.type_scale import SIZE_TINY
@@ -357,6 +358,25 @@ def test_the_file_on_screen_is_named_in_muted_gray_under_the_title(thumb):
     strip = _rgb(named.bgra)[PAD + TITLE_ROW_H:_dividers(named)[0], TITLE_X:-PAD]
     assert (strip > 80).any(axis=2).sum() > 0
     assert (strip > 200).all(axis=2).sum() == 0
+
+
+def _brightest_in(rendered, rect) -> int:
+    x, y, w, h = rect
+    return int(_rgb(rendered.bgra)[y:y + h, x:x + w].max())
+
+
+def test_the_copy_icon_lights_up_under_the_pointer_like_the_huds_buttons(thumb):
+    renderer = HudRenderer("portrait")
+    model = _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))
+    resting = renderer.render(model, drawn_with=DrawnWith(video="example clip one"))
+    (rect, _copy), = [(r, b) for r, b in resting.targets.buttons if b.command == COPY_NAME]
+    x, y, w, h = rect
+
+    pointed_at = renderer.render(model, drawn_with=DrawnWith(
+        video="example clip one", hover_pos=(x + w // 2, y + h // 2)))
+
+    assert (_brightest_in(resting, rect), _brightest_in(pointed_at, rect)) == (
+        max(TEXT_MUTED), max(hovered(TEXT_MUTED)))
 
 
 def test_the_line_the_file_name_takes_is_kept_while_there_is_no_name(thumb):

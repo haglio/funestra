@@ -7,9 +7,10 @@ from threading import Thread
 
 from app_support.subprocess_utils import hidden_subprocess_kwargs
 from app_support.threading_utils import start_daemon_thread
+from shared_ui.palette import TEXT_MUTED, hovered
 from shared_ui.spacing import GAP_SMALL
 
-from .geometry import Rect
+from .geometry import Rect, contains
 from .hud_button import Button
 from .hud_icons import shared_icon
 
@@ -25,6 +26,11 @@ def copy_button() -> Button:
 
 def copy_icon_rect(after_x: int, line_top: int, line_h: int) -> Rect:
     return (after_x + COPY_GAP, line_top, line_h, line_h)
+
+
+def copy_icon_ink(rect: Rect, pointer: tuple[int, int] | None) -> tuple[int, int, int, int]:
+    pointed_at = pointer is not None and contains(rect, *pointer)
+    return (*(hovered(TEXT_MUTED) if pointed_at else TEXT_MUTED), 255)
 
 
 def copy_to_clipboard(text: str, *, run: Callable[..., object] = subprocess.run) -> None:
