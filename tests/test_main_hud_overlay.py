@@ -20,6 +20,7 @@ from funestra.main_hud_overlay import MainHudFiles, MainHudHost, MainHudOverlay
 from funestra.main_hud_painter import _PAD as PAD
 from funestra.main_hud_painter import MARGIN
 from funestra.modes import LengthMode, MainMode, Osr2State
+from funestra.name_copy import COPY_NAME
 from funestra.osr2_visualizer import DriveHud, DrivePublisher, drive_text, read_drive
 from funestra.testing import FakeEngine
 
@@ -64,6 +65,7 @@ def _overlay(tmp_path: Path, *, top_block=None, gate=None, drive: bool = True,
         drive=DriveFeed(tmp_path / "drive.txt" if drive else None, gate,
                         extras.get("visualizer")),
         clock=lambda: 0.0,
+        **({"clipboard": extras["clipboard"]} if "clipboard" in extras else {}),
     )
     return overlay, engine, gate
 
@@ -485,6 +487,39 @@ def test_the_minus_sits_where_the_plus_of_the_minimized_main_hud_sits_so_a_secon
     plus_left, plus_top, _bgra = overlay._engine.overlays[HUD_OVERLAY_ID]
     ((px, py, pw, ph), _plus), = overlay._painter.buttons
     assert (plus_left + px, plus_top + py, pw, ph) == (left + x, top + y, w, h)
+
+
+def _copy_icon(overlay: MainHudOverlay) -> tuple[int, int, int, int]:
+    left, top, _bgra = overlay._engine.overlays[HUD_OVERLAY_ID]
+    (x, y, w, h), = [rect for rect, button in overlay._painter.buttons
+                     if button.command == COPY_NAME]
+    return left + x, top + y, w, h
+
+
+@pytest.mark.parametrize("corner", list(HudCorner))
+def test_a_press_on_the_copy_icon_puts_the_whole_name_on_the_clipboard_and_posts_nothing(
+        tmp_path, corner):
+    name = "a name long enough that the line runs out of room for it " * 3
+    copied = []
+    _publish(tmp_path, corner)
+    overlay, _engine, _gate = _overlay(tmp_path, top_block=lambda: ModeHud(video=name),
+                                       clipboard=copied.append)
+    _tick(overlay)
+
+    x, y, w, h = _copy_icon(overlay)
+    overlay.press(x + w // 2, y + h // 2)
+
+    assert copied == [name]
+    assert _asked(tmp_path) == []
+
+
+def test_with_no_name_on_the_main_hud_there_is_nothing_to_copy(tmp_path):
+    _publish(tmp_path)
+    overlay, _engine, _gate = _overlay(tmp_path)
+    _tick(overlay)
+
+    assert not [button for _rect, button in overlay._painter.buttons
+                if button.command == COPY_NAME]
 
 
 @pytest.mark.parametrize("corner", list(HudCorner))

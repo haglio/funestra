@@ -14,6 +14,7 @@ from .hud_placement import HudEdge
 from .hud_row import ItemRowDraw, RowHud, RowLayout, RowPress, track_on_screen
 from .main_hud import MainHudModel, ModeHud, kino_shows, read_main_hud
 from .main_hud_painter import MainHud, MainHudPainter, with_playback_speed
+from .name_copy import COPY_NAME, copy_while_the_funestra_plays_on
 from .osr2_visualizer import DriveHud, read_drive
 
 
@@ -38,7 +39,9 @@ class MainHudOverlay:
         host: MainHudHost,
         drive: DriveFeed = NO_DRIVE,
         clock: Callable[[], float] = time.monotonic,
+        clipboard: Callable[[str], None] = copy_while_the_funestra_plays_on,
     ) -> None:
+        self._clipboard = clipboard
         self._main_hud_file = Path(files.main_hud)
         self._drive_file = None if drive.file is None else Path(drive.file)
         self._command_file = files.command
@@ -125,6 +128,9 @@ class MainHudOverlay:
                            duration_ms=self._track_duration()):
             return True
         asked = self._painter.press_at(x, y)
+        if asked == COPY_NAME:
+            self._clipboard(self._top_block().video)
+            return True
         if asked:
             ask(self._command_file, asked)
             return True

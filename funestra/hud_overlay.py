@@ -12,6 +12,7 @@ from .hud_corners import HudPlace
 from .hud_placement import HudCorner, HudEdge, PointerReading
 from .hud_row import ItemRowDraw, RowHud, RowLayout, RowPress, track_on_screen
 from .modes import Osr2State
+from .name_copy import COPY_NAME, copy_while_the_funestra_plays_on
 from .osr2_visualizer import DriveHud, DrivePublisher, read_drive
 from .satellite_hud import (
     MARGIN,
@@ -110,8 +111,10 @@ class HudOverlay:
         drive: DriveFeed = NO_DRIVE,
         row: RowPress | None = None,
         clock=time.monotonic,
+        clipboard: Callable[[str], None] = copy_while_the_funestra_plays_on,
     ) -> None:
         self._source = source
+        self._clipboard = clipboard
         self._drive_file = None if drive.file is None else Path(drive.file)
         self._drive_gate = drive.gate
         self._visualizer = drive.visualizer
@@ -207,7 +210,9 @@ class HudOverlay:
             self._post_on_the_foot(FOOT_PRESS)
             return True
         command = self._clicks.press(self.targets, *self._pointer_at, now=self._clock())
-        if command:
+        if command == COPY_NAME:
+            self._clipboard(self._video)
+        elif command:
             self._post(command)
             self._draw()
         return True

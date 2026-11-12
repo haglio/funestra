@@ -28,6 +28,7 @@ from .hud import (
     active_dot_top,
     draw_active_dot,
     draw_button,
+    draw_icon,
     draw_tooltip,
     load_font,
     text_width,
@@ -67,6 +68,7 @@ from .main_hud import (
     tooltip_at,
 )
 from .modes import LengthMode
+from .name_copy import COPY_GAP, COPY_ICON, copy_button, copy_icon_rect
 from .osr2_visualizer import (
     DriveHud,
     DriveSection,
@@ -291,7 +293,10 @@ class MainHudPainter:
         return block_x(corner, hud_width=hud_width, extent=extent, pad=_PAD,
                        reserve=reserve)
 
-    def _draw_top_block(self, hud: Hud, y: int, block: _TopBlock, slot: _Slot) -> None:
+    def _copy_room(self, filename: str) -> int:
+        return COPY_GAP + sum(self._tiny.getmetrics()) if filename else 0
+
+    def _draw_top_block(self, hud: Hud, y: int, block: _TopBlock, slot: _Slot) -> Rect | None:
         draw = hud.draw
         width = hud.image.width
         _ascent, descent = self._body.getmetrics()
@@ -303,11 +308,17 @@ class MainHudPainter:
         if block.title:
             draw.text((title_x + indent, baseline), block.title, font=self._body,
                       anchor="ls", fill=(*TEXT_PRIMARY, 255))
-        if block.filename:
-            name_x = self._block_x(slot.corner, width,
-                                   indent + text_width(self._tiny, block.filename), slot.reserve)
-            draw.text((name_x + indent, baseline + descent + _SUBTITLE_GAP), block.filename,
-                      font=self._tiny, anchor="la", fill=(*TEXT_MUTED, 255))
+        if not block.filename:
+            return None
+        name_w = text_width(self._tiny, block.filename)
+        name_x = self._block_x(slot.corner, width,
+                               indent + name_w + self._copy_room(block.filename), slot.reserve)
+        line_top = baseline + descent + _SUBTITLE_GAP
+        draw.text((name_x + indent, line_top), block.filename,
+                  font=self._tiny, anchor="la", fill=(*TEXT_MUTED, 255))
+        copy = copy_icon_rect(name_x + indent + name_w, line_top, sum(self._tiny.getmetrics()))
+        draw_icon(hud.image, COPY_ICON, copy, (*TEXT_MUTED, 255))
+        return copy
 
     def _draw_rows(self, hud: Hud, rows: list[list[Button]], y: int, slot: _Slot,
                    hover: tuple[int, int] | None) -> list[tuple[Rect, Button]]:
@@ -367,7 +378,8 @@ class MainHudPainter:
             width = 2 * _PAD + max(
                 parts_w,
                 reserves[0] + text_x + text_width(self._body, title),
-                reserves[0] + text_x + text_width(self._tiny, filename),
+                reserves[0] + text_x + text_width(self._tiny, filename)
+                + self._copy_room(filename),
             )
         else:
             any_row = (self._item_row.least_width_for_any_row()
@@ -375,7 +387,7 @@ class MainHudPainter:
             width = max(self._width, 2 * _PAD + parts_w, 2 * _PAD + any_row)
             room = width - 2 * _PAD - text_x - reserves[0]
             title = fit_text(self._body, title, room)
-            filename = fit_text(self._tiny, filename, room)
+            filename = fit_text(self._tiny, filename, room - self._copy_room(filename))
         row_h = ROW_H if item_row is not None else 0
         sections = stack(_PAD, [
             top_h + filename_h,
@@ -398,10 +410,12 @@ class MainHudPainter:
             hud.divide(divider)
         title_top, rows_top, device_top, _row_top, _host_top = plan.sections.tops
 
-        if plan.whole:
-            self._draw_top_block(hud, title_top, plan.top, _Slot(corner, plan.reserves[0]))
+        copy = (self._draw_top_block(hud, title_top, plan.top, _Slot(corner, plan.reserves[0]))
+                if plan.whole else None)
         self.buttons = self._draw_rows(hud, plan.rows, rows_top, _Slot(corner, plan.reserves[1]),
                                        hover)
+        if copy is not None:
+            self.buttons.append((copy, copy_button()))
         self.tracks = []
         self._draw_device_block(hud, main_hud, plan, device_top, hover)
 

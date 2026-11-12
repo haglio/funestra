@@ -36,6 +36,7 @@ from funestra.hud_title import PLAYBACK_SPEED_LABEL
 from funestra.main_hud import OSR2_DRIVING, OSR2_PARKED, MainHudModel
 from funestra.main_hud_painter import MainHud, MainHudPainter
 from funestra.modes import MainMode, Osr2State
+from funestra.name_copy import COPY_NAME
 from funestra.osr2_visualizer import (
     CONTROL_TIPS,
     DRIVEN_BY_ROBOT_HAND,
@@ -345,7 +346,7 @@ def test_a_status_too_wide_for_the_nav_map_is_drawn_smaller_or_cut_short_rather_
 
 
 def _control_band_top(rendered) -> int:
-    return min(y for (_x, y, _w, _h), _button in _declared(rendered))
+    return min(y for (_x, y, _w, _h), button in _declared(rendered) if button.command != COPY_NAME)
 
 
 def test_the_file_on_screen_is_named_in_muted_gray_under_the_title(thumb):
