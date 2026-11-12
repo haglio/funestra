@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Protocol
 
 from app_support.json_store import locked_update, read_json
 from app_support.mirrored_tree import library_roots_beside, mirrored_path
@@ -26,9 +27,25 @@ def _turned_over(record: dict) -> dict:
     return {**rest, GENAU_SECTION: genau} if genau else rest
 
 
+class FlipsKeptElsewhere(Protocol):
+    def keeps(self, flick: Path) -> bool: ...
+
+    def is_flipped(self, flick: Path) -> bool: ...
+
+    def keep(self, flick: Path, flipped: bool) -> None: ...
+
+
+class _KeptNowhereElse:
+    @staticmethod
+    def keeps(_flick: Path) -> bool:
+        return False
+
+
 class FlickFlip:
-    def __init__(self, metadata_root: Path | None = None) -> None:
+    def __init__(self, metadata_root: Path | None = None, *,
+                 kept_elsewhere: FlipsKeptElsewhere | None = None) -> None:
         self._metadata_root = metadata_root
+        self._elsewhere = kept_elsewhere or _KeptNowhereElse()
         self._flick: Path | None = None
         self.on = False
 
@@ -43,6 +60,10 @@ class FlickFlip:
 
     def toggle(self) -> None:
         if self._flick is None:
+            return
+        if self._elsewhere.keeps(self._flick):
+            self.on = not self.on
+            self._elsewhere.keep(self._flick, self.on)
             return
         record = self._record_of(self._flick)
         if record is None:
@@ -64,6 +85,8 @@ class FlickFlip:
                              mirror_root=self._metadata_root, suffix=".json")
 
     def _recorded_as_flipped(self, flick: Path) -> bool:
+        if self._elsewhere.keeps(flick):
+            return self._elsewhere.is_flipped(flick)
         record = self._record_of(flick)
         if record is None:
             return False
