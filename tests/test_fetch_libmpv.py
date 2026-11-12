@@ -153,3 +153,46 @@ def test_this_repos_gate_fetches_the_pin_itself_since_a_developers_machine_alrea
             / ".github" / "workflows" / "merge-gate.yml").read_text(encoding="utf-8")
 
     assert "tools/fetch_libmpv.py" in gate
+
+
+class TestTheLicense:
+    def test_the_pin_is_an_lgpl_build_so_the_family_can_be_sold_without_its_source(self):
+        assert "-lgpl-" in fetch_libmpv.lock()["asset"]
+
+    def test_a_retired_pin_falls_back_to_the_newest_lgpl_build_never_the_gpl_one_beside_it(
+            self, monkeypatch):
+        gpl = "mpv-dev-x86_64-20261111-git-bcde6b93cc.7z"
+        lgpl = "mpv-dev-lgpl-x86_64-20261111-git-bcde6b93cc.7z"
+        release = {"assets": [
+            {"name": name, "browser_download_url": f"https://example.invalid/{name}",
+             "digest": f"sha256:{_DIGEST}"}
+            for name in (gpl, "mpv-dev-lgpl-x86_64-v3-20261111-git-bcde6b93cc.7z", lgpl)]}
+        monkeypatch.setattr(fetch_libmpv, "_releases", lambda _repository: [release])
+
+        assert fetch_libmpv.newest_asset("someone/mpv-builds") == (
+            f"https://example.invalid/{lgpl}", _DIGEST)
+
+
+class TestAMachineThatAlreadyHasTheDll:
+    @pytest.fixture
+    def dll(self, tmp_path: Path, monkeypatch) -> Path:
+        dll = tmp_path / "libmpv-2.dll"
+        dll.write_bytes(b"an engine")
+        monkeypatch.setattr(fetch_libmpv, "dll_path", lambda: dll)
+        monkeypatch.setattr(fetch_libmpv.sys, "argv", ["fetch_libmpv.py"])
+        return dll
+
+    def test_one_fetched_from_an_earlier_pin_is_replaced_since_the_gpl_build_would_otherwise_stay_for_good(
+            self, dll: Path, monkeypatch):
+        fetched = []
+        monkeypatch.setattr(fetch_libmpv, "fetch", lambda: fetched.append(dll) or dll)
+
+        fetch_libmpv.main()
+
+        assert fetched == [dll]
+
+    def test_one_fetched_from_this_pin_is_kept(self, dll: Path, monkeypatch):
+        fetch_libmpv.pin_record(dll).write_text(fetch_libmpv.lock()["asset"], encoding="utf-8")
+        monkeypatch.setattr(fetch_libmpv, "fetch", _never_called)
+
+        assert fetch_libmpv.main() == 0

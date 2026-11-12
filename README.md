@@ -194,7 +194,12 @@ machine and the merge gate link the same DLL and both can say which one. Upstrea
 keeps about a month of releases; once the pinned tag is gone the script says so,
 names the lock file and takes the newest build instead, which is what every run
 did before the pin. Bumping the pin is one pull request, and it is where a
-version change gets a reason written down.
+version change gets a reason written down. A `libmpv-2.dll.pin` beside the DLL
+names the asset it came from, so running the script after a bump replaces it.
+
+The pin is an LGPL build (mpv built with `-Dgpl=false` against an ffmpeg built
+without `--enable-gpl`), so the family can one day be sold without its source;
+the newest-build fallback takes only LGPL builds too.
 
 ## Tests
 

@@ -19,6 +19,6 @@
 # consumer's gate a fortnight later, which is how the first one was found.
 source = zhongfly/mpv-winbuild
 fallback = shinchiro/mpv-winbuild-cmake
-tag = 2026-09-07-989d32716e
-asset = mpv-dev-x86_64-20260907-git-989d32716e.7z
-sha256 = c96fdc29eca9ffbd431478807992fd2ee43874907b5a8c3d84101d53069ed011
+tag = 2026-11-11-bcde6b93cc
+asset = mpv-dev-lgpl-x86_64-20261111-git-bcde6b93cc.7z
+sha256 = 1b76d39ac5e653b07e047674836e0b699d7eca4c842f3fa7677cacc9a3e17b8b

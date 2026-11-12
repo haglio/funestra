@@ -16,7 +16,7 @@ from pathlib import Path
 LOCK = Path(__file__).resolve().parent / "libmpv.lock"
 LOADER = Path(__file__).resolve().parent.parent / "funestra" / "libmpv_loader.py"
 
-_ASSET = re.compile(r"mpv-dev-x86_64-[0-9].*\.7z$")
+_ASSET = re.compile(r"mpv-dev-lgpl-x86_64-[0-9].*\.7z$")
 _DOWNLOAD_TIMEOUT = 300
 
 
@@ -30,6 +30,16 @@ def _loader_loaded_from_its_file():
 
 def dll_path() -> Path:
     return _loader_loaded_from_its_file().machine_libmpv_dir() / "libmpv-2.dll"
+
+
+def pin_record(dll: Path) -> Path:
+    return dll.with_name(dll.name + ".pin")
+
+
+def fetched_from_the_pin(dll: Path) -> bool:
+    record = pin_record(dll)
+    return (dll.is_file() and dll.stat().st_size > 0 and record.is_file()
+            and record.read_text(encoding="utf-8").strip() == lock()["asset"])
 
 
 def lock() -> dict[str, str]:
@@ -124,6 +134,7 @@ def fetch() -> Path:
         found = extract(download(url, digest, scratch), scratch)
         dll.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(found, dll)
+    pin_record(dll).write_text(url.rsplit("/", 1)[-1], encoding="utf-8")
     print(f"{dll} <- {url}")
     return dll
 
@@ -134,8 +145,8 @@ def main() -> int:
                         help="exit non-zero unless the DLL is in place afterwards")
     arguments = parser.parse_args()
     dll = dll_path()
-    if dll.is_file() and dll.stat().st_size > 0:
-        print(f"{dll} is already here ({dll.stat().st_size} bytes)")
+    if fetched_from_the_pin(dll):
+        print(f"{dll} is already here, from {lock()['asset']}")
     else:
         fetch()
     present = dll.is_file() and dll.stat().st_size > 0
