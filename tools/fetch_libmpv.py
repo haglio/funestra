@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import importlib.util
 import json
@@ -10,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.request
 from pathlib import Path
 
@@ -125,6 +127,16 @@ def extract(archive: Path, into: Path) -> Path:
     return found
 
 
+def put_in_place(found: Path, dll: Path) -> None:
+    dll.parent.mkdir(parents=True, exist_ok=True)
+    if dll.exists():
+        dll.replace(dll.with_name(f"{dll.name}.replaced-{time.time_ns()}"))
+    shutil.copy2(found, dll)
+    for replaced in dll.parent.glob(f"{dll.name}.replaced-*"):
+        with contextlib.suppress(PermissionError):
+            replaced.unlink()
+
+
 def fetch() -> Path:
     pinned = lock()
     url, digest = resolve(pinned)
@@ -132,8 +144,7 @@ def fetch() -> Path:
     with tempfile.TemporaryDirectory() as scratch_dir:
         scratch = Path(scratch_dir)
         found = extract(download(url, digest, scratch), scratch)
-        dll.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(found, dll)
+        put_in_place(found, dll)
     pin_record(dll).write_text(url.rsplit("/", 1)[-1], encoding="utf-8")
     print(f"{dll} <- {url}")
     return dll
