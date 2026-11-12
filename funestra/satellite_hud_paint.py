@@ -51,6 +51,7 @@ from .hud_osr2 import (
 )
 from .hud_placement import block_x
 from .hud_row import ROW_H, RowHud, RowSection, row_layout
+from .name_copy import COPY_GAP, COPY_ICON, copy_button, copy_icon_rect
 from .osr2_visualizer import DriveSection, DriveTrack, section_size, visualizer_targets
 from .satellite_hud import (
     ACT_GAP,
@@ -160,10 +161,19 @@ class _NavMap(NamedTuple):
     windows: tuple[NavMapWindow | None, NavMapWindow | None]
 
 
+def _minus_room(drawn_with: DrawnWith) -> int:
+    return MINIMIZE_ROOM if drawn_with.minus_on_the_hud else 0
+
+
+def _name_reserve(model: HudModel, drawn_with: DrawnWith) -> int:
+    return 0 if model.hud_corner.lower else _minus_room(drawn_with)
+
+
 class _Title(NamedTuple):
     font: ImageFont.FreeTypeFont
     subtitle: str
     reserve: int
+    copy_room: int = 0
 
 
 @dataclass(frozen=True)
@@ -273,7 +283,9 @@ class HudRenderer:
         drive_w, drive_h = section_size() if model.drive is not None else (0, 0)
         device_w = max(self._osr2.width(osr2_line) if model.osr2 else 0, drive_w)
         foot_w, foot_h = model.foot.size() if model.foot is not None else (0, 0)
-        width = hud_width(model.funestra, text_width(self._tiny, drawn_with.video),
+        width = hud_width(model.funestra,
+                          text_width(self._tiny, drawn_with.video) + self._copy_room(drawn_with)
+                          + _name_reserve(model, drawn_with),
                           content_width=max(
                                 bar_width,
                                 2 * PAD + device_w if device_w else 0,
@@ -302,17 +314,19 @@ class HudRenderer:
         image, draw = hud.image, hud.draw
 
         x = PAD
-        minus_room = MINIMIZE_ROOM if drawn_with.minus_on_the_hud else 0
+        minus_room = _minus_room(drawn_with)
         room = width - TITLE_X - PAD - minus_room
         title_font = self._title_font(largest_size_that_fits(
             SIZE_BODY, room,
             lambda size: text_width(self._title_font(size), model.title)))
         model = replace(model, title=fit_text(title_font, model.title, room))
-        favorite = self._draw_title_row(
+        copy_room = self._copy_room(drawn_with)
+        favorite, copy = self._draw_title_row(
             hud, PAD, model,
-            _Title(title_font, name_line(drawn_with.video, model.item_note, room, self._tiny),
-                   0 if model.hud_corner.lower else minus_room))
-        buttons: list[tuple[Rect, Button]] = []
+            _Title(title_font,
+                   name_line(drawn_with.video, model.item_note, room - copy_room, self._tiny),
+                   _name_reserve(model, drawn_with), copy_room))
+        buttons: list[tuple[Rect, Button]] = [] if copy is None else [(copy, copy_button())]
         if drawn_with.minus_on_the_hud:
             buttons.append(self._draw_minus(hud, model))
         buttons.extend(self._draw_button_rows(hud, model, sizes.rows, sizes.widths, layout.bars))
@@ -472,7 +486,14 @@ class HudRenderer:
             self._titles[size] = load_font(size)
         return self._titles[size]
 
-    def _draw_title_row(self, hud: Hud, y: int, model: HudModel, title: _Title) -> Rect | None:
+    def _copy_room(self, drawn_with: DrawnWith) -> int:
+        return COPY_GAP + self._tiny_line_h() if drawn_with.video else 0
+
+    def _tiny_line_h(self) -> int:
+        return sum(self._tiny.getmetrics())
+
+    def _draw_title_row(self, hud: Hud, y: int, model: HudModel,
+                        title: _Title) -> tuple[Rect | None, Rect | None]:
         image, draw, width = hud.image, hud.draw, hud.image.width
         title_x = self._block_x(model, width,
                                 TITLE_INDENT + text_width(title.font, model.title),
@@ -483,17 +504,21 @@ class HudRenderer:
         draw.text((title_x + TITLE_INDENT, y + TITLE_BASELINE), model.title,
                   font=title.font, anchor="ls", fill=(*TEXT_PRIMARY, 255))
         if not title.subtitle:
-            return None
+            return None, None
         line_y = y + self._name_line_top()
-        name_x = self._block_x(model, width,
-                              TITLE_INDENT + text_width(self._tiny, title.subtitle),
+        subtitle_w = text_width(self._tiny, title.subtitle)
+        name_x = self._block_x(model, width, TITLE_INDENT + subtitle_w + title.copy_room,
                               reserve=title.reserve)
         draw.text((name_x + TITLE_INDENT, line_y), title.subtitle,
                   font=self._tiny, anchor="la", fill=(*TEXT_MUTED, 255))
-        favorite = favorite_icon_rect(name_x, line_y, sum(self._tiny.getmetrics()))
+        favorite = favorite_icon_rect(name_x, line_y, self._tiny_line_h())
         draw_icon(image, FAVORITE_ICON, favorite,
                   (*(GREEN if model.is_favorite else TEXT_MUTED), 255))
-        return favorite
+        if not title.copy_room:
+            return favorite, None
+        copy = copy_icon_rect(name_x + TITLE_INDENT + subtitle_w, line_y, self._tiny_line_h())
+        draw_icon(image, COPY_ICON, copy, (*TEXT_MUTED, 255))
+        return favorite, copy
 
     def _name_line_top(self) -> int:
         _ascent, descent = self._body.getmetrics()

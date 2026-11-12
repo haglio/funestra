@@ -21,6 +21,7 @@ from funestra.hud_overlay import (
 )
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.hud_row import UNDER_THE_HUD_GAP, ItemRowDraw, RowHud, RowPress
+from funestra.name_copy import COPY_NAME, COPY_TOOLTIP
 from funestra.osr2_visualizer import DriveHud, DrivePublisher, publish_drive, read_drive
 from funestra.satellite_hud import MARGIN, MINUS_INSET, PAD, HudModel
 from funestra.satellite_hud_paint import HudRenderer
@@ -475,6 +476,39 @@ def test_hovering_a_button_redraws_with_its_tooltip_and_clears_it_to_the_very_pi
     overlay.motion(MARGIN + 2, MARGIN + 2)
     cleared = engine.overlays[overlay.overlay_id][2]
     assert bytes(cleared) == bytes(plain)
+
+
+def _copy_icon(targets) -> tuple[int, int, int, int]:
+    return next(rect for rect, button in targets.buttons if button.command == COPY_NAME)
+
+
+def test_a_press_on_the_copy_icon_puts_the_whole_name_on_the_clipboard_and_posts_nothing(
+        tmp_path: Path, hud: Path):
+    copied = []
+    overlay = _overlay(tmp_path, hud, FakeEngine(), clipboard=copied.append)
+    overlay.tick(video="a name long enough that the line runs out of room for it " * 3)
+
+    x, y, w, h = _copy_icon(overlay.targets)
+    overlay.press(x + w // 2 + MARGIN, y + h // 2 + MARGIN)
+
+    assert copied == ["a name long enough that the line runs out of room for it " * 3]
+    assert _commands(tmp_path) == []
+
+
+def test_the_copy_icon_names_what_it_does(tmp_path: Path, hud: Path):
+    overlay = _overlay(tmp_path, hud, FakeEngine())
+    overlay.tick(video="video one")
+
+    copy = next(button for _rect, button in overlay.targets.buttons if button.command == COPY_NAME)
+
+    assert copy.tooltip_on_hover == COPY_TOOLTIP
+
+
+def test_with_no_name_on_the_hud_there_is_nothing_to_copy(tmp_path: Path, hud: Path):
+    overlay = _overlay(tmp_path, hud, FakeEngine())
+    overlay.tick(video="")
+
+    assert not [button for _rect, button in overlay.targets.buttons if button.command == COPY_NAME]
 
 
 def test_pressing_the_lit_filter_button_lifts_the_filter(tmp_path: Path, hud: Path):
