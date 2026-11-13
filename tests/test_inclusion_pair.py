@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from funestra.inclusion_pair import BOTH, InclusionPair, Kind
+from funestra.inclusion_pair import BOTH, InclusionPair, Kind, answer_to_a_narrowing
 
 _PAIR = InclusionPair(
     Kind("Alpha", "alpha_mark", "alpha {things}"),
@@ -48,3 +48,17 @@ def test_the_title_names_only_the_one_kind_kept():
 
 def test_asked_reads_a_command_back_as_what_it_includes():
     assert _PAIR.asked["pair_alpha"] == (True, False)
+
+
+def test_a_narrowing_that_leaves_something_says_what_is_now_included():
+    answer = answer_to_a_narrowing(_PAIR.flash((True, False)), nothing_left=False, things="items")
+
+    assert (answer.says, answer.warns, answer.holds_what_is_on_screen) == (
+        "Alpha only", False, False)
+
+
+def test_a_narrowing_that_leaves_nothing_holds_what_is_on_screen_and_says_so():
+    answer = answer_to_a_narrowing(_PAIR.flash((False, False)), nothing_left=True, things="items")
+
+    assert (answer.says, answer.warns, answer.holds_what_is_on_screen) == (
+        "Including no other items", True, True)
