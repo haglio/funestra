@@ -102,3 +102,75 @@ def test_a_device_switched_on_wants_the_osr2_and_switched_off_lets_it_go():
     device.set_enabled(False)
 
     assert tcode.wanted == [False, True, False]
+
+
+class TestFollowingThePlayhead:
+    def test_each_step_of_the_playhead_drives_the_script_there(self):
+        tcode = FakeTCode()
+        device = ScriptedDevice(tcode)
+
+        device.follow(100.0, SCRIPT, speed=1.0)
+        device.follow(140.0, SCRIPT, speed=1.0)
+
+        assert [at for at, _script, _speed in tcode.updates] == [100, 140]
+        assert tcode.resets == 0
+
+    def test_a_playhead_that_jumps_back_takes_the_device_over_before_driving_it(self):
+        tcode = FakeTCode()
+        device = ScriptedDevice(tcode)
+        device.follow(1000.0, SCRIPT, speed=1.0)
+
+        device.follow(1000.0 - REWIND_MS - 1, SCRIPT, speed=1.0)
+
+        assert tcode.resets == 1
+
+    def test_a_frame_s_slip_backward_is_no_rewind(self):
+        tcode = FakeTCode()
+        device = ScriptedDevice(tcode)
+        device.follow(1000.0, SCRIPT, speed=1.0)
+
+        device.follow(1000.0 - REWIND_MS, SCRIPT, speed=1.0)
+
+        assert tcode.resets == 0
+
+    def test_a_roll_onto_the_next_item_is_not_taken_for_a_rewind(self):
+        tcode = FakeTCode()
+        device = ScriptedDevice(tcode)
+        device.follow(1000.0, SCRIPT, speed=1.0)
+
+        device.follow(0.0, SCRIPT, speed=1.0, rolled=True)
+
+        assert tcode.resets == 0
+
+    def test_starting_an_item_takes_the_device_over_and_forgets_where_the_last_one_was(self):
+        tcode = FakeTCode()
+        device = ScriptedDevice(tcode)
+        device.follow(1000.0, SCRIPT, speed=1.0)
+
+        device.start_an_item()
+        device.follow(0.0, SCRIPT, speed=1.0)
+
+        assert tcode.resets == 1
+
+    def test_after_a_resume_nothing_is_sent_until_the_playhead_has_moved(self):
+        tcode = FakeTCode()
+        device = ScriptedDevice(tcode)
+
+        device.resume_at(500.0)
+        device.follow(500.0, SCRIPT, speed=1.0)
+        assert tcode.updates == []
+
+        device.follow(520.0, SCRIPT, speed=1.0)
+        device.follow(520.0, SCRIPT, speed=1.0)
+
+        assert [at for at, _script, _speed in tcode.updates] == [520, 520]
+        assert tcode.resets == 1
+
+    def test_an_image_has_no_playhead_to_wait_for_so_a_resume_over_one_drives_at_once(self):
+        tcode = FakeTCode()
+        device = ScriptedDevice(tcode)
+
+        device.resume_at(0.0)
+        device.follow(0.0, SCRIPT, speed=1.0, over_an_image=True)
+
+        assert len(tcode.updates) == 1
