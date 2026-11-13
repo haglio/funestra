@@ -74,13 +74,17 @@ def parse_status(fields: Mapping[str, str], *, default: FunestraStatus | None = 
         read_at=_rate(fields.get("read_at"), default.read_at),
     )
 
+
+STATUS_INTERVAL_S = 0.2
+
+
 class StatusWriter:
     def __init__(
         self,
         path: Path,
         fields: Callable[[object], Mapping[str, str]],
         *,
-        min_interval: float = 0.2,
+        min_interval: float = STATUS_INTERVAL_S,
         now_source=time.monotonic,
     ) -> None:
         self._path = path
