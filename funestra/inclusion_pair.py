@@ -61,3 +61,20 @@ def _inclusion_button(command: str, kind: Kind, things: str, *, on: bool,
     named = kind.name(things)
     tooltip = f"Including {named}" if on else f"Not including {named}"
     return Button(command, kind.mark, tooltip, **lit_or_remembered(on, remembered))
+
+
+@dataclass(frozen=True)
+class Narrowed:
+    says: str
+    warns: bool = False
+    holds_what_is_on_screen: bool = False
+
+
+def including_no_other(things: str) -> str:
+    return f"Including no other {things}"
+
+
+def answer_to_a_narrowing(says: str, *, nothing_left: bool, things: str) -> Narrowed:
+    if nothing_left:
+        return Narrowed(including_no_other(things), warns=True, holds_what_is_on_screen=True)
+    return Narrowed(says)
