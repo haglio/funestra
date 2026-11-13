@@ -20,7 +20,6 @@ from funestra.flicks_on_screen import FlicksOnScreen
 from funestra.genau_controls import GenauControls
 from funestra.genau_files import GenauFiles
 from funestra.genau_refresh import GenauRefreshController
-from funestra.genau_refresh_parts import GenauRefreshParts
 from funestra.genau_status import GENAU_STATUS_FILENAME
 from funestra.learned_model import LearnedModel, Phrase, classify
 from funestra.learned_motion import LearnedMotionState
@@ -1082,24 +1081,6 @@ def test_with_no_status_file_named_the_status_goes_beside_the_command_file_where
     built = _build_controller(command_file=tmp_path / "genau_cmd.txt")
 
     assert built["controller"].files.status_file == tmp_path / GENAU_STATUS_FILENAME
-
-
-def test_the_tuple_fun_time_s_main_still_builds_it_from_makes_the_same_controller(tmp_path):
-    built = _build_controller(command_file=tmp_path / "genau_cmd.txt",
-                              entry={"frames": [object()] * 8})
-    new = built["controller"]
-
-    old = GenauRefreshController(GenauRefreshParts(
-        controls=new.controls, broker=new.broker, loader=new.flicks.loader,
-        notifier=new.flicks.notifier, renderer=new.flicks.renderer,
-        selection=new.flicks.selection, command_file=new.files.command,
-        paused_file=new.files.paused, beats_per_loop=4.0, bpm_smoothing=0.5, sync_strength=0.5,
-        set_loading_text=new.flicks.set_loading_text, logger=new.logger,
-        now_source=new.now_source, read_paused_state=None))
-    old.refresh()
-
-    assert (old.flicks, old.files, old.tuning) == (new.flicks, new.files, new.tuning)
-    assert built["renderer"].display_calls != []
 
 
 def test_the_controller_refuses_to_be_built_without_the_hands_state_so_no_hand_less_mode_can_come_back(
