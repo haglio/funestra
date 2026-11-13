@@ -4,6 +4,7 @@ import threading
 from pathlib import Path
 
 from funestra.status import (
+    STATUS_INTERVAL_S,
     FunestraStatus,
     StatusWriter,
     parse_status,
@@ -66,6 +67,18 @@ class TestStatusWriter:
 
         assert not writer.write(session)
         assert "position_ms=12345" in status_path.read_text(encoding="utf-8")
+
+    def test_a_writer_left_at_its_default_writes_once_a_status_interval(self, tmp_path):
+        status_path = tmp_path / "status.txt"
+        clock = {"t": 0.0}
+        writer = StatusWriter(status_path, _fields, now_source=lambda: clock["t"])
+        session = StubSession()
+        written = []
+
+        for clock["t"] in (0.0, STATUS_INTERVAL_S / 2, STATUS_INTERVAL_S):
+            written.append(writer.write(session))
+
+        assert written == [True, False, True]
 
     def test_writes_again_after_interval(self, tmp_path):
         status_path = tmp_path / "status.txt"
