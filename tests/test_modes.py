@@ -18,7 +18,7 @@ from funestra.modes import (
 _WIRE_WORDS = {
     MainMode: {"kino", "genau"},
     SatellitesMode: {"kino", "origenerator"},
-    LoopState: {"normal", "recording", "looping"},
+    LoopState: {"normal", "recording"},
     Osr2State: {"off", "auto", "funscript", "robot_hand", "unplugged", "no_answer"},
     LengthMode: {"mixed", "clips", "full", "none"},
     MessageLevel: {"warning", "notice", "favorite"},
