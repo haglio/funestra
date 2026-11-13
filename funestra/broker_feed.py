@@ -86,17 +86,16 @@ class UdpListener:
 
 
 def udp_reader(listener: UdpListener) -> None:
-    host, port, feed, stop_event, logger, retry_delays = (
-        listener.host, listener.port, listener.feed, listener.stop_event, listener.logger,
-        listener.retry_delays)
+    logger, stop_event = listener.logger, listener.stop_event
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     try:
-        if not bind_with_retry(sock, (host, port), stop_event, logger, retry_delays):
+        if not bind_with_retry(sock, (listener.host, listener.port), stop_event, logger,
+                               listener.retry_delays):
             return
 
         sock.settimeout(_READ_TIMEOUT_S)
-        logger.info("Broker UDP listener bound on %s:%s", host, port)
+        logger.info("Broker UDP listener bound on %s:%s", listener.host, listener.port)
 
         while not stop_event.is_set():
             try:
@@ -104,7 +103,7 @@ def udp_reader(listener: UdpListener) -> None:
             except TimeoutError:
                 continue
             apply_udp_line(
-                feed, data.decode("utf-8", errors="replace").strip(), logger)
+                listener.feed, data.decode("utf-8", errors="replace").strip(), logger)
     except Exception:
         logger.exception("UDP reader failed")
     finally:
