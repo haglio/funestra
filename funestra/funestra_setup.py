@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, NamedTuple
 from .play_points import PlayPoints
 from .playback import funscripts_of, points_of_interest_of
 from .playback_setup import PlaybackSetup
+from .volume_control import AppVolume, VolumeControl
 
 if TYPE_CHECKING:
     from .funestra import Channels, HudSurface, Users, UsersFrames
@@ -41,9 +42,14 @@ class FunestraSetup(NamedTuple):
     clock: Callable[[], float] = time.monotonic
 
     def playback_setup(self, start_paused: bool) -> PlaybackSetup:
-        channels, playlist, tcode = self[:3]
         return PlaybackSetup(
             start_paused=start_paused, locked=self.locked,
-            play_points=PlayPoints(channels.play_points),
-            funscripts=funscripts_of(playlist),
-            points_of_interest=points_of_interest_of(playlist), tcode=tcode)
+            play_points=PlayPoints(self.channels.play_points),
+            funscripts=funscripts_of(self.playlist),
+            points_of_interest=points_of_interest_of(self.playlist), tcode=self.tcode)
+
+    def volume_on(self, engine) -> AppVolume | VolumeControl:
+        if self.sound_is_the_rooms:
+            return AppVolume(engine, dashboard_cmd_file=self.channels.dashboard_cmd,
+                             live=self.audible)
+        return VolumeControl(engine, live=self.audible, muted=self.muted)

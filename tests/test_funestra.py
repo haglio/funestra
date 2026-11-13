@@ -17,7 +17,7 @@ from host_controls_fakes import AHost, middle_of
 from main_hud_rows import main_hud_rows
 
 from funestra.flick_overlay import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, FlickFrame
-from funestra.funestra import Channels, Funestra, User, _Nobody, osr2_line
+from funestra.funestra import Channels, Funestra, User, osr2_line
 from funestra.funestra_setup import FunestraSetup
 from funestra.hud_button import Button
 from funestra.hud_corners import CORNER_PLUS_OVERLAY_ID
@@ -34,6 +34,7 @@ from funestra.playhead import FIGURE_SPACE
 from funestra.playlist import PlaylistItem, read_playlist
 from funestra.pointer import OMNIPAUSE_TOGGLE
 from funestra.radio import radio_file_for, write_radio
+from funestra.runs_here import _Nobody
 from funestra.satellite_hud import MARGIN, HudModel
 from funestra.scrubber_bar import SCRUBBER_HEIGHT
 from funestra.session_quit import SESSION_QUIT
@@ -45,7 +46,7 @@ WINDOW = (640, 480)
 
 def _on_the_row(funestra, engine, part: str = "track", *, along: int | None = None):
     left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
-    row = funestra._hud.row
+    row = funestra.hud.row
     x, y, width, height = row.rect
     if part == "track":
         x0, x1 = row.track
@@ -191,7 +192,7 @@ def test_the_row_says_where_the_clip_is_and_how_long_it_runs(tmp_path):
     row = funestra.item_row()
     assert (row.position_ms, row.duration_ms) == (0.0, engine.duration_ms)
     assert row.playhead is not None
-    assert row.volume is funestra._volume.hud
+    assert row.volume is funestra.volume
 
 
 def test_a_scripted_clips_track_is_filled_across_the_width_the_hud_drew_it_at(tmp_path):
@@ -205,8 +206,8 @@ def test_a_scripted_clips_track_is_filled_across_the_width_the_hud_drew_it_at(tm
     funestra.tick(viewport=WINDOW)
     funestra.tick(viewport=WINDOW)
 
-    x0, x1 = funestra._hud.row.track
-    assert len(funestra._strip.colors) == x1 - x0
+    x0, x1 = funestra.hud.row.track
+    assert len(funestra.strip.colors) == x1 - x0
 
 
 def test_an_image_on_screen_keeps_the_row_saying_how_far_into_its_time_it_is(tmp_path):
@@ -220,8 +221,8 @@ def test_an_image_on_screen_keeps_the_row_saying_how_far_into_its_time_it_is(tmp
 
     row = funestra.item_row()
     assert (row.position_ms, row.duration_ms) == (1_000.0, 4_000.0)
-    assert row.volume is funestra._volume.hud
-    assert funestra._hud.row is not None
+    assert row.volume is funestra.volume
+    assert funestra.hud.row is not None
 
 
 def _an_image_up(engine: FakeEngine, elapsed_ms: float = 1_000.0, pace_ms: float = 4_000.0) -> None:
@@ -273,7 +274,7 @@ def test_a_press_along_an_images_track_puts_it_that_far_into_its_time(tmp_path):
     _publish_hud(tmp_path)
     _an_image_up(engine, 3_000.0, 4_000.0)
     funestra.tick(viewport=WINDOW)
-    x0, x1 = funestra._hud.row.track
+    x0, x1 = funestra.hud.row.track
 
     funestra.press(*_on_the_row(funestra, engine, along=x0 + (x1 - x0) // 4), viewport=WINDOW)
 
@@ -541,7 +542,7 @@ def _wearing_a_hud(tmp_path, *, audible: bool = True):
 class TestAPress:
     def test_on_the_track_seeks_the_clip(self, tmp_path):
         funestra, engine = _wearing_a_hud(tmp_path)
-        x0, x1 = funestra._hud.row.track
+        x0, x1 = funestra.hud.row.track
 
         funestra.press(*_on_the_row(funestra, engine), viewport=WINDOW)
 
@@ -616,7 +617,7 @@ class TestACornerTheHudIsNotIn:
         funestra.tick(viewport=WINDOW)
 
         hud_left, hud_top, _bgra = engine.overlays[HUD_OVERLAY_ID]
-        ((x, y, _w, _h), _restore), = funestra._hud.targets.buttons
+        ((x, y, _w, _h), _restore), = funestra.hud.targets.buttons
         assert shown_at == (hud_left + x, hud_top + y)
 
     def test_the_pointer_leaving_the_window_takes_the_plus_down(self, tmp_path):
@@ -926,7 +927,7 @@ class TestTheMainFunestra:
         funestra, engine, _kino = _main(tmp_path, host_controls=host)
         funestra.tick(viewport=WINDOW)
         left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
-        x, y = middle_of(funestra._hud._painter.host_controls_layout.bar)
+        x, y = middle_of(funestra.hud._painter.host_controls_layout.bar)
 
         funestra.press(left + x, top + y, viewport=WINDOW)
 
@@ -946,7 +947,7 @@ class TestTheMainFunestra:
         funestra, engine, _kino = _main(tmp_path)
         funestra.tick(viewport=WINDOW)
         left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
-        (x, y, w, h), button = funestra._hud._painter.buttons[0]
+        (x, y, w, h), button = funestra.hud._painter.buttons[0]
 
         funestra.press(left + x + w // 2, top + y + h // 2, viewport=WINDOW)
 
@@ -987,13 +988,13 @@ class TestTheMainFunestra:
         _publish_main_hud(tmp_path, max_intensity=50)
         funestra.tick(viewport=WINDOW)
         left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
-        x, y, _w, h = funestra._hud._painter.tracks[0].rect
+        x, y, _w, h = funestra.hud._painter.tracks[0].rect
         funestra.press(left + x, top + y + h // 2, viewport=WINDOW)
-        assert funestra._hud.holding is True
+        assert funestra.hud.holding is True
 
         funestra.release()
 
-        assert funestra._hud.holding is False
+        assert funestra.hud.holding is False
 
 
 class TestWhatRunsOnTheFunestra:
@@ -1075,7 +1076,7 @@ class TestAStretchOfTheItem:
 
         row = funestra.item_row()
         assert row.duration_ms < engine.duration_ms
-        assert row.record_in_ms == 50_000 - funestra._strip.window[0]
+        assert row.record_in_ms == 50_000 - funestra.strip.window[0]
 
     def test_a_press_on_the_zoomed_track_seeks_inside_the_stretch_it_shows(self, tmp_path):
         funestra, engine = _scripted_main(tmp_path)
@@ -1139,7 +1140,7 @@ class TestWhoHasTheWindow:
 
         assert funestra.showing == "genau"
         assert kino.showing == [True, False]
-        assert funestra._users["genau"].showing == [True]
+        assert funestra.runs_here["genau"].showing == [True]
 
     def test_show_naming_nobody_on_this_window_is_refused_and_named_on_the_log(self, tmp_path, caplog):
         funestra, _engine, _kino = _main(tmp_path, commands="SHOW slideshow\n", genau=True)
@@ -1155,7 +1156,7 @@ class TestWhoHasTheWindow:
 
         funestra.tick(viewport=WINDOW)
 
-        genau = funestra._users["genau"]
+        genau = funestra.runs_here["genau"]
         assert kino.commands == ["GENAU_THING", "KINO_THING"]
         assert genau.commands == ["GENAU_THING"]
         assert len(kino.ticks) == len(genau.ticks) == 1
@@ -1165,14 +1166,14 @@ class TestWhoHasTheWindow:
 
         funestra.close()
 
-        assert (kino.closed, funestra._users["genau"].closed) == (True, True)
+        assert (kino.closed, funestra.runs_here["genau"].closed) == (True, True)
 
 
 class TestAUsersOwnFrame:
     def _genau_in_front(self, tmp_path):
         funestra, engine, _kino = _main(tmp_path, commands="SHOW genau\n", genau=True)
         funestra.tick(viewport=WINDOW)
-        return funestra, engine, funestra._users["genau"]
+        return funestra, engine, funestra.runs_here["genau"]
 
     def test_its_frame_goes_up_over_the_video_under_the_main_hud(self, tmp_path):
         _funestra, engine, _genau = self._genau_in_front(tmp_path)
@@ -1209,17 +1210,17 @@ class TestAUsersOwnFrame:
     def test_the_row_runs_its_frames_time_on_screen_and_turns_its_dial(self, tmp_path):
         funestra, _engine, genau = self._genau_in_front(tmp_path)
 
-        row = funestra._hud._item_row
+        row = funestra.hud._item_row
 
         assert (row.position_ms, row.duration_ms) == (genau.elapsed_ms, genau.interval_ms)
         assert row.playhead.text == f"frame {FIGURE_SPACE}6 / 20 · 0:04 / 0:10"
         assert row.loop == (genau.played, genau.count)
-        assert row.volume is funestra._volume.hud
+        assert row.volume is funestra.volume
 
     def test_a_press_on_the_track_puts_its_frame_that_far_into_its_time_rather_than_the_video(
             self, tmp_path):
         funestra, engine, genau = self._genau_in_front(tmp_path)
-        x0, x1 = funestra._hud.row.track
+        x0, x1 = funestra.hud.row.track
 
         funestra.press(*_on_the_row(funestra, engine), viewport=WINDOW)
 
@@ -1253,7 +1254,7 @@ class TestAUsersOwnFrame:
         funestra.tick(viewport=WINDOW)
 
         assert not {BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID} & set(engine.overlays)
-        assert funestra._hud._item_row.duration_ms == engine.duration_ms
+        assert funestra.hud._item_row.duration_ms == engine.duration_ms
 
 
 class _ARadioOfItsHost:
@@ -1307,7 +1308,7 @@ class TestAWindowsOwnHud:
         funestra, engine, user, _hud = self._own_hud(tmp_path)
         funestra.tick(viewport=WINDOW)
         left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
-        (x, y, w, h), _button = next((rect, b) for rect, b in funestra._hud.targets.buttons
+        (x, y, w, h), _button = next((rect, b) for rect, b in funestra.hud.targets.buttons
                                      if b.command == "portrait_next")
 
         funestra.press(left + x + w // 2, top + y + h // 2, viewport=WINDOW)
@@ -1367,12 +1368,12 @@ class TestAWindowsOwnHud:
     def test_it_opens_heard_when_told_to(self, tmp_path):
         funestra, _engine, _user, _hud = self._own_hud(tmp_path, muted=False)
 
-        assert funestra._volume.hud.muted is False
+        assert funestra.volume.muted is False
 
     def test_it_opens_silent_unless_told_otherwise(self, tmp_path):
         funestra, _engine, _user, _hud = self._own_hud(tmp_path)
 
-        assert funestra._volume.hud.muted is True
+        assert funestra.volume.muted is True
 
     def test_a_radio_its_host_hands_it_hears_an_image_at_its_level(self, tmp_path):
         radio = _ARadioOfItsHost()
@@ -1450,10 +1451,10 @@ def test_a_window_told_to_fall_silent_mutes_its_engine_and_its_volume_control(tm
     funestra.tick(viewport=WINDOW)
 
     funestra.set_muted(True)
-    assert (engine.muted, funestra._volume.hud.muted) == (True, True)
+    assert (engine.muted, funestra.volume.muted) == (True, True)
 
     funestra.set_muted(False)
-    assert (engine.muted, funestra._volume.hud.muted) == (False, False)
+    assert (engine.muted, funestra.volume.muted) == (False, False)
 
 
 class _ASurface:
@@ -1616,8 +1617,8 @@ class TestAHudBesideTheItem:
         funestra, engine, surface = self._wearing_a_hud_beside(tmp_path)
         funestra.tick(viewport=WINDOW)
         left, top, _bgra = surface.overlays[HUD_OVERLAY_ID]
-        x, y, _width, height = funestra._hud.row.rect
-        x0, x1 = funestra._hud.row.track
+        x, y, _width, height = funestra.hud.row.rect
+        x0, x1 = funestra.hud.row.track
 
         funestra.press(left + x + (x0 + x1) // 2, top + y + height - 4, viewport=WINDOW)
 
@@ -1653,7 +1654,7 @@ class TestAUsersOwnFrameElsewhere:
         surface = _AFramesSurface()
         funestra, engine = TestAHudBesideTheItem()._main_beside(
             tmp_path, _ASurface(), genau=True, commands="SHOW genau\n", users_frames=surface)
-        genau = funestra._users["genau"]
+        genau = funestra.runs_here["genau"]
 
         funestra.tick(viewport=WINDOW)
 
@@ -1710,7 +1711,7 @@ class TestTheWindowsOwnVerbs:
         funestra.tick(viewport=WINDOW)
 
         assert heard == ["NEXT"]
-        assert funestra._users["kino"].commands == ["KINO_THING", "NEXT"]
+        assert funestra.runs_here["kino"].commands == ["KINO_THING", "NEXT"]
         assert funestra.playback.index == 1
 
 
