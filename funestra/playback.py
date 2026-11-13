@@ -1,34 +1,22 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 
 from shared_ui.orientation import PORTRAIT, orientation_of_size
 
 from .funscript import Funscript
-from .funscript import load as load_funscript
+from .lineup import Lineup
 from .play_points import PlayPoints
 from .playback_rate import NORMAL_RATE, clamp_rate
 from .playback_setup import PLAIN_PLAYBACK, PlaybackSetup
 from .playlist import PlaylistItem
-from .scripted_device import REWIND_MS, ScriptedDevice
+from .rides_along import RidesAlong, funscripts_of, points_of_interest_of
+from .scripted_device import ScriptedDevice
 from .seeking import OwedSeek, seek_if_taken
-from .up_next import put_up_next
 
 logger = logging.getLogger(__name__)
-
-
-def _by_path(items: Iterable[PlaylistItem], field: str) -> dict:
-    return {item.path: getattr(item, field) for item in items if getattr(item, field)}
-
-
-def funscripts_of(items: Iterable[PlaylistItem]) -> dict[Path, Path]:
-    return _by_path(items, "funscript")
-
-
-def points_of_interest_of(items: Iterable[PlaylistItem]) -> dict[Path, tuple]:
-    return _by_path(items, "points_of_interest")
 
 
 class Playback:
@@ -39,27 +27,20 @@ class Playback:
         engine,
         setup: PlaybackSetup = PLAIN_PLAYBACK,
     ) -> None:
-        if not playlist:
-            raise ValueError("playlist must not be empty")
+        self._lineup = Lineup(playlist)
+        self._rides = RidesAlong(setup.funscripts, setup.points_of_interest)
         self._device = ScriptedDevice(setup.tcode, enabled=False)
-        self._last_pos_ms = 0.0
-        self._engine, self._playlist = engine, list(playlist)
-        self._funscripts = dict(setup.funscripts or {})
-        self._points_of_interest = dict(setup.points_of_interest or {})
+        self._engine = engine
         self._points_told: tuple = ()
-        self._loaded_funscript: tuple[Path | None, Funscript | None] = (None, None)
         self._paused, self._locked = setup.start_paused, setup.locked
         self._held_by_the_pace = False
         self._speed = NORMAL_RATE
-        self._index = 0
         self._loads = 0
         self._play_points = setup.play_points or PlayPoints(None)
         self._owed_seek = OwedSeek()
-        self._versions: dict[Path, Path] = {}
         self._switching_versions = False
         self._mark: int | None = None
         self._ab_loop: tuple[int, int] | None = None
-        self._held_at: float | None = None
         if setup.locked:
             engine.set_loop_file(True)
         self.load(0)
@@ -74,11 +55,11 @@ class Playback:
 
     @property
     def current_video(self) -> Path:
-        return self._playlist[self._index]
+        return self._lineup.current
 
     @property
     def index(self) -> int:
-        return self._index
+        return self._lineup.index
 
     @property
     def loads(self) -> int:
@@ -94,14 +75,11 @@ class Playback:
         return orientation_of_size(width, height) == PORTRAIT if width and height else None
 
     def funscript_of(self, video: Path) -> Path | None:
-        return self._funscripts.get(video)
+        return self._rides.funscript_path(video)
 
     @property
     def current_funscript(self) -> Funscript | None:
-        path = self._funscripts.get(self.showing) or self._funscripts.get(self.current_video)
-        if path != self._loaded_funscript[0]:
-            self._loaded_funscript = (path, None if path is None else load_funscript(path))
-        return self._loaded_funscript[1]
+        return self._rides.funscript(self.showing, self.current_video)
 
     @property
     def funscript_as_played(self) -> Funscript | None:
@@ -138,11 +116,7 @@ class Playback:
 
     @property
     def showing(self) -> Path:
-        return self._file_at(self._index)
-
-    def _file_at(self, index: int) -> Path:
-        video = self._playlist[index % len(self._playlist)]
-        return self._versions.get(video, video)
+        return self._lineup.showing
 
     @property
     def idle(self) -> bool:
@@ -152,27 +126,19 @@ class Playback:
         self._engine.stop()
 
     def step_version(self, versions: Sequence[Path | PlaylistItem], delta: int) -> None:
-        versions = [self._version_file_of(version) for version in versions]
-        showing = self.showing
-        if len(versions) <= 1 or showing not in versions:
-            return
-        target = versions[(versions.index(showing) + delta) % len(versions)]
-        video = self.current_video
-        if target == video:
-            self._versions.pop(video, None)
-        else:
-            self._versions[video] = target
-        self.load(self._index)
-        self._switching_versions = True
+        if self._lineup.step_version([self._version_file_of(version) for version in versions],
+                                     delta):
+            self.load(self.index)
+            self._switching_versions = True
 
     def _version_file_of(self, version: Path | PlaylistItem) -> Path:
         if isinstance(version, PlaylistItem):
-            self._take_what_rides_with(version.path, version.funscript, version.points_of_interest)
+            self._rides.take(version.path, version.funscript, version.points_of_interest)
             return version.path
         return Path(version)
 
     def forget_versions(self) -> None:
-        self._versions = {}
+        self._lineup.forget_versions()
 
     @property
     def name_on_screen(self) -> str:
@@ -183,11 +149,11 @@ class Playback:
 
     @property
     def playlist(self) -> list[Path]:
-        return list(self._playlist)
+        return self._lineup.videos
 
     @property
     def playlist_length(self) -> int:
-        return len(self._playlist)
+        return len(self._lineup)
 
     @property
     def position_ms(self) -> float:
@@ -199,10 +165,10 @@ class Playback:
 
     @property
     def showing_image(self) -> bool:
-        return self._image_put_up or self._engine.showing_image
+        return self._lineup.an_image_was_put_up or self._engine.showing_image
 
     def step(self, delta: int) -> None:
-        self.load(self._index + delta)
+        self.load(self.index + delta)
 
     def seek_by(self, delta_ms: float) -> None:
         self.seek_to(self._engine.position_ms + delta_ms)
@@ -246,8 +212,7 @@ class Playback:
         self._paused = paused
         self._engine.set_paused(paused)
         if not paused:
-            self._device.take_over()
-            self._held_at = self._engine.position_ms
+            self._device.resume_at(self._engine.position_ms)
 
     @property
     def speed(self) -> float:
@@ -268,25 +233,19 @@ class Playback:
         self._engine.hold_image_for(seconds)
 
     def show_frame(self, frame: Path) -> None:
-        self._frame_on_screen = frame
-        self._image_put_up = True
+        self._lineup.put_up(frame)
         self._engine.swap_image(frame)
         self._stage_next()
         self._tell_the_places()
 
     def clear_frame(self) -> None:
-        if self._frame_on_screen is not None:
-            self._frame_on_screen = None
+        if self._lineup.take_down_the_frame():
             self._engine.swap_image(self.showing)
             self._stage_next()
             self._tell_the_places()
 
-    @property
-    def _on_screen(self) -> Path:
-        return self.showing if self._frame_on_screen is None else self._frame_on_screen
-
     def _tell_the_places(self) -> None:
-        points = self._points_of_interest.get(self._on_screen, ())
+        points = self._rides.points(self._lineup.on_screen)
         if points != self._points_told:
             self._points_told = points
             self._engine.set_points_of_interest(points)
@@ -312,22 +271,17 @@ class Playback:
         self._play_points.observe(self.current_video, position_ms, self._engine.duration_ms)
         if self._paused:
             return
-        if not self.follow_a_roll() and position_ms + REWIND_MS < self._last_pos_ms:
-            self._device.take_over()
-        self._last_pos_ms = position_ms
-        if self._playback_has_resumed(position_ms):
-            self._device.drive(position_ms, self.funscript_as_played, speed=self._speed)
+        rolled = self.follow_a_roll()
+        self._device.follow(position_ms, self.funscript_as_played, speed=self._speed,
+                            rolled=rolled, over_an_image=self._engine.showing_image)
 
     def follow_a_roll(self) -> bool:
         if not self._engine.advanced_to_next:
             return False
         self._play_points.ended()
-        if not self._rolls_onto_itself:
-            self._frame_on_screen = None
-            self._image_put_up = False
+        self._lineup.roll()
         self._mark = None
         self._ab_loop = None
-        self._index = (self._index + 1) % len(self._playlist)
         self._loads += 1
         self._engine.settle_on_the_next()
         self._stage_next()
@@ -336,74 +290,45 @@ class Playback:
         self._tell_the_places()
         return True
 
-    def _playback_has_resumed(self, position_ms: float) -> bool:
-        if self._held_at is None:
-            return True
-        if position_ms == self._held_at and not self._engine.showing_image:
-            return False
-        self._held_at = None
-        return True
-
     def discard(self) -> None:
-        if len(self._playlist) <= 1:
-            return
-        self._versions.pop(self._playlist.pop(self._index), None)
-        self.load(self._index)
+        if self._lineup.discard():
+            self.load(self.index)
 
     def play_file(self, video: Path, funscript: Path | None = None,
                   points_of_interest: tuple = ()) -> None:
-        self._take_what_rides_with(video, funscript, points_of_interest)
-        if video in self._playlist:
-            self.load(self._playlist.index(video))
+        self._rides.take(video, funscript, points_of_interest)
+        listed_at = self._lineup.place_of(video)
+        if listed_at is not None:
+            self.load(listed_at)
             return
-        self._put_next(video)
-        self.load(self._index + 1)
+        self._lineup.put_next(video)
+        self.load(self.index + 1)
 
     def play_next(self, video: Path, funscript: Path | None = None,
                   points_of_interest: tuple = ()) -> None:
-        self._take_what_rides_with(video, funscript, points_of_interest)
+        self._rides.take(video, funscript, points_of_interest)
         if video == self.current_video:
             return
-        self._put_next(video)
+        self._lineup.put_next(video)
         self._stage_next()
-
-    def _take_what_rides_with(self, video: Path, funscript: Path | None,
-                              points_of_interest: tuple) -> None:
-        if funscript is not None:
-            self._funscripts[video] = funscript
-        if points_of_interest:
-            self._points_of_interest[video] = tuple(points_of_interest)
-
-    def _put_next(self, video: Path) -> None:
-        listed_at = self._playlist.index(video) if video in self._playlist else None
-        self._index = put_up_next(self._playlist, self._index, video, listed_at)
 
     def load_playlist(
         self, playlist: list[Path], funscripts: Mapping[Path, Path] | None = None,
         points_of_interest: Mapping[Path, tuple] | None = None,
     ) -> None:
-        if not playlist:
-            raise ValueError("playlist must not be empty")
-        self._playlist = list(playlist)
-        self._funscripts = dict(funscripts or {})
-        self._points_of_interest = dict(points_of_interest or {})
-        self._versions = {}
+        self._lineup.start_over_with(playlist)
+        self._rides = RidesAlong(funscripts, points_of_interest)
         self.load(0)
 
     def replace_playlist(
         self, playlist: list[Path], funscripts: Mapping[Path, Path] | None = None,
         points_of_interest: Mapping[Path, tuple] | None = None,
     ) -> None:
-        if not playlist:
-            raise ValueError("playlist must not be empty")
-        current = self.current_video
-        chosen = self._versions.get(current)
-        self._playlist = list(playlist)
-        self._funscripts = dict(funscripts or {})
-        self._points_of_interest = dict(points_of_interest or {})
-        self._versions = {} if chosen is None else {current: chosen}
-        if not self._stand_on_what_is_on_screen(current):
-            self._versions = {}
+        stands_on_what_is_on_screen = self._lineup.take(playlist)
+        self._rides = RidesAlong(funscripts, points_of_interest)
+        if stands_on_what_is_on_screen:
+            self._stage_next()
+        else:
             self.load(0)
         self._tell_the_places()
 
@@ -411,24 +336,10 @@ class Playback:
         self.replace_playlist([item.path for item in items], funscripts_of(items),
                               points_of_interest_of(items))
 
-    def _stand_on_what_is_on_screen(self, current: Path) -> bool:
-        if current in self._playlist:
-            self._index = self._playlist.index(current)
-        elif self._frame_on_screen in self._playlist:
-            self._index = self._playlist.index(self._frame_on_screen)
-            self._frame_on_screen = None
-            self._versions = {}
-        else:
-            return False
-        self._stage_next()
-        return True
-
     def load(self, index: int) -> None:
         self._play_points.leave()
         self._switching_versions = False
-        self._frame_on_screen = None
-        self._image_put_up = False
-        self._index = index % len(self._playlist)
+        self._lineup.stand_at(index)
         self._loads += 1
         video = self.showing
         logger.info("Loading: %s", video.name)
@@ -437,21 +348,13 @@ class Playback:
         self._engine.set_paused(self._paused)
         self._stage_next()
         self._owed_seek.owe(self._play_points.point_for(self.current_video) or None)
-        self._device.take_over()
-        self._last_pos_ms = 0.0
+        self._device.start_an_item()
         self._tell_the_places()
 
     def _stage_next(self) -> None:
         if self._holds:
             return
-        self._engine.stage_next(self._what_the_roll_puts_up())
-
-    def _what_the_roll_puts_up(self) -> Path:
-        return self._on_screen if self._rolls_onto_itself else self._file_at(self._index + 1)
-
-    @property
-    def _rolls_onto_itself(self) -> bool:
-        return len(self._playlist) == 1
+        self._engine.stage_next(self._lineup.what_the_roll_puts_up)
 
     def close(self) -> None:
         self._play_points.leave()

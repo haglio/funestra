@@ -29,6 +29,8 @@ class ScriptedDevice:
         self._enabled = enabled
         self._tcode.want(enabled)
         self._max_intensity = FULL_INTENSITY
+        self._last_position_ms = 0.0
+        self._resumed_at: float | None = None
 
     def set_enabled(self, enabled: bool) -> None:
         if enabled == self._enabled:
@@ -40,6 +42,31 @@ class ScriptedDevice:
 
     def take_over(self) -> None:
         self._tcode.reset()
+
+    def start_an_item(self) -> None:
+        self.take_over()
+        self._last_position_ms = 0.0
+
+    def resume_at(self, position_ms: float) -> None:
+        self.take_over()
+        self._resumed_at = position_ms
+
+    def follow(self, position_ms: float, script, *, speed: float, rolled: bool = False,
+               over_an_image: bool = False) -> None:
+        if not rolled and position_ms + REWIND_MS < self._last_position_ms:
+            self.take_over()
+        self._last_position_ms = position_ms
+        if self._the_playhead_has_moved_since_the_resume(position_ms, over_an_image):
+            self.drive(position_ms, script, speed=speed)
+
+    def _the_playhead_has_moved_since_the_resume(self, position_ms: float,
+                                                 over_an_image: bool) -> bool:
+        if self._resumed_at is None:
+            return True
+        if position_ms == self._resumed_at and not over_an_image:
+            return False
+        self._resumed_at = None
+        return True
 
     @property
     def max_intensity(self) -> int:
