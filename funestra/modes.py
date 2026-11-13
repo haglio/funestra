@@ -15,11 +15,6 @@ class SatellitesMode(StrEnum):
     ORIGENERATOR = "origenerator"
 
 
-class LoopState(StrEnum):
-    NORMAL = "normal"
-    RECORDING = "recording"
-
-
 class Osr2State(StrEnum):
     OFF = "off"
     AUTO = "auto"
