@@ -24,6 +24,8 @@ from .hud_minimize import NameFlash
 from .hud_overlay import DrawnOn, DriveFeed, HudOverlay, PublishedHud, WindowsOwnHud
 from .hud_placement import HudEdge
 from .hud_row import ItemRowDraw, RowHud, RowPress
+from .items_row import ItemsRow, frame_row
+from .loop_frames import IN_FRAME_OVERLAY_ID, OUT_FRAME_OVERLAY_ID, LoopFrames
 from .main_hud import ModeHud
 from .main_hud_overlay import MainHudFiles, MainHudHost, MainHudOverlay
 from .messages import MessageWriter
@@ -31,19 +33,19 @@ from .mpv_engine import MpvEngine
 from .osr2_visualizer import DrivePublisher
 from .outside_buttons import OutsideButtons
 from .playback import Playback
-from .playhead import framed_playhead, time_playhead, video_playhead
 from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
 from .radio import Radio, RadioFile, radio_file_for
+from .runs_here import RunsHere, User
 from .satellite_hud import HudModel
-from .scrubber import Heatmap, LoopThumbCapture, MarkFollow, ThumbRow, loop_thumbnail_xys
+from .scrubber import Heatmap
 from .session_quit import quit_gesture
 from .status import StatusWriter
 from .tcode import UdpTCodeSink
 from .tcode_driver import FunscriptTCodeDriver
 from .volume import VolumeHud
-from .volume_control import AppVolume, VolumeControl, told_to_the_host
+from .volume_control import told_to_the_host
 
 logger = logging.getLogger(__name__)
 
@@ -68,21 +70,6 @@ class Channels:
 
 
 @runtime_checkable
-class User(Protocol):
-    def apply_command(self, command: str) -> bool: ...
-
-    def tick(self) -> None: ...
-
-    def status_fields(self) -> Mapping[str, str]: ...
-
-    def top_block(self) -> ModeHud: ...
-
-    def set_showing(self, showing: bool) -> None: ...
-
-    def close(self) -> None: ...
-
-
-@runtime_checkable
 class HudSurface(Protocol):
     width: int | None
 
@@ -98,31 +85,6 @@ class UsersFrames(Protocol):
     def hide(self) -> None: ...
 
 
-class _Nobody:
-    def apply_command(self, command: str) -> bool:
-        return False
-
-    def tick(self) -> None:
-        pass
-
-    def status_fields(self) -> Mapping[str, str]:
-        return {}
-
-    def top_block(self) -> ModeHud:
-        return ModeHud()
-
-    def set_showing(self, showing: bool) -> None:
-        pass
-
-    def own_frame(self) -> FlickFrame | None:
-        return None
-
-    def close(self) -> None:
-        pass
-
-
-NOBODY = ""
-
 Users = Mapping[str, Callable[[Playback], User]]
 
 
@@ -135,61 +97,48 @@ def osr2_line(channels: Channels) -> FunscriptTCodeDriver | None:
 
 
 class Funestra:
-    IN_FRAME_OVERLAY_ID = 8
-    OUT_FRAME_OVERLAY_ID = 9
+    IN_FRAME_OVERLAY_ID = IN_FRAME_OVERLAY_ID
+    OUT_FRAME_OVERLAY_ID = OUT_FRAME_OVERLAY_ID
 
     def __init__(self, engine, setup: FunestraSetup) -> None:
-        (channels, playlist, _tcode, audible, tiles, _locked, sound_is_the_rooms, users, hud,
-         muted, hud_surface, users_frames, window_verbs, host_controls, radio,
-         on_volume_moved, clock) = setup
+        channels = setup.channels
         self._engine = engine
-        self._clock = clock
-        self._volume_moved = on_volume_moved
+        self._setup = setup
         self._channels = channels
-        self._tiles = tiles
-        self._hud_surface = hud_surface
-        self._window_verbs = window_verbs
-        self._host_controls = host_controls
+        self._hud_surface = setup.hud_surface
         self._stop = threading.Event()
-        start_paused = (channels.paused is not None
-                        and read_paused_state(channels.paused, logger=logger))
         self._playback = Playback(
-            [item.path for item in playlist], engine=engine,
-            setup=setup.playback_setup(start_paused))
+            [item.path for item in setup.playlist], engine=engine,
+            setup=setup.playback_setup(start_paused=(
+                channels.paused is not None
+                and read_paused_state(channels.paused, logger=logger))))
         self._follower = (None if channels.playlist is None
                           else PlaylistFollower(channels.playlist, take=self.take_the_list))
-        self._users: dict[str, User] = (
-            {NOBODY: _Nobody()} if not users
-            else {name: make(self.playback) for name, make in users.items()})
-        self._showing = next(iter(self._users))
         self._drive_gate = DriveGate(self.playback)
-        self._strip = Heatmap()
-        self._volume = (
-            AppVolume(engine, dashboard_cmd_file=channels.dashboard_cmd, live=audible)
-            if sound_is_the_rooms else VolumeControl(engine, live=audible, muted=muted)
-        )
-        self._radio = radio if radio is not None else self._radio_beside(channels, audible)
-        self._hud = self._hud_for(channels, hud_surface or engine, hud)
-        self._name_flash = NameFlash(clock)
+        self._row = ItemsRow(self.playback, engine)
+        self._volume = setup.volume_on(engine)
+        self._radio = setup.radio if setup.radio is not None else self._radio_beside(channels)
+        self._hud = self._hud_for(channels, setup.hud_surface or engine, setup.hud)
+        self._name_flash = NameFlash(setup.clock)
         self._flash = ""
-        self._users_frames = users_frames or FlickOverlay(engine)
-        self._corners = None if self._hud is None or hud_surface is not None else HudCorners(
+        self._users_frames = setup.users_frames or FlickOverlay(engine)
+        self._corners = None if self._hud is None or setup.hud_surface is not None else HudCorners(
             self._hud, engine, post=self._where_the_hud_asks(channels))
         self._pointer = Pointer(hud=self._hud, corners=self._corners,
                                 item=self._press_on_the_item(channels))
+        self._runs_here = RunsHere(
+            {name: make(self.playback) for name, make in (setup.users or {}).items()})
         self._controls = FunestraControls(
             self.playback, stop_event=self._stop,
             reload_playlist=None if self._follower is None else self._follower.read_now,
-            volume=self._volume, show=self._show,
+            volume=self._volume, show=self._runs_here.show,
             funscript_jumps=FunscriptJumps(self.playback, MessageWriter(channels.notice)))
         self._status = (
             StatusWriter(channels.status, lambda _playback: self.status_fields())
             if channels.status else None
         )
-        self._loop_frames = LoopThumbCapture()
-        self._loop_frames_up = False
+        self._loop_frames = LoopFrames(engine)
         self._short_of_memory = False
-        self._front.set_showing(True)
 
     @property
     def playback(self) -> Playback:
@@ -199,12 +148,27 @@ class Funestra:
         return {
             **status_fields(self.playback, self._drive_gate.handoff_touch()),
             **volume_fields(self._volume.hud),
-            **{key: value for user in self._users.values()
-               for key, value in user.status_fields().items()}}
+            **self._runs_here.status_fields()}
+
+    @property
+    def runs_here(self) -> RunsHere:
+        return self._runs_here
+
+    @property
+    def hud(self) -> HudOverlay | MainHudOverlay | None:
+        return self._hud
+
+    @property
+    def volume(self) -> VolumeHud:
+        return self._volume.hud
+
+    @property
+    def strip(self) -> Heatmap:
+        return self._row.strip
 
     @property
     def _front(self) -> User:
-        return self._users[self._showing]
+        return self._runs_here.front
 
     def _top_block(self) -> ModeHud:
         return self._front.top_block()
@@ -225,9 +189,9 @@ class Funestra:
                 drawn_on=DrawnOn(
                     drawn_on, minus_on_the_hud=self._hud_surface is None,
                     width=None if self._hud_surface is None else self._hud_surface.width),
-                host=MainHudHost(self._top_block, self._row_press(), self._host_controls),
+                host=MainHudHost(self._top_block, self._row_press(), self._setup.host_controls),
                 drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
-                clock=self._clock,
+                clock=self._setup.clock,
             )
         if channels.hud is not None:
             return HudOverlay(
@@ -235,7 +199,7 @@ class Funestra:
                 drawn_on=DrawnOn(drawn_on, over_the_video=self._hud_surface is None,
                                  minus_on_the_hud=self._hud_surface is None),
                 drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
-                row=self._row_press(), clock=self._clock,
+                row=self._row_press(), clock=self._setup.clock,
             )
         return None
 
@@ -244,22 +208,18 @@ class Funestra:
         return None if channels.osr2_readout is None else DrivePublisher(channels.osr2_readout)
 
     def _row_press(self) -> RowPress:
+        moved = self._setup.on_volume_moved
         return RowPress(seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
-                        set_volume=told_to_the_host(
-                            self._volume.set_level, self._volume, self._volume_moved),
+                        set_volume=told_to_the_host(self._volume.set_level, self._volume, moved),
                         toggle_mute=told_to_the_host(
-                            self._volume.toggle_mute, self._volume, self._volume_moved))
+                            self._volume.toggle_mute, self._volume, moved))
 
     def _seek_along_the_track(self, ms: float) -> None:
         frame = self._front.own_frame()
         if frame is not None:
             frame.seek_time(ms)
             return
-        if self.playback.showing_image:
-            self._engine.seek_image(ms)
-            return
-        start_ms, _end_ms = self._strip.window
-        self.playback.seek_to(start_ms + ms)
+        self._row.seek_along_the_track(ms)
 
     def _seek_round_the_dial(self, turn: float) -> None:
         frame = self._front.own_frame()
@@ -283,9 +243,7 @@ class Funestra:
         return self._ask_what_runs_here_to_pause
 
     def _ask_what_runs_here_to_pause(self) -> None:
-        for user in self._users.values():
-            if user.apply_command(OMNIPAUSE_TOGGLE):
-                return
+        self._runs_here.ask_to_pause()
 
     @property
     def stopped(self) -> bool:
@@ -293,7 +251,7 @@ class Funestra:
 
     @property
     def showing(self) -> str:
-        return self._showing
+        return self._runs_here.showing
 
     @property
     def hud_edge(self) -> HudEdge:
@@ -343,26 +301,24 @@ class Funestra:
                 self.apply(command)
         if self._follower is not None:
             self._follower.tick()
-        for user in self._users.values():
-            user.tick()
+        self._runs_here.tick()
         self.playback.advance()
         if self._status is not None:
             self._status.write(self.playback)
-        if self._tiles:
+        if self._setup.tiles:
             self._engine.tile_to_fill(*viewport)
         self._engine.push_still()
         self._tune_the_radio()
         self._paint_if_there_is_memory(viewport)
 
     def close(self) -> None:
-        for user in self._users.values():
-            user.close()
+        self._runs_here.close()
         if self._radio is not None:
             self._radio.close()
         self.playback.close()
 
-    def _radio_beside(self, channels: Channels, audible: bool) -> Radio | None:
-        if not audible or channels.playlist is None:
+    def _radio_beside(self, channels: Channels) -> Radio | None:
+        if not self._setup.audible or channels.playlist is None:
             return None
         return Radio(self._engine.radio_station,
                      dealt_in=RadioFile(radio_file_for(channels.playlist)))
@@ -382,22 +338,10 @@ class Funestra:
 
     def apply(self, command: str) -> None:
         self.playback.follow_a_roll()
-        for user in self._users.values():
-            if user.apply_command(command):
-                return
-        if self._window_verbs(command):
+        if self._runs_here.apply(command) or self._setup.window_verbs(command):
             return
         if not look_up(command, VERBS, self._controls):
             logger.warning("Unhandled command: %s", command.strip())
-
-    def _show(self, name: str) -> bool:
-        if name not in self._users:
-            return False
-        if name != self._showing:
-            self._front.set_showing(False)
-            self._showing = name
-            self._front.set_showing(True)
-        return True
 
     def take_the_list(self, items: list[PlaylistItem]) -> None:
         self.playback.follow_a_roll()
@@ -418,38 +362,20 @@ class Funestra:
         frame = self._front.own_frame()
         if frame is None:
             self._users_frames.hide()
-            self._paint_hud(viewport, self.item_row(), self._strip.colors, self.playback.speed)
+            self._paint_hud(viewport, self.item_row(), self.strip.colors, self.playback.speed)
             if self._hud_surface is None:
-                self._paint_loop_frames(viewport)
+                self._loop_frames.paint(
+                    self.playback, self.strip,
+                    None if self._hud is None else self._hud.row_track, viewport[0])
         else:
             self._users_frames.show(frame, viewport)
             self._paint_hud(viewport, frame_row(frame, self._volume.hud), None, 1.0)
-            self._take_the_loop_frames_down()
+            self._loop_frames.take_down()
         if self._corners is not None:
             self._corners.paint(viewport=viewport)
 
     def item_row(self) -> RowHud:
-        playback, engine = self.playback, self._engine
-        mark = playback.mark
-        follow = None if mark is None else MarkFollow(mark, playback.position_ms)
-        self._strip.update(playback.showing, playback.current_funscript,
-                           playback.duration_ms, self._track_width(), follow)
-        if playback.showing_image:
-            elapsed_ms, pace_ms = engine.image_time or (0.0, 0.0)
-            return RowHud(position_ms=elapsed_ms, duration_ms=pace_ms, volume=self._volume.hud,
-                          playhead=time_playhead(elapsed_ms, pace_ms))
-        start_ms, end_ms = self._strip.window
-        bounds = playback.ab_loop
-        return RowHud(
-            position_ms=playback.position_ms - start_ms,
-            duration_ms=end_ms - start_ms,
-            volume=self._volume.hud,
-            playhead=video_playhead(playback.position_ms, playback.duration_ms,
-                                    engine.frame_rate),
-            loop_bounds=None if bounds is None else (bounds[0] - start_ms,
-                                                     bounds[1] - start_ms),
-            record_in_ms=None if playback.mark is None else playback.mark - start_ms,
-        )
+        return self._row.row(self._volume.hud, self._track_width())
 
     def _track_width(self) -> int:
         row = None if self._hud is None else self._hud.row
@@ -470,38 +396,3 @@ class Funestra:
             self._hud.tick(video=video, playback_speed=playback_speed, viewport=viewport,
                            item_row=item_row, flash=self._flash)
 
-    def _paint_loop_frames(self, viewport: tuple[int, int]) -> None:
-        playback, engine, frames = self.playback, self._engine, self._loop_frames
-        which = frames.needed(playback.ab_loop, playback.position_ms)
-        if which is not None:
-            frames.set(which, engine.screenshot_bgra())
-        track = None if self._hud is None else self._hud.row_track
-        if playback.ab_loop is None or track is None:
-            self._take_the_loop_frames_down()
-            return
-        x0, x1, top = track
-        in_at, out_at = loop_thumbnail_xys(
-            self._strip, frames, playback.ab_loop, ThumbRow((x0, x1), viewport[0], top))
-        if in_at is not None:
-            engine.overlay(self.IN_FRAME_OVERLAY_ID, *in_at, frames.in_thumb)
-            self._loop_frames_up = True
-        if out_at is not None:
-            engine.overlay(self.OUT_FRAME_OVERLAY_ID, *out_at, frames.out_thumb)
-            self._loop_frames_up = True
-
-    def _take_the_loop_frames_down(self) -> None:
-        if not self._loop_frames_up:
-            return
-        self._loop_frames_up = False
-        self._engine.remove_overlay(self.IN_FRAME_OVERLAY_ID)
-        self._engine.remove_overlay(self.OUT_FRAME_OVERLAY_ID)
-
-
-def frame_row(frame: FlickFrame, volume) -> RowHud | None:
-    if frame.count <= 0:
-        return None
-    return RowHud(position_ms=frame.elapsed_ms, duration_ms=frame.interval_ms,
-                  volume=volume,
-                  playhead=framed_playhead(frame.played, frame.count,
-                                           frame.elapsed_ms, frame.interval_ms),
-                  loop=(frame.played, frame.count))
