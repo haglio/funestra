@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-from . import learned_motion
 from .flick_flip import HALF_A_LOOP
 from .genau_controls import GenauControls
 from .osr2_visualizer import TRACE_SAMPLES, DriveHud, DrivePublisher
@@ -14,12 +13,10 @@ from .robot_hand import (
     Waveform,
     WaveformShape,
     control_limits,
-    position_fraction,
     trace_window,
 )
 
-_AUTO_AMPLITUDE = 100
-_AUTO_CENTER = 50
+_AUTO_SWING = Waveform(WaveformShape.SINE, amplitude=100, center=50)
 
 
 @dataclass(frozen=True)
@@ -29,13 +26,12 @@ class AutoMotion:
 
     @property
     def height(self) -> float:
-        return position_fraction(self.phase, amplitude=_AUTO_AMPLITUDE,
-                                 center=_AUTO_CENTER)
+        return _AUTO_SWING.height_at(self.phase)
 
     def trace(self, seconds: float, beats_per_loop: float,
               ) -> tuple[list[float], float, float]:
         heights, slide = trace_window(
-            Waveform(WaveformShape.SINE, _AUTO_AMPLITUDE, _AUTO_CENTER),
+            _AUTO_SWING,
             TraceSpan(self.phase, self.bpm / beats_per_loop if self.bpm > 0 else 0.0,
                       TRACE_SAMPLES, seconds))
         return heights[:TRACE_SAMPLES], slide, heights[TRACE_SAMPLES]
@@ -51,7 +47,7 @@ class GenauVisualizer:
         drive_file: Path | None = None,
     ):
         self.robot_hand = controls.robot_hand
-        self.learned = controls.learned_motion_state
+        self._motion = controls.hand_motion
         self.flick_advance = controls.flick_advance_state
         self.beats_per_loop = beats_per_loop
         self.tcode_sender = tcode_sender
@@ -115,14 +111,8 @@ class GenauVisualizer:
 
     def _trace(self, display_seconds: float, start_phase: float,
                phase_per_second: float) -> tuple[list[float], float, float | None]:
-        if self.learned is not None and self.learned.active:
-            heights, slide = learned_motion.trace_window(
-                self.learned, self.robot_hand, TRACE_SAMPLES, display_seconds)
-        else:
-            ds = self.robot_hand
-            heights, slide = trace_window(
-                Waveform(ds.shape, ds.amplitude, ds.center),
-                TraceSpan(start_phase, phase_per_second * 60.0, TRACE_SAMPLES, display_seconds))
+        heights, slide = self._motion.trace(
+            TraceSpan(start_phase, phase_per_second * 60.0, TRACE_SAMPLES, display_seconds))
         return heights[:TRACE_SAMPLES], slide, heights[TRACE_SAMPLES]
 
     def _publish_drive(self, hud: DriveHud, now: float) -> None:
