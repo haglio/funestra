@@ -7,7 +7,6 @@ from app_support.osr2_device import Osr2Mode, Osr2Trouble
 
 from funestra.modes import (
     LengthMode,
-    LoopState,
     MainMode,
     MessageLevel,
     Osr2State,
@@ -18,7 +17,6 @@ from funestra.modes import (
 _WIRE_WORDS = {
     MainMode: {"kino", "genau"},
     SatellitesMode: {"kino", "origenerator"},
-    LoopState: {"normal", "recording"},
     Osr2State: {"off", "auto", "funscript", "robot_hand", "unplugged", "no_answer"},
     LengthMode: {"mixed", "clips", "full", "none"},
     MessageLevel: {"warning", "notice", "favorite"},
@@ -39,7 +37,6 @@ def test_an_entry_is_its_wire_word_wherever_a_string_is_wanted(enum):
 
 def test_read_mode_gives_the_entry_a_known_word_names():
     assert read_mode(MainMode, "genau", MainMode.KINO) is MainMode.GENAU
-    assert read_mode(LoopState, "recording", LoopState.NORMAL) is LoopState.RECORDING
 
 
 @pytest.mark.parametrize("raw", ["", "hybrid", None, 3, "KINO", "video"])

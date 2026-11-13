@@ -9,6 +9,12 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-13 — `LoopState` is gone
+
+`funestra.modes.LoopState` (normal, recording) had one user, Fun Time's
+Kino, which since fun_time#837 keeps its own `SnippetState` for the snippet a
+held R records, so the enum and its tests go.
+
 ## 2026-11-07 — a video's actions are its labels, and nothing else
 
 `video_families.actions_text` no longer falls back to a record's
