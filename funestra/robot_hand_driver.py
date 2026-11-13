@@ -2,14 +2,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from . import learned_motion
 from .flick_flip import HALF_A_LOOP
 from .funscript import HANDOFF_RAMP_MS
-from .robot_hand import (
-    ON_THE_PARK_WITHIN,
-    POSITION_MAX,
-    phase_to_position,
-)
+from .hand_motion import HandMotion, ways_the_hand_moves
+from .robot_hand import ON_THE_PARK_WITHIN, POSITION_MAX
 from .tcode import HandoffGlide, TCodeSink, format_tcode_command
 
 if TYPE_CHECKING:
@@ -28,8 +24,7 @@ class RobotHandTCodeDriver:
         min_interval: float = 1.0 / 30.0,
     ) -> None:
         self._sink = sink
-        self._robot_hand = robot_hand
-        self._learned = learned
+        self._motion = HandMotion(robot_hand, ways_the_hand_moves(learned))
         self._min_interval = min_interval
         self._last_send_time: float = 0.0
         self._last_phase: float = 0.0
@@ -57,24 +52,13 @@ class RobotHandTCodeDriver:
 
     def rest_at_floor(self) -> None:
         self._motion_phase = 0.0
-        if self._learned is not None:
-            learned_motion.rest_at_floor(self._learned)
+        self._motion.rest_at_floor()
 
     def set_motion_phase(self, phase: float) -> None:
         self._motion_phase = phase
 
     def _compute_position(self) -> int:
-        if self._learned is not None and self._learned.active:
-            return round(POSITION_MAX * learned_motion.position(
-                self._learned, self._robot_hand) / 100)
-        if self._robot_hand is not None:
-            return phase_to_position(
-                self._motion_phase,
-                shape=self._robot_hand.shape,
-                amplitude=self._robot_hand.amplitude,
-                center=self._robot_hand.center,
-            )
-        return phase_to_position(self._motion_phase)
+        return round(POSITION_MAX * self._motion.height(self._motion_phase) / 100)
 
     def current_position(self) -> int:
         return round(self._compute_position() * self._rise)

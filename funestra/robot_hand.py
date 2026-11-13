@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import NamedTuple
 
-from .tcode import POSITION_MAX
+from .tcode import POSITION_MAX  # noqa: F401
 
 
 class WaveformShape(Enum):
@@ -219,6 +219,14 @@ class Waveform(NamedTuple):
     amplitude: int
     center: int
 
+    @classmethod
+    def of(cls, hand: RobotHandState) -> Waveform:
+        return cls(hand.shape, hand.amplitude, hand.center)
+
+    def height_at(self, phase: float) -> float:
+        return position_fraction(
+            phase, shape=self.shape, amplitude=self.amplitude, center=self.center)
+
 
 class TraceSpan(NamedTuple):
     phase: float
@@ -231,13 +239,9 @@ def trace_window(waveform: Waveform, span: TraceSpan) -> tuple[list[float], floa
     phase, bpm, samples, span_s = span
     grid = span_s / max(1, samples - 1) * bpm / 60.0
     if grid <= 0:
-        held = position_fraction(phase, **waveform._asdict())
-        return [held] * (samples + 1), 0.0
+        return [waveform.height_at(phase)] * (samples + 1), 0.0
     first = math.floor(phase / grid) * grid
-    heights = [
-        position_fraction(first + i * grid, **waveform._asdict())
-        for i in range(samples + 1)
-    ]
+    heights = [waveform.height_at(first + i * grid) for i in range(samples + 1)]
     return heights, (phase - first) / grid
 
 
@@ -253,17 +257,6 @@ def position_fraction(
     low = max(0.0, center / 100 - half)
     high = min(1.0, center / 100 + half)
     return min(1.0, max(0.0, low + raw * (high - low)))
-
-
-def phase_to_position(
-    phase: float,
-    *,
-    shape: WaveformShape = WaveformShape.SINE,
-    amplitude: int = 100,
-    center: int = 50,
-) -> int:
-    return round(POSITION_MAX * position_fraction(
-        phase, shape=shape, amplitude=amplitude, center=center))
 
 
 _PHASE_SEARCH_SAMPLES = 720

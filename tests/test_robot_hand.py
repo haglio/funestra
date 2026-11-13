@@ -22,7 +22,6 @@ from funestra.robot_hand import (
     cycle_shape,
     phase_advanced,
     phase_for_position_fraction,
-    phase_to_position,
     position_fraction,
     set_amplitude,
     set_bars,
@@ -34,6 +33,11 @@ from funestra.robot_hand import (
     travel_cap,
     wave_travel,
 )
+
+
+def phase_to_position(phase: float, *, shape: WaveformShape = WaveformShape.SINE,
+                      amplitude: int = 100, center: int = 50) -> int:
+    return round(POSITION_MAX * Waveform(shape, amplitude, center).height_at(phase))
 
 
 class TestBpmForSpeed:

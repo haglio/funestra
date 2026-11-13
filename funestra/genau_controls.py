@@ -30,6 +30,7 @@ from .funestra_verbs import (
     TOGGLE_LOCK,
     TRASH,
 )
+from .hand_motion import HandMotion, ways_the_hand_moves
 from .learned_motion import (
     LearnedMotionState,
     disable_learned_motion,
@@ -71,6 +72,10 @@ class GenauControls:
     play_file: Callable[[Path], None] | None = None
     flick_flip: FlickFlip = field(default_factory=FlickFlip)
     app_hold: RoomHold = field(default_factory=RoomHold)
+
+    @property
+    def hand_motion(self) -> HandMotion:
+        return HandMotion(self.robot_hand, ways_the_hand_moves(self.learned_motion_state))
 
 
 Act = Callable[[GenauControls, str], bool]

@@ -10,7 +10,6 @@ from .genau_controls import apply_runtime_command
 from .genau_refresh_parts import GenauRefreshParts
 from .genau_status import GENAU_STATUS_FILENAME, FlickOnScreen, build_status_text, write_status_file
 from .genau_visualizer import AutoMotion, GenauVisualizer
-from .learned_motion import tick_learned_motion
 from .main_hud import HELD_HEIGHT, HOLD_VERB
 from .robot_hand import POSITION_MAX, phase_for_position_fraction
 from .robot_hand_beat import Beat, BeatTuning, advance_beat
@@ -31,6 +30,7 @@ class GenauRefreshController:
         if self.robot_hand is None:
             raise ValueError("Genau runs with the hand's state and no hand-less mode")
         self.learned = controls.learned_motion_state
+        self.motion = controls.hand_motion
         self.flick_advance = controls.flick_advance_state
         self.hud = controls.hud
         self.tcode_enabled = controls.tcode_enabled
@@ -148,11 +148,7 @@ class GenauRefreshController:
         )
 
     def _tick_the_hand(self, now: float) -> None:
-        if self.learned is not None:
-            tick_learned_motion(
-                self.robot_hand, self.learned, now,
-                start_fraction=self._where_the_device_is(),
-            )
+        self.motion.tick(now, start_fraction=self._where_the_device_is())
         if self.flick_advance is not None:
             entry = self.renderer.current_flick_entry()
             on_screen_flick = (
