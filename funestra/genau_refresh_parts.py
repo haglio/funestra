@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 import time
-from functools import partial
 from pathlib import Path
 from typing import Any, NamedTuple
 
-from .file_channel import consume_command_file
 from .genau_controls import GenauControls
-
-consume_command_keeping_its_case = partial(consume_command_file, uppercase=False)
 
 
 class GenauRefreshParts(NamedTuple):
@@ -26,7 +22,6 @@ class GenauRefreshParts(NamedTuple):
     set_loading_text: Any
     logger: Any
     now_source: Any = time.monotonic
-    consume_command: Any = consume_command_keeping_its_case
     read_paused_state: Any = None
     tcode_sender: Any = None
     status_file: Path | None = None

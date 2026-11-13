@@ -4,7 +4,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from test_genau_refresh import (
+from genau_fakes import (
     FakeLoader,
     FakeNotifier,
     FakeRenderer,
@@ -15,14 +15,15 @@ from test_genau_refresh import (
 from funestra.broker_feed import BrokerFeed
 from funestra.flag import Flag
 from funestra.flick_advance import FlickAdvanceState
+from funestra.flicks_on_screen import FlicksOnScreen
 from funestra.genau_controls import VERBS, GenauControls
+from funestra.genau_files import GenauFiles
 from funestra.genau_refresh import GenauRefreshController
-from funestra.genau_refresh_parts import GenauRefreshParts
 from funestra.learned_model import LearnedModel
 from funestra.learned_motion import LearnedMotionState
 from funestra.main_hud import OSR2_PARKED, OSR2_RETRACTED
 from funestra.robot_hand import RobotHandState, WaveformShape
-from funestra.robot_hand_beat import BeatEngine
+from funestra.robot_hand_beat import BeatEngine, BeatTuning
 
 NOW_FROZEN_SO_ONLY_A_VERB_MOVES_THE_PHASE = 5.0
 
@@ -59,8 +60,8 @@ class Seam:
         self.stop_event = _Stop()
         self.command_file = tmp_path / "genau_cmd.txt"
 
-        self.controller = GenauRefreshController(GenauRefreshParts(
-            controls=GenauControls(
+        self.controller = GenauRefreshController(
+            GenauControls(
                 engine=self.engine,
                 paused=self.paused,
                 step_flick=self.selection.step,
@@ -77,22 +78,15 @@ class Seam:
                     (plays_vr, plays_flat)),
                 play_file=self.played.append,
             ),
+            FlicksOnScreen(FakeLoader(), FakeRenderer(path=tmp_path / "flicks" / "example.mp4"),
+                           self.selection, FakeNotifier(), lambda _text: None),
             broker=BrokerFeed(),
-            loader=FakeLoader(),
-            notifier=FakeNotifier(),
-            renderer=FakeRenderer(path=tmp_path / "flicks" / "example.mp4"),
-            selection=self.selection,
-            command_file=self.command_file,
-            paused_file=tmp_path / "genau_paused.txt",
-            beats_per_loop=4.0,
-            bpm_smoothing=0.5,
-            sync_strength=0.5,
-            set_loading_text=lambda _text: None,
+            files=GenauFiles(self.command_file, tmp_path / "genau_paused.txt"),
+            tuning=BeatTuning(beats_per_loop=4.0, bpm_smoothing=0.5, sync_strength=0.5),
             logger=MagicMock(),
             now_source=lambda: NOW_FROZEN_SO_ONLY_A_VERB_MOVES_THE_PHASE,
-            read_paused_state=lambda _path, logger=None: self.paused.on,
             tcode_sender=self.tcode,
-        ))
+        )
 
     def send(self, line: str) -> None:
         line = line.replace(PICKED, str(self.picked_with_capitals))
@@ -114,8 +108,8 @@ class Seam:
             "interval": self.advance.interval,
             "steps": tuple(self.selection.step_calls),
             "condemned": self.selection.discard_calls,
-            "flipped": self.controller.flip.on,
-            "held": self.controller.app_hold.held,
+            "flipped": self.controller.controls.flick_flip.on,
+            "held": self.controller.controls.app_hold.held,
             "reorders": tuple(self.reorders),
             "kept_shapes": tuple(self.kept_shapes),
             "played": tuple(path.name for path in self.played),

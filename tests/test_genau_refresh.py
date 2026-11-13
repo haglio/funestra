@@ -9,131 +9,24 @@ from unittest.mock import MagicMock
 import pytest
 from app_support.osr2_hold import HOLD_DELAY_S, HOLD_MOVE_MS, PARK, RETRACT
 from funestra_fakes import holds_of_the_lock
+from genau_fakes import FakeLoader, FakeNotifier, FakeRenderer, FakeSelection, FakeTCodeSender
 
 from funestra.broker_feed import BrokerFeed
+from funestra.file_channel import append_command
 from funestra.flag import Flag
 from funestra.flick_advance import FlickAdvanceState
 from funestra.flick_flip import FlickFlip
+from funestra.flicks_on_screen import FlicksOnScreen
 from funestra.genau_controls import GenauControls
+from funestra.genau_files import GenauFiles
 from funestra.genau_refresh import GenauRefreshController
-from funestra.genau_refresh_parts import GenauRefreshParts
 from funestra.genau_status import GENAU_STATUS_FILENAME
 from funestra.learned_model import LearnedModel, Phrase, classify
 from funestra.learned_motion import LearnedMotionState
 from funestra.robot_hand import RobotHandState, position_fraction
-from funestra.robot_hand_beat import BeatEngine
+from funestra.robot_hand_beat import BeatEngine, BeatTuning
 from funestra.robot_hand_driver import RobotHandTCodeDriver
 from funestra.tcode import HANDOFF_MS
-
-
-class FakeLoader:
-    def __init__(self, *, loading: bool = False):
-        self.load_state = type("LoadState", (), {"loading": loading})()
-        self.loaded_adopt_calls = 0
-        self.prefetch_adopt_calls = 0
-
-    def adopt_loaded_flick_if_ready(self) -> None:
-        self.loaded_adopt_calls += 1
-
-    def adopt_prefetch_if_ready(self) -> None:
-        self.prefetch_adopt_calls += 1
-
-
-class FakeNotifier:
-    def __init__(self):
-        self.visible_updates: list[bool] = []
-
-    def notify_visible(self, is_visible: bool) -> None:
-        self.visible_updates.append(is_visible)
-
-
-class FakeRenderer:
-    def __init__(self, *, path: Path | None = None, entry=None, current_frame_index: int | None = None):
-        self.current_flick_path = path
-        self._entry = entry
-        self.current_frame_index = current_frame_index
-        self.display_calls: list[int] = []
-        self.portrait: bool | None = None
-
-    def current_flick_entry(self):
-        return self._entry
-
-    def show_frame_at(self, index: int) -> None:
-        self.display_calls.append(index)
-        self.current_frame_index = index
-
-
-class FakeSelection:
-    def __init__(self, *, current_number: int = 2, count: int = 5, pending_flick_name: str | None = None):
-        self.current_number = current_number
-        self.count = count
-        self.step_calls: list[int] = []
-        self.discard_calls = 0
-        self.prefetch_calls = 0
-        self.adopt_calls = 0
-        self.pending_flick_name = pending_flick_name
-
-    def step(self, delta: int) -> None:
-        self.step_calls.append(delta)
-
-    def condemn_current(self) -> bool:
-        self.discard_calls += 1
-        return True
-
-    def adopt_pending_flick(self) -> bool:
-        self.adopt_calls += 1
-        return False
-
-    def request_nearby_prefetch(self) -> None:
-        self.prefetch_calls += 1
-
-
-class FakeTCodeSender:
-    def __init__(self):
-        self.sends: list[tuple[float, float]] = []
-        self.take_overs = 0
-        self.rests = 0
-        self.hand_overs = 0
-        self.let_go_position: int | None = None
-        self.closed = False
-        self.wanted: bool | None = None
-        self._position = 5000
-        self._motion_phase = 0.0
-
-    def want(self, wanted: bool) -> None:
-        self.wanted = wanted
-
-    def maybe_send(self, phase: float, now: float, *, output: bool = True) -> None:
-        if output:
-            self.sends.append((phase, now))
-        self._motion_phase = phase
-
-    def take_over(self) -> None:
-        self.take_overs += 1
-        self.let_go_position = None
-
-    def rest_at_floor(self) -> None:
-        self.rests += 1
-        self._motion_phase = 0.0
-
-    def set_motion_phase(self, phase: float) -> None:
-        self._motion_phase = phase
-
-    def hand_over(self) -> None:
-        self.hand_overs += 1
-        self.let_go_position = self._position
-        self.rest_at_floor()
-
-    def current_position(self) -> int:
-        return self._position
-
-    @property
-    def motion_phase(self) -> float:
-        return self._motion_phase
-
-    def close(self) -> None:
-        self.closed = True
-
 
 _COMMAND_DIR: Path | None = None
 
@@ -188,12 +81,11 @@ def _build_controller(*, broker: BrokerFeed | None = None,
     files = _taken(_Files, choices)
     assert not choices, choices
     loading_texts: list[str | None] = []
-    drained_from: list[Path] = []
-
-    def consume(path, logger=None):
-        drained_from.append(path)
-        return (said.commands if said.commands is not None
-                else ([said.command] if said.command else []))
+    command_file = files.command_file or _COMMAND_DIR / "command.txt"
+    for line in said.commands if said.commands is not None else filter(None, [said.command]):
+        append_command(command_file, line)
+    paused_file = _COMMAND_DIR / "paused.txt"
+    paused_file.write_text("1" if said.paused_state else "0", encoding="utf-8")
 
     loader = FakeLoader(loading=screen.loading)
     notifier = FakeNotifier()
@@ -217,32 +109,19 @@ def _build_controller(*, broker: BrokerFeed | None = None,
         set_volume=lambda _level, _muted: None,
         flick_flip=hands.flick_flip if hands.flick_flip is not None else FlickFlip(),
     )
-    parts = GenauRefreshParts(
-        controls=controls,
+    controller = GenauRefreshController(
+        controls,
+        FlicksOnScreen(loader, renderer, selection, notifier, loading_texts.append),
         broker=broker or BrokerFeed(),
-        loader=loader,
-        notifier=notifier,
-        renderer=renderer,
-        selection=selection,
-        command_file=files.command_file or _COMMAND_DIR / "command.txt",
-        status_file=files.status_file,
-        paused_file=Path("paused.txt"),
-        beats_per_loop=4.0,
-        bpm_smoothing=0.5,
-        sync_strength=0.5,
-        set_loading_text=loading_texts.append,
+        files=GenauFiles(command_file, paused_file, files.status_file, files.drive_file),
+        tuning=BeatTuning(beats_per_loop=4.0, bpm_smoothing=0.5, sync_strength=0.5),
+        tcode_sender=tcode_sender,
         logger=logger,
         now_source=now_source or (lambda: 5.0),
-        consume_command=consume,
-        read_paused_state=lambda _path, logger=None: said.paused_state,
-        tcode_sender=tcode_sender,
-        drive_file=files.drive_file,
     )
-    controller = GenauRefreshController(parts)
     return {
-        "drained_from": drained_from,
         "controller": controller,
-        "parts": parts,
+        "say": lambda line: append_command(command_file, line),
         "loader": loader,
         "notifier": notifier,
         "renderer": renderer,
@@ -317,7 +196,7 @@ def test_refresh_reads_paused_state_file_each_tick():
 
     built["controller"].refresh()
 
-    assert built["controller"].paused.on is True
+    assert built["controller"].controls.paused.on is True
 
 
 def test_refresh_reports_exceptions():
@@ -727,7 +606,7 @@ def test_a_motion_short_of_the_ends_swaps_halves_on_a_turn():
         tcode._position = position
         controller.refresh()
 
-    assert controller._scrub.back_half is True
+    assert controller.under_the_device.on_the_way_down is True
 
 
 def _resumed_by_the_room(tick, _hand, at):
@@ -763,13 +642,14 @@ class TestTheRoomHoldingTheDevice:
         tcode._position = position
         hand = RobotHandState(playing=True, bpm=120.0)
         clock = [5.0]
-        commands: list[str] = []
         built = _build_controller(
             entry={"frames": [object() for _ in range(_FRAMES)]}, robot_hand=hand,
-            tcode_sender=tcode, commands=commands, now_source=lambda: clock[0])
+            tcode_sender=tcode, now_source=lambda: clock[0])
 
         def tick(at: float, *said: str) -> float:
-            clock[0], commands[:] = at, list(said)
+            clock[0] = at
+            for line in said:
+                built["say"](line)
             built["controller"].refresh()
             return _height_framed(built["renderer"].current_frame_index)
 
@@ -911,15 +791,14 @@ class TestTheOrderOfTheTicksStepsWhichNoUnitTestCanTell:
 
     def test_commands_are_drained_before_anything_reads_what_they_moved_or_a_pause_lands_a_tick_late_and_the_motion_goes_out_once_more_after_the_hand_stopped(self):
         self._before("self._drain_commands", "self._who_is_driving")
-        self._before("self._drain_commands", "self.handoff.watch")
-        self._before("self._drain_commands", "self.tcode_sender.maybe_send")
+        self._before("self._drain_commands", "self.device.drive")
 
     def test_the_flick_that_finished_decoding_is_adopted_before_it_is_drawn_or_it_is_a_tick_late_on_screen_and_the_advance_times_its_interval_against_the_old_one(self):
-        self._before("self._adopt_whatever_finished_decoding", "self._show_the_frame")
+        self._before("self.flicks.adopt_whatever_finished_decoding", "self._show_the_frame")
 
     def test_the_flip_knows_the_flick_on_screen_before_a_command_can_flip_it(self):
-        self._before("self._adopt_whatever_finished_decoding", "self.flip.follow")
-        self._before("self.flip.follow", "self._drain_commands")
+        self._before("self.flicks.adopt_whatever_finished_decoding", "self.controls.flick_flip.follow")
+        self._before("self.controls.flick_flip.follow", "self._drain_commands")
 
     def test_who_is_driving_is_settled_before_the_engine_is_told_anything(self):
         self._before("self._who_is_driving", "advance_beat")
@@ -944,10 +823,10 @@ class TestSeekingTheFlick:
     @staticmethod
     def _height(controller) -> float:
         return position_fraction(
-            controller.tcode_sender.motion_phase,
-            shape=controller.robot_hand.shape,
-            amplitude=controller.robot_hand.amplitude,
-            center=controller.robot_hand.center,
+            controller.visualizer.tcode_sender.motion_phase,
+            shape=controller.controls.robot_hand.shape,
+            amplitude=controller.controls.robot_hand.amplitude,
+            center=controller.controls.robot_hand.center,
         )
 
     def test_the_front_half_of_the_bar_is_the_device_on_its_way_up(self):
@@ -955,7 +834,7 @@ class TestSeekingTheFlick:
 
         controller.seek_the_flick(0.25)
 
-        assert controller._scrub.back_half is False
+        assert controller.under_the_device.on_the_way_down is False
         assert self._height(controller) == pytest.approx(0.5, abs=0.01)
 
     def test_the_back_half_is_the_same_heights_on_the_way_down(self):
@@ -963,7 +842,7 @@ class TestSeekingTheFlick:
 
         controller.seek_the_flick(0.75)
 
-        assert controller._scrub.back_half is True
+        assert controller.under_the_device.on_the_way_down is True
         assert self._height(controller) == pytest.approx(0.5, abs=0.01)
 
     def test_the_ends_of_the_bar_are_the_ends_of_the_stroke(self):
@@ -990,14 +869,14 @@ class TestSeekingTheFlick:
         controller.seek_the_flick(0.6)
         controller.refresh()
 
-        assert controller._scrub.back_half is True
+        assert controller.under_the_device.on_the_way_down is True
 
     def test_a_flick_still_decoding_is_not_seekable(self):
         built = _build_controller(entry=None, tcode_sender=FakeTCodeSender())
 
         built["controller"].seek_the_flick(0.5)
 
-        assert built["controller"].tcode_sender.motion_phase == 0.0
+        assert built["controller"].visualizer.tcode_sender.motion_phase == 0.0
 
 
 def _learned_model() -> LearnedModel:
@@ -1145,7 +1024,7 @@ class TestAFlippedFlick:
         controller.seek_the_flick(0.25)
 
         assert at_the_start == pytest.approx(1.0, abs=0.01)
-        assert (controller._scrub.back_half, TestSeekingTheFlick._height(controller)) == (
+        assert (controller.under_the_device.on_the_way_down, TestSeekingTheFlick._height(controller)) == (
             True, pytest.approx(0.5, abs=0.01))
 
     def test_the_status_says_the_flick_up_is_flipped(self, tmp_path):
@@ -1201,14 +1080,15 @@ def test_with_no_status_file_named_the_status_goes_beside_the_command_file_where
         tmp_path):
     built = _build_controller(command_file=tmp_path / "genau_cmd.txt")
 
-    assert built["controller"].status_file == tmp_path / GENAU_STATUS_FILENAME
+    assert built["controller"].files.status_file == tmp_path / GENAU_STATUS_FILENAME
 
 
 def test_the_controller_refuses_to_be_built_without_the_hands_state_so_no_hand_less_mode_can_come_back(
         tmp_path):
-    parts = _build_controller(command_file=tmp_path / "genau_cmd.txt")["parts"]
-    hand_less = parts._replace(controls=GenauControls(
-        engine=BeatEngine(phase=0.0, last_tick=0.0), paused=Flag(), step_flick=lambda _step: None))
+    built = _build_controller(command_file=tmp_path / "genau_cmd.txt")["controller"]
+    hand_less = GenauControls(
+        engine=BeatEngine(phase=0.0, last_tick=0.0), paused=Flag(), step_flick=lambda _step: None)
 
     with pytest.raises(ValueError, match="hand"):
-        GenauRefreshController(hand_less)
+        GenauRefreshController(hand_less, built.flicks, broker=built.broker, files=built.files,
+                               tuning=built.tuning, logger=built.logger)
