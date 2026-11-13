@@ -10,6 +10,7 @@ from .flick_under_the_device import FlickUnderTheDevice
 from .flicks_on_screen import FlicksOnScreen
 from .genau_controls import GenauControls, apply_runtime_command
 from .genau_files import GenauFiles
+from .genau_refresh_parts import GenauRefreshParts
 from .genau_status import FlickOnScreen, build_status_text, write_status_file
 from .genau_visualizer import AutoMotion, GenauVisualizer
 from .hands_device import HandsDevice
@@ -18,9 +19,15 @@ from .tick_failures import TickFailures
 
 
 class GenauRefreshController:
-    def __init__(self, controls: GenauControls, flicks: FlicksOnScreen, *, broker: BrokerFeed,
-                 files: GenauFiles, tuning: BeatTuning, tcode_sender=None,
-                 logger: logging.Logger, now_source: Callable[[], float] = time.monotonic):
+    def __init__(self, controls: GenauControls | GenauRefreshParts,
+                 flicks: FlicksOnScreen | None = None, **the_rest) -> None:
+        if isinstance(controls, GenauRefreshParts):
+            controls, flicks, the_rest = controls.as_the_controller_takes_them()
+        self._build(controls, flicks, **the_rest)
+
+    def _build(self, controls: GenauControls, flicks: FlicksOnScreen, *, broker: BrokerFeed,
+               files: GenauFiles, tuning: BeatTuning, tcode_sender=None,
+               logger: logging.Logger, now_source: Callable[[], float] = time.monotonic) -> None:
         if controls.robot_hand is None:
             raise ValueError("Genau runs with the hand's state and no hand-less mode")
         self.controls = controls

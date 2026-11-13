@@ -4,7 +4,10 @@ import time
 from pathlib import Path
 from typing import Any, NamedTuple
 
+from .flicks_on_screen import FlicksOnScreen
 from .genau_controls import GenauControls
+from .genau_files import GenauFiles
+from .robot_hand_beat import BeatTuning
 
 
 class GenauRefreshParts(NamedTuple):
@@ -26,3 +29,15 @@ class GenauRefreshParts(NamedTuple):
     tcode_sender: Any = None
     status_file: Path | None = None
     drive_file: Path | None = None
+
+    def as_the_controller_takes_them(self) -> tuple[GenauControls, FlicksOnScreen, dict]:
+        return self.controls, FlicksOnScreen(
+            self.loader, self.renderer, self.selection, self.notifier, self.set_loading_text), {
+            "broker": self.broker,
+            "files": GenauFiles(self.command_file, self.paused_file, self.status_file,
+                                self.drive_file),
+            "tuning": BeatTuning(self.beats_per_loop, self.bpm_smoothing, self.sync_strength),
+            "tcode_sender": self.tcode_sender,
+            "logger": self.logger,
+            "now_source": self.now_source,
+        }
