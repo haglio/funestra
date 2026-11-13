@@ -18,7 +18,6 @@ class SatellitesMode(StrEnum):
 class LoopState(StrEnum):
     NORMAL = "normal"
     RECORDING = "recording"
-    LOOPING = "looping"
 
 
 class Osr2State(StrEnum):
