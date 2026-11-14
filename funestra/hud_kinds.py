@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass, replace
-from enum import IntEnum, StrEnum
+from dataclasses import dataclass, fields, replace
+from enum import Enum, IntEnum, StrEnum
 
 from shared_ui.spacing import BUTTON_WORD_W
 
@@ -26,7 +26,15 @@ from .hud_controls import (
     versions_button,
 )
 from .hud_icons import MINIMIZE_FUNESTRA_ICON, shared_icon
-from .hud_title import F_MODE_LABEL
+from .hud_title import (
+    F_MODE_LABEL,
+    LATEST_LABEL,
+    SEPARATOR,
+    SHUFFLE_LABEL,
+    HudTitleFacts,
+    compilation_label,
+    hud_title,
+)
 from .inclusion_pair import (
     BOTH,
     LENGTH,
@@ -38,7 +46,7 @@ from .inclusion_pair import (
     lengths_included,
     media_pair,
 )
-from .main_hud import GAP, VALUE_W
+from .main_hud import GAP, VALUE_W, ModeHud
 from .modes import LengthMode, MainMode
 
 
@@ -92,6 +100,37 @@ class HudFacts:
     enhancement: Included = BOTH
     hosted: bool = False
     clip_seconds: int | None = None
+
+
+def facts_raw(facts: HudFacts) -> dict:
+    return {field.name: _raw_value(getattr(facts, field.name)) for field in fields(HudFacts)}
+
+
+def facts_from_raw(raw: object) -> HudFacts | None:
+    if not isinstance(raw, dict):
+        return None
+    defaults = HudFacts()
+    return HudFacts(**{field.name: _read_value(getattr(defaults, field.name), raw[field.name])
+                       for field in fields(HudFacts) if field.name in raw})
+
+
+def _raw_value(value):
+    if isinstance(value, Enum):
+        return value.value
+    if isinstance(value, tuple):
+        return list(value)
+    return value
+
+
+def _read_value(default, raw):
+    if isinstance(default, Enum):
+        try:
+            return type(default)(raw)
+        except ValueError:
+            return default
+    if isinstance(default, tuple):
+        return tuple(bool(part) for part in raw) if isinstance(raw, list) else default
+    return raw
 
 
 @dataclass(frozen=True)
@@ -432,3 +471,13 @@ def osr2_button(funestra: str, *, has_it: bool) -> Button:
 def title_filters(facts: HudFacts) -> tuple[str, ...]:
     return tuple(word for pair, included in _inclusions(facts, shows_on(HudKind.MAIN, facts))
                  if (word := pair.title_word(included)))
+
+
+def main_title(facts: HudFacts, block: ModeHud) -> str:
+    playing_set = (f"{compilation_label(block.compilation)}{SEPARATOR}{block.position}/{block.total}"
+                   if block.compilation else "")
+    order = "" if facts.latest is None else LATEST_LABEL if facts.latest else SHUFFLE_LABEL
+    if facts.main_mode is MainMode.GENAU and not facts.locked and facts.pace_s:
+        order = SEPARATOR.join(part for part in (order, f"{facts.pace_s}s") if part)
+    return hud_title(HudTitleFacts(locked=facts.locked, playing_set=playing_set, order=order,
+                                   f_mode=block.scripted_filter, filters=title_filters(facts)))

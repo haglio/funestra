@@ -7,11 +7,14 @@ from pathlib import Path
 from typing import NamedTuple
 
 from .dashboard import ask
+from .host_controls import HostControls, HostControlsHud, HostControlsPress
 from .hud_button import Button
 from .hud_corners import HudPlace
+from .hud_kinds import HudFacts, HudKind, main_title
 from .hud_placement import HudCorner, HudEdge, PointerReading
 from .hud_row import ItemRowDraw, RowHud, RowLayout, RowPress, track_on_screen
-from .modes import Osr2State
+from .main_hud import ModeHud
+from .modes import MainMode, Osr2State
 from .name_copy import COPY_NAME, copy_while_the_funestra_plays_on
 from .osr2_visualizer import DriveHud, DrivePublisher, read_drive
 from .satellite_hud import (
@@ -91,6 +94,27 @@ class PublishedHud:
         ask(self._command_file, command)
 
 
+class ConsoleHud:
+    def __init__(self, console: Path, command_file: Path, top_block: Callable[[], ModeHud]) -> None:
+        self._published = PublishedHud(console, command_file)
+        self._top_block = top_block
+        self._console = _AT_REST
+
+    def next(self, shown: HudModel | None) -> tuple[HudModel | None, bool]:
+        console, _changed = self._published.next(self._console)
+        self._console = console or self._console
+        block = self._top_block()
+        model = replace(self._console, item_name=block.video,
+                        title=main_title(self._console.facts or HudFacts(), block))
+        return model, model != shown
+
+    def post(self, command: str) -> None:
+        self._published.post(command)
+
+
+_AT_REST = HudModel(funestra="main", kind=HudKind.MAIN, facts=HudFacts(locked=True))
+
+
 class WindowsOwnHud:
     def __init__(self, hud: Callable[[], HudModel | None],
                  post: Callable[[str], None]) -> None:
@@ -106,10 +130,11 @@ class HudOverlay:
     def __init__(
         self,
         *,
-        source: PublishedHud | WindowsOwnHud,
+        source: PublishedHud | WindowsOwnHud | ConsoleHud,
         drawn_on: DrawnOn,
         drive: DriveFeed = NO_DRIVE,
         row: RowPress | None = None,
+        host_controls: HostControls | None = None,
         clock=time.monotonic,
         clipboard: Callable[[str], None] = copy_while_the_funestra_plays_on,
     ) -> None:
@@ -119,12 +144,14 @@ class HudOverlay:
         self._drive_gate = drive.gate
         self._visualizer = drive.visualizer
         self._published_drive: DriveHud | None = None
-        self._drive: DriveHud | None = None
         self._engine = drawn_on.engine
         self.overlay_id = drawn_on.overlay_id
         self._clock = clock
         self._over_the_video = drawn_on.over_the_video
         self._minus_on_the_hud = drawn_on.minus_on_the_hud
+        self._width = drawn_on.width
+        self._host_controls = HostControlsPress(host_controls)
+        self._host_drawing: HostControlsHud | None = None
         self._renderer: HudRenderer | None = None
         self._clicks: HudClicks | None = None
         self._model: HudModel | None = None
@@ -175,6 +202,10 @@ class HudOverlay:
         self._viewport = viewport
         self._flash = flash
         self._item_row, self._heatmap = row, heatmap
+        host_drawing = self._host_controls.drawing()
+        if host_drawing != self._host_drawing:
+            self._host_drawing = host_drawing
+            redraw = True
         model, changed = self._source.next(self._model)
         if changed:
             if model is not None:
@@ -186,11 +217,8 @@ class HudOverlay:
             self._model = model
             redraw = True
         drive = self._motion()
-        if drive is not None and self._visualizer is not None:
+        if drive is not None:
             self._visualizer.publish(drive, self._clock())
-        elif drive != self._drive:
-            self._drive = drive
-            redraw = True
         if redraw or self._draw_owed:
             self._draw()
         if self._clicks is not None:
@@ -202,6 +230,10 @@ class HudOverlay:
         if self._clicks is None or not self.covers(x, y):
             return False
         self._pointer_at = self._local(x, y)
+        if self._host_controls.press(*self._pointer_at, layout=self.targets.host_controls):
+            self._host_drawing = self._host_controls.drawing()
+            self._draw()
+            return True
         if self._row.press(*self._pointer_at, layout=self.targets.row,
                            duration_ms=self._track_duration()):
             return True
@@ -240,11 +272,13 @@ class HudOverlay:
 
     @property
     def holding(self) -> bool:
-        return self._row.holding or self._foot_held or (
+        return self._host_controls.holding or self._row.holding or self._foot_held or (
             self._clicks is not None and self._clicks.holding)
 
     def drag_to(self, x: int, y: int) -> str:
         self._pointer_at = self._local(x, y)
+        if self._host_controls.drag_to(*self._pointer_at, layout=self.targets.host_controls):
+            return ""
         if self._row.drag_to(*self._pointer_at, layout=self.targets.row,
                              duration_ms=self._track_duration()):
             return ""
@@ -257,6 +291,7 @@ class HudOverlay:
         return command
 
     def release(self) -> None:
+        self._host_controls.release()
         self._row.release()
         if self._foot_held:
             self._foot_held = False
@@ -313,13 +348,16 @@ class HudOverlay:
         return replace(self.hud_place, corner=corner).origin(hud=size, viewport=self._viewport)
 
     def _motion(self) -> DriveHud | None:
-        if self._drive_file is None or self._model is None or not self._model.osr2:
+        if (self._visualizer is None or self._drive_file is None or self._model is None
+                or not self._model.osr2):
             return None
         self._published_drive = read_drive(self._drive_file) or self._published_drive
         if self._drive_gate is None:
             return self._published_drive
+        facts = self._model.facts
         return self._drive_gate.visualizer(
-            self._published_drive, device_drives_itself=self._model.osr2 == Osr2State.AUTO)
+            self._published_drive, device_drives_itself=self._model.osr2 == Osr2State.AUTO,
+            video_shows=facts is None or facts.main_mode is MainMode.KINO)
 
     def _draw(self) -> None:
         hover = self._hover.on(self._model)
@@ -329,18 +367,16 @@ class HudOverlay:
             self.close()
             return
         corner = self._model.hud_corner if self._over_the_video else HudCorner.UPPER_LEFT
-        drive = self._model.drive if self._drive_file is None else self._drive
-        model = replace(self._model, playback_speed=self._playback_speed, drive=drive,
-                        drive_composed=self._drive_gate is not None, hud_corner=corner)
-        if self._visualizer is not None:
-            model = replace(model, osr2="", drive=None)
+        model = replace(self._model, playback_speed=self._playback_speed, hud_corner=corner)
         self._draw_owed = True
         rendered = self._renderer.render(
             model, item_row=self._item_row, heatmap=self._heatmap,
             drawn_with=DrawnWith(
                 video=self._name, hover_loop=hover.loop, hover_tip=hover.tip, hover_pos=hover.at,
                 may_grow_on_hover=self._over_the_video,
-                minus_on_the_hud=self._minus_on_the_hud, flash=self._flash),
+                minus_on_the_hud=self._minus_on_the_hud, flash=self._flash,
+                width=self._width),
+            host_controls=self._host_drawing,
         )
         height, width = rendered.bgra.shape[:2]
         origin = self._place(corner, (width, height))

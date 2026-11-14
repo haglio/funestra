@@ -579,57 +579,6 @@ def _publish_motion(path: Path, offset: float) -> None:
         waveform=tuple(0.5 + 0.4 * math.sin(i / 6 + offset) for i in range(80))))
 
 
-def _overlay_with_the_motion(tmp_path: Path, hud: Path, engine) -> HudOverlay:
-    return _overlay(tmp_path, hud, engine, drive=DriveFeed(tmp_path / "drive.txt"))
-
-
-class TestAHudWithTheOsr2:
-    def test_draws_the_motion_genau_publishes_under_the_osr2_line(self, tmp_path: Path, hud: Path):
-        _give_it_the_osr2(hud)
-        _publish_motion(tmp_path / "drive.txt", 0.0)
-        overlay = _overlay_with_the_motion(tmp_path, hud, FakeEngine())
-
-        overlay.tick()
-
-        assert overlay.targets.tracks
-
-    def test_redraws_as_the_motion_moves(self, tmp_path: Path, hud: Path):
-        _give_it_the_osr2(hud)
-        _publish_motion(tmp_path / "drive.txt", 0.0)
-        engine = FakeEngine()
-        overlay = _overlay_with_the_motion(tmp_path, hud, engine)
-        overlay.tick()
-        first = engine.overlays[overlay.overlay_id][2].copy()
-
-        _publish_motion(tmp_path / "drive.txt", 3.0)
-        overlay.tick()
-
-        assert not (engine.overlays[overlay.overlay_id][2] == first).all()
-
-    def test_a_hud_without_it_draws_no_motion(self, tmp_path: Path, hud: Path):
-        _publish_motion(tmp_path / "drive.txt", 0.0)
-        overlay = _overlay_with_the_motion(tmp_path, hud, FakeEngine())
-
-        overlay.tick()
-
-        assert overlay.targets.tracks == []
-
-    def test_a_band_of_the_visualizer_keeps_a_drag_until_it_is_let_go(self, tmp_path: Path, hud: Path):
-        _give_it_the_osr2(hud)
-        _publish_motion(tmp_path / "drive.txt", 0.0)
-        overlay = _overlay_with_the_motion(tmp_path, hud, FakeEngine())
-        overlay.tick()
-        x, y, w, h = next(bar.rect for bar in overlay.targets.tracks if bar.axis == "speed")
-
-        overlay.press(MARGIN + x + 1, MARGIN + y + h // 2)
-        dragged = overlay.drag_to(MARGIN + x + w - 2, MARGIN + y + h // 2)
-        overlay.release()
-
-        assert _commands(tmp_path) == ["robot_hand_speed_1", "robot_hand_speed_99"]
-        assert dragged == "robot_hand_speed_99"
-        assert overlay.holding is False
-
-
 def _overlay_handing_on_the_motion(tmp_path: Path, hud: Path, engine) -> HudOverlay:
     return _overlay(tmp_path, hud, engine, drive=DriveFeed(
         tmp_path / "drive.txt", visualizer=DrivePublisher(tmp_path / "visualizer.txt")))
@@ -685,27 +634,39 @@ class _Gate:
         self.asked: list[tuple[DriveHud | None, bool]] = []
         self._composed = composed
 
-    def visualizer(self, published, *, device_drives_itself: bool = False) -> DriveHud:
+    def visualizer(self, published, *, device_drives_itself: bool = False,
+                   video_shows: bool = True) -> DriveHud:
         self.asked.append((published, device_drives_itself))
         return self._composed
 
 
 class TestAHudWithTheOsr2ItsOwnFunestraScripts:
-    def test_draws_genaus_motion_with_the_funestras_own_script_folded_in(self, tmp_path, hud):
+    def test_hands_on_genaus_motion_with_the_funestras_own_script_folded_in(self, tmp_path, hud):
         _give_it_the_osr2(hud)
         _publish_motion(tmp_path / "drive.txt", 0.0)
         composed = DriveHud(speed=50, amplitude=80, center=50, driven="funscript",
                             waveform=tuple(0.2 for _ in range(80)))
         gate = _Gate(composed)
-        overlay = _overlay(tmp_path, hud, FakeEngine(),
-                           drive=DriveFeed(tmp_path / "drive.txt", gate))
+        overlay = _overlay(tmp_path, hud, FakeEngine(), drive=DriveFeed(
+            tmp_path / "drive.txt", gate, DrivePublisher(tmp_path / "visualizer.txt")))
 
         overlay.tick()
 
         ((published, drives_itself),) = gate.asked
         assert published.amplitude == 80
         assert drives_itself is False
-        assert overlay.targets.tracks
+        assert read_drive(tmp_path / "visualizer.txt") == composed
+
+    def test_a_hud_with_no_visualizer_to_hand_it_to_reads_no_motion(self, tmp_path, hud):
+        _give_it_the_osr2(hud)
+        _publish_motion(tmp_path / "drive.txt", 0.0)
+        gate = _Gate(DriveHud())
+        overlay = _overlay(tmp_path, hud, FakeEngine(),
+                           drive=DriveFeed(tmp_path / "drive.txt", gate))
+
+        overlay.tick()
+
+        assert gate.asked == []
 
 
 def _publish(hud_path: Path, **hud_changes) -> None:
@@ -951,19 +912,6 @@ class TestAWindowsOwnHud:
         overlay.press(MARGIN + x + w // 2, MARGIN + y + h // 2)
 
         assert posted == ["portrait_next"]
-
-    def test_it_keeps_the_visualizer_the_program_drew_into_it(self):
-        engine = FakeEngine()
-        visualizer = DriveHud(speed=50, amplitude=80, center=50,
-                           waveform=tuple(0.5 for _ in range(80)))
-        model = HudModel(funestra="portrait", title="Unlocked", osr2="robot_hand",
-                         osr2_control="driving", drive=visualizer)
-        overlay = HudOverlay(source=WindowsOwnHud(lambda: model, lambda command: None),
-                             drawn_on=DrawnOn(engine), clock=lambda: 0.0)
-
-        overlay.tick()
-
-        assert overlay.targets.tracks
 
 
 class TestTheBlockAtTheFoot:
