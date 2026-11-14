@@ -11,7 +11,7 @@ from .host_controls import HostControls, HostControlsPress
 from .hud_corners import HudPlace
 from .hud_overlay import NO_DRIVE, DrawnOn, DriveFeed
 from .hud_placement import HudEdge
-from .hud_row import ItemRowDraw, RowHud, RowLayout, RowPress, track_on_screen
+from .hud_row import RowHud, RowLayout, RowPress, ScrubberRowDraw, track_on_screen
 from .main_hud import MainHudModel, ModeHud, kino_shows, read_main_hud
 from .main_hud_painter import MainHud, MainHudPainter, with_playback_speed
 from .name_copy import COPY_NAME, copy_while_the_funestra_plays_on
@@ -59,7 +59,7 @@ class MainHudOverlay:
         self._shown = False
         self._origin = (0, 0)
         self._hud_height = 0
-        self._item_row: RowHud | None = None
+        self._scrubber_row: RowHud | None = None
         self._row = host.row
         self._host_controls = HostControlsPress(host.host_controls)
 
@@ -80,8 +80,8 @@ class MainHudOverlay:
         return self._painter.hud_place
 
     def tick(self, *, playback_speed: float, viewport: tuple[int, int],
-             item_row: ItemRowDraw | None = None, flash: str = "") -> None:
-        row, heatmap = (None, None) if item_row is None else item_row
+             scrubber_row: ScrubberRowDraw | None = None, flash: str = "") -> None:
+        row, heatmap = (None, None) if scrubber_row is None else scrubber_row
         self._main_hud = read_main_hud(self._main_hud_file) or self._main_hud
         if self._drive_file is not None:
             self._drive = read_drive(self._drive_file) or self._drive
@@ -90,7 +90,7 @@ class MainHudOverlay:
             video_shows=kino_shows(self._main_hud.main_mode))
         if self._visualizer is not None and self._main_hud.has_osr2:
             self._visualizer.publish(drive, self._clock())
-        self._item_row = row
+        self._scrubber_row = row
         if self.minimized and not self._minus_on_the_hud:
             self.close()
             return
@@ -102,7 +102,7 @@ class MainHudOverlay:
             main_hud_model=main_hud_model,
             drive=drive,
             flash=flash,
-        ), item_row=row, heatmap=heatmap, host_controls=self._host_controls.drawing())
+        ), scrubber_row=row, heatmap=heatmap, host_controls=self._host_controls.drawing())
         self._origin = self._painter.place(viewport=viewport)
         self._hud_height = bgra.shape[0]
         self._engine.overlay(self.overlay_id, *self._origin, bgra)
@@ -161,7 +161,7 @@ class MainHudOverlay:
         return x - self._origin[0], y - self._origin[1]
 
     def _track_duration(self) -> float:
-        return 0.0 if self._item_row is None else self._item_row.duration_ms
+        return 0.0 if self._scrubber_row is None else self._scrubber_row.duration_ms
 
     def motion(self, x: int, y: int) -> None:
         self._painter.motion(x, y)

@@ -32,7 +32,7 @@ from .hud_overlay import (
     WindowsOwnHud,
 )
 from .hud_placement import HudEdge
-from .hud_row import ItemRowDraw, RowHud, RowPress
+from .hud_row import RowHud, RowPress, ScrubberRowDraw
 from .items_row import ItemsRow, frame_row
 from .loop_frames import IN_FRAME_OVERLAY_ID, OUT_FRAME_OVERLAY_ID, LoopFrames
 from .main_hud import ModeHud
@@ -370,7 +370,7 @@ class Funestra:
         frame = self._front.own_frame()
         if frame is None:
             self._users_frames.hide()
-            self._paint_hud(viewport, self.item_row(), self.strip.colors, self.playback.speed)
+            self._paint_hud(viewport, self.scrubber_row(), self.strip.colors, self.playback.speed)
             if self._hud_surface is None:
                 self._loop_frames.paint(
                     self.playback, self.strip,
@@ -382,7 +382,7 @@ class Funestra:
         if self._corners is not None:
             self._corners.paint(viewport=viewport)
 
-    def item_row(self) -> RowHud:
+    def scrubber_row(self) -> RowHud:
         return self._row.row(self._volume.hud, self._track_width())
 
     def _track_width(self) -> int:
@@ -393,11 +393,11 @@ class Funestra:
                    playback_speed: float) -> None:
         if self._hud is None:
             return
-        item_row = None if row is None else ItemRowDraw(row, colors)
+        scrubber_row = None if row is None else ScrubberRowDraw(row, colors)
         video = self._front.top_block().video or self.playback.name_on_screen
         self._flash = self._name_flash.showing(video)
         self._hud.tick(video=video, playback_speed=playback_speed, viewport=viewport,
-                       item_row=item_row, flash=self._flash, playing=PlayingFacts(
+                       scrubber_row=scrubber_row, flash=self._flash, playing=PlayingFacts(
                            has_funscript=self.playback.has_funscript,
                            longer_than_a_step=longer_than_a_step(self.playback.duration_ms),
                            image=self.playback.showing_image))

@@ -1393,7 +1393,7 @@ class TestTheRowTheHudCarriesForItsClip:
     @staticmethod
     def _rendered(row=None, **extra):
         return HudRenderer("portrait").render(
-            _model(title="Unlocked", **extra), item_row=row)
+            _model(title="Unlocked", **extra), scrubber_row=row)
 
     def test_a_funestra_that_hands_over_no_row_grows_none(self):
         row = RowHud(position_ms=1_000, duration_ms=60_000, volume=VolumeHud(volume=40))
@@ -1596,7 +1596,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
         rendered = HudRenderer("portrait").render(
             _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
                    playback_speed=1.0, foot=block),
-            item_row=RowHud(duration_ms=60_000), drawn_with=DrawnWith(video="example clip one"))
+            scrubber_row=RowHud(duration_ms=60_000), drawn_with=DrawnWith(video="example clip one"))
         painted = np.argwhere((_rgb(rendered.bgra) == np.array(_Block.MARK)).all(axis=-1))
         _x, row_y, _w, row_h = rendered.targets.row.rect
         sections = [self._status(rendered), self._controls(rendered), (row_y, row_y + row_h),
@@ -1615,18 +1615,18 @@ def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_it
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb),
                    seeds=(HudCell(path="s1.mp4", thumb=thumb),))
     renderer = HudRenderer("portrait")
-    renderer.render(model, item_row=RowHud(position_ms=1_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
+    renderer.render(model, scrubber_row=RowHud(position_ms=1_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
     pressed = []
     draw = satellite_hud_paint.draw_button
     monkeypatch.setattr(satellite_hud_paint, "draw_button",
                         lambda *args, **kwargs: pressed.append(1) or draw(*args, **kwargs))
 
     moved = renderer.render(model,
-                            item_row=RowHud(position_ms=4_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
+                            scrubber_row=RowHud(position_ms=4_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
 
     drawn_while_moving = len(pressed)
     whole = HudRenderer("portrait").render(model,
-                                           item_row=RowHud(position_ms=4_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
+                                           scrubber_row=RowHud(position_ms=4_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
     assert np.array_equal(moved.bgra, whole.bgra)
     assert (moved.targets, drawn_while_moving) == (whole.targets, 0)
 
@@ -1711,7 +1711,7 @@ class TestTheHostsControls:
 
     def test_they_land_under_the_row_and_the_buttons(self):
         rendered = HudRenderer("main").render(
-            _model(funestra="main"), item_row=RowHud(position_ms=30_000, duration_ms=60_000),
+            _model(funestra="main"), scrubber_row=RowHud(position_ms=30_000, duration_ms=60_000),
             host_controls=a_hud())
         _x, y, _field_width, field_height = rendered.targets.host_controls.field
 

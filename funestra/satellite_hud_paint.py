@@ -203,7 +203,7 @@ class HudRenderer:
         self._pointer: tuple[int, int] | None = None
         self._icon = load_font(SIZE_BODY, SYMBOL_FONT)
         self._thumbs_by_path: dict[str, Image.Image] = {}
-        self._item_row = RowSection()
+        self._scrubber_row = RowSection()
         self._host_controls = HostControlsSection()
         self._widest_titles: dict[HudKind, int] = {}
         self._drawn: _DrawnButTheRow | None = None
@@ -244,7 +244,7 @@ class HudRenderer:
         self,
         model: HudModel,
         *,
-        item_row: RowHud | None = None,
+        scrubber_row: RowHud | None = None,
         heatmap: np.ndarray | None = None,
         drawn_with: DrawnWith = PLAIN,
         host_controls: HostControlsHud | None = None,
@@ -258,13 +258,13 @@ class HudRenderer:
                                                 buttons=buttons))
         model = replace(model, osr2="", osr2_rows=(), osr2_controls=(), max_intensity=None,
                         drive=None)
-        drawn_for = self._all_but_the_row(model, item_row, drawn_with, host_controls)
+        drawn_for = self._all_but_the_row(model, scrubber_row, drawn_with, host_controls)
         if drawn_for is not None and self._drawn is not None and self._drawn.drawn_for == drawn_for:
-            return self._with_the_row(self._drawn, item_row, heatmap)
-        return self._drawn_whole(model, drawn_for, item_row, heatmap,
+            return self._with_the_row(self._drawn, scrubber_row, heatmap)
+        return self._drawn_whole(model, drawn_for, scrubber_row, heatmap,
                                  _Drawing(drawn_with, host_controls))
 
-    def _measure(self, model: HudModel, item_row: RowHud | None,
+    def _measure(self, model: HudModel, scrubber_row: RowHud | None,
                  drawing: _Drawing) -> _Sizes:
         host_controls = drawing.host_controls
         rows = rows_with_the_speed(model)
@@ -283,9 +283,9 @@ class HudRenderer:
                                 self._room_for_the_widest_title(model.kind, drawing.drawn_with),
                                 2 * PAD + self._host_controls.least_width(host_controls)
                                 if host_controls is not None else 0,
-                                2 * PAD + self._item_row.least_width(item_row)
-                                if item_row is not None else 0))
-        row_h = ROW_H if item_row is not None else 0
+                                2 * PAD + self._scrubber_row.least_width(scrubber_row)
+                                if scrubber_row is not None else 0))
+        row_h = ROW_H if scrubber_row is not None else 0
         layout = hud_layout(
             heights=SectionHeights(
                 self._title_height(), row_h,
@@ -293,13 +293,13 @@ class HudRenderer:
             bars=len(rows), nav_map=has_a_nav_map(model.funestra))
         return _Sizes(rows, widths, foot_h, width, row_h, layout)
 
-    def _drawn_whole(self, model: HudModel, drawn_for: tuple | None, item_row: RowHud | None,
+    def _drawn_whole(self, model: HudModel, drawn_for: tuple | None, scrubber_row: RowHud | None,
                      heatmap: np.ndarray | None, drawing: _Drawing) -> RenderedHud:
         drawn_with = drawing.drawn_with
         counts = count_lines(model)
         model, seed_win, action_win = narrowed_to_window(model)
         thumbs = NavMapThumbs(*self._nav_map_thumbnails(model))
-        sizes = self._measure(model, item_row, drawing)
+        sizes = self._measure(model, scrubber_row, drawing)
         layout, width, foot_h = sizes.layout, sizes.width, sizes.foot_h
         hud = Hud(width, layout.height)
         for divider in layout.dividers:
@@ -325,8 +325,8 @@ class HudRenderer:
         buttons.extend(self._draw_button_rows(hud, model, sizes.rows, sizes.widths, layout.bars))
 
         row = None
-        if item_row is not None:
-            row = row_layout(item_row, rect=(x, layout.row, width - 2 * PAD, sizes.row_h))
+        if scrubber_row is not None:
+            row = row_layout(scrubber_row, rect=(x, layout.row, width - 2 * PAD, sizes.row_h))
         host_controls = None
         if drawing.host_controls is not None:
             host_controls = self._host_controls.draw(
@@ -348,9 +348,9 @@ class HudRenderer:
                           favorite=favorite, host_controls=host_controls)
         if drawn_for is not None:
             self._drawn = _DrawnButTheRow(drawn_for, image, to_bgra(image), row.rect, targets)
-            return self._with_the_row(self._drawn, item_row, heatmap)
+            return self._with_the_row(self._drawn, scrubber_row, heatmap)
         if row is not None:
-            self._item_row.draw(image, row, item_row, heatmap=heatmap)
+            self._scrubber_row.draw(image, row, scrubber_row, heatmap=heatmap)
         if drawn_with.hover_tip:
             draw_tooltip(draw, self._tiny, drawn_with.hover_tip, drawn_with.hover_pos,
                          image.size)
@@ -384,22 +384,22 @@ class HudRenderer:
             y += CONTROL_ROW_H
         return buttons
 
-    def _all_but_the_row(self, model: HudModel, item_row: RowHud | None,
+    def _all_but_the_row(self, model: HudModel, scrubber_row: RowHud | None,
                          drawn_with: DrawnWith,
                          host_controls: HostControlsHud | None) -> tuple | None:
-        if item_row is None or drawn_with.hover_tip:
+        if scrubber_row is None or drawn_with.hover_tip:
             return None
-        return model, self._item_row.least_width(item_row), drawn_with, host_controls
+        return model, self._scrubber_row.least_width(scrubber_row), drawn_with, host_controls
 
-    def _with_the_row(self, drawn: _DrawnButTheRow, item_row: RowHud, heatmap) -> RenderedHud:
+    def _with_the_row(self, drawn: _DrawnButTheRow, scrubber_row: RowHud, heatmap) -> RenderedHud:
         x, y, width, height = drawn.row_rect
         region = drawn.image.crop((x, y, x + width, y + height))
-        self._item_row.draw(region, row_layout(item_row, rect=(0, 0, width, height)), item_row,
+        self._scrubber_row.draw(region, row_layout(scrubber_row, rect=(0, 0, width, height)), scrubber_row,
                             heatmap=heatmap)
         bgra = drawn.bgra.copy()
         bgra[y:y + height, x:x + width] = to_bgra(region)
         return RenderedHud(bgra, replace(drawn.targets,
-                                         row=row_layout(item_row, rect=drawn.row_rect)))
+                                         row=row_layout(scrubber_row, rect=drawn.row_rect)))
 
     def _draw_nav_map(self, hud: Hud, model: HudModel, top: int, nav: _NavMap,
                       hover_loop: str) -> HudTargets:
