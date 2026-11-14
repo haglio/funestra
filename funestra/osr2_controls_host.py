@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from .main_hud_painter import MainHud, MainHudPainter, hud_xy
+from .main_hud_painter import MainHud, hud_xy
+from .osr2_part_painter import Osr2PartPainter
 
 
 class Osr2ControlsHost:
     def __init__(self, *, post: Callable[[str], None], painter=None) -> None:
         self._post = post
-        self._painter = painter if painter is not None else MainHudPainter(device_only=True)
+        self._painter = painter if painter is not None else Osr2PartPainter()
 
     def drawing(self, hud: MainHud) -> tuple[bytes, tuple[int, int]]:
         return self._painter.rgba(hud)

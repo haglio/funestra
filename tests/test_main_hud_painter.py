@@ -8,7 +8,15 @@ from host_controls_fakes import a_hud
 from main_hud_rows import RowLights, main_hud_rows, motion_rows
 from shared_ui import colors
 from shared_ui.app_icon import LETTERS
-from shared_ui.palette import BG_PRIMARY, BLUE, BORDER_PANEL, GREEN, MAGENTA, TEXT_MUTED, WHITE
+from shared_ui.palette import (
+    BG_PRIMARY,
+    BLUE,
+    BORDER_PANEL,
+    GREEN,
+    MAGENTA,
+    TEXT_MUTED,
+    WHITE,
+)
 from shared_ui.spacing import BUTTON_GAP, GAP_SMALL
 from shared_ui.type_scale import SIZE_TINY
 
@@ -47,13 +55,13 @@ from funestra.main_hud_painter import (
     MainHud,
     MainHudPainter,
     ModeHud,
-    compilation_label,
     hud_xy,
     osr2_line_on,
     with_playback_speed,
 )
 from funestra.main_hud_painter import _PAD as PAD
 from funestra.modes import LengthMode, MainMode, Osr2State
+from funestra.osr2_part_painter import Osr2PartPainter
 from funestra.osr2_visualizer import (
     CONTROL_TIPS,
     DRIVEN_BY_NEUTRAL,
@@ -165,16 +173,6 @@ class TestLine:
         assert _line(scripted_filter=True) == "Locked · Shuffle · F-mode"
         assert _line(length_mode=CLIPS, scripted_filter=True) == (
             "Locked · Shuffle · F-mode · Clips")
-
-
-class TestCompilationLabel:
-    def test_keeps_only_the_volume(self):
-        assert compilation_label(
-            "various - Ultimate Example Studio Alpha Collection - Volume 6 (v1)"
-        ) == "Volume 6"
-
-    def test_an_undashed_title_survives_whole(self):
-        assert compilation_label("Scene Five 3") == "Scene Five 3"
 
 
 class TestPainter:
@@ -1546,50 +1544,17 @@ class TestEverySectionIsSetOffFromTheNextByALine:
         assert (_rgb(bgra)[lines[0] + 1:controls[0], 1:-1] == BG_PRIMARY).all()
 
 
-class TestADeviceOnlyMainHud:
-    @staticmethod
-    def _painted() -> tuple[MainHudPainter, np.ndarray]:
-        painter = MainHudPainter(device_only=True)
-        bgra = painter.bgra(MainHud(
+def test_a_device_only_main_hud_paints_what_the_osr2_part_paints():
+    def painted(painter) -> tuple[bytes, tuple[int, int]]:
+        return painter.rgba(MainHud(
             modes=ModeHud(video="scene one"),
             main_hud_model=MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
                                  rows=main_hud_rows("genau"), osr2_rows=motion_rows(),
                                  osr2_controls=osr2_controls(broker_running=True)),
-            drive=_drive()), item_row=RowHud(duration_ms=60_000))
-        return painter, bgra
-
-    def test_it_has_no_minus_since_nothing_under_it_could_be_uncovered(self):
-        painter, _bgra = self._painted()
-
-        assert minimize_command("main") not in [button.command for _r, button in painter.buttons]
-
-    def test_its_first_line_is_the_row_that_aims_the_device(self):
-        painter, bgra = self._painted()
-
-        assert _button_rect(painter, "robot_hand_toggle_learned")[1] == PAD
-        assert _dividers(bgra) == []
-
-    def test_nothing_is_drawn_beside_the_row_that_aims_the_device(self):
-        painter, bgra = self._painted()
-        x, y, w, h = _button_rect(painter, "robot_hand_toggle_learned")
-
-        assert (_rgb(bgra)[y:y + h, x + w:-1] == BG_PRIMARY).all()
-
-    def test_it_keeps_no_room_for_a_minus_in_a_lower_corner(self):
-        painter = MainHudPainter(device_only=True)
-        painter.bgra(MainHud(
-            modes=ModeHud(video="scene one"),
-            main_hud_model=MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
-                                 hud_corner=HudCorner.LOWER_LEFT, osr2_rows=motion_rows(),
-                                 osr2_controls=osr2_controls(broker_running=True)),
             drive=_drive()))
 
-        assert _button_rect(painter, "robot_hand_toggle_learned")[0] == PAD
+    def clock() -> float:
+        return 0.0
 
-    def test_a_long_name_for_the_video_does_not_widen_it(self):
-        def width(video: str) -> int:
-            return MainHudPainter(device_only=True).rgba(MainHud(
-                modes=ModeHud(video=video),
-                main_hud_model=MainHudModel(osr2_rows=motion_rows()), drive=_drive()))[1][0]
-
-        assert width("Jane Doe - scene one - " + "a long descriptor " * 6) == width("")
+    assert (painted(MainHudPainter(device_only=True, clock=clock))
+            == painted(Osr2PartPainter(clock=clock)))

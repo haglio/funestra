@@ -26,7 +26,13 @@ from funestra.hud_osr2 import (
     line_shown_for,
     state_for,
 )
-from funestra.main_hud import GAP, OSR2_DRIVING, OSR2_PARKED, OSR2_RETRACTED, MainHudModel
+from funestra.main_hud import (
+    GAP,
+    OSR2_DRIVING,
+    OSR2_PARKED,
+    OSR2_RETRACTED,
+    MainHudModel,
+)
 from funestra.modes import Osr2State
 from funestra.osr2_visualizer import (
     DRIVEN_BY_AUTO,
@@ -52,11 +58,11 @@ def _has(hud: Hud, color) -> bool:
     return bool((pixels == np.array(color)).all(axis=-1).any())
 
 
-def test_only_the_two_hud_painters_in_this_package_draw_the_device_line_a_host_saying_what_its_line_shows_through_its_model():
+def test_only_the_osr2_part_draws_the_device_line_a_host_saying_what_its_line_shows_through_its_model():
     users = {module.name for module in Path(hud_osr2.__file__).parent.glob("*.py")
              if module.name != "hud_osr2.py" and "Osr2Section" in module.read_text(encoding="utf-8")}
 
-    assert users == {"main_hud_painter.py", "satellite_hud_paint.py"}
+    assert users == {"main_hud_painter.py"}
 
 
 def test_each_drivers_word_is_written_in_the_ink_its_stretch_of_the_trace_is_drawn_in():
