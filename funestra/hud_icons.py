@@ -27,6 +27,7 @@ BROKER_ICON = app_icon("B")
 FMODE_ICON = app_icon("F")
 
 MINIMIZE_ICON = shared_icon("minus")
+MINIMIZE_FUNESTRA_ICON = shared_icon("screen_arrow_down")
 
 PREVIOUS_ICON = shared_icon("chevron_left")
 BACK_ICON = shared_icon("chevrons_left")
