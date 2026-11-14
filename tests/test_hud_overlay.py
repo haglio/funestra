@@ -11,11 +11,13 @@ from shared_ui.spacing import BUTTON_SIZE_HUD
 
 from funestra.hud_button import Button
 from funestra.hud_corners import HudPlace
+from funestra.hud_kinds import HudFacts, HudKind
 from funestra.hud_minimize import collapsed_hud
 from funestra.hud_overlay import (
     DrawnOn,
     DriveFeed,
     HudOverlay,
+    PlayingFacts,
     PublishedHud,
     WindowsOwnHud,
 )
@@ -975,3 +977,25 @@ class TestTheBlockAtTheFoot:
         overlay, _posted = _a_windows_own_hud(FakeEngine())
 
         assert overlay.targets.foot is None
+
+
+class TestWhatTheButtonsGrayOnIsTheFunestrasOwn:
+    @staticmethod
+    def _shown(playing: PlayingFacts | None) -> dict:
+        model = HudModel(funestra="portrait", kind=HudKind.SATELLITE, facts=HudFacts(
+            funestra="portrait", has_osr2=True, has_funscript=False, longer_than_a_step=False))
+        overlay = HudOverlay(source=WindowsOwnHud(lambda: model, lambda command: None),
+                             drawn_on=DrawnOn(FakeEngine()), clock=lambda: 0.0)
+        overlay.tick(playing=playing)
+        return {button.command: button for _rect, button in overlay.targets.buttons}
+
+    def test_a_video_with_a_funscript_lights_the_jump_whatever_the_host_guessed(self):
+        shown = self._shown(PlayingFacts(has_funscript=True, longer_than_a_step=True, image=False))
+
+        assert not shown["portrait_funscript_jump"].dim
+        assert not shown["portrait_nudge_next"].dim
+
+    def test_with_nothing_said_of_the_playing_the_hosts_facts_stand(self):
+        shown = self._shown(None)
+
+        assert shown["portrait_funscript_jump"].dim
