@@ -21,13 +21,12 @@ from .funestra_status import status_fields, volume_fields
 from .funscript_jumps import FunscriptJumps
 from .hud_corners import HudCorners
 from .hud_minimize import NameFlash
-from .hud_overlay import DrawnOn, DriveFeed, HudOverlay, PublishedHud, WindowsOwnHud
+from .hud_overlay import ConsoleHud, DrawnOn, DriveFeed, HudOverlay, PublishedHud, WindowsOwnHud
 from .hud_placement import HudEdge
 from .hud_row import ItemRowDraw, RowHud, RowPress
 from .items_row import ItemsRow, frame_row
 from .loop_frames import IN_FRAME_OVERLAY_ID, OUT_FRAME_OVERLAY_ID, LoopFrames
 from .main_hud import ModeHud
-from .main_hud_overlay import MainHudFiles, MainHudHost, MainHudOverlay
 from .messages import MessageWriter
 from .mpv_engine import MpvEngine
 from .osr2_visualizer import DrivePublisher
@@ -155,7 +154,7 @@ class Funestra:
         return self._runs_here
 
     @property
-    def hud(self) -> HudOverlay | MainHudOverlay | None:
+    def hud(self) -> HudOverlay | None:
         return self._hud
 
     @property
@@ -174,7 +173,7 @@ class Funestra:
         return self._front.top_block()
 
     def _hud_for(self, channels: Channels, drawn_on,
-                 hud: Callable[[], HudModel | None] | None) -> HudOverlay | MainHudOverlay | None:
+                 hud: Callable[[], HudModel | None] | None) -> HudOverlay | None:
         if channels.dashboard_cmd is None:
             if hud is None:
                 return None
@@ -184,13 +183,13 @@ class Funestra:
                 row=self._row_press(),
             )
         if channels.console is not None:
-            return MainHudOverlay(
-                files=MainHudFiles(channels.console, channels.dashboard_cmd),
+            return HudOverlay(
+                source=ConsoleHud(channels.console, channels.dashboard_cmd, self._top_block),
                 drawn_on=DrawnOn(
                     drawn_on, minus_on_the_hud=self._hud_surface is None,
                     width=None if self._hud_surface is None else self._hud_surface.width),
-                host=MainHudHost(self._top_block, self._row_press(), self._setup.host_controls),
                 drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
+                row=self._row_press(), host_controls=self._setup.host_controls,
                 clock=self._setup.clock,
             )
         if channels.hud is not None:
@@ -386,13 +385,8 @@ class Funestra:
         if self._hud is None:
             return
         item_row = None if row is None else ItemRowDraw(row, colors)
-        if isinstance(self._hud, MainHudOverlay):
-            self._flash = self._name_flash.showing(self._top_block().video)
-            self._hud.tick(playback_speed=playback_speed, viewport=viewport,
-                           item_row=item_row, flash=self._flash)
-        else:
-            video = self._front.top_block().video or self.playback.name_on_screen
-            self._flash = self._name_flash.showing(video)
-            self._hud.tick(video=video, playback_speed=playback_speed, viewport=viewport,
-                           item_row=item_row, flash=self._flash)
+        video = self._front.top_block().video or self.playback.name_on_screen
+        self._flash = self._name_flash.showing(video)
+        self._hud.tick(video=video, playback_speed=playback_speed, viewport=viewport,
+                       item_row=item_row, flash=self._flash)
 

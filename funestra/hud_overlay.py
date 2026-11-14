@@ -265,6 +265,10 @@ class HudOverlay:
         return self.targets.row
 
     @property
+    def scrubber_row(self) -> RowHud | None:
+        return self._item_row
+
+    @property
     def row_track(self) -> tuple[int, int, int] | None:
         return track_on_screen(
             self.targets.row, origin=self._origin,

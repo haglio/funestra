@@ -161,14 +161,15 @@ class TestTheClipsRowAtItsFootSinceAlongAWrappedVideosEdgeItSmearsOutOfTheContro
         assert (bare == drawn).all()
 
     def test_the_host_is_told_where_the_row_landed(self, tmp_path, hud):
-        overlay = _overlay(tmp_path, hud, FakeEngine())
+        engine = FakeEngine()
+        overlay = _overlay(tmp_path, hud, engine)
 
         overlay.tick(item_row=ItemRowDraw(self._ROW))
 
         x, _y, _width, _height = overlay.row.rect
         x0, x1 = overlay.row.track
         left, top, _w, _h = (MARGIN, MARGIN, 0, 0)
-        hud_h = overlay._engine.overlays[overlay.overlay_id][2].shape[0]
+        hud_h = engine.overlays[overlay.overlay_id][2].shape[0]
         assert overlay.row_track == (left + x + x0, left + x + x1,
                                      top + hud_h + UNDER_THE_HUD_GAP)
 

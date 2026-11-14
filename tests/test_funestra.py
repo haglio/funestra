@@ -14,19 +14,23 @@ import pytest
 from app_support.osr2_slot import Osr2Slot
 from app_support.threading_utils import start_daemon_thread
 from host_controls_fakes import AHost, middle_of
-from main_hud_rows import main_hud_rows
 
-from funestra.flick_overlay import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID, FlickFrame
+from funestra.flick_overlay import (
+    BACKDROP_OVERLAY_ID,
+    FIRST_TILE_OVERLAY_ID,
+    FlickFrame,
+)
 from funestra.funestra import Channels, Funestra, User, osr2_line
 from funestra.funestra_setup import FunestraSetup
 from funestra.hud_button import Button
 from funestra.hud_corners import CORNER_PLUS_OVERLAY_ID
+from funestra.hud_kinds import HudFacts, HudKind
 from funestra.hud_minimize import BUTTON, FLASH_S, collapsed_hud
 from funestra.hud_overlay import HUD_OVERLAY_ID
 from funestra.hud_placement import HudEdge
 from funestra.hud_row import PARTS_Y
 from funestra.loop_dial import DIAL_SIZE
-from funestra.main_hud import MainHudModel, ModeHud, main_hud_text
+from funestra.main_hud import ModeHud
 from funestra.modes import LengthMode, MainMode, Osr2State
 from funestra.osr2_visualizer import DriveHud, publish_drive, read_drive
 from funestra.outside_buttons import OutsideButtons
@@ -35,11 +39,17 @@ from funestra.playlist import PlaylistItem, read_playlist
 from funestra.pointer import OMNIPAUSE_TOGGLE
 from funestra.radio import radio_file_for, write_radio
 from funestra.runs_here import _Nobody
-from funestra.satellite_hud import MARGIN, HudModel
+from funestra.satellite_hud import MARGIN, HudModel, hud_text
 from funestra.scrubber_bar import SCRUBBER_HEIGHT
 from funestra.session_quit import SESSION_QUIT
 from funestra.testing import FakeEngine
-from funestra.volume import PAD, VOLUME_CONTROL_H, VOLUME_CONTROL_W, VolumeHud, volume_control_xy
+from funestra.volume import (
+    PAD,
+    VOLUME_CONTROL_H,
+    VOLUME_CONTROL_W,
+    VolumeHud,
+    volume_control_xy,
+)
 
 WINDOW = (640, 480)
 
@@ -809,9 +819,11 @@ def _main_hud_channels(tmp_path: Path, lines: list[str], *, commands: str = "") 
     return replace(channels, console=tmp_path / "main_hud.json", drive=tmp_path / "drive.txt")
 
 
-def _publish_main_hud(tmp_path: Path, **over) -> None:
-    model = MainHudModel(main_mode=MainMode.KINO, rows=main_hud_rows(), osr2=Osr2State.ROBOT_HAND, **over)
-    (tmp_path / "main_hud.json").write_text(main_hud_text(model), encoding="utf-8")
+def _publish_main_hud(tmp_path: Path, *, has_osr2: bool = True, **over) -> None:
+    model = HudModel(funestra="main", kind=HudKind.MAIN, osr2=Osr2State.ROBOT_HAND,
+                     facts=HudFacts(main_mode=MainMode.KINO, locked=True, has_osr2=has_osr2),
+                     **over)
+    (tmp_path / "main_hud.json").write_text(hud_text(model), encoding="utf-8")
 
 
 class Kino:
@@ -927,7 +939,7 @@ class TestTheMainFunestra:
         funestra, engine, _kino = _main(tmp_path, host_controls=host)
         funestra.tick(viewport=WINDOW)
         left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
-        x, y = middle_of(funestra.hud._painter.host_controls_layout.bar)
+        x, y = middle_of(funestra.hud.targets.host_controls.bar)
 
         funestra.press(left + x, top + y, viewport=WINDOW)
 
@@ -947,7 +959,8 @@ class TestTheMainFunestra:
         funestra, engine, _kino = _main(tmp_path)
         funestra.tick(viewport=WINDOW)
         left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
-        (x, y, w, h), button = funestra.hud._painter.buttons[0]
+        (x, y, w, h), button = next(placed for placed in funestra.hud.targets.buttons
+                                     if placed[1].command == "main_kino_activate")
 
         funestra.press(left + x + w // 2, top + y + h // 2, viewport=WINDOW)
 
@@ -983,13 +996,12 @@ class TestTheMainFunestra:
 
         assert engine.muted is False
 
-    def test_a_held_band_is_let_go_when_the_button_comes_up(self, tmp_path):
-        funestra, engine, _kino = _main(tmp_path)
-        _publish_main_hud(tmp_path, max_intensity=50)
+    def test_a_held_bar_is_let_go_when_the_button_comes_up(self, tmp_path):
+        funestra, engine, _kino = _main(tmp_path, host_controls=AHost())
         funestra.tick(viewport=WINDOW)
         left, top, _bgra = engine.overlays[HUD_OVERLAY_ID]
-        x, y, _w, h = funestra.hud._painter.tracks[0].rect
-        funestra.press(left + x, top + y + h // 2, viewport=WINDOW)
+        x, y, _w, h = funestra.hud.targets.host_controls.bar
+        funestra.press(left + x + 2, top + y + h // 2, viewport=WINDOW)
         assert funestra.hud.holding is True
 
         funestra.release()
@@ -1210,7 +1222,7 @@ class TestAUsersOwnFrame:
     def test_the_row_runs_its_frames_time_on_screen_and_turns_its_dial(self, tmp_path):
         funestra, _engine, genau = self._genau_in_front(tmp_path)
 
-        row = funestra.hud._item_row
+        row = funestra.hud.scrubber_row
 
         assert (row.position_ms, row.duration_ms) == (genau.elapsed_ms, genau.interval_ms)
         assert row.playhead.text == f"frame {FIGURE_SPACE}6 / 20 · 0:04 / 0:10"
@@ -1254,7 +1266,7 @@ class TestAUsersOwnFrame:
         funestra.tick(viewport=WINDOW)
 
         assert not {BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID} & set(engine.overlays)
-        assert funestra.hud._item_row.duration_ms == engine.duration_ms
+        assert funestra.hud.scrubber_row.duration_ms == engine.duration_ms
 
 
 class _ARadioOfItsHost:
