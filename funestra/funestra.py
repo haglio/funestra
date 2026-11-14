@@ -19,9 +19,18 @@ from .funestra_controls import VERBS, FunestraControls
 from .funestra_setup import FunestraSetup
 from .funestra_status import status_fields, volume_fields
 from .funscript_jumps import FunscriptJumps
+from .hud_controls import longer_than_a_step
 from .hud_corners import HudCorners
 from .hud_minimize import NameFlash
-from .hud_overlay import ConsoleHud, DrawnOn, DriveFeed, HudOverlay, PublishedHud, WindowsOwnHud
+from .hud_overlay import (
+    ConsoleHud,
+    DrawnOn,
+    DriveFeed,
+    HudOverlay,
+    PlayingFacts,
+    PublishedHud,
+    WindowsOwnHud,
+)
 from .hud_placement import HudEdge
 from .hud_row import ItemRowDraw, RowHud, RowPress
 from .items_row import ItemsRow, frame_row
@@ -388,5 +397,8 @@ class Funestra:
         video = self._front.top_block().video or self.playback.name_on_screen
         self._flash = self._name_flash.showing(video)
         self._hud.tick(video=video, playback_speed=playback_speed, viewport=viewport,
-                       item_row=item_row, flash=self._flash)
+                       item_row=item_row, flash=self._flash, playing=PlayingFacts(
+                           has_funscript=self.playback.has_funscript,
+                           longer_than_a_step=longer_than_a_step(self.playback.duration_ms),
+                           image=self.playback.showing_image))
 

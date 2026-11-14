@@ -59,6 +59,12 @@ class DriveFeed:
 NO_DRIVE = DriveFeed()
 
 
+class PlayingFacts(NamedTuple):
+    has_funscript: bool
+    longer_than_a_step: bool
+    image: bool
+
+
 class _Hover(NamedTuple):
     loop: str
     tip: str
@@ -156,6 +162,7 @@ class HudOverlay:
         self._clicks: HudClicks | None = None
         self._model: HudModel | None = None
         self._video = ""
+        self._playing: PlayingFacts | None = None
         self._flash = ""
         self._playback_speed: float | None = None
         self._item_row: RowHud | None = None
@@ -192,12 +199,14 @@ class HudOverlay:
 
     def tick(self, *, video: str = "", playback_speed: float | None = None,
              viewport: tuple[int, int] | None = None,
-             item_row: ItemRowDraw | None = None, flash: str = "") -> None:
+             item_row: ItemRowDraw | None = None, flash: str = "",
+             playing: PlayingFacts | None = None) -> None:
         row, heatmap = (None, None) if item_row is None else item_row
-        redraw = (video != self._video or playback_speed != self._playback_speed
+        redraw = (playing != self._playing or video != self._video or playback_speed != self._playback_speed
                   or viewport != self._viewport or flash != self._flash
                   or row != self._item_row or heatmap is not self._heatmap)
         self._video = video
+        self._playing = playing
         self._playback_speed = playback_speed
         self._viewport = viewport
         self._flash = flash
@@ -372,6 +381,8 @@ class HudOverlay:
             return
         corner = self._model.hud_corner if self._over_the_video else HudCorner.UPPER_LEFT
         model = replace(self._model, playback_speed=self._playback_speed, hud_corner=corner)
+        if self._playing is not None and model.facts is not None:
+            model = replace(model, facts=replace(model.facts, **self._playing._asdict()))
         self._draw_owed = True
         rendered = self._renderer.render(
             model, item_row=self._item_row, heatmap=self._heatmap,
