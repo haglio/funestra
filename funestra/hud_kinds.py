@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, replace
-from enum import StrEnum
+from enum import IntEnum, StrEnum
 
 from shared_ui.spacing import BUTTON_WORD_W
 
-from .hud_button import FIT_THE_WORD, Button
+from .hud_button import BUTTON, FIT_THE_WORD, Button
 from .hud_controls import (
     RESET_PUTS_BACK_THE_SPEED,
     RESET_TOOLTIP,
@@ -38,7 +38,7 @@ from .inclusion_pair import (
     lengths_included,
     media_pair,
 )
-from .main_hud import ROW_LABEL_W, VALUE_W
+from .main_hud import GAP, VALUE_W
 from .modes import LengthMode, MainMode
 
 
@@ -99,6 +99,7 @@ class HudControl:
     name: str
     on: frozenset[Shows]
     buttons: Callable[[HudFacts, Shows], tuple[Button, ...]]
+    row: int = 1
 
 
 VIDEO = "video"
@@ -144,12 +145,19 @@ def _noun(facts: HudFacts, shows: Shows) -> str:
 def _transport(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     if shows is Shows.GENAU:
         return (previous_button("genau_prev_flick", noun=facts.flick_one),
+                _empty_gap(2 * BUTTON + GAP),
                 next_button("genau_next_flick", noun=facts.flick_one))
     return transport(facts.funestra, noun=_noun(facts, shows),
                      longer_than_a_step=facts.longer_than_a_step, image=facts.image)
 
 
+def _empty_gap(width: int) -> Button:
+    return Button("", "", "", width=width)
+
+
 def _funscript_jump(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
+    if shows is Shows.GENAU:
+        return (_empty_gap(BUTTON),)
     command = ("main_funestra_funscript_jump" if shows is Shows.KINO
                else f"{facts.funestra}_funscript_jump")
     return (funscript_jump_button(command, noun=_noun(facts, shows), has_osr2=facts.has_osr2,
@@ -270,14 +278,20 @@ def _versions(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
 
 _KINO, _GENAU, _SLIDES = (frozenset({shows}) for shows in Shows)
 
+
+class Row(IntEnum):
+    TOP = 0
+    SECOND = 1
+
+
 TRANSPORT_CONTROLS: tuple[HudControl, ...] = (
-    HudControl("transport", EVERY_SHOW, _transport),
-    HudControl("funscript_jump", _KINO | _SLIDES, _funscript_jump),
-    HudControl("lock", EVERY_SHOW, _lock),
+    HudControl("transport", EVERY_SHOW, _transport, Row.TOP),
+    HudControl("funscript_jump", EVERY_SHOW, _funscript_jump, Row.TOP),
     HudControl("trash", _SLIDES, _slide_trash),
+    HudControl("trash_flick", _GENAU, _flick_trash),
+    HudControl("lock", EVERY_SHOW, _lock),
     HudControl("fmode", EVERY_SHOW, _fmode),
     HudControl("flip", _GENAU, _flip),
-    HudControl("trash_flick", _GENAU, _flick_trash),
     HudControl("reset", _KINO | _SLIDES, _reset),
     HudControl("browse_order", EVERY_SHOW, _browse_order),
     HudControl("inclusions", _KINO | _GENAU, _inclusion_buttons),
@@ -289,10 +303,15 @@ TRANSPORT_CONTROLS: tuple[HudControl, ...] = (
 )
 
 
-def transport_row(facts: HudFacts, shows: Shows,
-                  controls: tuple[HudControl, ...] = TRANSPORT_CONTROLS) -> tuple[Button, ...]:
-    return tuple(button for control in controls if shows in control.on
+def _controls_on(row: Row, facts: HudFacts, shows: Shows,
+                 controls: tuple[HudControl, ...]) -> tuple[Button, ...]:
+    return tuple(button for control in controls if shows in control.on and control.row == row
                  for button in control.buttons(facts, shows))
+
+
+def _one_group_each(*groups: tuple[Button, ...]) -> tuple[Button, ...]:
+    return tuple(replace(button, group_break=True) if index == 0 else button
+                 for group in groups if group for index, button in enumerate(group))
 
 
 def minimize_funestra_button(funestra: str) -> Button:
@@ -339,19 +358,15 @@ def _file_controls(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     )
 
 
-def _mode_row(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
-    return (
-        *(Button(command, label, "", width=BUTTON_WORD_W, lit=facts.main_mode is main_mode)
-          for command, label, main_mode in MODE_BUTTONS),
-        *window_buttons(facts),
-        *_file_controls(facts, shows),
-    )
+def _modes(facts: HudFacts) -> tuple[Button, ...]:
+    return tuple(Button(command, label, "", width=BUTTON_WORD_W, lit=facts.main_mode is main_mode)
+                 for command, label, main_mode in MODE_BUTTONS)
 
 
 def _flick_seconds_row(facts: HudFacts) -> tuple[Button, ...]:
     return (
-        Button("", f"{facts.flick_one.capitalize()} seconds", "", width=ROW_LABEL_W),
-        Button("genau_flick_seconds_down", LESS_ICON, "Move on sooner", group_break=True),
+        Button("", f"{facts.flick_one.capitalize()} seconds", "", width=FIT_THE_WORD),
+        Button("genau_flick_seconds_down", LESS_ICON, "Move on sooner"),
         Button("", "", "", width=VALUE_W, host_value="advance_interval"),
         Button("genau_flick_seconds_up", MORE_ICON, f"Leave each {facts.flick_one} longer"),
     )
@@ -363,29 +378,41 @@ def clip_seconds_row(shape: str, seconds: int) -> tuple[Button, ...]:
         Button(f"{shape}_clip_seconds_down", LESS_ICON, "Move on sooner"),
         Button("", f"{seconds}s", "", width=VALUE_W),
         Button(f"{shape}_clip_seconds_up", MORE_ICON, "Leave each clip longer"),
-        *playback_speed_buttons(shape, in_a_column_of_labels=False),
+        *playback_speed_buttons(shape),
     )
 
 
-def _slideshow_rows(facts: HudFacts,
-                    controls: tuple[HudControl, ...]) -> tuple[tuple[Button, ...], ...]:
-    pace = (() if facts.clip_seconds is None
-            else (clip_seconds_row(facts.funestra, facts.clip_seconds),))
-    return (transport_row(facts, Shows.SLIDES, controls), *pace)
+def _pace_row(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
+    if shows is Shows.KINO:
+        return playback_speed_buttons("main_funestra")
+    if shows is Shows.GENAU:
+        return _flick_seconds_row(facts)
+    return () if facts.clip_seconds is None else clip_seconds_row(facts.funestra, facts.clip_seconds)
+
+
+def _top_row(kind: HudKind, facts: HudFacts, shows: Shows,
+             controls: tuple[HudControl, ...]) -> tuple[Button, ...]:
+    on_top = _controls_on(Row.TOP, facts, shows, controls)
+    osr2 = (osr2_button(facts.funestra, has_it=facts.has_osr2),)
+    if kind is HudKind.MAIN:
+        return _one_group_each(_modes(facts), osr2, on_top, window_buttons(facts),
+                               _file_controls(facts, shows))
+    return _one_group_each(osr2, on_top, window_buttons(facts))
 
 
 def hud_rows(kind: HudKind, facts: HudFacts,
              controls: tuple[HudControl, ...] = TRANSPORT_CONTROLS) -> tuple[tuple[Button, ...], ...]:
     shows = shows_on(kind, facts)
-    if kind is HudKind.MAIN:
-        return (
-            _mode_row(facts, shows),
-            transport_row(facts, shows, controls),
-            (playback_speed_buttons("main_funestra") if shows is Shows.KINO
-             else _flick_seconds_row(facts)),
-        )
-    own = window_buttons(facts) if kind is HudKind.SATELLITE else ()
-    return (*((own,) if own else ()), *_slideshow_rows(facts, controls))
+    second = _controls_on(Row.SECOND, facts, shows, controls)
+    if kind is HudKind.SLIDESHOW and facts.hosted:
+        rows = (_one_group_each(_controls_on(Row.TOP, facts, shows, controls), second),)
+    elif kind is HudKind.SLIDESHOW:
+        minimize = () if facts.in_vr else (minimize_funestra_button(facts.funestra),)
+        rows = (_one_group_each(_controls_on(Row.TOP, facts, shows, controls), minimize),
+                _one_group_each(second))
+    else:
+        rows = (_top_row(kind, facts, shows, controls), _one_group_each(second))
+    return tuple(row for row in (*rows, _pace_row(facts, shows)) if row)
 
 
 def take_osr2_command(funestra: str) -> str:
@@ -400,12 +427,6 @@ def osr2_button(funestra: str, *, has_it: bool) -> Button:
     return Button(take_osr2_command(funestra), "OSR2",
                   "Take over the OSR2 — it follows this Funestra's funscripts",
                   width=BUTTON_WORD_W)
-
-
-def device_rows(kind: HudKind, facts: HudFacts) -> tuple[tuple[Button, ...], ...]:
-    if kind is HudKind.SLIDESHOW:
-        return ()
-    return ((osr2_button(facts.funestra, has_it=facts.has_osr2),),)
 
 
 def title_filters(facts: HudFacts) -> tuple[str, ...]:

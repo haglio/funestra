@@ -49,7 +49,7 @@ from funestra.hud_icons import (
     shared_icon_name,
 )
 from funestra.hud_title import F_MODE_LABEL, LATEST_LABEL, PLAYBACK_SPEED_LABEL, SHUFFLE_LABEL
-from funestra.main_hud import ROW_LABEL_W, VALUE_W
+from funestra.main_hud import VALUE_W
 from funestra.status import FunestraStatus
 
 
@@ -238,13 +238,8 @@ class TestThePlaybackSpeedButtons:
 
         assert [shared_icon_name(slower.icon), shared_icon_name(faster.icon)] == ["minus", "plus"]
 
-    def test_in_a_column_of_labels_the_name_takes_the_columns_width_and_its_controls_stand_apart_from_it(self):
+    def test_the_name_takes_its_own_width_keeps_its_controls_close_and_stands_apart_from_what_precedes_it(self):
         name, slower, *_rest = playback_speed_buttons("portrait")
-
-        assert (name.width, name.group_break, slower.group_break) == (ROW_LABEL_W, False, True)
-
-    def test_off_a_column_the_name_takes_its_own_width_keeps_its_controls_close_and_stands_apart_from_what_precedes_it(self):
-        name, slower, *_rest = playback_speed_buttons("portrait", in_a_column_of_labels=False)
 
         assert (name.width, name.group_break, slower.group_break) == (FIT_THE_WORD, True, False)
 
