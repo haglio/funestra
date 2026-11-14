@@ -25,7 +25,7 @@ from .hud_controls import (
     trash_button_under,
     versions_button,
 )
-from .hud_icons import MINIMIZE_ICON, shared_icon
+from .hud_icons import MINIMIZE_FUNESTRA_ICON, shared_icon
 from .hud_title import F_MODE_LABEL
 from .inclusion_pair import (
     BOTH,
@@ -315,7 +315,7 @@ def _one_group_each(*groups: tuple[Button, ...]) -> tuple[Button, ...]:
 
 
 def minimize_funestra_button(funestra: str) -> Button:
-    return Button(f"{funestra}_minimize", MINIMIZE_ICON,
+    return Button(f"{funestra}_minimize", MINIMIZE_FUNESTRA_ICON,
                   "Minimize this Funestra — bring it back from the taskbar", group_break=True)
 
 

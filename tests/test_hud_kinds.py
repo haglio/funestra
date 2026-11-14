@@ -5,6 +5,7 @@ from dataclasses import replace
 import pytest
 from shared_ui.icon_geometry import icon_names
 
+from funestra import hud_minimize
 from funestra.hud_button import BUTTON, FIT_THE_WORD, Button
 from funestra.hud_controls import (
     AN_IMAGE,
@@ -14,7 +15,7 @@ from funestra.hud_controls import (
     lock_tooltip,
 )
 from funestra.hud_icons import (
-    MINIMIZE_ICON,
+    MINIMIZE_FUNESTRA_ICON,
     SHARED_ICON,
     shared_icon,
     shared_icon_name,
@@ -653,10 +654,11 @@ class TestLayout:
         assert genau == ["main_kino_activate", "genau_activate", "main_take_osr2",
                          "genau_prev_flick", "genau_next_flick", "browse_library"]
 
-    def test_minimize_asks_for_a_drawn_bar_rather_than_a_font_glyph(self):
+    def test_minimize_this_funestra_wears_a_screen_with_an_arrow_not_the_huds_own_minus(self):
         button = _button(_main_facts(main_mode=MainMode.GENAU), "main_minimize")
 
-        assert button.icon == MINIMIZE_ICON
+        assert button.icon == shared_icon("screen_arrow_down")
+        assert button.icon != hud_minimize.MINIMIZE_ICON
         assert "taskbar" in button.tooltip
 
     def test_a_press_finds_the_button_under_it_and_names_it(self):
@@ -746,7 +748,7 @@ def test_a_satellites_own_buttons_are_its_minimize_button_and_the_portraits_crow
     portrait = _window_buttons("portrait", in_vr=False, crowned=False)
 
     assert [button.command for button in portrait] == ["portrait_minimize", "portrait_crown"]
-    assert [button.icon for button in portrait] == [MINIMIZE_ICON, shared_icon("crown")]
+    assert [button.icon for button in portrait] == [MINIMIZE_FUNESTRA_ICON, shared_icon("crown")]
 
 
 def test_a_funestra_in_the_headset_has_no_window_to_minimize():
