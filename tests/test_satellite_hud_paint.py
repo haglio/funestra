@@ -21,7 +21,7 @@ from shared_ui.palette import (
     hovered,
 )
 from shared_ui.spacing import BUTTON_GAP, MARGIN_STANDARD
-from shared_ui.type_scale import SIZE_TINY
+from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
 from funestra import satellite_hud_nav_map, satellite_hud_paint
 from funestra.geometry import Rect
@@ -29,6 +29,7 @@ from funestra.host_controls import HostControlsSection
 from funestra.hud import ACTIVE_DOT, load_font
 from funestra.hud_button import FIT_THE_WORD, Button
 from funestra.hud_controls import PLAYBACK_SPEED, playback_speed_buttons
+from funestra.hud_kinds import HudFacts, HudKind, title_choices
 from funestra.hud_minimize import RESTORE_TOOLTIP, minimize_command
 from funestra.hud_minimize import ROOM as MINUS_ROOM
 from funestra.hud_placement import HudCorner
@@ -1747,3 +1748,18 @@ def test_a_hud_held_to_a_width_is_that_wide_whatever_it_carries():
               for rows in ((), funestra_rows("portrait"))}
 
     assert widths == {900}
+
+
+@pytest.mark.parametrize(("funestra", "kind"), [("main", HudKind.MAIN), ("portrait", HudKind.SATELLITE)])
+def test_a_hud_is_wide_enough_for_the_widest_title_its_kind_can_show(funestra, kind):
+    font = load_font(SIZE_BODY)
+    widest = max(title_choices(kind), key=font.getlength)
+
+    def drawn(title: str):
+        return HudRenderer(funestra).render(_model(funestra=funestra, kind=kind, title=title,
+                                                   facts=HudFacts(funestra=funestra)))
+
+    short, long = drawn("Locked"), drawn(widest)
+
+    assert long.bgra.shape[1] == short.bgra.shape[1]
+    assert long.bgra.shape[1] >= TITLE_X + font.getlength(widest) + PAD + MINUS_ROOM
