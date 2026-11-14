@@ -22,7 +22,7 @@ from funestra.hud_overlay import (
     WindowsOwnHud,
 )
 from funestra.hud_placement import HudCorner, HudEdge
-from funestra.hud_row import UNDER_THE_HUD_GAP, ItemRowDraw, RowHud, RowPress
+from funestra.hud_row import UNDER_THE_HUD_GAP, RowHud, RowPress, ScrubberRowDraw
 from funestra.name_copy import COPY_NAME, COPY_TOOLTIP
 from funestra.osr2_visualizer import DriveHud, DrivePublisher, publish_drive, read_drive
 from funestra.satellite_hud import MARGIN, MINUS_INSET, PAD, HudModel
@@ -83,7 +83,7 @@ class TestTheClipsRowAtItsFootSinceAlongAWrappedVideosEdgeItSmearsOutOfTheContro
         engine = FakeEngine()
         overlay = _overlay(tmp_path, hud, engine)
 
-        overlay.tick(item_row=ItemRowDraw(self._ROW))
+        overlay.tick(scrubber_row=ScrubberRowDraw(self._ROW))
 
         assert overlay.targets.row is not None
 
@@ -91,7 +91,7 @@ class TestTheClipsRowAtItsFootSinceAlongAWrappedVideosEdgeItSmearsOutOfTheContro
         engine = FakeEngine()
         overlay = _overlay(tmp_path, hud, engine)
 
-        overlay.tick(item_row=None)
+        overlay.tick(scrubber_row=None)
 
         assert overlay.targets.row is None
 
@@ -102,7 +102,7 @@ class TestTheClipsRowAtItsFootSinceAlongAWrappedVideosEdgeItSmearsOutOfTheContro
     def test_a_press_along_the_track_runs_the_clip_there(self, tmp_path, hud):
         seeks: list[float] = []
         overlay = _overlay(tmp_path, hud, FakeEngine(), row=RowPress(seek=seeks.append))
-        overlay.tick(item_row=ItemRowDraw(self._ROW))
+        overlay.tick(scrubber_row=ScrubberRowDraw(self._ROW))
         _x, _y, _width, height = overlay.targets.row.rect
         x0, x1 = overlay.targets.row.track
 
@@ -114,7 +114,7 @@ class TestTheClipsRowAtItsFootSinceAlongAWrappedVideosEdgeItSmearsOutOfTheContro
     def test_a_drag_along_the_track_keeps_running_the_clip(self, tmp_path, hud):
         seeks: list[float] = []
         overlay = _overlay(tmp_path, hud, FakeEngine(), row=RowPress(seek=seeks.append))
-        overlay.tick(item_row=ItemRowDraw(self._ROW))
+        overlay.tick(scrubber_row=ScrubberRowDraw(self._ROW))
         _x, _y, _width, height = overlay.targets.row.rect
         x0, x1 = overlay.targets.row.track
         along = height - SCRUBBER_HEIGHT // 2
@@ -129,7 +129,7 @@ class TestTheClipsRowAtItsFootSinceAlongAWrappedVideosEdgeItSmearsOutOfTheContro
         levels: list[int] = []
         overlay = _overlay(tmp_path, hud, FakeEngine(), row=RowPress(
             set_volume=levels.append, toggle_mute=lambda: mutes.append(1)))
-        overlay.tick(item_row=ItemRowDraw(self._ROW))
+        overlay.tick(scrubber_row=ScrubberRowDraw(self._ROW))
         _x, _y, width, height = overlay.targets.row.rect
         cx, cy = volume_control_xy(viewport_w=width, viewport_h=height, timeline_h=SCRUBBER_HEIGHT)
 
@@ -141,10 +141,10 @@ class TestTheClipsRowAtItsFootSinceAlongAWrappedVideosEdgeItSmearsOutOfTheContro
 
     def test_a_scripted_clip_colors_its_track(self, tmp_path, hud):
         plain, scripted = FakeEngine(), FakeEngine()
-        _overlay(tmp_path, hud, plain).tick(item_row=ItemRowDraw(self._ROW))
+        _overlay(tmp_path, hud, plain).tick(scrubber_row=ScrubberRowDraw(self._ROW))
         colored = _overlay(tmp_path, hud, scripted)
-        colored.tick(item_row=ItemRowDraw(self._ROW))
-        colored.tick(item_row=ItemRowDraw(self._ROW, _colors_across(colored.row)))
+        colored.tick(scrubber_row=ScrubberRowDraw(self._ROW))
+        colored.tick(scrubber_row=ScrubberRowDraw(self._ROW, _colors_across(colored.row)))
 
         (_x, _y, bare), = plain.overlays.values()
         (_x, _y, filled), = scripted.overlays.values()
@@ -153,10 +153,10 @@ class TestTheClipsRowAtItsFootSinceAlongAWrappedVideosEdgeItSmearsOutOfTheContro
 
     def test_a_fill_measured_across_some_other_track_is_dropped(self, tmp_path, hud):
         plain, mismatched = FakeEngine(), FakeEngine()
-        _overlay(tmp_path, hud, plain).tick(item_row=ItemRowDraw(self._ROW))
+        _overlay(tmp_path, hud, plain).tick(scrubber_row=ScrubberRowDraw(self._ROW))
         overlay = _overlay(tmp_path, hud, mismatched)
-        overlay.tick(item_row=ItemRowDraw(self._ROW))
-        overlay.tick(item_row=ItemRowDraw(self._ROW, [(255, 0, 0)] * 7))
+        overlay.tick(scrubber_row=ScrubberRowDraw(self._ROW))
+        overlay.tick(scrubber_row=ScrubberRowDraw(self._ROW, [(255, 0, 0)] * 7))
 
         (_x, _y, bare), = plain.overlays.values()
         (_x, _y, drawn), = mismatched.overlays.values()
@@ -166,7 +166,7 @@ class TestTheClipsRowAtItsFootSinceAlongAWrappedVideosEdgeItSmearsOutOfTheContro
         engine = FakeEngine()
         overlay = _overlay(tmp_path, hud, engine)
 
-        overlay.tick(item_row=ItemRowDraw(self._ROW))
+        overlay.tick(scrubber_row=ScrubberRowDraw(self._ROW))
 
         x, _y, _width, _height = overlay.row.rect
         x0, x1 = overlay.row.track
@@ -178,7 +178,7 @@ class TestTheClipsRowAtItsFootSinceAlongAWrappedVideosEdgeItSmearsOutOfTheContro
     def test_an_image_leaves_nothing_for_the_frames_to_hang_under(self, tmp_path, hud):
         overlay = _overlay(tmp_path, hud, FakeEngine())
 
-        overlay.tick(item_row=None)
+        overlay.tick(scrubber_row=None)
 
         assert overlay.row is None
         assert overlay.row_track is None

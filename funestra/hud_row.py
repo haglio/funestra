@@ -59,7 +59,7 @@ class RowHud:
     loop: tuple[int, int] | None = None
 
 
-class ItemRowDraw(NamedTuple):
+class ScrubberRowDraw(NamedTuple):
     row: RowHud
     heatmap: object = None
 

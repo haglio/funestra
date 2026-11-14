@@ -199,7 +199,7 @@ def test_the_row_says_where_the_clip_is_and_how_long_it_runs(tmp_path):
 
     funestra.tick(viewport=WINDOW)
 
-    row = funestra.item_row()
+    row = funestra.scrubber_row()
     assert (row.position_ms, row.duration_ms) == (0.0, engine.duration_ms)
     assert row.playhead is not None
     assert row.volume is funestra.volume
@@ -229,7 +229,7 @@ def test_an_image_on_screen_keeps_the_row_saying_how_far_into_its_time_it_is(tmp
 
     funestra.tick(viewport=WINDOW)
 
-    row = funestra.item_row()
+    row = funestra.scrubber_row()
     assert (row.position_ms, row.duration_ms) == (1_000.0, 4_000.0)
     assert row.volume is funestra.volume
     assert funestra.hud.row is not None
@@ -263,7 +263,7 @@ def test_the_hud_keeps_its_size_on_an_image_held_until_something_moves_it(tmp_pa
     _an_image_up(engine, 0.0, 0.0)
     funestra.tick(viewport=WINDOW)
 
-    assert funestra.item_row().playhead is None
+    assert funestra.scrubber_row().playhead is None
     assert engine.overlays[HUD_OVERLAY_ID][2].shape == on_the_video
 
 
@@ -275,7 +275,7 @@ def test_an_images_row_reads_out_the_time_it_has_had_of_its_time(tmp_path):
 
     funestra.tick(viewport=WINDOW)
 
-    assert funestra.item_row().playhead.text == "0:01 / 0:04"
+    assert funestra.scrubber_row().playhead.text == "0:01 / 0:04"
 
 
 def test_a_press_along_an_images_track_puts_it_that_far_into_its_time(tmp_path):
@@ -1080,13 +1080,13 @@ class TestAStretchOfTheItem:
     def test_a_mark_zooms_the_track_to_the_stretch_around_it(self, tmp_path):
         funestra, engine = _scripted_main(tmp_path)
         funestra.tick(viewport=WINDOW)
-        assert funestra.item_row().duration_ms == engine.duration_ms
+        assert funestra.scrubber_row().duration_ms == engine.duration_ms
 
         funestra.playback.set_mark(50_000)
         engine.position_ms = 51_000.0
         funestra.tick(viewport=WINDOW)
 
-        row = funestra.item_row()
+        row = funestra.scrubber_row()
         assert row.duration_ms < engine.duration_ms
         assert row.record_in_ms == 50_000 - funestra.strip.window[0]
 

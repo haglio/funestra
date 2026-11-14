@@ -134,7 +134,7 @@ class _Plan:
     rows: list[list[Button]]
     device: Osr2Block
     top: _TopBlock
-    item_row: RowHud | None
+    scrubber_row: RowHud | None
     host_controls: HostControlsHud | None
     row_h: int
     width: int
@@ -382,20 +382,20 @@ class MainHudPainter(PressableHud):
         self._fonts = hud_fonts()
         self._body, self._tiny, self._icon = self._fonts
         self._part = Osr2PartDrawing(self._fonts)
-        self._item_row = RowSection()
+        self._scrubber_row = RowSection()
         self._host_controls = HostControlsSection()
         self.row: RowLayout | None = None
         self.host_controls_layout: HostControlsLayout | None = None
 
     def bgra(self, hud: MainHud, *, hover: tuple[int, int] | None = None,
-             item_row: RowHud | None = None, heatmap=None,
+             scrubber_row: RowHud | None = None, heatmap=None,
              host_controls: HostControlsHud | None = None) -> np.ndarray:
-        return self._bgra_of(hud, hover, item_row, host_controls, heatmap=heatmap)
+        return self._bgra_of(hud, hover, scrubber_row, host_controls, heatmap=heatmap)
 
     def rgba(self, hud: MainHud, *, hover: tuple[int, int] | None = None,
-             item_row: RowHud | None = None, heatmap=None,
+             scrubber_row: RowHud | None = None, heatmap=None,
              host_controls: HostControlsHud | None = None) -> tuple[bytes, tuple[int, int]]:
-        return self._rgba_of(hud, hover, item_row, host_controls, heatmap=heatmap)
+        return self._rgba_of(hud, hover, scrubber_row, host_controls, heatmap=heatmap)
 
     def _copy_room(self, filename: str) -> int:
         return COPY_GAP + sum(self._tiny.getmetrics()) if filename else 0
@@ -424,14 +424,14 @@ class MainHudPainter(PressableHud):
         return copy
 
     def _paint(self, main_hud: MainHud, hover: tuple[int, int] | None,
-               item_row: RowHud | None, host_controls: HostControlsHud | None) -> Image.Image:
+               scrubber_row: RowHud | None, host_controls: HostControlsHud | None) -> Image.Image:
         main_hud_model = main_hud.main_hud_model
         if main_hud_model.hud_minimized:
             return self._paint_minimized(main_hud_model.funestra, main_hud_model.hud_corner, hover, main_hud.flash)
-        plan = self._plan(main_hud, item_row, host_controls)
+        plan = self._plan(main_hud, scrubber_row, host_controls)
         return self._draw_plan(main_hud, hover, plan)
 
-    def _plan(self, main_hud: MainHud, item_row: RowHud | None,
+    def _plan(self, main_hud: MainHud, scrubber_row: RowHud | None,
               host_controls: HostControlsHud | None) -> _Plan:
         main_hud_model = main_hud.main_hud_model
         rows = [[filled(button, main_hud, self._tiny) for button in row]
@@ -447,10 +447,10 @@ class MainHudPainter(PressableHud):
         corner = main_hud_model.hud_corner
         text_x = ACTIVE_DOT + DOT_GAP
         widths = [0, _row_width(rows), device.width,
-                  self._item_row.least_width(item_row) if item_row is not None else 0,
+                  self._scrubber_row.least_width(scrubber_row) if scrubber_row is not None else 0,
                   self._host_controls.least_width(host_controls) if host_controls is not None else 0]
         minus_room = MINUS_ROOM if self._minus_on_the_hud else 0
-        used = (True, bool(rows), device.shown, item_row is not None, host_controls is not None)
+        used = (True, bool(rows), device.shown, scrubber_row is not None, host_controls is not None)
         reserves, parts_w = _reserved(widths, used, corner, minus_room)
         if self._width is None:
             width = 2 * _PAD + max(
@@ -460,12 +460,12 @@ class MainHudPainter(PressableHud):
                 + self._copy_room(filename),
             )
         else:
-            any_row = self._item_row.least_width_for_any_row() + (minus_room if corner.lower else 0)
+            any_row = self._scrubber_row.least_width_for_any_row() + (minus_room if corner.lower else 0)
             width = max(self._width, 2 * _PAD + parts_w, 2 * _PAD + any_row)
             room = width - 2 * _PAD - text_x - reserves[0]
             title = fit_text(self._body, title, room)
             filename = fit_text(self._tiny, filename, room - self._copy_room(filename))
-        row_h = ROW_H if item_row is not None else 0
+        row_h = ROW_H if scrubber_row is not None else 0
         sections = stack(_PAD, [
             top_h + filename_h,
             rows_height(rows),
@@ -474,7 +474,7 @@ class MainHudPainter(PressableHud):
             HostControlsSection.height if host_controls is not None else 0,
         ])
         return _Plan(rows, device, _TopBlock(title, filename, main_hud_model.active),
-                     item_row, host_controls, row_h, width, reserves, sections)
+                     scrubber_row, host_controls, row_h, width, reserves, sections)
 
     def _draw_plan(self, main_hud: MainHud, hover: tuple[int, int] | None,
                    plan: _Plan) -> Image.Image:
@@ -511,10 +511,10 @@ class MainHudPainter(PressableHud):
     def _draw_the_foot(self, image: Image.Image, plan: _Plan, corner: HudCorner) -> None:
         *_above, row_top, host_top = plan.sections.tops
         self.row = None
-        if plan.item_row is not None:
-            self.row = row_layout(plan.item_row, rect=_section_rect(
+        if plan.scrubber_row is not None:
+            self.row = row_layout(plan.scrubber_row, rect=_section_rect(
                 corner, image.width, plan.reserves[3], row_top, plan.row_h))
-            self._item_row.draw(image, self.row, plan.item_row, heatmap=self._heatmap)
+            self._scrubber_row.draw(image, self.row, plan.scrubber_row, heatmap=self._heatmap)
         self.host_controls_layout = None
         if plan.host_controls is not None:
             self.host_controls_layout = self._host_controls.draw(image, _section_rect(

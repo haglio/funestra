@@ -12,7 +12,7 @@ from .hud_button import Button
 from .hud_corners import HudPlace
 from .hud_kinds import HudFacts, HudKind, main_title
 from .hud_placement import HudCorner, HudEdge, PointerReading
-from .hud_row import ItemRowDraw, RowHud, RowLayout, RowPress, track_on_screen
+from .hud_row import RowHud, RowLayout, RowPress, ScrubberRowDraw, track_on_screen
 from .main_hud import ModeHud
 from .modes import MainMode, Osr2State
 from .name_copy import COPY_NAME, copy_while_the_funestra_plays_on
@@ -165,7 +165,7 @@ class HudOverlay:
         self._playing: PlayingFacts | None = None
         self._flash = ""
         self._playback_speed: float | None = None
-        self._item_row: RowHud | None = None
+        self._scrubber_row: RowHud | None = None
         self._heatmap = None
         self._row = RowPress() if row is None else row
         self._hover: PointerReading[_Hover] = PointerReading(_ON_NO_CONTROL)
@@ -199,18 +199,18 @@ class HudOverlay:
 
     def tick(self, *, video: str = "", playback_speed: float | None = None,
              viewport: tuple[int, int] | None = None,
-             item_row: ItemRowDraw | None = None, flash: str = "",
+             scrubber_row: ScrubberRowDraw | None = None, flash: str = "",
              playing: PlayingFacts | None = None) -> None:
-        row, heatmap = (None, None) if item_row is None else item_row
+        row, heatmap = (None, None) if scrubber_row is None else scrubber_row
         redraw = (playing != self._playing or video != self._video or playback_speed != self._playback_speed
                   or viewport != self._viewport or flash != self._flash
-                  or row != self._item_row or heatmap is not self._heatmap)
+                  or row != self._scrubber_row or heatmap is not self._heatmap)
         self._video = video
         self._playing = playing
         self._playback_speed = playback_speed
         self._viewport = viewport
         self._flash = flash
-        self._item_row, self._heatmap = row, heatmap
+        self._scrubber_row, self._heatmap = row, heatmap
         host_drawing = self._host_controls.drawing()
         if host_drawing != self._host_drawing:
             self._host_drawing = host_drawing
@@ -267,7 +267,7 @@ class HudOverlay:
         return True
 
     def _track_duration(self) -> float:
-        return 0.0 if self._item_row is None else self._item_row.duration_ms
+        return 0.0 if self._scrubber_row is None else self._scrubber_row.duration_ms
 
     @property
     def row(self) -> RowLayout | None:
@@ -275,7 +275,7 @@ class HudOverlay:
 
     @property
     def scrubber_row(self) -> RowHud | None:
-        return self._item_row
+        return self._scrubber_row
 
     @property
     def row_track(self) -> tuple[int, int, int] | None:
@@ -385,7 +385,7 @@ class HudOverlay:
             model = replace(model, facts=replace(model.facts, **self._playing._asdict()))
         self._draw_owed = True
         rendered = self._renderer.render(
-            model, item_row=self._item_row, heatmap=self._heatmap,
+            model, scrubber_row=self._scrubber_row, heatmap=self._heatmap,
             drawn_with=DrawnWith(
                 video=self._name, hover_loop=hover.loop, hover_tip=hover.tip, hover_pos=hover.at,
                 may_grow_on_hover=self._over_the_video,

@@ -201,7 +201,7 @@ class TestPainter:
             painter.rgba(MainHud(
                 modes=ModeHud(video="scene one"),
                 main_hud_model=MainHudModel(main_mode=mode, locked=False, rows=main_hud_rows(mode)),
-                drive=_drive()), item_row=row)[1][0]
+                drive=_drive()), scrubber_row=row)[1][0]
             for mode in MainMode for row in (flick, video, None)
         }
 
@@ -1296,7 +1296,7 @@ class TestTheRowTheMainHudCarriesForItsVideo:
         painter = MainHudPainter()
         row = RowHud(position_ms=30_000, duration_ms=60_000, volume=VolumeHud(volume=40))
 
-        with_row = painter.rgba(self._hud(), item_row=row)[1][1]
+        with_row = painter.rgba(self._hud(), scrubber_row=row)[1][1]
         without = MainHudPainter().rgba(self._hud())[1][1]
 
         assert with_row > without
@@ -1304,12 +1304,12 @@ class TestTheRowTheMainHudCarriesForItsVideo:
     def test_the_clip_s_funscript_colors_fill_that_track(self):
         painter = MainHudPainter()
         row = RowHud(position_ms=0, duration_ms=60_000)
-        plain = painter.rgba(self._hud(), item_row=row)[0]
+        plain = painter.rgba(self._hud(), scrubber_row=row)[0]
         x0, x1 = painter.row.track
         colors = np.array([(200, 40 + x % 150, 30) for x in range(x1 - x0)],
                           dtype=np.uint8)
 
-        colored = MainHudPainter().rgba(self._hud(), item_row=row, heatmap=colors)[0]
+        colored = MainHudPainter().rgba(self._hud(), scrubber_row=row, heatmap=colors)[0]
 
         assert colored != plain
 
@@ -1317,7 +1317,7 @@ class TestTheRowTheMainHudCarriesForItsVideo:
         painter = MainHudPainter()
         row = RowHud(position_ms=30_000, duration_ms=60_000, volume=VolumeHud(volume=40))
 
-        _rgba, (_width, height) = painter.rgba(self._hud(), item_row=row)
+        _rgba, (_width, height) = painter.rgba(self._hud(), scrubber_row=row)
         _x, y, _width, row_h = painter.row.rect
 
         assert y + row_h <= height
@@ -1343,7 +1343,7 @@ class TestTheHostsControls:
         painter = MainHudPainter()
         row = RowHud(position_ms=30_000, duration_ms=60_000, volume=VolumeHud(volume=40))
 
-        _rgba, (_width, height) = painter.rgba(self._hud(), item_row=row, host_controls=a_hud())
+        _rgba, (_width, height) = painter.rgba(self._hud(), scrubber_row=row, host_controls=a_hud())
         _x, y, _field_width, field_height = painter.host_controls_layout.field
 
         assert field_height == HostControlsSection.height
@@ -1472,7 +1472,7 @@ class TestWhereTheMainHudSits:
     @pytest.mark.parametrize("corner", [HudCorner.LOWER_LEFT, HudCorner.LOWER_RIGHT])
     def test_the_clips_row_moves_over_for_the_minus_in_a_lower_corner(self, corner):
         painter = MainHudPainter(width=420)
-        painter.bgra(self._hud(corner), item_row=RowHud(position_ms=1_000,
+        painter.bgra(self._hud(corner), scrubber_row=RowHud(position_ms=1_000,
                                                         duration_ms=60_000))
         x, y, w, h = _button_rect(painter, "main_hud_minimize")
         rx, ry, rw, rh = painter.row.rect
@@ -1527,7 +1527,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
             main_hud_model=MainHudModel(main_mode=MainMode.KINO, osr2=Osr2State.ROBOT_HAND,
                                  rows=main_hud_rows(), osr2_rows=motion_rows(),
                                  osr2_controls=osr2_controls(broker_running=True)),
-            drive=drive), item_row=RowHud(duration_ms=60_000))
+            drive=drive), scrubber_row=RowHud(duration_ms=60_000))
         controls = _span(rect for rect, button in _declared(painter)
                          if button.command.startswith(("main_", "genau_")))
         visualizer_top = painter.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
