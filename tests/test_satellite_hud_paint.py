@@ -1202,7 +1202,7 @@ def test_the_word_that_leads_a_row_sits_as_close_to_its_minus_as_a_word_further_
     row = (Button("", "Clip seconds", "", width=FIT_THE_WORD),
            Button("portrait_clip_seconds_down", "−", "Move on sooner"),
            Button("portrait_clip_seconds_up", "+", "Leave each clip longer"),
-           *playback_speed_buttons("portrait", in_a_column_of_labels=False))
+           *playback_speed_buttons("portrait"))
     rendered = HudRenderer("portrait").render(_model(rows=(row,), playback_speed=1.0))
     placed = {button.command or button.icon: rect for rect, button in rendered.targets.buttons}
 
@@ -1217,7 +1217,7 @@ def test_the_word_that_leads_a_row_sits_as_close_to_its_minus_as_a_word_further_
 def test_a_row_that_places_the_speed_keeps_it_on_its_own_line_and_no_row_is_added_under_it(thumb):
     corner = HudCell(path="c.mp4", thumb=thumb)
     shared = (Button("portrait_clip_seconds_up", "+", "longer tip"),
-              *playback_speed_buttons("portrait", in_a_column_of_labels=False))
+              *playback_speed_buttons("portrait"))
     rows = (*funestra_rows("portrait"), shared)
     without = HudRenderer("portrait").render(_model(corner=corner, rows=rows))
     with_rate = HudRenderer("portrait").render(_model(corner=corner, rows=rows, playback_speed=2.0))

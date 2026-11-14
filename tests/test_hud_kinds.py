@@ -26,7 +26,6 @@ from funestra.hud_kinds import (
     HudFacts,
     HudKind,
     clip_seconds_row,
-    device_rows,
     hud_rows,
     osr2_button,
     window_buttons,
@@ -75,12 +74,8 @@ def main_hud_rows(facts: HudFacts, *, in_vr: bool = False) -> tuple[tuple[Button
     return hud_rows(HudKind.MAIN, replace(facts, in_vr=in_vr))
 
 
-def osr2_rows(facts: HudFacts) -> tuple[tuple[Button, ...], ...]:
-    return device_rows(HudKind.MAIN, facts)
-
-
 def _every_row(facts: HudFacts) -> tuple[tuple[Button, ...], ...]:
-    return (*main_hud_rows(facts), *osr2_rows(facts))
+    return main_hud_rows(facts)
 
 
 def _actions(facts: HudFacts) -> list[str]:
@@ -152,7 +147,8 @@ class TestTransport:
 
     def test_genaus_transport_names_its_flicks_in_the_overlays_word(self):
         def tips(**facts):
-            return {b.command: b.tooltip for b in _every_row(_main_facts(main_mode=MainMode.GENAU, **facts))[1]}
+            return {b.command: b.tooltip for row in _every_row(_main_facts(main_mode=MainMode.GENAU, **facts))
+                    for b in row}
 
         held, loose = tips(locked=True, pace_s=7), tips(locked=False, pace_s=7)
 
@@ -432,7 +428,7 @@ class TestLock:
         fmode, reset = by_action["main_fmode"], by_action["main_reset"]
 
         assert skip[0] - (step[0] + step[2]) == GAP
-        assert lock[0] - (skip[0] + skip[2]) == GROUP_GAP
+        assert lock[1] != skip[1]
         assert fmode[0] - (lock[0] + lock[2]) == GAP
         assert reset[0] - (fmode[0] + fmode[2]) == GROUP_GAP
 
@@ -507,15 +503,17 @@ class TestSkipAhead:
     def test_skip_ahead_follows_previous_and_next_as_on_every_satellite(self):
         row = self._transport_row(_main_facts(main_mode=MainMode.KINO))
 
-        assert row[:6] == ["main_prev", "main_nudge_prev", "main_nudge_next", "main_next",
-                           "main_funestra_funscript_jump", "main_lock"]
+        start = row.index("main_prev")
+        assert row[start:start + 5] == ["main_prev", "main_nudge_prev", "main_nudge_next",
+                                        "main_next", "main_funestra_funscript_jump"]
 
     @pytest.mark.parametrize("has_osr2", [True, False])
     def test_skip_ahead_is_there_whether_or_not_the_main_funestra_has_the_osr2(self, has_osr2):
         facts = _main_facts(main_mode=MainMode.KINO, has_osr2=has_osr2)
 
         assert "main_funestra_funscript_jump" in self._transport_row(facts)
-        assert osr2_rows(facts) == ((osr2_button("main", has_it=has_osr2),),)
+        osr2 = next(b for b in main_hud_rows(facts)[0] if b.command == "main_take_osr2")
+        assert osr2.lit is has_osr2
 
     @pytest.mark.parametrize(("has_osr2", "has_funscript", "why"), [
         (False, True, " (this Funestra doesn't have the OSR2)"),
@@ -542,16 +540,17 @@ class TestDriveControls:
             assert action not in actions
 
 class TestTheOsr2Button:
-    def test_a_main_hud_that_has_the_osr2_wears_its_button_lit_in_place_of_the_aim_row(self):
-        facts = _main_facts(main_mode=MainMode.GENAU)
+    def test_a_main_hud_that_has_the_osr2_wears_its_button_lit_after_kino_and_genau(self):
+        top = main_hud_rows(_main_facts(main_mode=MainMode.GENAU))[0]
 
-        assert osr2_rows(facts) == ((osr2_button("main", has_it=True),),)
+        assert top[2].command == "main_take_osr2"
+        assert (top[2].lit, top[2].group_break) == (True, True)
 
     def test_a_main_hud_that_gave_the_osr2_away_offers_it_back_there(self):
-        facts = _main_facts(main_mode=MainMode.KINO, has_osr2=False)
+        top = main_hud_rows(_main_facts(main_mode=MainMode.KINO, has_osr2=False))[0]
 
-        assert osr2_rows(facts) == ((osr2_button("main", has_it=False),),)
-        assert osr2_button("main", has_it=False) not in [b for row in main_hud_rows(facts) for b in row]
+        assert top[2].command == "main_take_osr2"
+        assert top[2].lit is False
 
 
 class TestState:
@@ -596,15 +595,15 @@ class TestLayout:
     def test_the_mode_row_leads_so_it_holds_its_place_across_modes(self):
         for mode in MainMode:
             first = main_hud_rows(_main_facts(main_mode=mode))[0]
-            assert [b.command for b in first][:4] == [
-                "main_kino_activate", "genau_activate", "main_minimize", "main_crown"]
+            assert [b.command for b in first][:3] == [
+                "main_kino_activate", "genau_activate", "main_take_osr2"]
 
     def test_the_browse_rides_the_mode_row_in_both_modes_and_the_rest_only_over_a_video(self):
         video = [b.command for b in main_hud_rows(_main_facts(main_mode=MainMode.KINO))[0]]
         genau = [b.command for b in main_hud_rows(_main_facts(main_mode=MainMode.GENAU))[0]]
 
-        assert video[4:] == ["browse_library", "main_funestra_record_tap", "genaumacher_save"]
-        assert genau[4:] == ["browse_library"]
+        assert video[-3:] == ["browse_library", "main_funestra_record_tap", "genaumacher_save"]
+        assert genau[-1:] == ["browse_library"]
 
     def test_the_save_is_named_for_the_snippet_it_saves(self):
         assert _button(_main_facts(main_mode=MainMode.KINO), "genaumacher_save").tooltip == "Save snippet"
@@ -636,19 +635,23 @@ class TestLayout:
 
         assert video["main_minimize"] == genau["main_minimize"]
 
-    def test_minimize_stands_apart_from_the_modes_it_sits_beside(self):
+    def test_minimize_stands_apart_from_skip_ahead_it_sits_beside(self):
         by_action = _placed(_main_facts(main_mode=MainMode.KINO))
-        genau, minimize = by_action["genau_activate"], by_action["main_minimize"]
+        skip, minimize = by_action["main_funestra_funscript_jump"], by_action["main_minimize"]
 
-        assert minimize[0] - (genau[0] + genau[2]) == GROUP_GAP
+        assert minimize[0] - (skip[0] + skip[2]) == GROUP_GAP
 
     def test_a_main_hud_in_the_headset_has_no_window_to_minimize(self):
         video = [b.command for b in main_hud_rows(_main_facts(main_mode=MainMode.KINO), in_vr=True)[0]]
-        genau = [b.command for b in main_hud_rows(_main_facts(main_mode=MainMode.GENAU), in_vr=True)[0]]
+        genau = [b.command for b in main_hud_rows(_main_facts(main_mode=MainMode.GENAU), in_vr=True)[0]
+                 if b.command]
 
-        assert video == ["main_kino_activate", "genau_activate",
+        assert video == ["main_kino_activate", "genau_activate", "main_take_osr2",
+                         "main_prev", "main_nudge_prev", "main_nudge_next", "main_next",
+                         "main_funestra_funscript_jump",
                          "browse_library", "main_funestra_record_tap", "genaumacher_save"]
-        assert genau == ["main_kino_activate", "genau_activate", "browse_library"]
+        assert genau == ["main_kino_activate", "genau_activate", "main_take_osr2",
+                         "genau_prev_flick", "genau_next_flick", "browse_library"]
 
     def test_minimize_asks_for_a_drawn_bar_rather_than_a_font_glyph(self):
         button = _button(_main_facts(main_mode=MainMode.GENAU), "main_minimize")
@@ -764,15 +767,17 @@ def test_only_the_portrait_funestra_wears_a_crown():
 
 
 SLIDESHOW_THE_ROW = [
-    "prev", "nudge_prev", "nudge_next", "next", "funscript_jump", "lock", "trash", "fmode",
+    "prev", "nudge_prev", "nudge_next", "next", "funscript_jump", "trash", "lock", "fmode",
     "reset", "shuffle", "latest", "media_videos", "media_images", "enhancement_originals",
     "enhancement_enhanced", "cycle_version"]
 
 
 def _slideshow_rows(shape: str = "portrait", *, favorites_filter: bool = False,
-                    order: str = "", **fields) -> tuple[tuple[Button, ...], ...]:
+                    order: str = "", hosted: bool = True,
+                    **fields) -> tuple[tuple[Button, ...], ...]:
     return hud_rows(HudKind.SLIDESHOW, HudFacts(
-        funestra=shape, f_mode=favorites_filter, latest=order == LATEST_LABEL, **fields))
+        funestra=shape, f_mode=favorites_filter, latest=order == LATEST_LABEL, hosted=hosted,
+        **fields))
 
 
 def _button_row(**fields) -> tuple:
@@ -801,7 +806,8 @@ def test_every_button_posts_that_sides_own_verb_and_names_itself():
 
 def test_the_band_breaks_into_groups_where_the_controls_stop_being_about_one_thing():
     assert [name for name, button in zip(_names(_button_row()), _button_row(), strict=True) if button.group_break] == [
-        "lock", "reset", "shuffle", "media_videos", "enhancement_originals", "cycle_version"]
+        "prev", "trash", "lock", "reset", "shuffle", "media_videos", "enhancement_originals",
+        "cycle_version"]
 
 
 def test_the_switches_light_and_the_things_done_never_do():
@@ -924,11 +930,17 @@ def test_reset_is_faded_with_nothing_to_put_back():
     assert not _by_name(nothing_to_reset=False)["reset"].dim
 
 
-def test_a_slideshow_on_its_own_offers_no_minimize_and_no_session_to_switch():
-    rows = _slideshow_rows("portrait")
+def test_a_slideshow_on_its_own_puts_the_transport_and_minimize_on_a_top_row_of_their_own():
+    top, second = hud_rows(HudKind.SLIDESHOW, HudFacts(funestra="portrait", crowned=True, latest=False))
 
-    assert len(rows) == 1
-    assert "minimize" not in _names(rows[-1])
+    assert _names(top) == ["prev", "nudge_prev", "nudge_next", "next", "funscript_jump", "minimize"]
+    assert _names(second) == SLIDESHOW_THE_ROW[5:]
+
+
+def test_a_slideshow_on_its_own_in_the_headset_has_no_minimize():
+    top = hud_rows(HudKind.SLIDESHOW, HudFacts(funestra="portrait", in_vr=True))[0]
+
+    assert "minimize" not in _names(top)
 
 
 def test_a_hosted_slideshow_declares_its_band_and_nothing_around_it():
@@ -945,7 +957,7 @@ def test_the_versions_button_is_dim_where_the_item_has_only_itself():
 
 def test_reset_says_what_the_side_goes_back_to_where_it_is_being_shown():
     hosted = next(b for b in _button_row(hosted=True) if b.command == "portrait_reset")
-    alone = next(b for b in _button_row() if b.command == "portrait_reset")
+    alone = next(b for b in _button_row(hosted=False) if b.command == "portrait_reset")
 
     assert "library" in hosted.tooltip
     assert "library" not in alone.tooltip
@@ -953,7 +965,7 @@ def test_reset_says_what_the_side_goes_back_to_where_it_is_being_shown():
 
 def test_reset_says_the_speed_goes_back_in_the_words_kinos_reset_uses():
     hosted = next(b for b in _button_row(hosted=True) if b.command == "portrait_reset")
-    alone = next(b for b in _button_row() if b.command == "portrait_reset")
+    alone = next(b for b in _button_row(hosted=False) if b.command == "portrait_reset")
 
     assert RESET_PUTS_BACK_THE_SPEED in hosted.tooltip
     assert RESET_PUTS_BACK_THE_SPEED in alone.tooltip
@@ -975,3 +987,73 @@ def test_each_name_on_that_row_keeps_its_controls_close_and_the_second_pair_stan
     assert [button.group_break for button in shared] == [
         False, False, False, False, True, False, False, False]
     assert (clip_seconds.width, playback_speed.width) == (FIT_THE_WORD, FIT_THE_WORD)
+
+
+def _commands(row) -> list[str]:
+    return [button.command for button in row]
+
+
+def test_the_main_funestras_top_row_holds_the_modes_the_osr2_button_and_the_transport():
+    top = hud_rows(HudKind.MAIN, _main_facts(main_mode=MainMode.KINO))[0]
+
+    assert _commands(top) == [
+        "main_kino_activate", "genau_activate", "main_take_osr2",
+        "main_prev", "main_nudge_prev", "main_nudge_next", "main_next",
+        "main_funestra_funscript_jump", "main_minimize", "main_crown",
+        "browse_library", "main_funestra_record_tap", "genaumacher_save"]
+
+
+def test_genau_brings_only_previous_and_next_up_to_the_top_row():
+    top = hud_rows(HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU))[0]
+
+    assert [c for c in _commands(top) if c] == [
+        "main_kino_activate", "genau_activate", "main_take_osr2",
+        "genau_prev_flick", "genau_next_flick", "main_minimize", "main_crown", "browse_library"]
+
+
+def test_genau_leaves_an_empty_gap_where_kinos_skip_buttons_and_funscript_jump_stand():
+    kino = _placed(_main_facts(main_mode=MainMode.KINO))
+    genau = _placed(_main_facts(main_mode=MainMode.GENAU))
+
+    assert genau["genau_prev_flick"][0] == kino["main_prev"][0]
+    assert genau["genau_next_flick"][0] == kino["main_next"][0]
+    gaps = [b for b in hud_rows(HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU))[0]
+            if not b.command]
+    assert gaps
+    assert all(not b.icon and not b.tooltip for b in gaps)
+
+
+def test_a_satellites_top_row_starts_with_the_osr2_button_then_the_transport():
+    top = hud_rows(HudKind.SATELLITE, HudFacts(funestra="portrait", has_osr2=True))[0]
+
+    assert _commands(top) == [
+        "portrait_take_osr2", "portrait_prev", "portrait_nudge_prev", "portrait_nudge_next",
+        "portrait_next", "portrait_funscript_jump", "portrait_minimize", "portrait_crown"]
+    assert top[0].lit
+
+
+def test_in_the_headset_the_top_row_ends_after_skip_ahead():
+    top = hud_rows(HudKind.SATELLITE, HudFacts(funestra="landscape", in_vr=True))[0]
+
+    assert _commands(top)[-1] == "landscape_funscript_jump"
+
+
+
+def test_trash_sits_right_before_the_lock_so_the_lock_and_f_mode_stay_neighbors():
+    for kind, facts in ((HudKind.SATELLITE, HudFacts(funestra="portrait")),
+                        (HudKind.SLIDESHOW, HudFacts(funestra="portrait")),
+                        (HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU))):
+        commands = [command for row in hud_rows(kind, facts) for command in _commands(row)]
+        lock = next(index for index, command in enumerate(commands) if command.endswith("_lock"))
+        assert "trash" in commands[lock - 1], (kind, commands)
+        assert commands[lock + 1].endswith("_fmode"), (kind, commands)
+
+
+def test_every_row_label_is_only_as_wide_as_its_words():
+    for kind, facts in ((HudKind.MAIN, _main_facts(main_mode=MainMode.KINO)),
+                        (HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU)),
+                        (HudKind.SATELLITE, HudFacts(funestra="portrait", clip_seconds=4))):
+        labels = [button for row in hud_rows(kind, facts) for button in row
+                  if button.is_a_name and not button.command and button.icon]
+        assert labels, kind
+        assert all(label.width == FIT_THE_WORD for label in labels), kind
