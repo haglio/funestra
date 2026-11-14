@@ -28,12 +28,18 @@ from funestra.hud_kinds import (
     HudKind,
     clip_seconds_row,
     hud_rows,
+    main_title,
     osr2_button,
     window_buttons,
 )
-from funestra.hud_title import F_MODE_LABEL, LATEST_LABEL, SHUFFLE_LABEL
+from funestra.hud_title import (
+    F_MODE_LABEL,
+    LATEST_LABEL,
+    SHUFFLE_LABEL,
+    compilation_label,
+)
 from funestra.inclusion_pair import LENGTH, ORIENTATION, PROJECTION
-from funestra.main_hud import GAP, GROUP_GAP, hit_test, place_rows, tooltip_at
+from funestra.main_hud import GAP, GROUP_GAP, ModeHud, hit_test, place_rows, tooltip_at
 from funestra.modes import LengthMode, MainMode
 from funestra.satellite_hud import HudModel
 from funestra.satellite_hud_paint import HudRenderer
@@ -1059,3 +1065,46 @@ def test_every_row_label_is_only_as_wide_as_its_words():
                   if button.is_a_name and not button.command and button.icon]
         assert labels, kind
         assert all(label.width == FIT_THE_WORD for label in labels), kind
+
+
+def _title(*, block: ModeHud | None = None, **facts) -> str:
+    return main_title(HudFacts(**{"locked": True, "latest": False, **facts}), block or ModeHud())
+
+
+class TestTheMainFunestrasTitle:
+    def test_says_whether_the_main_funestra_is_holding_the_video_on_screen(self):
+        assert _title(locked=True) == "Locked · Shuffle"
+        assert _title(locked=False) == "Unlocked · Shuffle"
+
+    def test_says_the_length_mode_last_and_nothing_for_mixed(self):
+        assert _title(length_mode=LengthMode.MIXED) == "Locked · Shuffle"
+        assert _title(length_mode=LengthMode.FULL) == "Locked · Shuffle · Full"
+        assert _title(length_mode=LengthMode.CLIPS) == "Locked · Shuffle · Clips"
+
+    def test_a_genau_main_funestra_says_its_order_and_the_pace_it_moves_at_while_unlocked(self):
+        def line(**over) -> str:
+            return _title(main_mode=MainMode.GENAU, pace_s=5, **over)
+
+        assert line(locked=False) == "Unlocked · Shuffle · 5s"
+        assert line(locked=True) == "Locked · Shuffle"
+        assert line(locked=False, latest=True) == "Unlocked · Latest · 5s"
+
+    def test_the_pace_belongs_to_genau_and_is_not_claimed_in_kino(self):
+        assert _title(locked=False, pace_s=5) == "Unlocked · Shuffle"
+
+    def test_a_host_with_no_browse_order_names_none(self):
+        assert _title(main_mode=MainMode.GENAU, latest=None) == "Locked"
+
+    def test_names_the_compilation_and_where_you_are_in_it(self):
+        block = ModeHud(compilation="Example Set - Vol6 (v2)", position=9, total=20)
+
+        assert _title(block=block, locked=False) == "Vol6 · 9/20 · Shuffle"
+        assert _title(block=block, locked=True) == "Vol6 · 9/20 · Locked · Shuffle"
+
+    def test_says_when_the_library_is_narrowed_to_f_mode(self):
+        assert _title(block=ModeHud(scripted_filter=True)) == "Locked · Shuffle · F-mode"
+
+
+def test_a_compilations_title_keeps_only_its_volume():
+    assert compilation_label("various - Example Studio Alpha Collection - Volume 6 (v1)") == "Volume 6"
+    assert compilation_label("Scene Five 3") == "Scene Five 3"

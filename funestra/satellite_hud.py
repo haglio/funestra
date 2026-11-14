@@ -12,17 +12,16 @@ from shared_ui.lettering import fit_text
 from shared_ui.spacing import (
     BUTTON_GAP,
     BUTTON_GROUP_GAP,
-    BUTTON_PAD_H_TIGHT,
     BUTTON_SIZE_HUD,
     GAP_DIALOG,
     GAP_MEDIUM,
     GAP_SMALL,
-    MARGIN_DIALOG,
     MARGIN_STANDARD,
 )
 from shared_ui.type_scale import SIZES
 
 from .geometry import Rect, contains
+from .host_controls import HostControlsLayout
 from .hud import ACTIVE_DOT
 from .hud_button import (
     Button,
@@ -33,7 +32,7 @@ from .hud_button import (
     rows_raw,
 )
 from .hud_controls import PLAYBACK_SPEED, playback_speed_buttons
-from .hud_osr2 import HEIGHT as OSR2_H
+from .hud_kinds import HudFacts, HudKind, facts_from_raw, facts_raw, hud_rows
 from .hud_placement import HudCorner, HudEdge
 from .hud_sections import blocks_height, stack
 from .hud_title import SEPARATOR
@@ -47,7 +46,7 @@ if TYPE_CHECKING:
     from .hud_row import RowLayout
 
 
-MARGIN = MARGIN_DIALOG
+MARGIN = MARGIN_STANDARD
 
 PAD = MARGIN_STANDARD
 BLOCK_GAP = GAP_MEDIUM
@@ -159,9 +158,14 @@ class HudModel:
     max_intensity: int | None = None
     paused: bool = False
     drive: DriveHud | None = None
-    drive_composed: bool = False
 
     foot: HudSection | None = None
+    kind: HudKind | None = None
+    facts: HudFacts | None = None
+
+    def __post_init__(self) -> None:
+        if self.facts is not None and self.kind is not None:
+            object.__setattr__(self, "rows", hud_rows(self.kind, self.facts))
 
 
 ELLIPSIS = 12
@@ -185,23 +189,21 @@ def map_block_width(funestra: str) -> int:
             + NAV_MAP_RIGHT_RESERVE)
 
 
-def hud_width(funestra: str, name_width: int = 0, *, content_width: int = 0) -> int:
-    return max(2 * PAD + map_block_width(funestra),
-               TITLE_X + name_width + PAD, content_width)
+def has_a_nav_map(funestra: str) -> bool:
+    return funestra in WIDEST_FULL_HEIGHT_SHAPE
 
 
-def device_height(osr2: str, drive: DriveHud | None, drive_h: int,
-                  osr2_rows: int = 0) -> int:
-    return blocks_height([CTRL_BTN] * osr2_rows + [OSR2_H if osr2 else 0,
-                                                    drive_h if drive is not None else 0],
-                         BLOCK_GAP)
+def hud_width(funestra: str, *, content_width: int = 0) -> int:
+    if not has_a_nav_map(funestra):
+        return content_width
+    return max(2 * PAD + map_block_width(funestra), content_width)
 
 
 @dataclass(frozen=True)
 class HudLayout:
     bars: int
     row: int
-    device: int
+    host_controls: int
     foot: int
     nav_map: int
     height: int
@@ -211,15 +213,16 @@ class HudLayout:
 class SectionHeights(NamedTuple):
     title: int
     row: int = 0
-    device: int = 0
+    host_controls: int = 0
     foot: int = 0
 
 
-def hud_layout(*, heights: SectionHeights, bars: int = 0) -> HudLayout:
+def hud_layout(*, heights: SectionHeights, bars: int = 0, nav_map: bool = True) -> HudLayout:
     stacked = stack(PAD, [heights.title, blocks_height([CTRL_BTN] * bars, BLOCK_GAP),
-                          heights.row, heights.device, heights.foot, NAV_MAP_H])
-    _title, bars_top, row_top, device_top, foot_top, nav_map_top = stacked.tops
-    return HudLayout(bars_top, row_top, device_top,
+                          heights.row, heights.host_controls, heights.foot,
+                          NAV_MAP_H if nav_map else 0])
+    _title, bars_top, row_top, host_controls_top, foot_top, nav_map_top = stacked.tops
+    return HudLayout(bars_top, row_top, host_controls_top,
                      foot_top, nav_map_top, stacked.end + PAD, stacked.dividers)
 
 
@@ -345,9 +348,9 @@ def ellipsis_rects(rects: NavMapRects, axis: str) -> tuple[Rect, Rect]:
 
 
 CTRL_BTN = BUTTON_SIZE_HUD
-MINUS_INSET = (PAD, PAD + (TITLE_ROW_H - CTRL_BTN) // 2)
+MINUS_INSET = (PAD, PAD)
 CONTROL_ROW_H = CTRL_BTN + BLOCK_GAP
-MODE_LABEL_PAD = BUTTON_PAD_H_TIGHT
+WORD_PAD = BUTTON_GAP // 2
 
 
 def button_row_width(buttons: Sequence[Button], widths: Sequence[int]) -> int:
@@ -388,8 +391,10 @@ def favorite_icon_rect(x: int, y: int, line_h: int) -> Rect:
 
 def name_line(name: str, note: str, room: int, font) -> str:
     whole = SEPARATOR.join(part for part in (name, note) if part)
-    if not (name and note) or font.getlength(whole) <= room:
+    if font.getlength(whole) <= room:
         return whole
+    if not (name and note):
+        return fit_text(font, whole, room)
     after = f"{SEPARATOR}{note}"
     shortened = fit_text(font, name, room - font.getlength(after))
     return f"{shortened}{after}" if shortened else note
@@ -436,6 +441,7 @@ class HudTargets:
     tracks: list[DriveTrack] = field(default_factory=list)
     row: RowLayout | None = None
     foot: Rect | None = None
+    host_controls: HostControlsLayout | None = None
 
 
 def build_click_targets(rects: NavMapRects, model: HudModel) -> list[tuple[Rect, str]]:
@@ -571,6 +577,8 @@ def hud_text(model: HudModel) -> str:
         "osr2_controls": buttons_raw(model.osr2_controls),
         "max_intensity": model.max_intensity,
         "foot": model.foot.raw() if isinstance(model.foot, PaintedFoot) else None,
+        "kind": model.kind,
+        "facts": None if model.facts is None else facts_raw(model.facts),
     })
 
 
@@ -612,5 +620,7 @@ def parse_hud(text: str) -> HudModel | None:
         osr2_controls=buttons_from_raw(raw.get("osr2_controls")),
         max_intensity=max_intensity_from_raw(raw.get("max_intensity")),
         foot=PaintedFoot.from_raw(raw.get("foot")),
+        kind=read_mode(HudKind, raw.get("kind"), None),
+        facts=facts_from_raw(raw.get("facts")),
     )
 

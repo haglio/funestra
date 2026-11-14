@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 
 import numpy as np
 import pytest
+from host_controls_fakes import a_hud
 from PIL import Image, ImageDraw
 from satellite_rows import funestra_rows, short_name
 from shared_ui import colors
@@ -12,19 +14,18 @@ from shared_ui.palette import (
     BG_BUTTON,
     BLUE,
     BORDER_PANEL,
-    GREEN,
     RED,
     TEXT_MUTED,
     TEXT_PRIMARY,
     WHITE,
     hovered,
 )
-from shared_ui.spacing import BUTTON_GAP
+from shared_ui.spacing import BUTTON_GAP, MARGIN_STANDARD
 from shared_ui.type_scale import SIZE_TINY
 
 from funestra import satellite_hud_nav_map, satellite_hud_paint
-from funestra.drive_layout import MAX_INTENSITY, SECTION_W
 from funestra.geometry import Rect
+from funestra.host_controls import HostControlsSection
 from funestra.hud import ACTIVE_DOT, load_font
 from funestra.hud_button import FIT_THE_WORD, Button
 from funestra.hud_controls import PLAYBACK_SPEED, playback_speed_buttons
@@ -34,17 +35,13 @@ from funestra.hud_placement import HudCorner
 from funestra.hud_row import SCRUBBER, RowHud, row_part
 from funestra.hud_sections import DIVIDER_H, SECTION_GAP
 from funestra.hud_title import PLAYBACK_SPEED_LABEL
-from funestra.main_hud import OSR2_DRIVING, OSR2_PARKED, MainHudModel
+from funestra.main_hud import MainHudModel
 from funestra.main_hud_painter import MainHud, MainHudPainter
 from funestra.modes import MainMode, Osr2State
 from funestra.name_copy import COPY_NAME
 from funestra.osr2_visualizer import (
-    CONTROL_TIPS,
     DRIVEN_BY_ROBOT_HAND,
     DriveHud,
-    section_size,
-    track_command,
-    tracks,
 )
 from funestra.satellite_hud import (
     COL_LABEL_GAP,
@@ -387,19 +384,6 @@ def test_the_line_the_file_name_takes_is_kept_while_there_is_no_name(thumb):
 
     assert bare.bgra.shape == named.bgra.shape
     assert _control_band_top(bare) == _control_band_top(named)
-
-
-def test_a_file_name_too_wide_for_the_nav_map_widens_the_hud(thumb):
-    renderer = HudRenderer("portrait")
-    model = _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))
-
-    short = renderer.render(model, drawn_with=DrawnWith(video="clip"))
-    long = renderer.render(
-        model, drawn_with=DrawnWith(video="a considerably longer example clip name than the map is wide,"
-                     " made longer still so that no map could ever be as wide"))
-
-    assert long.bgra.shape[1] > short.bgra.shape[1]
-    assert long.bgra.shape[0] == short.bgra.shape[0]
 
 
 def test_a_note_after_a_name_shortens_the_name_rather_than_widening_the_hud(thumb):
@@ -1261,178 +1245,16 @@ def test_the_enhanced_switch_keeps_its_place_under_a_mode_row(thumb):
     assert by_name["reset"][0] + by_name["reset"][2] + PAD <= width
 
 
-class TestTheDeviceBlockSoAHostThatBrowsesASetAndDrivesTheDeviceShowsOneHudNotTwo:
-    @staticmethod
-    def _rendered(**extra):
-        return HudRenderer("portrait").render(
-            _model(title="Unlocked", **extra))
+def test_a_hud_draws_none_of_the_osr2_part_whatever_its_source_hands_it():
+    plain = HudRenderer("portrait").render(_model(title="Unlocked"))
+    handed = HudRenderer("portrait").render(_model(
+        title="Unlocked", osr2=Osr2State.ROBOT_HAND, max_intensity=35,
+        osr2_controls=(Button("robot_hand_park", "P", "Parked"),),
+        osr2_rows=((Button("osr2_aim", "A", "Aim"),),),
+        drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND)))
 
-    def test_a_source_that_names_no_driver_grows_no_device_line(self):
-        assert self._rendered().bgra.shape == self._rendered().bgra.shape
-        assert (self._rendered(osr2=Osr2State.ROBOT_HAND).bgra.shape[0]
-                > self._rendered().bgra.shape[0])
-
-    def test_the_line_says_which_driver_has_the_device(self):
-        rgb = _rgb(self._rendered(osr2=Osr2State.ROBOT_HAND).bgra)
-        assert (rgb == np.array(BLUE)).all(axis=-1).any()
-
-    def test_a_control_on_that_line_is_pressable(self):
-        park = Button("robot_hand_park", "P", "Parked")
-        rendered = self._rendered(osr2=Osr2State.ROBOT_HAND, osr2_controls=(park,))
-        assert park in [button for _rect, button in rendered.targets.buttons]
-
-    def test_the_max_intensity_on_that_line_is_a_slider_a_press_sets(self):
-        rendered = self._rendered(osr2=Osr2State.ROBOT_HAND, max_intensity=35)
-        (max_intensity,) = [bar for bar in rendered.targets.tracks if bar.axis == MAX_INTENSITY]
-        x, y, w, h = max_intensity.rect
-
-        assert track_command(max_intensity, x + w - 1, y + h // 2) == "max_intensity_100"
-
-    def test_a_hold_is_named_ahead_of_whoever_would_have_been_driving(self):
-        driving = _rgb(self._rendered(osr2=Osr2State.FUNSCRIPT).bgra)
-        parked = _rgb(self._rendered(osr2=Osr2State.FUNSCRIPT,
-                                     osr2_control=OSR2_PARKED).bgra)
-
-        assert (driving == np.array(GREEN)).all(axis=-1).any()
-        assert not (parked == np.array(GREEN)).all(axis=-1).any()
-
-    def test_a_paused_rooms_line_reads_as_a_parked_ones_does(self):
-        def hud(control: str, *, paused: bool) -> np.ndarray:
-            return self._rendered(osr2=Osr2State.ROBOT_HAND, osr2_control=control,
-                                  paused=paused).bgra
-
-        paused = hud(OSR2_DRIVING, paused=True)
-
-        assert np.array_equal(paused, hud(OSR2_PARKED, paused=False))
-        assert not np.array_equal(paused, hud(OSR2_DRIVING, paused=False))
-
-    def test_the_visualizers_speed_amp_and_center_buttons_take_presses_in_a_paused_room(self):
-        rendered = self._rendered(osr2=Osr2State.ROBOT_HAND, osr2_control=OSR2_DRIVING,
-                                  paused=True, drive=_wave())
-        placed = {button.command: rect for rect, button in rendered.targets.buttons}
-        clicks = HudClicks("portrait")
-
-        def posts(command: str) -> str:
-            x, y, w, h = placed[command]
-            return clicks.press(rendered.targets, x + w // 2, y + h // 2, now=0.0)
-
-        assert {command for command in CONTROL_TIPS if posts(command) == command} == set(CONTROL_TIPS)
-
-    def test_the_visualizer_is_drawn_under_the_line(self):
-        with_visualizer = self._rendered(osr2=Osr2State.ROBOT_HAND, drive=DriveHud())
-        line_only = self._rendered(osr2=Osr2State.ROBOT_HAND)
-        assert with_visualizer.bgra.shape[0] > line_only.bgra.shape[0]
-        assert with_visualizer.bgra.shape[1] >= SECTION_W + 2 * PAD
-
-    def test_the_visualizers_own_marks_post_what_they_are_pressed_for(self):
-        rendered = self._rendered(osr2=Osr2State.ROBOT_HAND,
-                                  drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND))
-        posted = [button.command for _rect, button in rendered.targets.buttons]
-        assert "robot_hand_speed_up" in posted
-
-    def test_the_nav_map_hangs_under_the_device_at_the_outside_of_the_hud(self, thumb):
-        rendered = HudRenderer("portrait").render(_model(
-            title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
-            seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2,
-            osr2=Osr2State.ROBOT_HAND,
-            drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND)))
-        nav_map_top = min(y for (_x, y, _w, _h), _path in rendered.targets.click)
-
-        assert rendered.targets.tracks
-        assert all(bar.rect[1] + bar.rect[3] <= nav_map_top for bar in rendered.targets.tracks)
-
-    def test_the_rows_that_aim_the_device_stay_between_the_sets_bands_and_the_visualizer(
-            self, thumb):
-        aim = (Button("robot_hand_toggle_learned", "hi", "Human inspired"),
-               Button("robot_hand_park", "P", "Parked"))
-        rendered = HudRenderer("portrait").render(_model(
-            title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
-            seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2,
-            osr2=Osr2State.ROBOT_HAND, osr2_rows=(aim,),
-            drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND)))
-        placed = {button.command: rect for rect, button in rendered.targets.buttons}
-
-        assert placed["robot_hand_toggle_learned"][1] > placed["portrait_prev"][1]
-        assert all(bar.rect[1] > placed["robot_hand_park"][1]
-                   for bar in rendered.targets.tracks)
-
-    def test_the_nav_map_is_set_off_from_the_device_by_a_line(self, thumb):
-        drive = DriveHud(driven=DRIVEN_BY_ROBOT_HAND)
-        rendered = HudRenderer("portrait").render(_model(
-            title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
-            seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2,
-            osr2=Osr2State.ROBOT_HAND, drive=drive))
-        visualizer_top = rendered.targets.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
-        visualizer_end = visualizer_top + section_size()[1]
-
-        assert _lines_between(rendered, visualizer_end, _nav_map_top(rendered)) == 1
-
-    def test_a_press_in_a_band_takes_hold_of_it_and_sets_it(self):
-        rendered = self._rendered(osr2=Osr2State.ROBOT_HAND,
-                                  drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND))
-        clicks = HudClicks("portrait")
-        bar = rendered.targets.tracks[0]
-        x, y, w, h = bar.rect
-
-        posted = clicks.press(rendered.targets, x + w // 2, y + h // 2, now=0.0)
-
-        assert posted.startswith(f"robot_hand_{bar.axis}_")
-        assert clicks.holding is True
-        clicks.release()
-        assert clicks.holding is False
-
-
-def _wave(offset: float = 0.0) -> DriveHud:
-    return DriveHud(speed=50, amplitude=80, center=50,
-                    waveform=tuple(0.5 + 0.4 * np.sin(i / 6 + offset) for i in range(80)))
-
-
-class TestTheVisualizerIsDrawnAsTheMainMainHudDrawsIt:
-    def test_the_trace_holds_still_while_nothing_is_driving(self):
-        renderer = HudRenderer("portrait")
-        first = renderer.render(_model(osr2=Osr2State.OFF, drive=_wave(0.0))).bgra.copy()
-
-        later = renderer.render(_model(osr2=Osr2State.OFF, drive=_wave(3.0))).bgra
-
-        assert np.array_equal(later, first)
-
-    def test_it_moves_again_the_moment_something_is_driving(self):
-        renderer = HudRenderer("portrait")
-        still = renderer.render(_model(osr2=Osr2State.OFF, drive=_wave(0.0))).bgra.copy()
-
-        moving = renderer.render(_model(osr2=Osr2State.ROBOT_HAND, drive=_wave(3.0))).bgra
-
-        assert not np.array_equal(moving, still)
-
-    def test_a_funestras_own_composed_trace_keeps_sliding_while_the_device_is_on(self):
-        renderer = HudRenderer("portrait")
-        first = renderer.render(_model(osr2=Osr2State.FUNSCRIPT, drive=_wave(0.0),
-                                       drive_composed=True)).bgra.copy()
-
-        later = renderer.render(_model(osr2=Osr2State.FUNSCRIPT, drive=_wave(3.0),
-                                       drive_composed=True)).bgra
-
-        assert not np.array_equal(later, first)
-
-    def test_a_funestras_own_composed_trace_holds_still_with_the_device_off(self):
-        renderer = HudRenderer("portrait")
-        first = renderer.render(_model(osr2=Osr2State.OFF, drive=_wave(0.0),
-                                       drive_composed=True)).bgra.copy()
-
-        later = renderer.render(_model(osr2=Osr2State.OFF, drive=_wave(3.0),
-                                       drive_composed=True)).bgra
-
-        assert np.array_equal(later, first)
-
-    def test_a_held_device_is_a_gray_line_nobody_can_press(self):
-        rendered = HudRenderer("portrait").render(_model(
-            osr2=Osr2State.ROBOT_HAND, osr2_control=OSR2_PARKED, drive=_wave()))
-        bar = rendered.targets.tracks[0]
-        x, y, w, h = bar.rect
-
-        assert not (_rgb(rendered.bgra) == np.array(BLUE)).all(axis=-1).any()
-        assert HudClicks("portrait").press(
-            rendered.targets, x + w // 2, y + h // 2, now=0.0) == ""
+    assert np.array_equal(handed.bgra, plain.bgra)
+    assert handed.targets.tracks == []
 
 
 class _Block:
@@ -1465,17 +1287,14 @@ class TestTheBlockASourcePaintsAtTheFootSoAHostWithWorkToReportShowsOneHudNotTwo
         assert (self._rendered(block).bgra.shape[0]
                 > self._rendered().bgra.shape[0])
 
-    def test_it_is_painted_under_the_device_and_over_the_nav_map(self, thumb):
+    def test_it_is_painted_over_the_nav_map(self, thumb):
         block = _Block()
         rendered = self._rendered(
             block, corner=HudCell(path="c.mp4", thumb=thumb),
-            seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2,
-            osr2=Osr2State.ROBOT_HAND, drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND))
+            seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2)
         painted = np.argwhere((_rgb(rendered.bgra) == np.array(_Block.MARK)).all(axis=-1))
 
         assert painted.size
-        assert painted[:, 0].min() > max(bar.rect[1] + bar.rect[3]
-                                         for bar in rendered.targets.tracks)
         assert painted[:, 0].max() < _nav_map_top(rendered)
 
     def test_the_nav_map_is_set_off_from_it_by_a_line(self, thumb):
@@ -1675,42 +1494,6 @@ def test_the_speed_row_moves_to_the_corner_the_hud_sits_in(thumb):
     assert min(rect[0] for rect, _b in left.targets.buttons) == PAD
 
 
-def test_the_device_block_moves_to_the_corner_the_hud_sits_in(thumb):
-    def rendered(corner):
-        return HudRenderer("portrait").render(
-            _model(hud_corner=corner, osr2=Osr2State.ROBOT_HAND,
-                   drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND),
-                   corner=HudCell(path="c.mp4", thumb=thumb)), drawn_with=DrawnWith(video="a name far longer than the map is wide, by a good margin.mp4"))
-
-    right = rendered(HudCorner.UPPER_RIGHT)
-    left = rendered(HudCorner.UPPER_LEFT)
-    width = right.bgra.shape[1]
-
-    assert right.targets.tracks, "the readout drew no bands to place"
-    moved = width - 2 * PAD - section_size()[0]
-    assert moved > 0, "the HUD is no wider than the readout, so nothing can move"
-    assert (min(bar.rect[0] for bar in right.targets.tracks)
-            - min(bar.rect[0] for bar in left.targets.tracks)) == moved
-
-def test_the_max_intensity_moves_with_its_line_to_the_corner_the_hud_sits_in(thumb):
-    park = Button("robot_hand_park", "P", "Parked")
-
-    def rendered(corner):
-        return HudRenderer("portrait").render(
-            _model(hud_corner=corner, osr2=Osr2State.ROBOT_HAND, osr2_controls=(park,),
-                   max_intensity=35, corner=HudCell(path="c.mp4", thumb=thumb)), drawn_with=DrawnWith(video="a name far longer than the map is wide, by a good margin.mp4"))
-
-    def slider_past_park(hud) -> int:
-        (max_intensity,) = [bar for bar in hud.targets.tracks if bar.axis == MAX_INTENSITY]
-        return max_intensity.rect[0] - _button_rect(hud, "robot_hand_park")[0]
-
-    left, right = rendered(HudCorner.UPPER_LEFT), rendered(HudCorner.UPPER_RIGHT)
-
-    assert (_button_rect(right, "robot_hand_park")[0]
-            > _button_rect(left, "robot_hand_park")[0]), "the line did not move"
-    assert slider_past_park(right) == slider_past_park(left)
-
-
 def _button_rect(rendered, command: str) -> Rect:
     rects = [rect for rect, button in rendered.targets.buttons if button.command == command]
     assert len(rects) == 1, f"{command} drew {len(rects)} buttons"
@@ -1804,27 +1587,18 @@ class TestEverySectionIsSetOffFromTheNextByALine:
                      and button.command != "portrait_hud_minimize")
 
     @staticmethod
-    def _device(rendered, drive: DriveHud) -> tuple[int, int]:
-        top, _end = _span(rect for rect, button in rendered.targets.buttons
-                             if button.command.startswith("robot_hand_toggle"))
-        visualizer_top = rendered.targets.tracks[0].rect[1] - tracks(0, 0, drive)[0].rect[1]
-        return top, visualizer_top + section_size()[1]
-
-    @staticmethod
     def _nav_map(rendered) -> tuple[int, int]:
         return _nav_map_top(rendered), rendered.bgra.shape[0] - PAD
 
     def test_a_hud_carrying_every_section_has_a_line_between_each_and_the_next(self, thumb):
         block = _Block()
-        drive = DriveHud(driven=DRIVEN_BY_ROBOT_HAND)
         rendered = HudRenderer("portrait").render(
             _model(title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb),
-                   playback_speed=1.0, osr2=Osr2State.ROBOT_HAND, drive=drive, foot=block,
-                   osr2_rows=((Button("robot_hand_toggle_learned", "hi", "Human inspired"),),)), item_row=RowHud(duration_ms=60_000), drawn_with=DrawnWith(video="example clip one"))
+                   playback_speed=1.0, foot=block),
+            item_row=RowHud(duration_ms=60_000), drawn_with=DrawnWith(video="example clip one"))
         painted = np.argwhere((_rgb(rendered.bgra) == np.array(_Block.MARK)).all(axis=-1))
         _x, row_y, _w, row_h = rendered.targets.row.rect
         sections = [self._status(rendered), self._controls(rendered), (row_y, row_y + row_h),
-                    self._device(rendered, drive),
                     (painted[:, 0].min(), painted[:, 0].max() + 1), self._nav_map(rendered)]
 
         lines = _dividers(rendered)
@@ -1839,26 +1613,6 @@ def test_a_hud_whose_row_alone_has_moved_is_the_whole_hud_drawn_again_without_it
         thumb, monkeypatch):
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb),
                    seeds=(HudCell(path="s1.mp4", thumb=thumb),))
-    renderer = HudRenderer("portrait")
-    renderer.render(model, item_row=RowHud(position_ms=1_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
-    pressed = []
-    draw = satellite_hud_paint.draw_button
-    monkeypatch.setattr(satellite_hud_paint, "draw_button",
-                        lambda *args, **kwargs: pressed.append(1) or draw(*args, **kwargs))
-
-    moved = renderer.render(model,
-                            item_row=RowHud(position_ms=4_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
-
-    drawn_while_moving = len(pressed)
-    whole = HudRenderer("portrait").render(model,
-                                           item_row=RowHud(position_ms=4_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
-    assert np.array_equal(moved.bgra, whole.bgra)
-    assert (moved.targets, drawn_while_moving) == (whole.targets, 0)
-
-
-def test_a_hud_whose_osr2_visualizer_is_still_draws_only_its_row_again_too(thumb, monkeypatch):
-    model = _model(corner=HudCell(path="c.mp4", thumb=thumb), osr2=Osr2State.ROBOT_HAND,
-                   drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND))
     renderer = HudRenderer("portrait")
     renderer.render(model, item_row=RowHud(position_ms=1_000, duration_ms=10_000), drawn_with=DrawnWith(video="scene one"))
     pressed = []
@@ -1915,3 +1669,81 @@ def test_the_pointer_on_one_of_a_rows_words_says_what_its_click_does(thumb):
     x, y, w, h = {word: rect for rect, word in rendered.targets.words}["XYZ"]
 
     assert button_tooltip(rendered.targets, x + w // 2, y + h // 2) == FILTER_TOOLTIP
+
+
+def test_the_huds_own_minus_sits_eight_pixels_in_from_its_corner():
+    rendered = HudRenderer("portrait").render(_model(hud_corner=HudCorner.UPPER_RIGHT))
+    x, y, w, _h = _button_rect(rendered, "portrait_hud_minimize")
+
+    assert (rendered.bgra.shape[1] - (x + w), y) == (MARGIN_STANDARD, MARGIN_STANDARD)
+
+
+def test_a_word_on_a_button_has_two_pixels_either_side():
+    word = Button("portrait_word", "Example", "", width=FIT_THE_WORD)
+    rendered = HudRenderer("portrait").render(_model(rows=((Button("portrait_prev", "<", ""), word),)))
+
+    assert _button_rect(rendered, "portrait_word")[2] == int(
+        load_font(SIZE_TINY).getlength("Example")) + 2 * 2
+
+
+def test_a_long_video_name_is_cut_with_an_ellipsis_rather_than_widening_the_hud():
+    short = HudRenderer("portrait").render(_model(), drawn_with=DrawnWith(video="video one"))
+    long = HudRenderer("portrait").render(_model(), drawn_with=DrawnWith(video="video one " * 40))
+
+    assert long.bgra.shape[1] == short.bgra.shape[1]
+
+
+class TestTheHostsControls:
+    @staticmethod
+    def _render(renderer=None, *, host_controls=None, **extra):
+        renderer = renderer or HudRenderer("main")
+        return renderer.render(_model(funestra="main", **extra),
+                               drawn_with=DrawnWith(video="scene one"),
+                               host_controls=host_controls)
+
+    def test_the_hud_grows_by_the_room_they_take(self):
+        without = self._render().bgra.shape[0]
+
+        with_them = self._render(host_controls=a_hud()).bgra.shape[0]
+
+        assert with_them >= without + HostControlsSection.height
+
+    def test_they_land_under_the_row_and_the_buttons(self):
+        rendered = HudRenderer("main").render(
+            _model(funestra="main"), item_row=RowHud(position_ms=30_000, duration_ms=60_000),
+            host_controls=a_hud())
+        _x, y, _field_width, field_height = rendered.targets.host_controls.field
+
+        assert field_height == HostControlsSection.height
+        assert rendered.targets.row.rect[1] + rendered.targets.row.rect[3] <= y
+        assert all(rect[1] + rect[3] <= y for rect, _button in rendered.targets.buttons)
+
+    def test_controls_wider_than_the_hud_widen_it_rather_than_being_cut(self):
+        wide = replace(a_hud(), choices=("A name far too long for a console held to its width " * 3,))
+
+        width = self._render(host_controls=wide).bgra.shape[1]
+
+        assert width >= HostControlsSection().least_width(wide) + 2 * PAD
+
+    def test_a_change_in_what_the_host_shows_is_on_the_next_paint(self):
+        renderer = HudRenderer("main")
+
+        curved = self._render(renderer, host_controls=a_hud("Curved")).bgra
+        round_ = self._render(renderer, host_controls=a_hud("Round")).bgra
+
+        assert not np.array_equal(curved, round_)
+
+    def test_a_minimized_hud_has_none_to_press(self):
+        rendered = self._render(host_controls=a_hud(), hud_minimized=True)
+
+        assert rendered.targets.host_controls is None
+
+
+def test_a_hud_held_to_a_width_is_that_wide_whatever_it_carries():
+    renderer = HudRenderer("main")
+
+    widths = {renderer.render(_model(funestra="main", rows=rows),
+                              drawn_with=DrawnWith(video="scene one", width=900)).bgra.shape[1]
+              for rows in ((), funestra_rows("portrait"))}
+
+    assert widths == {900}

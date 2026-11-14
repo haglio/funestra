@@ -11,11 +11,12 @@ from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL, SIZE_TINY
 
 from funestra import satellite_hud
 from funestra.hud import load_font
-from funestra.hud_button import Button
+from funestra.hud_button import Button, rows_from_raw
 from funestra.hud_icons import MINIMIZE_ICON, shared_icon
+from funestra.hud_kinds import HudFacts, HudKind, hud_rows
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.main_hud import OSR2_PARKED
-from funestra.modes import Osr2State
+from funestra.modes import LengthMode, MainMode, Osr2State
 from funestra.satellite_hud import (
     CTRL_BTN,
     ELLIPSIS,
@@ -23,9 +24,7 @@ from funestra.satellite_hud import (
     LOOP_BTN,
     NAV_MAP_CELLS,
     NAV_MAP_GAP,
-    PAD,
     ROW_GAP,
-    TITLE_X,
     HudCell,
     HudModel,
     HudTargets,
@@ -60,12 +59,11 @@ def _squares(x: int, y: int, buttons) -> list:
     return button_row_rects(x, y, buttons, [CTRL_BTN] * len(buttons))
 
 
-def test_the_hud_is_as_wide_as_its_nav_map_or_its_file_name_whichever_asks_for_more():
+def test_the_hud_is_as_wide_as_its_nav_map_or_its_content_whichever_asks_for_more():
     for_nav_map = hud_width("portrait")
-    room = for_nav_map - TITLE_X - PAD
 
-    assert hud_width("portrait", name_width=room) == for_nav_map
-    assert hud_width("portrait", name_width=room + 20) == for_nav_map + 20
+    assert hud_width("portrait", content_width=for_nav_map - 1) == for_nav_map
+    assert hud_width("portrait", content_width=for_nav_map + 20) == for_nav_map + 20
 
 
 def test_a_text_naming_no_funestra_is_not_a_hud():
@@ -461,8 +459,12 @@ def test_a_name_and_a_note_that_fit_their_line_are_left_whole():
     assert name_line("clip", _NOTE, 1000, load_font(SIZE_TINY)) == f"clip · {_NOTE}"
 
 
-def test_a_name_with_no_note_after_it_is_left_whole_however_long():
-    assert name_line("a long name " * 5, "", 10, load_font(SIZE_TINY)) == "a long name " * 5
+def test_a_name_with_no_note_after_it_is_cut_to_its_room_with_an_ellipsis():
+    font = load_font(SIZE_TINY)
+    line = name_line("a long name " * 5, "", 80, font)
+
+    assert line.endswith("…")
+    assert font.getlength(line) <= 80
 
 
 def test_a_note_with_no_name_before_it_stands_alone():
@@ -646,6 +648,23 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
             "enhanced_filter": True, "satellites_mode": "video"}))
 
         assert parsed == HudModel(funestra="portrait")
+
+    def test_the_facts_a_source_publishes_survive_the_round_trip_and_name_its_buttons(self):
+        facts = HudFacts(funestra="portrait", locked=True, latest=True, media=(True, False),
+                         main_mode=MainMode.GENAU, length_mode=LengthMode.CLIPS, clip_seconds=6,
+                         hosted=True)
+        parsed = parse_hud(hud_text(HudModel(funestra="portrait", kind=HudKind.SATELLITE,
+                                             facts=facts)))
+
+        assert (parsed.kind, parsed.facts) == (HudKind.SATELLITE, facts)
+        assert parsed.rows == hud_rows(HudKind.SATELLITE, facts)
+
+    def test_a_source_that_publishes_facts_still_sends_its_rows_to_an_older_reader(self):
+        facts = HudFacts(funestra="portrait", hosted=True)
+        raw = json.loads(hud_text(HudModel(funestra="portrait", kind=HudKind.SLIDESHOW,
+                                           facts=facts)))
+
+        assert rows_from_raw(raw["rows"]) == hud_rows(HudKind.SLIDESHOW, facts)
 
     def test_a_hud_with_no_clip_yet_round_trips_empty(self):
         parsed = parse_hud(hud_text(HudModel(funestra="portrait")))

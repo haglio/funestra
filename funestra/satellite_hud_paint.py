@@ -40,22 +40,14 @@ from funestra.hud_button import Button
 from funestra.hud_icons import SHARED_ICON, shared_icon, shared_icon_name
 
 from .geometry import Rect, contains
+from .host_controls import HostControlsHud, HostControlsSection
 from .hud_minimize import ROOM as MINIMIZE_ROOM
 from .hud_minimize import collapsed_hud, corner_button_rect, minimize_button
-from .hud_osr2 import HEIGHT as OSR2_H
-from .hud_osr2 import (
-    Osr2Line,
-    Osr2Section,
-    VisualizerResolver,
-    line_shown_for,
-)
 from .hud_placement import block_x
 from .hud_row import ROW_H, RowHud, RowSection, row_layout
 from .name_copy import COPY_GAP, COPY_ICON, copy_button, copy_icon_ink, copy_icon_rect
-from .osr2_visualizer import DriveSection, DriveTrack, section_size, visualizer_targets
 from .satellite_hud import (
     ACT_GAP,
-    BLOCK_GAP,
     COL_LABEL_GAP,
     COL_LABEL_H,
     CONTROL_ROW_H,
@@ -65,7 +57,6 @@ from .satellite_hud import (
     LOOP_ICON,
     MAP_THUMB_H,
     MINUS_INSET,
-    MODE_LABEL_PAD,
     NAV_MAP_COLUMN_H,
     NAV_MAP_GAP,
     PAD,
@@ -73,6 +64,7 @@ from .satellite_hud import (
     SUBTITLE_GAP,
     TITLE_INDENT,
     TITLE_X,
+    WORD_PAD,
     WRONG_ACTION_ICON,
     WRONG_BTN,
     WRONG_GAP,
@@ -90,10 +82,10 @@ from .satellite_hud import (
     build_click_targets,
     button_row_rects,
     button_row_width,
-    device_height,
     expand_button_rect,
     favorite_icon_rect,
     filter_button_rects,
+    has_a_nav_map,
     hud_layout,
     hud_width,
     label_stack_top,
@@ -144,6 +136,7 @@ class DrawnWith:
     may_grow_on_hover: bool = True
     minus_on_the_hud: bool = True
     flash: str = ""
+    width: int | None = None
 
 
 PLAIN = DrawnWith()
@@ -180,13 +173,15 @@ class _Title(NamedTuple):
 class _Sizes:
     rows: list[list[Button]]
     widths: list[list[int]]
-    device_rows: list[list[Button]]
-    device_row_widths: list[list[int]]
-    osr2_line: Osr2Line
     foot_h: int
     width: int
     row_h: int
     layout: HudLayout
+
+
+class _Drawing(NamedTuple):
+    drawn_with: DrawnWith
+    host_controls: HostControlsHud | None
 
 
 @dataclass(frozen=True)
@@ -207,10 +202,8 @@ class HudRenderer:
         self._pointer: tuple[int, int] | None = None
         self._icon = load_font(SIZE_BODY, SYMBOL_FONT)
         self._thumbs_by_path: dict[str, Image.Image] = {}
-        self._osr2 = Osr2Section()
-        self._drive = DriveSection()
-        self._visualizer = VisualizerResolver()
         self._item_row = RowSection()
+        self._host_controls = HostControlsSection()
         self._drawn: _DrawnButTheRow | None = None
 
     def _thumbnail(self, cell: HudCell) -> Image.Image:
@@ -252,6 +245,7 @@ class HudRenderer:
         item_row: RowHud | None = None,
         heatmap: np.ndarray | None = None,
         drawn_with: DrawnWith = PLAIN,
+        host_controls: HostControlsHud | None = None,
     ) -> RenderedHud:
         self._pointer = drawn_with.hover_pos
         if model.hud_minimized:
@@ -260,53 +254,49 @@ class HudRenderer:
                 room_for_the_tooltip=not drawn_with.may_grow_on_hover, flash=drawn_with.flash)
             return RenderedHud(bgra, HudTargets(click=[], loop=[], filter=[], expand=None,
                                                 buttons=buttons))
-        model = replace(model, drive=self._visualizer.resolve(
-            model.drive, osr2=model.osr2, control=model.osr2_control, paused=model.paused,
-            composed=model.drive_composed))
-        drawn_for = self._all_but_the_row(model, item_row, drawn_with)
+        model = replace(model, osr2="", osr2_rows=(), osr2_controls=(), max_intensity=None,
+                        drive=None)
+        drawn_for = self._all_but_the_row(model, item_row, drawn_with, host_controls)
         if drawn_for is not None and self._drawn is not None and self._drawn.drawn_for == drawn_for:
             return self._with_the_row(self._drawn, item_row, heatmap)
-        return self._drawn_whole(model, drawn_for, item_row, heatmap, drawn_with)
+        return self._drawn_whole(model, drawn_for, item_row, heatmap,
+                                 _Drawing(drawn_with, host_controls))
 
     def _measure(self, model: HudModel, item_row: RowHud | None,
-                 drawn_with: DrawnWith) -> _Sizes:
+                 drawing: _Drawing) -> _Sizes:
+        host_controls = drawing.host_controls
         rows = rows_with_the_speed(model)
         widths = [self._row_widths(row) for row in rows]
-        device_rows = [list(row) for row in model.osr2_rows]
-        device_row_widths = [self._row_widths(row) for row in device_rows]
         bar_width = max((
             2 * PAD + button_row_width(row, row_widths)
-            for row, row_widths in zip(rows + device_rows, widths + device_row_widths, strict=True)
+            for row, row_widths in zip(rows, widths, strict=True)
             if row
         ), default=0)
-        osr2_line = line_shown_for(model, model.drive, composed=model.drive_composed)
-        drive_w, drive_h = section_size() if model.drive is not None else (0, 0)
-        device_w = max(self._osr2.width(osr2_line) if model.osr2 else 0, drive_w)
         foot_w, foot_h = model.foot.size() if model.foot is not None else (0, 0)
         width = hud_width(model.funestra,
-                          text_width(self._tiny, drawn_with.video) + self._copy_room(drawn_with)
-                          + _name_reserve(model, drawn_with),
                           content_width=max(
                                 bar_width,
-                                2 * PAD + device_w if device_w else 0,
                                 2 * PAD + foot_w if foot_w else 0,
+                                drawing.drawn_with.width or 0,
+                                2 * PAD + self._host_controls.least_width(host_controls)
+                                if host_controls is not None else 0,
                                 2 * PAD + self._item_row.least_width(item_row)
                                 if item_row is not None else 0))
         row_h = ROW_H if item_row is not None else 0
         layout = hud_layout(
             heights=SectionHeights(
                 self._title_height(), row_h,
-                device_height(model.osr2, model.drive, drive_h, len(device_rows)), foot_h),
-            bars=len(rows))
-        return _Sizes(rows, widths, device_rows, device_row_widths, osr2_line, foot_h, width,
-                      row_h, layout)
+                HostControlsSection.height if host_controls is not None else 0, foot_h),
+            bars=len(rows), nav_map=has_a_nav_map(model.funestra))
+        return _Sizes(rows, widths, foot_h, width, row_h, layout)
 
     def _drawn_whole(self, model: HudModel, drawn_for: tuple | None, item_row: RowHud | None,
-                     heatmap: np.ndarray | None, drawn_with: DrawnWith) -> RenderedHud:
+                     heatmap: np.ndarray | None, drawing: _Drawing) -> RenderedHud:
+        drawn_with = drawing.drawn_with
         counts = count_lines(model)
         model, seed_win, action_win = narrowed_to_window(model)
         thumbs = NavMapThumbs(*self._nav_map_thumbnails(model))
-        sizes = self._measure(model, item_row, drawn_with)
+        sizes = self._measure(model, item_row, drawing)
         layout, width, foot_h = sizes.layout, sizes.width, sizes.foot_h
         hud = Hud(width, layout.height)
         for divider in layout.dividers:
@@ -334,8 +324,11 @@ class HudRenderer:
         row = None
         if item_row is not None:
             row = row_layout(item_row, rect=(x, layout.row, width - 2 * PAD, sizes.row_h))
-        device_buttons, bars = self._draw_device(hud, model, layout.device, sizes)
-        buttons.extend(device_buttons)
+        host_controls = None
+        if drawing.host_controls is not None:
+            host_controls = self._host_controls.draw(
+                image, (x, layout.host_controls, width - 2 * PAD, HostControlsSection.height),
+                drawing.host_controls)
         foot_rect = None
         if model.foot is not None:
             foot_rect = (x, layout.foot, width - 2 * PAD, foot_h)
@@ -348,8 +341,8 @@ class HudRenderer:
                                drawn_with.hover_loop)
                            if thumbs.corner is not None
                            else HudTargets(click=[], loop=[], filter=[], expand=None))
-        targets = replace(nav_map_targets, tracks=bars, row=row, foot=foot_rect, buttons=buttons,
-                          favorite=favorite)
+        targets = replace(nav_map_targets, tracks=[], row=row, foot=foot_rect, buttons=buttons,
+                          favorite=favorite, host_controls=host_controls)
         if drawn_for is not None:
             self._drawn = _DrawnButTheRow(drawn_for, image, to_bgra(image), row.rect, targets)
             return self._with_the_row(self._drawn, item_row, heatmap)
@@ -389,10 +382,11 @@ class HudRenderer:
         return buttons
 
     def _all_but_the_row(self, model: HudModel, item_row: RowHud | None,
-                         drawn_with: DrawnWith) -> tuple | None:
+                         drawn_with: DrawnWith,
+                         host_controls: HostControlsHud | None) -> tuple | None:
         if item_row is None or drawn_with.hover_tip:
             return None
-        return model, self._item_row.least_width(item_row), drawn_with
+        return model, self._item_row.least_width(item_row), drawn_with, host_controls
 
     def _with_the_row(self, drawn: _DrawnButTheRow, item_row: RowHud, heatmap) -> RenderedHud:
         x, y, width, height = drawn.row_rect
@@ -452,34 +446,9 @@ class HudRenderer:
             words=word_rects,
         )
 
-    def _draw_device(self, hud: Hud, model: HudModel, y: int,
-                     sizes: _Sizes) -> tuple[list[tuple[Rect, Button]], list[DriveTrack]]:
-        width = hud.image.width
-        buttons = self._draw_button_rows(hud, model, sizes.device_rows,
-                                         sizes.device_row_widths, y)
-        y += CONTROL_ROW_H * len(sizes.device_rows)
-        bars: list[DriveTrack] = []
-        max_intensity_bars: list[DriveTrack] = []
-        if model.osr2:
-            osr2_x = self._block_x(model, width, self._osr2.width(sizes.osr2_line))
-            buttons.extend(self._osr2.draw(hud.image, hud.draw, (osr2_x, y), sizes.osr2_line,
-                                           hover=self._pointer))
-            max_intensity_bars = self._osr2.bars(osr2_x, y, sizes.osr2_line)
-            y += OSR2_H + BLOCK_GAP
-        if model.drive is not None:
-            drive_x = self._block_x(model, width, section_size()[0])
-            self._drive.draw(hud.image, drive_x, y, model.drive)
-            drive_targets, bars = visualizer_targets(drive_x, y, model.drive)
-            buttons.extend(drive_targets)
-        return buttons, bars + max_intensity_bars
-
     def _row_widths(self, row: list[Button]) -> list[int]:
-        return [self._button_width(button, flush_left=index == 0 and not button.command)
-                for index, button in enumerate(row)]
-
-    def _button_width(self, button: Button, *, flush_left: bool) -> int:
-        pads = 1 if flush_left else 2
-        return button.width or text_width(self._tiny, button.icon) + pads * MODE_LABEL_PAD
+        return [button.width or text_width(self._tiny, button.icon) + 2 * WORD_PAD
+                for button in row]
 
     def _title_font(self, size: int) -> ImageFont.FreeTypeFont:
         if size not in self._titles:
