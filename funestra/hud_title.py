@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 
@@ -47,3 +48,11 @@ def hud_title(facts: HudTitleFacts) -> str:
         parts.append(ENHANCED_LABEL)
     parts.extend(word for word in facts.filters if word)
     return SEPARATOR.join(parts)
+
+
+_REVISION = re.compile(r"\s*\(v\d+\)$")
+
+
+def compilation_label(title: str) -> str:
+    volume = title.rsplit(" - ", 1)[-1]
+    return _REVISION.sub("", volume).strip()
