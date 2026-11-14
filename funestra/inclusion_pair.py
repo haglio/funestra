@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 
+from shared_ui.orientation import LANDSCAPE, PORTRAIT
+
 from funestra.hud_button import Button
 from funestra.hud_controls import lit_or_remembered
+from funestra.hud_icons import shared_icon
+from funestra.hud_title import ENHANCED_LABEL
+from funestra.modes import LengthMode
 
 Included = tuple[bool, bool]
 BOTH: Included = (True, True)
@@ -78,3 +83,61 @@ def answer_to_a_narrowing(says: str, *, nothing_left: bool, things: str) -> Narr
     if nothing_left:
         return Narrowed(including_no_other(things), warns=True, holds_what_is_on_screen=True)
     return Narrowed(says)
+
+
+PROJECTION = InclusionPair(
+    Kind("2D", shared_icon("flat_2d"), "2D {things}"),
+    Kind("VR", shared_icon("vr_hemisphere"), "VR {things}"),
+    {(True, True): "main_projection_both", (True, False): "main_projection_flat",
+     (False, True): "main_projection_vr", (False, False): "main_projection_none"},
+)
+
+LENGTH = InclusionPair(
+    Kind("Clips", shared_icon("clips"), "clips"),
+    Kind("Full", shared_icon("full"), "full videos"),
+    {(True, True): "main_funestra_length_mixed", (True, False): "main_funestra_length_clips",
+     (False, True): "main_funestra_length_full", (False, False): "main_funestra_length_none"},
+)
+
+ORIENTATION = InclusionPair(
+    Kind("Portrait", shared_icon(PORTRAIT), "portrait {things}"),
+    Kind("Landscape", shared_icon(LANDSCAPE), "landscape {things}"),
+    {(True, True): "main_orientation_both", (True, False): "main_orientation_portrait",
+     (False, True): "main_orientation_landscape", (False, False): "main_orientation_none"},
+)
+
+_LENGTHS: dict[Included, LengthMode] = {
+    (True, True): LengthMode.MIXED, (True, False): LengthMode.CLIPS,
+    (False, True): LengthMode.FULL, (False, False): LengthMode.NONE,
+}
+
+
+def length_mode(included: Included) -> LengthMode:
+    return _LENGTHS[included]
+
+
+def lengths_included(length: LengthMode) -> Included:
+    return next(included for included, mode in _LENGTHS.items() if mode is length)
+
+
+ORIGINALS_LABEL = "Originals"
+
+
+def _pair(shape: str, name: str, first: Kind, second: Kind,
+          spelled: tuple[str, str]) -> InclusionPair:
+    first_alone, second_alone = spelled
+    return InclusionPair(first, second, {
+        (True, True): f"{shape}_{name}_both", (True, False): f"{shape}_{name}_{first_alone}",
+        (False, True): f"{shape}_{name}_{second_alone}", (False, False): f"{shape}_{name}_none"})
+
+
+def media_pair(shape: str) -> InclusionPair:
+    return _pair(shape, "media", Kind("Images", shared_icon("photo"), "images"),
+                 Kind("Videos", shared_icon("play"), "videos"), ("images", "videos"))
+
+
+def enhancement_pair(shape: str) -> InclusionPair:
+    return _pair(shape, "enhancement",
+                 Kind(ENHANCED_LABEL, shared_icon("plus"), "enhanced {things}"),
+                 Kind(ORIGINALS_LABEL, shared_icon("originals"), "original {things}"),
+                 ("enhanced", "originals"))
