@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, fields, replace
 from enum import Enum, IntEnum, StrEnum
+from itertools import product
 
 from shared_ui.spacing import BUTTON_WORD_W
 
@@ -34,6 +35,7 @@ from .hud_title import (
     HudTitleFacts,
     compilation_label,
     hud_title,
+    looping_label,
 )
 from .inclusion_pair import (
     BOTH,
@@ -46,6 +48,7 @@ from .inclusion_pair import (
     lengths_included,
     media_pair,
 )
+from .loop_cycle import ACTION, OFF, SEED
 from .main_hud import GAP, VALUE_W, ModeHud
 from .modes import LengthMode, MainMode
 
@@ -481,3 +484,35 @@ def main_title(facts: HudFacts, block: ModeHud) -> str:
         order = SEPARATOR.join(part for part in (order, f"{facts.pace_s}s") if part)
     return hud_title(HudTitleFacts(locked=facts.locked, playing_set=playing_set, order=order,
                                    f_mode=block.scripted_filter, filters=title_filters(facts)))
+
+
+def slideshow_title(facts: HudFacts, *, loop: str = "", action_filter: str = "") -> str:
+    return hud_title(HudTitleFacts(
+        playing_set=looping_label(loop) if loop else "", locked=facts.locked,
+        order="" if facts.latest is None else LATEST_LABEL if facts.latest else SHUFFLE_LABEL,
+        f_mode=facts.f_mode,
+        filters=(media_pair("").title_word(facts.media),
+                 enhancement_pair("").title_word(facts.enhancement), action_filter)))
+
+
+_ONE_OR_BOTH: tuple[Included, ...] = (BOTH, (True, False), (False, True))
+_LONGEST_PACE = 99
+
+
+def title_choices(kind: HudKind) -> tuple[str, ...]:
+    if kind is HudKind.MAIN:
+        return tuple(sorted({
+            main_title(HudFacts(main_mode=mode, locked=locked, latest=latest, pace_s=_LONGEST_PACE,
+                                plays_flat=projection[0], plays_vr=projection[1],
+                                length_mode=length, plays_portrait=orientation[0],
+                                plays_landscape=orientation[1]),
+                       ModeHud(scripted_filter=f_mode))
+            for mode, locked, latest, f_mode, projection, length, orientation in product(
+                MainMode, (True, False), (True, False, None), (True, False), _ONE_OR_BOTH,
+                (LengthMode.MIXED, LengthMode.FULL, LengthMode.CLIPS), _ONE_OR_BOTH)}))
+    return tuple(sorted({
+        slideshow_title(HudFacts(locked=locked, latest=latest, f_mode=f_mode, media=media,
+                                 enhancement=enhancement), loop=loop)
+        for loop, locked, latest, f_mode, media, enhancement in product(
+            (OFF, SEED, ACTION), (True, False), (True, False), (True, False), _ONE_OR_BOTH,
+            _ONE_OR_BOTH)}))

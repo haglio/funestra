@@ -41,6 +41,7 @@ from funestra.hud_icons import SHARED_ICON, shared_icon, shared_icon_name
 
 from .geometry import Rect, contains
 from .host_controls import HostControlsHud, HostControlsSection
+from .hud_kinds import HudKind, title_choices
 from .hud_minimize import ROOM as MINIMIZE_ROOM
 from .hud_minimize import collapsed_hud, corner_button_rect, minimize_button
 from .hud_placement import block_x
@@ -204,6 +205,7 @@ class HudRenderer:
         self._thumbs_by_path: dict[str, Image.Image] = {}
         self._item_row = RowSection()
         self._host_controls = HostControlsSection()
+        self._widest_titles: dict[HudKind, int] = {}
         self._drawn: _DrawnButTheRow | None = None
 
     def _thumbnail(self, cell: HudCell) -> Image.Image:
@@ -278,6 +280,7 @@ class HudRenderer:
                                 bar_width,
                                 2 * PAD + foot_w if foot_w else 0,
                                 drawing.drawn_with.width or 0,
+                                self._room_for_the_widest_title(model.kind, drawing.drawn_with),
                                 2 * PAD + self._host_controls.least_width(host_controls)
                                 if host_controls is not None else 0,
                                 2 * PAD + self._item_row.least_width(item_row)
@@ -445,6 +448,14 @@ class HudRenderer:
             wrong_action=wrong_rect,
             words=word_rects,
         )
+
+    def _room_for_the_widest_title(self, kind: HudKind | None, drawn_with: DrawnWith) -> int:
+        if kind is None:
+            return 0
+        if kind not in self._widest_titles:
+            self._widest_titles[kind] = max(text_width(self._body, title)
+                                            for title in title_choices(kind))
+        return TITLE_X + self._widest_titles[kind] + PAD + _minus_room(drawn_with)
 
     def _row_widths(self, row: list[Button]) -> list[int]:
         return [button.width or text_width(self._tiny, button.icon) + 2 * WORD_PAD

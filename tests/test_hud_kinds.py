@@ -30,6 +30,8 @@ from funestra.hud_kinds import (
     hud_rows,
     main_title,
     osr2_button,
+    slideshow_title,
+    title_choices,
     window_buttons,
 )
 from funestra.hud_title import (
@@ -1108,3 +1110,21 @@ class TestTheMainFunestrasTitle:
 def test_a_compilations_title_keeps_only_its_volume():
     assert compilation_label("various - Example Studio Alpha Collection - Volume 6 (v1)") == "Volume 6"
     assert compilation_label("Scene Five 3") == "Scene Five 3"
+
+
+def test_a_slideshows_title_says_its_loop_its_hold_its_order_and_what_it_narrows_to():
+    facts = HudFacts(funestra="portrait", locked=False, latest=True, f_mode=True,
+                     media=(False, True), enhancement=(True, True))
+
+    assert slideshow_title(facts, loop="seed", action_filter="alpha") == (
+        "Looping seeds · Latest · F-mode · Videos · alpha")
+
+
+def test_every_title_a_kind_of_hud_can_show_is_among_its_choices_but_the_unbounded_parts():
+    shown = main_title(HudFacts(main_mode=MainMode.GENAU, locked=False, latest=False, pace_s=99,
+                                f_mode=True, plays_vr=True, plays_flat=False,
+                                plays_portrait=False), ModeHud(scripted_filter=True))
+
+    assert shown in title_choices(HudKind.MAIN)
+    assert slideshow_title(HudFacts(locked=True, latest=False, media=(True, False)),
+                           loop="action") in title_choices(HudKind.SATELLITE)
