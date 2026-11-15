@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 
 from .funscript import Funscript
 from .funscript import load as load_funscript
 from .playlist import PlaylistItem
+
+_SCRIPTS_HELD = 8
 
 
 def _by_path(items: Iterable[PlaylistItem], field: str) -> dict:
@@ -25,7 +28,7 @@ class RidesAlong:
                  points_of_interest: Mapping[Path, tuple] | None = None) -> None:
         self._funscripts = dict(funscripts or {})
         self._points_of_interest = dict(points_of_interest or {})
-        self._read: tuple[Path | None, Funscript | None] = (None, None)
+        self._read: OrderedDict[Path, Funscript] = OrderedDict()
 
     @classmethod
     def of(cls, items: Iterable[PlaylistItem]) -> RidesAlong:
@@ -43,9 +46,14 @@ class RidesAlong:
 
     def funscript(self, *videos: Path) -> Funscript | None:
         path = next(filter(None, map(self.funscript_path, videos)), None)
-        if path != self._read[0]:
-            self._read = (path, None if path is None else load_funscript(path))
-        return self._read[1]
+        if path is None:
+            return None
+        if path not in self._read:
+            self._read[path] = load_funscript(path)
+            while len(self._read) > _SCRIPTS_HELD:
+                self._read.popitem(last=False)
+        self._read.move_to_end(path)
+        return self._read[path]
 
     def points(self, video: Path) -> tuple:
         return self._points_of_interest.get(video, ())
