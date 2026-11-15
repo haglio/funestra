@@ -473,7 +473,7 @@ class TestTheOsr2:
 
         playback.advance()
 
-        assert tcode.updates == [(1500, playback.current_funscript, 1.5)]
+        assert tcode.updates == [(1500, playback.funscript_as_played, 1.5)]
 
     def test_a_clip_with_no_funscript_rests_the_device(self, tmp_path):
         playback, _engine, tcode = _driving(tmp_path, scripted=())
@@ -519,14 +519,25 @@ class TestTheOsr2:
             jump()
             assert tcode.resets == before + 1
 
-    def test_a_clip_it_rolls_onto_by_itself_starts_it_from_wherever_it_is(self, tmp_path):
+    def test_the_script_the_device_follows_carries_the_next_clips_opening_actions_past_this_clips_end(self, tmp_path):
+        playback, engine, tcode = _driving(tmp_path)
+        playback.set_tcode_enabled(True)
+        engine.position_ms = 4900
+
+        playback.advance()
+
+        followed = tcode.updates[-1][1]
+        assert followed.actions == [(0, 0), (1000, 90), (2000, 0),
+                                    (5000, 0), (6000, 90), (7000, 0)]
+
+    def test_a_clip_it_rolls_onto_by_itself_is_carried_straight_on_with_no_fresh_takeover(self, tmp_path):
         playback, engine, tcode = _driving(tmp_path)
         before = tcode.resets
 
         engine.run_out()
         playback.advance()
 
-        assert tcode.resets == before + 1
+        assert tcode.resets == before
 
     def test_a_locked_clip_coming_round_again_starts_it_from_wherever_it_is(self, tmp_path):
         playback, engine, tcode = _driving(tmp_path, locked=True)

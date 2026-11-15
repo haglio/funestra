@@ -57,6 +57,8 @@ class Funscript:
         self._planned_grid_values: tuple[float, ...] = ()
         self._looped_key: tuple[int, int] | None = None
         self._looped_value: Funscript = self
+        self._followed_key: tuple[int, Funscript] | None = None
+        self._followed_value: Funscript = self
 
     @property
     def first_real_event_ms(self) -> int | None:
@@ -136,6 +138,16 @@ class Funscript:
                 (t + k * period, p) for k in passes for t, p in one_pass
                 if t + k * period < laid_out_until])
         return self._looped_value
+
+    def followed_by(self, following: Funscript, seam_ms: int) -> Funscript:
+        if self._followed_key is None or self._followed_key[0] != seam_ms \
+                or self._followed_key[1] is not following:
+            head = [(t + seam_ms, p) for t, p in following.actions
+                    if t <= QUIET_LEAD_IN_MS
+                    and (not self.actions or t + seam_ms > self.actions[-1][0])]
+            self._followed_key = (seam_ms, following)
+            self._followed_value = Funscript(actions=self.actions + head) if head else self
+        return self._followed_value
 
     def position_at(self, position_ms: int) -> float:
         if not self.actions:
