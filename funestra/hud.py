@@ -32,6 +32,7 @@ from .hud_icons import (
     APP_ICON,
     SHARED_ICON,
     TOGGLE_SWITCH,
+    UNFAVORITE_ICON,
     app_mark_letter,
     shared_icon_name,
 )
@@ -261,7 +262,10 @@ def draw_button(image: Image.Image, draw: ImageDraw.ImageDraw,
         hovered=hovered, dim=button.dim,
         rest_ink=RED if button.danger else YELLOW if button.enhanced else None))
     icon = button.icon
-    if icon.startswith(APP_ICON):
+    if icon == UNFAVORITE_ICON:
+        draw_icon(image, "star", rect, ink if button.dim else (*GREEN, 255))
+        draw_icon(image, "circle_slash", rect, ink if button.dim else (*RED, 255))
+    elif icon.startswith(APP_ICON):
         draw_letter(draw, rect, app_mark_letter(icon))
     elif icon.startswith(SHARED_ICON):
         draw_icon(image, shared_icon_name(icon), rect, ink)
