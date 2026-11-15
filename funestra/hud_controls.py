@@ -60,8 +60,9 @@ def why_it_cannot_step(verb: str, status: FunestraStatus, noun: str) -> str | No
 
 
 def transport(funestra: str, *, noun: str, longer_than_a_step: bool,
-              image: bool = False) -> tuple[Button, ...]:
-    cannot_step = AN_IMAGE if image else "" if longer_than_a_step else too_short_to_step(noun)
+              image: bool = False, cannot_step: str = "") -> tuple[Button, ...]:
+    cannot_step = cannot_step or (AN_IMAGE if image else "" if longer_than_a_step
+                                  else too_short_to_step(noun))
     reason = f" ({cannot_step})" if cannot_step else ""
     return (
         previous_button(f"{funestra}_prev", noun=noun),
