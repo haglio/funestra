@@ -213,7 +213,8 @@ def _lock(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
                    else f"Unlocked — moving on every {pace}s; press to hold this {one}")
     else:
         tooltip = lock_tooltip(facts.locked, _noun(facts, shows))
-    return (lock_button(facts.funestra, locked=facts.locked, tooltip=tooltip),)
+    return (lock_button(facts.funestra, locked=facts.locked, tooltip=tooltip,
+                        group_break=shows is Shows.KINO),)
 
 
 def _slide_trash(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
@@ -281,9 +282,17 @@ def _inclusions(facts: HudFacts, shows: Shows) -> tuple[tuple[InclusionPair, Inc
 
 def _inclusion_buttons(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     things = "videos" if shows is Shows.KINO else facts.flick_many
-    return tuple(button for pair, included in _inclusions(facts, shows)
-                 for button in pair.buttons(included, remembered=_remembered(facts, shows),
-                                            things=things))
+    offered = facts.plays_vr is not None and facts.plays_flat is not None
+    shown = [(ORIENTATION, (facts.plays_portrait, facts.plays_landscape), True),
+             (PROJECTION, (bool(facts.plays_flat), bool(facts.plays_vr)) if offered else BOTH,
+              offered)]
+    if shows is Shows.KINO:
+        shown.append((LENGTH, lengths_included(facts.length_mode), True))
+    return tuple(
+        button if can else replace(button, dim=True,
+                                   tooltip=f"{button.tooltip} (all these {things} are one kind)")
+        for pair, included, can in shown
+        for button in pair.buttons(included, remembered=_remembered(facts, shows), things=things))
 
 
 def _compilation(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
@@ -307,15 +316,16 @@ def _clip_scene(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
         else "Back to the clip taken from this scene" if facts.jump_to == "clip"
         else "Play the full scene this clip came from"
              " (no full scene in the library for this one)",
-        dim=not facts.jump_to, group_break=True,
+        dim=not facts.jump_to,
     ),)
 
 
 def _versions(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     command = ("main_funestra_cycle_version" if shows is Shows.KINO
                else f"{facts.funestra}_cycle_version")
-    return (versions_button(command, noun=_noun(facts, shows),
-                            has_other_versions=facts.has_other_versions),)
+    return (replace(versions_button(command, noun=_noun(facts, shows),
+                                    has_other_versions=facts.has_other_versions),
+                    group_break=shows is not Shows.KINO),)
 
 
 _KINO, _GENAU, _SLIDES = (frozenset({shows}) for shows in Shows)
@@ -333,7 +343,6 @@ TRANSPORT_CONTROLS: tuple[HudControl, ...] = (
     HudControl("trash_flick", _GENAU, _flick_trash),
     HudControl("lock", EVERY_SHOW, _lock),
     HudControl("fmode", EVERY_SHOW, _fmode),
-    HudControl("flip", _GENAU, _flip),
     HudControl("reset", _KINO | _SLIDES, _reset),
     HudControl("browse_order", EVERY_SHOW, _browse_order),
     HudControl("inclusions", _KINO | _GENAU, _inclusion_buttons),
@@ -342,6 +351,7 @@ TRANSPORT_CONTROLS: tuple[HudControl, ...] = (
     HudControl("compilation", _KINO, _compilation),
     HudControl("clip_scene", _KINO, _clip_scene),
     HudControl("versions", _KINO | _SLIDES, _versions),
+    HudControl("flip", _GENAU, _flip),
 )
 
 

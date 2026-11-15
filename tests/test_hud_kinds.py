@@ -281,17 +281,14 @@ class TestProjectionPair:
 
         assert (flat.command, vr.command) == ("main_projection_flat", "main_projection_vr")
 
-    def test_flat_leads_vr_in_a_group_of_their_own(self):
+    def test_flat_leads_vr_after_portrait_and_landscape_in_a_group_of_their_own(self):
         placed = place_rows(main_hud_rows(_main_facts(main_mode=MainMode.KINO, latest=False,
                                                   plays_flat=True, plays_vr=True)), x=0, y=0)
         rect_of = {b.icon: rect for rect, b in placed}
-        latest, flat, vr = rect_of[LATEST_ICON], rect_of[FLAT_ICON], rect_of[VR_ICON]
+        landscape, flat, vr = rect_of[LANDSCAPE_ICON], rect_of[FLAT_ICON], rect_of[VR_ICON]
 
-        assert flat[0] - (latest[0] + latest[2]) == GROUP_GAP
+        assert flat[0] - (landscape[0] + landscape[2]) == GROUP_GAP
         assert vr[0] - (flat[0] + flat[2]) == GAP
-
-    def test_no_pair_at_all_where_the_library_holds_one_shape(self):
-        assert self._flat_and_vr(flat=None, vr=None) == ()
 
     def test_inside_a_compilation_the_shapes_read_as_held(self):
         pair = self._flat_and_vr(flat=True, vr=True, compilation="Volume 6")
@@ -361,13 +358,13 @@ class TestLengthPair:
         assert (clips.lit, full.lit) == (False, False)
         assert (clips.command, full.command) == ("main_funestra_length_clips", "main_funestra_length_full")
 
-    def test_clips_lead_full_in_a_group_of_their_own(self):
+    def test_clips_lead_full_after_2d_and_vr_in_a_group_of_their_own(self):
         placed = place_rows(main_hud_rows(_main_facts(main_mode=MainMode.KINO, latest=False,
                                                   length_mode=LengthMode.MIXED)), x=0, y=0)
         rect_of = {b.icon: rect for rect, b in placed}
-        latest, clips, full = rect_of[LATEST_ICON], rect_of[CLIPS_ICON], rect_of[FULL_ICON]
+        vr, clips, full = rect_of[VR_ICON], rect_of[CLIPS_ICON], rect_of[FULL_ICON]
 
-        assert clips[0] - (latest[0] + latest[2]) == GROUP_GAP
+        assert clips[0] - (vr[0] + vr[2]) == GROUP_GAP
         assert full[0] - (clips[0] + clips[2]) == GAP
 
     def test_each_says_whether_its_length_is_included(self):
@@ -727,12 +724,12 @@ class TestOrientationPair:
         assert (portrait.command, landscape.command) == (
             "main_orientation_both", "main_orientation_none")
 
-    def test_they_sit_right_after_clips_and_full_in_a_group_of_their_own(self):
+    def test_they_lead_the_inclusion_pairs_right_after_the_browse_order_in_a_group_of_their_own(self):
         placed = place_rows(main_hud_rows(_main_facts(main_mode=MainMode.KINO, latest=False)), x=0, y=0)
         rect_of = {b.icon: rect for rect, b in placed}
-        full, portrait, landscape = rect_of[FULL_ICON], rect_of[PORTRAIT_ICON], rect_of[LANDSCAPE_ICON]
+        latest, portrait, landscape = rect_of[LATEST_ICON], rect_of[PORTRAIT_ICON], rect_of[LANDSCAPE_ICON]
 
-        assert portrait[0] - (full[0] + full[2]) == GROUP_GAP
+        assert portrait[0] - (latest[0] + latest[2]) == GROUP_GAP
         assert landscape[0] - (portrait[0] + portrait[2]) == GAP
 
     def test_they_name_the_videos_and_the_flicks_where_the_other_pairs_do(self):
@@ -816,7 +813,7 @@ def test_every_button_posts_that_sides_own_verb_and_names_itself():
 
 def test_the_band_breaks_into_groups_where_the_controls_stop_being_about_one_thing():
     assert [name for name, button in zip(_names(_button_row()), _button_row(), strict=True) if button.group_break] == [
-        "prev", "trash", "lock", "reset", "shuffle", "media_videos", "enhancement_originals",
+        "prev", "trash", "reset", "shuffle", "media_videos", "enhancement_originals",
         "cycle_version"]
 
 
@@ -1124,3 +1121,44 @@ def test_every_title_a_kind_of_hud_can_show_is_among_its_choices_but_the_unbound
     assert shown in title_choices(HudKind.MAIN)
     assert slideshow_title(HudFacts(locked=True, latest=False, media=(True, False)),
                            loop="action") in title_choices(HudKind.SATELLITE)
+
+
+def _second_row(**facts) -> tuple[Button, ...]:
+    return hud_rows(HudKind.MAIN, _main_facts(latest=False, **facts))[1]
+
+
+def test_portrait_and_landscape_lead_the_inclusion_pairs_then_2d_and_vr_in_both_modes():
+    for mode in MainMode:
+        commands = _commands(_second_row(main_mode=mode, plays_vr=True, plays_flat=True))
+        orientation = commands.index("main_orientation_landscape")
+        assert commands[orientation + 2:orientation + 4] == [
+            "main_projection_vr", "main_projection_flat"], (mode, commands)
+
+
+def test_a_library_of_one_kind_shows_the_2d_and_vr_pair_dimmed_rather_than_leaving_it_out():
+    for mode in MainMode:
+        shown = {b.command: b for b in _second_row(main_mode=mode, plays_vr=None, plays_flat=None)}
+        assert shown["main_projection_vr"].dim, mode
+        assert shown["main_projection_flat"].dim, mode
+
+
+def test_genaus_flip_ends_its_row():
+    assert _commands(_second_row(main_mode=MainMode.GENAU))[-1] == "genau_flip_ends"
+
+
+def test_compilation_full_scene_and_versions_close_kinos_row_as_one_group():
+    row = _second_row(main_mode=MainMode.KINO)
+    last_three = row[-3:]
+
+    assert [b.command for b in last_three] == [
+        "main_funestra_compilation", "main_funestra_clip_jump", "main_funestra_cycle_version"]
+    assert [b.group_break for b in last_three] == [True, False, False]
+
+
+def test_trash_and_the_lock_touch_with_no_gap_between_them():
+    for kind, facts in ((HudKind.SATELLITE, HudFacts(funestra="portrait")),
+                        (HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU))):
+        row = hud_rows(kind, facts)[1]
+        lock = next(index for index, b in enumerate(row) if b.command.endswith("_lock"))
+        assert "trash" in row[lock - 1].command
+        assert not row[lock].group_break, kind
