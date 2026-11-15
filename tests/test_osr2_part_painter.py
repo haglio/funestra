@@ -9,7 +9,7 @@ from funestra.hud_minimize import minimize_command
 from funestra.hud_placement import HudCorner
 from funestra.main_hud import MainHudModel, osr2_controls
 from funestra.main_hud_painter import _PAD as PAD
-from funestra.main_hud_painter import MainHud, ModeHud, hud_xy
+from funestra.main_hud_painter import MainHud, hud_xy
 from funestra.modes import MainMode, Osr2State
 from funestra.osr2_part_painter import Osr2PartPainter
 from funestra.osr2_visualizer import DriveHud
@@ -22,7 +22,6 @@ def _drive() -> DriveHud:
 
 def _hud(**model) -> MainHud:
     return MainHud(
-        modes=ModeHud(video="scene one"),
         main_hud_model=MainHudModel(**{
             "main_mode": MainMode.GENAU, "osr2": Osr2State.ROBOT_HAND,
             "rows": main_hud_rows("genau"), "osr2_rows": motion_rows(),
@@ -74,15 +73,6 @@ def test_it_keeps_no_room_for_a_minus_in_a_lower_corner():
     painter, _bgra = _painted(hud_corner=HudCorner.LOWER_LEFT)
 
     assert _button_rect(painter, "robot_hand_toggle_learned")[0] == PAD
-
-
-def test_a_long_name_for_the_video_does_not_widen_it():
-    def width(video: str) -> int:
-        return Osr2PartPainter().rgba(MainHud(
-            modes=ModeHud(video=video),
-            main_hud_model=MainHudModel(osr2_rows=motion_rows()), drive=_drive()))[1][0]
-
-    assert width("Jane Doe - scene one - " + "a long descriptor " * 6) == width("")
 
 
 def test_the_drive_visualizer_is_drawn_with_bars_to_drag():
