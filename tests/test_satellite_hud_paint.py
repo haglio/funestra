@@ -1247,16 +1247,29 @@ def test_the_enhanced_switch_keeps_its_place_under_a_mode_row(thumb):
     assert by_name["reset"][0] + by_name["reset"][2] + PAD <= width
 
 
-def test_a_hud_draws_none_of_the_osr2_part_whatever_its_source_hands_it():
-    plain = HudRenderer("portrait").render(_model(title="Unlocked"))
-    handed = HudRenderer("portrait").render(_model(
-        title="Unlocked", osr2=Osr2State.ROBOT_HAND, max_intensity=35,
-        osr2_controls=(Button("robot_hand_park", "P", "Parked"),),
-        osr2_rows=((Button("osr2_aim", "A", "Aim"),),),
-        drive=DriveHud(driven=DRIVEN_BY_ROBOT_HAND)))
+_THE_OSR2_PART = {
+    "osr2": Osr2State.ROBOT_HAND, "max_intensity": 35,
+    "osr2_controls": (Button("robot_hand_park", "P", "Parked"),),
+    "osr2_rows": ((Button("osr2_aim", "A", "Aim"),),),
+    "drive": DriveHud(driven=DRIVEN_BY_ROBOT_HAND)}
+
+
+def test_a_hud_whose_source_names_its_kind_draws_none_of_the_osr2_part_it_is_handed():
+    named = {"kind": HudKind.SATELLITE, "facts": HudFacts(funestra="portrait")}
+    plain = HudRenderer("portrait").render(_model(title="Unlocked", **named))
+    handed = HudRenderer("portrait").render(_model(title="Unlocked", **named, **_THE_OSR2_PART))
 
     assert np.array_equal(handed.bgra, plain.bgra)
     assert handed.targets.tracks == []
+
+
+def test_a_source_from_before_the_one_hud_still_gets_the_osr2_part_it_hands_over():
+    plain = HudRenderer("portrait").render(_model(title="Unlocked"))
+    handed = HudRenderer("portrait").render(_model(title="Unlocked", **_THE_OSR2_PART))
+
+    assert handed.bgra.shape[0] > plain.bgra.shape[0]
+    assert handed.targets.tracks
+    assert "robot_hand_park" in [button.command for _rect, button in handed.targets.buttons]
 
 
 class _Block:
