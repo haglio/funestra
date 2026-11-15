@@ -158,6 +158,7 @@ class HudModel:
     max_intensity: int | None = None
     paused: bool = False
     drive: DriveHud | None = None
+    drive_composed: bool = False
 
     foot: HudSection | None = None
     kind: HudKind | None = None

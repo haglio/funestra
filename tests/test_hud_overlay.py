@@ -582,6 +582,17 @@ def _publish_motion(path: Path, offset: float) -> None:
         waveform=tuple(0.5 + 0.4 * math.sin(i / 6 + offset) for i in range(80))))
 
 
+class TestAHudFromBeforeTheOneHudWithTheOsr2:
+    def test_draws_the_motion_genau_publishes_under_the_osr2_line(self, tmp_path: Path, hud: Path):
+        _give_it_the_osr2(hud)
+        _publish_motion(tmp_path / "drive.txt", 0.0)
+        overlay = _overlay(tmp_path, hud, FakeEngine(), drive=DriveFeed(tmp_path / "drive.txt"))
+
+        overlay.tick()
+
+        assert overlay.targets.tracks
+
+
 def _overlay_handing_on_the_motion(tmp_path: Path, hud: Path, engine) -> HudOverlay:
     return _overlay(tmp_path, hud, engine, drive=DriveFeed(
         tmp_path / "drive.txt", visualizer=DrivePublisher(tmp_path / "visualizer.txt")))
@@ -660,8 +671,10 @@ class TestAHudWithTheOsr2ItsOwnFunestraScripts:
         assert drives_itself is False
         assert read_drive(tmp_path / "visualizer.txt") == composed
 
-    def test_a_hud_with_no_visualizer_to_hand_it_to_reads_no_motion(self, tmp_path, hud):
+    def test_a_hud_naming_its_kind_with_no_visualizer_to_hand_it_to_reads_no_motion(
+            self, tmp_path, hud):
         _give_it_the_osr2(hud)
+        _publish(hud, kind="satellite")
         _publish_motion(tmp_path / "drive.txt", 0.0)
         gate = _Gate(DriveHud())
         overlay = _overlay(tmp_path, hud, FakeEngine(),
