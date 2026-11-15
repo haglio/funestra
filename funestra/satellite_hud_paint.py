@@ -44,17 +44,11 @@ from .host_controls import HostControlsHud, HostControlsSection
 from .hud_kinds import HudKind, title_choices
 from .hud_minimize import ROOM as MINIMIZE_ROOM
 from .hud_minimize import collapsed_hud, corner_button_rect, minimize_button
-from .hud_osr2 import VisualizerResolver
 from .hud_placement import block_x
 from .hud_row import ROW_H, RowHud, RowSection, row_layout
-from .hud_sections import blocks_height
-from .main_hud import MainHudModel, kino_shows
-from .main_hud_painter import MainHud, Osr2Block, Osr2PartDrawing, Slot, hud_fonts
-from .modes import MainMode, Osr2State, read_mode
 from .name_copy import COPY_GAP, COPY_ICON, copy_button, copy_icon_ink, copy_icon_rect
 from .satellite_hud import (
     ACT_GAP,
-    BLOCK_GAP,
     COL_LABEL_GAP,
     COL_LABEL_H,
     CONTROL_ROW_H,
@@ -184,23 +178,11 @@ class _Sizes:
     width: int
     row_h: int
     layout: HudLayout
-    osr2_block: Osr2Block | None = None
 
 
 class _Drawing(NamedTuple):
     drawn_with: DrawnWith
     host_controls: HostControlsHud | None
-    osr2_part: MainHud | None = None
-
-
-def _osr2_part_from_before_the_one_hud(model: HudModel) -> MainHud | None:
-    if model.kind is not None or not (model.osr2 or model.osr2_rows or model.drive):
-        return None
-    return MainHud(main_hud_model=MainHudModel(
-        main_mode=MainMode.KINO if model.drive_composed else MainMode.GENAU,
-        osr2=read_mode(Osr2State, model.osr2, Osr2State.OFF), osr2_control=model.osr2_control,
-        paused=model.paused, osr2_rows=model.osr2_rows, osr2_controls=model.osr2_controls,
-        has_osr2=bool(model.osr2), max_intensity=model.max_intensity), drive=model.drive)
 
 
 @dataclass(frozen=True)
@@ -223,8 +205,6 @@ class HudRenderer:
         self._thumbs_by_path: dict[str, Image.Image] = {}
         self._scrubber_row = RowSection()
         self._host_controls = HostControlsSection()
-        self._osr2_part = Osr2PartDrawing(hud_fonts())
-        self._visualizer = VisualizerResolver()
         self._widest_titles: dict[HudKind, int] = {}
         self._drawn: _DrawnButTheRow | None = None
 
@@ -276,28 +256,17 @@ class HudRenderer:
                 room_for_the_tooltip=not drawn_with.may_grow_on_hover, flash=drawn_with.flash)
             return RenderedHud(bgra, HudTargets(click=[], loop=[], filter=[], expand=None,
                                                 buttons=buttons))
-        osr2_part = self._resolved(_osr2_part_from_before_the_one_hud(model))
         model = replace(model, osr2="", osr2_rows=(), osr2_controls=(), max_intensity=None,
                         drive=None)
-        drawing = _Drawing(drawn_with, host_controls, osr2_part)
-        drawn_for = self._all_but_the_row(model, scrubber_row, drawing)
+        drawn_for = self._all_but_the_row(model, scrubber_row, drawn_with, host_controls)
         if drawn_for is not None and self._drawn is not None and self._drawn.drawn_for == drawn_for:
             return self._with_the_row(self._drawn, scrubber_row, heatmap)
-        return self._drawn_whole(model, drawn_for, scrubber_row, heatmap, drawing)
-
-    def _resolved(self, osr2_part: MainHud | None) -> MainHud | None:
-        if osr2_part is None:
-            return None
-        model = osr2_part.main_hud_model
-        return replace(osr2_part, drive=self._visualizer.resolve(
-            osr2_part.drive, osr2=model.osr2, control=model.osr2_control, paused=model.paused,
-            composed=kino_shows(model.main_mode)))
+        return self._drawn_whole(model, drawn_for, scrubber_row, heatmap,
+                                 _Drawing(drawn_with, host_controls))
 
     def _measure(self, model: HudModel, scrubber_row: RowHud | None,
                  drawing: _Drawing) -> _Sizes:
         host_controls = drawing.host_controls
-        osr2_block = (None if drawing.osr2_part is None
-                      else self._osr2_part.block(drawing.osr2_part))
         rows = rows_with_the_speed(model)
         widths = [self._row_widths(row) for row in rows]
         bar_width = max((
@@ -311,7 +280,6 @@ class HudRenderer:
                                 bar_width,
                                 2 * PAD + foot_w if foot_w else 0,
                                 drawing.drawn_with.width or 0,
-                                2 * PAD + osr2_block.width if osr2_block is not None else 0,
                                 self._room_for_the_widest_title(model.kind, drawing.drawn_with),
                                 2 * PAD + self._host_controls.least_width(host_controls)
                                 if host_controls is not None else 0,
@@ -321,11 +289,9 @@ class HudRenderer:
         layout = hud_layout(
             heights=SectionHeights(
                 self._title_height(), row_h,
-                blocks_height([HostControlsSection.height if host_controls is not None else 0,
-                               osr2_block.height if osr2_block is not None else 0], BLOCK_GAP),
-                foot_h),
+                HostControlsSection.height if host_controls is not None else 0, foot_h),
             bars=len(rows), nav_map=has_a_nav_map(model.funestra))
-        return _Sizes(rows, widths, foot_h, width, row_h, layout, osr2_block)
+        return _Sizes(rows, widths, foot_h, width, row_h, layout)
 
     def _drawn_whole(self, model: HudModel, drawn_for: tuple | None, scrubber_row: RowHud | None,
                      heatmap: np.ndarray | None, drawing: _Drawing) -> RenderedHud:
@@ -361,12 +327,6 @@ class HudRenderer:
         row = None
         if scrubber_row is not None:
             row = row_layout(scrubber_row, rect=(x, layout.row, width - 2 * PAD, sizes.row_h))
-        tracks: list = []
-        if sizes.osr2_block is not None:
-            osr2_buttons, tracks = self._osr2_part.draw(
-                hud, sizes.osr2_block, layout.host_controls, Slot(model.hud_corner, 0),
-                self._pointer)
-            buttons.extend(osr2_buttons)
         host_controls = None
         if drawing.host_controls is not None:
             host_controls = self._host_controls.draw(
@@ -384,7 +344,7 @@ class HudRenderer:
                                drawn_with.hover_loop)
                            if thumbs.corner is not None
                            else HudTargets(click=[], loop=[], filter=[], expand=None))
-        targets = replace(nav_map_targets, tracks=tracks, row=row, foot=foot_rect, buttons=buttons,
+        targets = replace(nav_map_targets, tracks=[], row=row, foot=foot_rect, buttons=buttons,
                           favorite=favorite, host_controls=host_controls)
         if drawn_for is not None:
             self._drawn = _DrawnButTheRow(drawn_for, image, to_bgra(image), row.rect, targets)
@@ -425,10 +385,11 @@ class HudRenderer:
         return buttons
 
     def _all_but_the_row(self, model: HudModel, scrubber_row: RowHud | None,
-                         drawing: _Drawing) -> tuple | None:
-        if scrubber_row is None or drawing.drawn_with.hover_tip:
+                         drawn_with: DrawnWith,
+                         host_controls: HostControlsHud | None) -> tuple | None:
+        if scrubber_row is None or drawn_with.hover_tip:
             return None
-        return model, self._scrubber_row.least_width(scrubber_row), drawing
+        return model, self._scrubber_row.least_width(scrubber_row), drawn_with, host_controls
 
     def _with_the_row(self, drawn: _DrawnButTheRow, scrubber_row: RowHud, heatmap) -> RenderedHud:
         x, y, width, height = drawn.row_rect
