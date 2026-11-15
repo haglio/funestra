@@ -198,7 +198,7 @@ def _buttons_wearing_a_shared_controls_face(source: _AppSource, names: set[str],
 def test_the_shared_controls_icons_are_read_off_hud_controls():
     names, keys = _shared_control_icons()
 
-    assert {"PREVIOUS_ICON", "NEXT_ICON", "LOCK_ICON", "TRASH_ICON", "FMODE_ICON"} <= names
+    assert {"PREVIOUS_ICON", "NEXT_ICON", "LOCK_ICON", "TRASH_ICON", "FAVORITES_ICON"} <= names
     assert {"trash", "reset", "shuffle", "latest", "versions"} <= keys
 
 

@@ -9,7 +9,6 @@ from host_controls_fakes import a_hud
 from PIL import Image, ImageDraw
 from satellite_rows import funestra_rows, short_name
 from shared_ui import colors
-from shared_ui.app_icon import LETTERS
 from shared_ui.palette import (
     BG_BUTTON,
     BLUE,
@@ -337,7 +336,7 @@ def test_a_status_too_wide_for_the_nav_map_is_drawn_smaller_or_cut_short_rather_
             _model(title=label, corner=HudCell(path="c.mp4", thumb=thumb)))
 
     short = rendered("Locked")
-    long = rendered("Looping actions · Locked · Latest · F-mode · Enhanceds · beta gamma")
+    long = rendered("Looping actions · Locked · Latest · Favorites · Enhanceds · beta gamma")
     bar = _rgb(long.bgra)[PAD:PAD + TITLE_ROW_H, TITLE_X:]
     inked_columns = np.nonzero((bar > 200).all(axis=2).any(axis=0))[0]
 
@@ -423,7 +422,7 @@ def test_the_nav_map_sits_where_it_sits_however_long_the_status_is(thumb):
         (x, y, _w, _h), _path = rendered.targets.click[0]
         return x, y
 
-    assert (corner("Looping actions · Latest · F-mode · beta gamma")
+    assert (corner("Looping actions · Latest · Favorites · beta gamma")
             == corner("Locked · Shuffle") == corner(""))
 
 
@@ -456,7 +455,7 @@ def test_render_draws_the_sides_own_controls_even_with_no_clip():
         _model(funestra="landscape", locked=False, title="Unlocked"))
 
     assert _names(rendered) == [
-        "prev", "next", "lock", "trash", "fmode", "reset", "minimize",
+        "prev", "next", "lock", "trash", "favorites", "reset", "minimize",
     ]
 
 
@@ -490,7 +489,7 @@ def test_the_state_controls_and_favorite_mark_light_up_when_they_apply():
     rects = _rects(on)
 
     assert _lit_ink(rects["lock"], on) > _lit_ink(rects["lock"], off)
-    assert _lit_ink(rects["fmode"], on) > _lit_ink(rects["fmode"], off)
+    assert _lit_ink(rects["favorites"], on) > _lit_ink(rects["favorites"], off)
     assert _lit_ink(on.targets.favorite, on) > _lit_ink(off.targets.favorite, off)
 
 
@@ -523,26 +522,6 @@ def test_the_bin_draws_red_because_it_takes_something_away():
 
     assert red_ink("trash") > 60
     assert red_ink("prev") == 0
-
-
-def test_f_mode_wears_its_own_badge_rather_than_a_typed_letter():
-    for favorites in (False, True):
-        rendered = HudRenderer("landscape").render(_model(
-            funestra="landscape", title="Unlocked",
-            rows=funestra_rows("landscape", favorites=favorites)))
-        x, y, w, h = _rects(rendered)["fmode"]
-        pixels = _rgb(rendered.bgra)[y:y + h, x:x + w]
-        magenta = (pixels == np.array((200, 80, 160), dtype=pixels.dtype)).all(axis=2)
-        ys, xs = np.nonzero(magenta)
-        cell = (xs.max() - xs.min() + 1) / 5
-        drawn = [
-            "".join("#" if magenta[int(ys.min() + (r + 0.5) * cell),
-                                   int(xs.min() + (c + 0.5) * cell)] else "."
-                    for c in range(5))
-            for r in range(5)
-        ]
-
-        assert drawn == list(LETTERS["F"]), favorites
 
 
 def test_a_running_loops_button_fills_white_and_not_the_locks_green(thumb):
@@ -1061,7 +1040,7 @@ def test_the_mode_row_leads_and_minimize_rides_it_since_minimize_acts_on_the_sid
     mode_y = by_name["satellites_kino_activate"][1]
     assert by_name["minimize"][1] == mode_y
     assert by_name["minimize"][0] > by_name["origenerator_activate"][0]
-    for name in ("prev", "next", "lock", "trash", "fmode"):
+    for name in ("prev", "next", "lock", "trash", "favorites"):
         assert by_name[name][1] == mode_y + CONTROL_ROW_H
     clicks = HudClicks("portrait")
     rect = by_name["minimize"]
@@ -1242,8 +1221,8 @@ def test_the_enhanced_switch_keeps_its_place_under_a_mode_row(thumb):
     by_name = _rects(rendered)
     width = rendered.bgra.shape[1]
 
-    assert by_name["enhanced"][1] == by_name["fmode"][1] == by_name["reset"][1]
-    assert by_name["fmode"][0] < by_name["enhanced"][0] < by_name["reset"][0]
+    assert by_name["enhanced"][1] == by_name["favorites"][1] == by_name["reset"][1]
+    assert by_name["favorites"][0] < by_name["enhanced"][0] < by_name["reset"][0]
     assert by_name["reset"][0] + by_name["reset"][2] + PAD <= width
 
 

@@ -176,7 +176,7 @@ def test_a_icon_is_centered_on_its_ink_not_on_the_fonts_bounds():
 
 def test_an_app_mark_fits_inside_the_button_it_is_centered_in():
     image = Image.new("RGBA", (18, 18), (0, 0, 0, 0))
-    draw_button(image, ImageDraw.Draw(image), (0, 0, 18, 18), Button("fmode", app_icon("F"), ""),
+    draw_button(image, ImageDraw.Draw(image), (0, 0, 18, 18), Button("broker_panel", app_icon("B"), ""),
         ButtonLook(
             hovered=False,
             icon_font=load_font(11),

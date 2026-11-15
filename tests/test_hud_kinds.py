@@ -36,7 +36,8 @@ from funestra.hud_kinds import (
     window_buttons,
 )
 from funestra.hud_title import (
-    F_MODE_LABEL,
+    ENHANCED_LABEL,
+    FAVORITES_LABEL,
     LATEST_LABEL,
     SHUFFLE_LABEL,
     compilation_label,
@@ -117,13 +118,13 @@ class TestTransport:
     def test_kino_mode_steps_the_video_and_acts_on_it(self):
         actions = _actions(_main_facts(main_mode=MainMode.KINO))
         for action in ("main_prev", "main_next", "main_nudge_prev",
-                       "main_nudge_next", "main_fmode", "browse_library",
+                       "main_nudge_next", "main_favorites", "browse_library",
                        "genaumacher_save", "main_funestra_record_tap"):
             assert action in actions, action
 
     def test_f_mode_is_the_main_funestras_own_and_lights_while_it_is_on(self):
-        assert _button(_main_facts(main_mode=MainMode.KINO), "main_fmode").lit is False
-        assert _button(_main_facts(main_mode=MainMode.KINO, f_mode=True), "main_fmode").lit is True
+        assert _button(_main_facts(main_mode=MainMode.KINO), "main_favorites").lit is False
+        assert _button(_main_facts(main_mode=MainMode.KINO, favorites=True), "main_favorites").lit is True
 
     def test_genau_steps_its_own_flicks_and_can_mark_one_trash(self):
         actions = _actions(_main_facts(main_mode=MainMode.GENAU))
@@ -170,27 +171,74 @@ class TestTransport:
                                              "it stays flipped")
 
 
-class TestKinosFMode:
-    def test_it_plays_only_the_well_funscripted_videos(self):
-        button = _button(_main_facts(main_mode=MainMode.KINO), "main_fmode")
-
-        assert button.tooltip == f"{F_MODE_LABEL} — play only the well funscripted videos"
+def _row_holding(kind: HudKind, facts: HudFacts, command: str) -> tuple[Button, ...]:
+    return next(row for row in hud_rows(kind, facts) if any(b.command == command for b in row))
 
 
-class TestGenausFMode:
-    def test_it_keeps_the_favorites_and_says_so(self):
-        off = _button(_main_facts(main_mode=MainMode.GENAU), "main_fmode")
-        on = _button(_main_facts(main_mode=MainMode.GENAU, f_mode=True), "main_fmode")
+class TestTheSpecialCollections:
+    def test_every_hud_carries_enhanceds_and_then_favorites_as_one_group(self):
+        for kind, facts in _EVERY_KIND_OF_HUD:
+            enhanced, favorites = f"{facts.funestra}_enhanced", f"{facts.funestra}_favorites"
+            row = _row_holding(kind, facts, favorites)
+            commands = [b.command for b in row]
+            assert commands.index(favorites) == commands.index(enhanced) + 1, (kind, facts)
+            assert row[commands.index(enhanced)].group_break, (kind, facts)
+            assert not row[commands.index(favorites)].group_break, (kind, facts)
+            following = commands.index(favorites) + 1
+            assert following == len(row) or row[following].group_break, (kind, facts)
 
-        assert (off.lit, on.lit) == (False, True)
-        assert off.tooltip == f"{F_MODE_LABEL} — play only the favorites"
-        assert on.tooltip == "Showing the favorites only — press for all of them"
-        assert on.favorite is True
+    def test_neither_stands_with_the_lock_or_the_trash(self):
+        for kind, facts in _EVERY_KIND_OF_HUD:
+            commands = [b.command for row in hud_rows(kind, facts) for b in row]
+            lock = commands.index(f"{facts.funestra}_lock")
+            assert commands.index(f"{facts.funestra}_enhanced") > lock + 1, (kind, facts)
 
-    def test_it_holds_the_place_it_holds_in_kino_mode_straight_after_the_lock(self):
+    def test_they_close_the_inclusions_in_kino_and_come_before_the_compilation(self):
+        actions = _actions(_main_facts(main_mode=MainMode.KINO))
+
+        last_length = max(index for index, action in enumerate(actions) if "_length_" in action)
+        assert actions.index("main_enhanced") == last_length + 1
+        assert actions.index("main_favorites") < actions.index("main_funestra_compilation")
+
+    def test_favorites_wears_the_green_star_and_lights_while_it_is_on(self):
         for mode in MainMode:
-            actions = _actions(_main_facts(main_mode=mode))
-            assert actions.index("main_fmode") == actions.index("main_lock") + 1, mode
+            off = _button(_main_facts(main_mode=mode), "main_favorites")
+            on = _button(_main_facts(main_mode=mode, favorites=True), "main_favorites")
+            assert shared_icon_name(off.icon) == "star"
+            assert (off.lit, on.lit, on.favorite) == (False, True, True), mode
+
+    def test_enhanceds_lights_in_the_enhanced_color_while_it_is_on(self):
+        off = _button(_main_facts(main_mode=MainMode.KINO), "main_enhanced")
+        on = _button(_main_facts(main_mode=MainMode.KINO, enhanced=True), "main_enhanced")
+
+        assert (off.lit, on.lit, on.enhanced, on.favorite) == (False, True, True, False)
+
+    def test_each_says_what_it_keeps_and_how_to_have_everything_back(self):
+        off, on = _main_facts(main_mode=MainMode.KINO), _main_facts(
+            main_mode=MainMode.KINO, favorites=True, enhanced=True)
+
+        assert _button(off, "main_favorites").tooltip == (
+            f"{FAVORITES_LABEL} — play only the favorite videos")
+        assert _button(on, "main_favorites").tooltip == (
+            "Playing only the favorite videos — press for all of them")
+        assert _button(off, "main_enhanced").tooltip == (
+            f"{ENHANCED_LABEL} — play only the enhanced videos")
+        assert _button(on, "main_enhanced").tooltip == (
+            "Playing only the enhanced videos — press for all of them")
+
+    def test_genau_grays_the_enhanceds_since_no_stroke_has_an_enhanced_version(self):
+        enhanced = _button(_main_facts(main_mode=MainMode.GENAU), "main_enhanced")
+
+        assert enhanced.dim
+        assert enhanced.tooltip.endswith("(not in Genau)")
+        assert not _button(_main_facts(main_mode=MainMode.GENAU), "main_favorites").dim
+
+    def test_a_slideshow_names_its_items(self):
+        row = {b.command: b for b in _button_row(favorites_filter=True)}
+
+        assert row["portrait_favorites"].tooltip == (
+            "Playing only the favorite items — press for all of them")
+        assert row["portrait_enhanced"].tooltip == f"{ENHANCED_LABEL} — play only the enhanced items"
 
 
 class TestReset:
@@ -201,17 +249,17 @@ class TestReset:
         assert "main_reset" not in _actions(_main_facts(main_mode=MainMode.GENAU))
 
     def test_it_is_a_thing_done_rather_than_a_state_held(self):
-        for scripted_filter in (False, True):
-            button = _button(_main_facts(main_mode=MainMode.KINO, f_mode=scripted_filter),
+        for favorites in (False, True):
+            button = _button(_main_facts(main_mode=MainMode.KINO, favorites=favorites),
                              "main_reset")
             assert button.lit is False
             assert button.favorite is False
 
     def test_it_stands_clear_of_the_switches_it_turns_off(self):
         by_action = _placed(_main_facts(main_mode=MainMode.KINO))
-        fmode, reset = by_action["main_fmode"], by_action["main_reset"]
+        lock, reset = by_action["main_lock"], by_action["main_reset"]
 
-        assert reset[0] - (fmode[0] + fmode[2]) == GROUP_GAP
+        assert reset[0] - (lock[0] + lock[2]) == GROUP_GAP
 
 
 class TestBrowseOrder:
@@ -428,16 +476,15 @@ class TestLock:
         assert loose.tooltip.startswith("Unlocked")
         assert "hold this video" in loose.tooltip
 
-    def test_it_pairs_with_f_mode_and_stands_apart_from_everything_else(self):
+    def test_it_stands_apart_from_everything_but_the_trash(self):
         by_action = _placed(_main_facts(main_mode=MainMode.KINO))
         step, skip = by_action["main_next"], by_action["main_funestra_funscript_jump"]
-        lock = by_action["main_lock"]
-        fmode, reset = by_action["main_fmode"], by_action["main_reset"]
+        trash, lock, reset = by_action["main_trash"], by_action["main_lock"], by_action["main_reset"]
 
         assert skip[0] - (step[0] + step[2]) == GAP
         assert lock[1] != skip[1]
-        assert fmode[0] - (lock[0] + lock[2]) == GAP
-        assert reset[0] - (fmode[0] + fmode[2]) == GROUP_GAP
+        assert lock[0] - (trash[0] + trash[2]) == GAP
+        assert reset[0] - (lock[0] + lock[2]) == GROUP_GAP
 
     def test_every_mode_offers_exactly_one_padlock_lit_while_whatever_shows_is_held(self):
         for mode in MainMode:
@@ -575,7 +622,7 @@ class TestState:
         assert colored == []
 
     def test_f_mode_keeps_the_green_the_other_switches_gave_up(self):
-        assert _button(_main_facts(main_mode=MainMode.KINO, f_mode=True), "main_fmode").favorite is True
+        assert _button(_main_facts(main_mode=MainMode.KINO, favorites=True), "main_favorites").favorite is True
 
     def test_the_record_button_tells_marking_from_repeating(self):
         idle = _button(_main_facts(main_mode=MainMode.KINO), "main_funestra_record_tap")
@@ -776,16 +823,16 @@ def test_only_the_portrait_funestra_wears_a_crown():
 
 
 SLIDESHOW_THE_ROW = [
-    "prev", "nudge_prev", "nudge_next", "next", "funscript_jump", "trash", "lock", "fmode",
-    "reset", "shuffle", "latest", "media_videos", "media_images", "enhancement_originals",
-    "enhancement_enhanced", "cycle_version"]
+    "prev", "nudge_prev", "nudge_next", "next", "funscript_jump", "trash", "lock",
+    "reset", "shuffle", "latest", "media_videos", "media_images", "enhanced", "favorites",
+    "cycle_version"]
 
 
 def _slideshow_rows(shape: str = "portrait", *, favorites_filter: bool = False,
                     order: str = "", hosted: bool = True,
                     **fields) -> tuple[tuple[Button, ...], ...]:
     return hud_rows(HudKind.SLIDESHOW, HudFacts(
-        funestra=shape, f_mode=favorites_filter, latest=order == LATEST_LABEL, hosted=hosted,
+        funestra=shape, favorites=favorites_filter, latest=order == LATEST_LABEL, hosted=hosted,
         **fields))
 
 
@@ -815,8 +862,7 @@ def test_every_button_posts_that_sides_own_verb_and_names_itself():
 
 def test_the_band_breaks_into_groups_where_the_controls_stop_being_about_one_thing():
     assert [name for name, button in zip(_names(_button_row()), _button_row(), strict=True) if button.group_break] == [
-        "prev", "trash", "reset", "shuffle", "media_videos", "enhancement_originals",
-        "cycle_version"]
+        "prev", "trash", "reset", "shuffle", "media_videos", "enhanced", "cycle_version"]
 
 
 def test_the_switches_light_and_the_things_done_never_do():
@@ -824,37 +870,27 @@ def test_the_switches_light_and_the_things_done_never_do():
 
     assert row["lock"].lit
     assert row["lock"].favorite
-    assert row["fmode"].lit
-    assert row["fmode"].favorite
+    assert row["favorites"].lit
+    assert row["favorites"].favorite
     assert row["trash"].danger
     assert not any(row[name].lit for name in ("prev", "next", "trash", "reset"))
     at_rest = _by_name()
-    assert not any(at_rest[name].lit for name in ("lock", "fmode"))
+    assert not any(at_rest[name].lit for name in ("lock", "favorites", "enhanced"))
 
 
 def _pair_buttons(row, word: str) -> tuple:
     return tuple(button for button in row if button.tooltip.endswith(word))
 
 
-def test_each_pair_lights_the_kinds_it_includes():
-    row = _button_row(media=(True, False), enhancement=(False, True))
+def test_the_media_pair_lights_the_kinds_it_includes():
+    row = _button_row(media=(True, False))
 
     (images,) = _pair_buttons(row, " images")
     (videos,) = _pair_buttons(row, " videos")
-    (enhanced,) = _pair_buttons(row, "enhanced items")
-    (originals,) = _pair_buttons(row, "original items")
-    assert [images.lit, videos.lit, enhanced.lit, originals.lit] == [True, False, False, True]
+    assert [images.lit, videos.lit] == [True, False]
     at_rest = _button_row()
-    assert all(button.lit for word in (" images", " videos", "enhanced items", "original items")
+    assert all(button.lit for word in (" images", " videos")
                for button in _pair_buttons(at_rest, word))
-
-
-def test_the_enhanced_button_keeps_the_enhanced_color_and_the_originals_button_wears_none():
-    row = _button_row()
-
-    (enhanced,) = _pair_buttons(row, "enhanced items")
-    (originals,) = _pair_buttons(row, "original items")
-    assert (enhanced.enhanced, originals.enhanced) == (True, False)
 
 
 def test_the_order_the_set_plays_in_is_the_one_lit_of_the_pair():
@@ -875,18 +911,16 @@ class TestSlideshowWords:
         assert row["nudge_next"].tooltip.startswith("Forward 10s")
         assert row["funscript_jump"].tooltip.startswith(
             "Skip ahead to where this slide's scripting starts up again")
-        assert row["fmode"].tooltip == f"{F_MODE_LABEL} — browse only the favorites on this Funestra"
+        assert row["favorites"].tooltip == f"{FAVORITES_LABEL} — play only the favorite items"
         assert row["shuffle"].tooltip == f"{SHUFFLE_LABEL} — reshuffle what plays"
         assert row["latest"].tooltip == f"{LATEST_LABEL} — reload it newest-first"
         assert row["cycle_version"].tooltip == "Another version of this slide"
 
-    def test_each_pair_says_what_it_includes_as_two_d_and_vr_do(self):
-        row = _by_name(media=(True, False), enhancement=(False, True))
+    def test_the_media_pair_says_what_it_includes_as_two_d_and_vr_do(self):
+        row = _by_name(media=(True, False))
 
-        assert [row[name].tooltip for name in (
-            "media_none", "media_both", "enhancement_both", "enhancement_none")] == [
-            "Including images", "Not including videos", "Not including enhanced items",
-            "Including original items"]
+        assert [row[name].tooltip for name in ("media_none", "media_both")] == [
+            "Including images", "Not including videos"]
 
     def test_the_lock_and_the_trash_read_as_kinos_and_reset_says_what_it_does_here(self):
         row = _by_name()
@@ -1044,14 +1078,14 @@ def test_in_the_headset_the_top_row_ends_after_skip_ahead():
 
 
 
-def test_trash_sits_right_before_the_lock_so_the_lock_and_f_mode_stay_neighbors():
+def test_trash_sits_right_before_the_lock_and_reset_right_after_it():
     for kind, facts in ((HudKind.SATELLITE, HudFacts(funestra="portrait")),
                         (HudKind.SLIDESHOW, HudFacts(funestra="portrait")),
                         (HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU))):
         commands = [command for row in hud_rows(kind, facts) for command in _commands(row)]
         lock = next(index for index, command in enumerate(commands) if command.endswith("_lock"))
         assert "trash" in commands[lock - 1], (kind, commands)
-        assert commands[lock + 1].endswith("_fmode"), (kind, commands)
+        assert commands[lock + 1].endswith("_reset"), (kind, commands)
 
 
 def test_every_row_label_is_only_as_wide_as_its_words():
@@ -1098,8 +1132,9 @@ class TestTheMainFunestrasTitle:
         assert _title(block=block, locked=False) == "Vol6 · 9/20 · Shuffle"
         assert _title(block=block, locked=True) == "Vol6 · 9/20 · Locked · Shuffle"
 
-    def test_says_when_the_library_is_narrowed_to_f_mode(self):
-        assert _title(block=ModeHud(scripted_filter=True)) == "Locked · Shuffle · F-mode"
+    def test_says_when_the_library_is_narrowed_to_the_favorites_or_the_enhanceds(self):
+        assert _title(favorites=True) == "Locked · Shuffle · Favorites"
+        assert _title(favorites=True, enhanced=True) == "Locked · Shuffle · Favorites · Enhanceds"
 
 
 def test_a_compilations_title_keeps_only_its_volume():
@@ -1108,17 +1143,17 @@ def test_a_compilations_title_keeps_only_its_volume():
 
 
 def test_a_slideshows_title_says_its_loop_its_hold_its_order_and_what_it_narrows_to():
-    facts = HudFacts(funestra="portrait", locked=False, latest=True, f_mode=True,
-                     media=(False, True), enhancement=(True, True))
+    facts = HudFacts(funestra="portrait", locked=False, latest=True, favorites=True,
+                     media=(False, True), enhanced=True)
 
     assert slideshow_title(facts, loop="seed", action_filter="alpha") == (
-        "Looping seeds · Latest · F-mode · Videos · alpha")
+        "Looping seeds · Latest · Favorites · Enhanceds · Videos · alpha")
 
 
 def test_every_title_a_kind_of_hud_can_show_is_among_its_choices_but_the_unbounded_parts():
     shown = main_title(HudFacts(main_mode=MainMode.GENAU, locked=False, latest=False, pace_s=99,
-                                f_mode=True, plays_vr=True, plays_flat=False,
-                                plays_portrait=False), ModeHud(scripted_filter=True))
+                                favorites=True, enhanced=True, plays_vr=True, plays_flat=False,
+                                plays_portrait=False), ModeHud())
 
     assert shown in title_choices(HudKind.MAIN)
     assert slideshow_title(HudFacts(locked=True, latest=False, media=(True, False)),
@@ -1206,7 +1241,7 @@ def test_every_button_kino_and_genau_share_sits_in_the_same_place_in_both():
 
     kino, genau = placed(MainMode.KINO), placed(MainMode.GENAU)
     kino["trash_flick"] = kino.pop("trash")
-    shared = {"trash_flick", "lock", "fmode", "reset", "shuffle", "latest",
+    shared = {"trash_flick", "lock", "reset", "shuffle", "latest",
               "orientation_portrait", "orientation_landscape", "projection_vr", "projection_flat"}
 
     assert {name: kino[name][0] for name in shared} == {name: genau[name][0] for name in shared}

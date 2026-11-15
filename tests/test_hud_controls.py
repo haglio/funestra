@@ -19,8 +19,8 @@ from funestra.hud_controls import (
     TRASH_ICON,
     VERSIONS_ICON,
     browse_order_buttons,
-    favorites_only_tooltip,
-    fmode_button,
+    enhanced_button,
+    favorites_button,
     funscript_jump_button,
     lit_or_remembered,
     lock_button,
@@ -41,14 +41,15 @@ from funestra.hud_controls import (
 )
 from funestra.hud_icons import (
     BACK_ICON,
-    FMODE_ICON,
+    ENHANCED_ICON,
+    FAVORITES_ICON,
     FORWARD_ICON,
     LOCK_ICON,
     NEXT_ICON,
     PREVIOUS_ICON,
     shared_icon_name,
 )
-from funestra.hud_title import F_MODE_LABEL, LATEST_LABEL, PLAYBACK_SPEED_LABEL, SHUFFLE_LABEL
+from funestra.hud_title import FAVORITES_LABEL, LATEST_LABEL, PLAYBACK_SPEED_LABEL, SHUFFLE_LABEL
 from funestra.main_hud import VALUE_W
 from funestra.status import FunestraStatus
 
@@ -174,13 +175,21 @@ class TestTheSwitchesAndTheThingsDone:
         assert trash == replace(trash_button("portrait"), command="made_up_trash",
                                 tooltip="Send to Trash — move it out")
 
-    def test_f_mode_is_the_favorites_green_switch(self):
-        fmode = fmode_button("portrait", favorites_only_tooltip(), lit=True)
+    def test_favorites_is_the_green_star_switch(self):
+        favorites = favorites_button("portrait", things="items", lit=True)
 
-        assert (fmode.command, fmode.icon) == ("portrait_fmode", FMODE_ICON)
-        assert fmode.tooltip == f"{F_MODE_LABEL} — browse only the favorites on this Funestra"
-        assert (fmode.lit, fmode.favorite) == (True, True)
-        assert not fmode_button("portrait", "F-mode — only the scripted ones", lit=False).lit
+        assert (favorites.command, favorites.icon) == ("portrait_favorites", FAVORITES_ICON)
+        assert favorites.tooltip == "Playing only the favorite items — press for all of them"
+        assert (favorites.lit, favorites.favorite) == (True, True)
+        assert favorites_button("portrait", things="items", lit=False).tooltip == (
+            f"{FAVORITES_LABEL} — play only the favorite items")
+
+    def test_enhanceds_is_the_yellow_switch_that_opens_its_group(self):
+        enhanced = enhanced_button("portrait", things="items", lit=False)
+
+        assert (enhanced.command, enhanced.icon) == ("portrait_enhanced", ENHANCED_ICON)
+        assert (enhanced.lit, enhanced.enhanced, enhanced.group_break) == (False, True, True)
+        assert enhanced.tooltip == "Enhanceds — play only the enhanced items"
 
     def test_reset_is_a_thing_done_faded_with_nothing_to_put_back(self):
         reset = reset_button("portrait", nothing_to_reset=True, tooltip=RESET_TOOLTIP)
@@ -246,6 +255,7 @@ class TestThePlaybackSpeedButtons:
 
 def test_resets_tooltip_says_the_speed_goes_back_in_the_words_every_reset_shares():
     assert RESET_TOOLTIP == (
-        "Reset — no filter, no lock, no loop, no F-mode, normal speed, shuffled from the top")
+        "Reset — no filter, no lock, no loop, no Favorites, no Enhanceds, normal speed, "
+        "shuffled from the top")
     assert RESET_PUTS_BACK_THE_SPEED == "normal speed"
     assert RESET_PUTS_BACK_THE_SPEED in RESET_TOOLTIP

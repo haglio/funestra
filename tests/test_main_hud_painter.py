@@ -197,8 +197,7 @@ class TestPainter:
             assert (pixels == np.array((200, 80, 160), dtype=pixels.dtype)).all(axis=2).any()
 
     def test_a_control_that_stands_for_an_app_wears_that_apps_mark(self):
-        for action, grid in (("broker_panel", LETTERS["B"]),
-                             ("main_fmode", LETTERS["F"])):
+        for action, grid in (("broker_panel", LETTERS["B"]),):
             pixels = self._button_pixels(action, MainHudModel(
                 main_mode=MainMode.KINO, osr2_rows=main_hud_rows(lights=RowLights(favorites=True)),
                 osr2_controls=osr2_controls(broker_running=True)))
@@ -234,9 +233,9 @@ class TestPainter:
         return self._button_pixels("broker_panel", MainHudModel(
             main_mode=MainMode.KINO, osr2_controls=osr2_controls(broker_running=broker)))
 
-    def test_f_mode_is_the_one_lit_control_that_stays_green_since_green_here_belongs_to_the_favorites_and_the_funscripts(self):
+    def test_favorites_is_the_one_lit_control_that_stays_green_since_green_here_belongs_to_the_favorites_and_the_funscripts(self):
         pixels = self._button_pixels(
-            "main_fmode",
+            "main_favorites",
             MainHudModel(main_mode=MainMode.KINO,
                          osr2_rows=main_hud_rows(lights=RowLights(favorites=True)))).astype(int)
 
@@ -257,8 +256,8 @@ class TestPainter:
 
         lit = {button.command for rect, button in painter.buttons if button.lit}
         green = {button.command for rect, button in painter.buttons if dominant(rect) == GREEN}
-        assert lit > {"main_lock", "main_fmode", "main_kino_activate"}
-        assert green == {"main_lock", "main_fmode"}
+        assert lit > {"main_lock", "main_favorites", "main_kino_activate"}
+        assert green == {"main_lock", "main_favorites"}
 
     def test_the_enhanced_filter_wears_yellow_off_and_on_the_yellow_of_the_plus_origenerator_marks_an_enhanced_image_with(self):
         yellow = (255, 200, 120)

@@ -9,6 +9,17 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-15 — F-mode is Favorites, and Enhanceds stands beside it
+
+Every HUD's F button is now Favorites, wearing the star, and Enhanceds is one
+switch rather than a pair with Originals: the two stand together, Enhanceds
+first, after the inclusion pairs. `fmode_button` and `favorites_only_tooltip`
+give way to `favorites_button` and `enhanced_button`, `F_MODE_LABEL` and
+`FMODE_ICON` to `FAVORITES_LABEL` and `FAVORITES_ICON`, `HudFacts.f_mode` and
+`HudFacts.enhancement` to `favorites` and `enhanced`, and `enhancement_pair`,
+`ORIGINALS_LABEL`, `SET_F_MODE` and `ModeHud.scripted_filter` go: the Main
+Funestra's title reads both switches off the facts Fun Time publishes.
+
 ## 2026-11-13 — `LoopState` is gone
 
 `funestra.modes.LoopState` (normal, recording) had one user, Fun Time's
