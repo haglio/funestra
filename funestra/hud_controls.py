@@ -99,9 +99,10 @@ def lock_tooltip(locked: bool, noun: str) -> str:
     return f"Unlocked — plays on through the playlist; press to hold this {noun}"
 
 
-def lock_button(funestra: str, *, locked: bool, tooltip: str) -> Button:
+def lock_button(funestra: str, *, locked: bool, tooltip: str,
+                group_break: bool = True) -> Button:
     return Button(f"{funestra}_lock", LOCK_ICON, tooltip, lit=locked, favorite=True,
-                  group_break=True)
+                  group_break=group_break)
 
 
 def trash_button(funestra: str) -> Button:
