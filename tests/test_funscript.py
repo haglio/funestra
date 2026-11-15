@@ -583,3 +583,33 @@ class TestPlayedOnALoop:
         swings = self._two_swings()
 
         assert swings.looped(0, 5_000) is swings.looped(0, 5_000)
+
+
+class TestFollowedByTheNextVideosScript:
+    def _ends_dense(self):
+        return Funscript(actions=[(0, 0), (300, 100), (600, 0)])
+
+    def test_the_seam_to_a_script_starting_promptly_is_no_more_parked_than_the_same_gap_inside_one_script(self):
+        bridged = self._ends_dense().followed_by(Funscript(actions=[(33, 100), (333, 0)]), 5_000)
+
+        assert self._ends_dense().is_parked_at(4_000) is True
+        assert bridged.is_parked_at(4_000) is False
+
+    def test_a_real_pause_across_the_seam_still_parks(self):
+        late_start = Funscript(actions=[(5_500, 100), (5_800, 0)])
+
+        bridged = self._ends_dense().followed_by(late_start, 5_000)
+
+        assert bridged.is_parked_at(4_000) is True
+
+    def test_the_same_seam_asked_for_every_frame_is_laid_out_once(self):
+        ends_dense, next_up = self._ends_dense(), Funscript(actions=[(33, 100), (333, 0)])
+
+        assert ends_dense.followed_by(next_up, 5_000) is ends_dense.followed_by(next_up, 5_000)
+
+    def test_a_script_running_past_its_videos_end_keeps_its_own_actions_in_order(self):
+        runs_long = Funscript(actions=[(0, 0), (5_500, 100), (6_000, 0)])
+
+        bridged = runs_long.followed_by(Funscript(actions=[(33, 100), (1_333, 0)]), 5_000)
+
+        assert bridged.actions == [(0, 0), (5_500, 100), (6_000, 0), (6_333, 0)]

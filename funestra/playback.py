@@ -101,7 +101,16 @@ class Playback:
             return script.looped(*self._ab_loop)
         if self._holds:
             return script.looped(0, round(self._engine.duration_ms))
-        return script
+        return self._carried_into_the_next(script)
+
+    def _carried_into_the_next(self, script: Funscript) -> Funscript:
+        duration = round(self._engine.duration_ms)
+        if duration <= 0:
+            return script
+        next_script = self._rides.funscript(self._lineup.what_the_roll_puts_up)
+        if next_script is None:
+            return script
+        return script.followed_by(next_script, duration)
 
     @property
     def has_funscript(self) -> bool:
@@ -314,7 +323,6 @@ class Playback:
         self._engine.settle_on_the_next()
         self._stage_next()
         self._owed_seek.owe(self._play_points.point_for(self.current_video) or None)
-        self._device.take_over()
         self._tell_the_places()
         return True
 
