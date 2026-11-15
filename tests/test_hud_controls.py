@@ -49,7 +49,7 @@ from funestra.hud_icons import (
     shared_icon_name,
 )
 from funestra.hud_title import F_MODE_LABEL, LATEST_LABEL, PLAYBACK_SPEED_LABEL, SHUFFLE_LABEL
-from funestra.main_hud import VALUE_W
+from funestra.main_hud import ROW_LABEL_W, VALUE_W
 from funestra.status import FunestraStatus
 
 
@@ -249,3 +249,8 @@ def test_resets_tooltip_says_the_speed_goes_back_in_the_words_every_reset_shares
         "Reset — no filter, no lock, no loop, no F-mode, normal speed, shuffled from the top")
     assert RESET_PUTS_BACK_THE_SPEED == "normal speed"
     assert RESET_PUTS_BACK_THE_SPEED in RESET_TOOLTIP
+
+
+def test_a_caller_from_before_the_one_hud_may_still_ask_for_a_column_of_labels():
+    assert playback_speed_buttons("portrait", in_a_column_of_labels=False)[0].width == FIT_THE_WORD
+    assert playback_speed_buttons("portrait", in_a_column_of_labels=True)[0].width == ROW_LABEL_W
