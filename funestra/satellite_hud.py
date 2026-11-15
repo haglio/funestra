@@ -12,6 +12,7 @@ from shared_ui.lettering import fit_text
 from shared_ui.spacing import (
     BUTTON_GAP,
     BUTTON_GROUP_GAP,
+    BUTTON_PAD_H_TIGHT,
     BUTTON_SIZE_HUD,
     GAP_DIALOG,
     GAP_MEDIUM,
@@ -351,6 +352,7 @@ CTRL_BTN = BUTTON_SIZE_HUD
 MINUS_INSET = (PAD, PAD)
 CONTROL_ROW_H = CTRL_BTN + BLOCK_GAP
 WORD_PAD = BUTTON_GAP // 2
+MODE_LABEL_PAD = BUTTON_PAD_H_TIGHT
 
 
 def button_row_width(buttons: Sequence[Button], widths: Sequence[int]) -> int:

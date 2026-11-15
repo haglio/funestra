@@ -68,6 +68,9 @@ apps-are-callers = true
 # The broker's contract names the folder Fun Time starts the tray from; whether
 # a HUD may grow on hover is read only by comparing one drawn HUD with the next.
 unread-dataclass-fields = ["BrokerContract.package_dir"]
+# Fun Time's main sizes its Random Favs Browser mode buttons with this until
+# its one-HUD change ships; it leaves with the next release after that.
+unread-constants = ["MODE_LABEL_PAD"]
 
 [tool.setuptools.packages.find]
 include = ["funestra*"]
