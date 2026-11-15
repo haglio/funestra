@@ -31,14 +31,14 @@ def test_the_funscript_is_the_first_one_any_of_the_videos_asked_about_has(tmp_pa
     assert rides.funscript_path(TWO) == script
 
 
-def test_a_funscript_is_read_once_and_again_only_when_another_is_asked_for(tmp_path):
+def test_a_funscript_is_read_once_and_stays_held_while_a_neighbors_is_asked_for(tmp_path):
     first, second = _script(tmp_path, "one.funscript", 80), _script(tmp_path, "two.funscript", 60)
     rides = RidesAlong({ONE: first, TWO: second})
 
     read = rides.funscript(ONE)
+    assert rides.funscript(TWO).actions == [(0, 0), (1000, 60)]
 
     assert rides.funscript(ONE) is read
-    assert rides.funscript(TWO).actions == [(0, 0), (1000, 60)]
 
 
 def test_what_a_video_brings_is_taken_and_what_it_does_not_bring_is_left(tmp_path):
