@@ -151,6 +151,23 @@ class TestTheClipsRowAtItsFootSinceAlongAWrappedVideosEdgeItSmearsOutOfTheContro
         assert bare.shape == filled.shape
         assert not (bare == filled).all()
 
+    def test_a_fill_is_known_by_being_the_same_list_so_a_host_rebuilds_it_rather_than_writing_into_it(
+            self, tmp_path, hud):
+        engine = FakeEngine()
+        overlay = _overlay(tmp_path, hud, engine)
+        overlay.tick(scrubber_row=ScrubberRowDraw(self._ROW))
+        fill = _colors_across(overlay.row)
+        overlay.tick(scrubber_row=ScrubberRowDraw(self._ROW, fill))
+        engine.overlays[overlay.overlay_id] = "drawn before"
+
+        fill[:] = [(40, 200, 40)] * len(fill)
+        overlay.tick(scrubber_row=ScrubberRowDraw(self._ROW, fill))
+        kept = engine.overlays[overlay.overlay_id]
+        overlay.tick(scrubber_row=ScrubberRowDraw(self._ROW, list(fill)))
+
+        assert kept == "drawn before"
+        assert engine.overlays[overlay.overlay_id] != "drawn before"
+
     def test_a_fill_measured_across_some_other_track_is_dropped(self, tmp_path, hud):
         plain, mismatched = FakeEngine(), FakeEngine()
         _overlay(tmp_path, hud, plain).tick(scrubber_row=ScrubberRowDraw(self._ROW))
@@ -261,6 +278,16 @@ def test_the_overlay_is_removed_when_the_hud_goes_away(tmp_path: Path, hud: Path
 
     hud.unlink()
     overlay.tick()
+
+    assert engine.overlays == {}
+
+
+def test_closing_takes_the_hud_down(tmp_path: Path, hud: Path):
+    engine = FakeEngine()
+    overlay = _overlay(tmp_path, hud, engine)
+    overlay.tick()
+
+    overlay.close()
 
     assert engine.overlays == {}
 
@@ -659,6 +686,31 @@ class TestAHudWithTheOsr2ItsOwnFunestraScripts:
         assert published.amplitude == 80
         assert drives_itself is False
         assert read_drive(tmp_path / "visualizer.txt") == composed
+
+    def test_a_torn_read_keeps_the_motion_that_was_there(self, tmp_path, hud):
+        _give_it_the_osr2(hud)
+        _publish_motion(tmp_path / "drive.txt", 0.0)
+        gate = _Gate(DriveHud())
+        overlay = _overlay(tmp_path, hud, FakeEngine(), drive=DriveFeed(
+            tmp_path / "drive.txt", gate, DrivePublisher(tmp_path / "visualizer.txt")))
+        overlay.tick()
+
+        (tmp_path / "drive.txt").write_text("speed=", encoding="utf-8")
+        overlay.tick()
+
+        assert [published.amplitude for published, _drives_itself in gate.asked] == [80, 80]
+
+    def test_the_gate_is_told_when_the_device_is_running_itself(self, tmp_path, hud):
+        _give_it_the_osr2(hud)
+        _publish(hud, osr2="auto")
+        _publish_motion(tmp_path / "drive.txt", 0.0)
+        gate = _Gate(DriveHud())
+        overlay = _overlay(tmp_path, hud, FakeEngine(), drive=DriveFeed(
+            tmp_path / "drive.txt", gate, DrivePublisher(tmp_path / "visualizer.txt")))
+
+        overlay.tick()
+
+        assert [drives_itself for _published, drives_itself in gate.asked] == [True]
 
     def test_a_hud_with_no_visualizer_to_hand_it_to_reads_no_motion(self, tmp_path, hud):
         _give_it_the_osr2(hud)

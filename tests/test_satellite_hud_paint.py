@@ -37,8 +37,6 @@ from funestra.hud_placement import HudCorner
 from funestra.hud_row import SCRUBBER, RowHud, row_part
 from funestra.hud_sections import DIVIDER_H, SECTION_GAP
 from funestra.hud_title import PLAYBACK_SPEED_LABEL
-from funestra.main_hud import MainHudModel
-from funestra.main_hud_painter import MainHud, MainHudPainter
 from funestra.modes import MainMode, Osr2State
 from funestra.name_copy import COPY_NAME
 from funestra.osr2_visualizer import (
@@ -299,8 +297,9 @@ def test_the_dot_sits_in_the_same_corner_at_the_same_size_on_a_satellites_hud_as
 
     satellite = white_box(_rgb(HudRenderer("portrait").render(
         _model(active=True, title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))).bgra))
-    main = white_box(_rgb(MainHudPainter().bgra(
-        MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, active=True)))))
+    main = white_box(_rgb(HudRenderer("main").render(_model(
+        funestra="main", kind=HudKind.MAIN, active=True, title="Unlocked",
+        facts=HudFacts(main_mode=MainMode.KINO))).bgra))
 
     assert satellite[0] == main[0]
     assert satellite[2:] == main[2:]
@@ -315,8 +314,9 @@ def test_the_title_sits_as_far_from_the_top_on_the_main_funestras_hud_as_on_a_sa
 
     satellite = ink_rows(_rgb(HudRenderer("portrait").render(
         _model(active=True, title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))).bgra))
-    main = ink_rows(_rgb(MainHudPainter().bgra(
-        MainHud(main_hud_model=MainHudModel(main_mode=MainMode.KINO, active=True)))))
+    main = ink_rows(_rgb(HudRenderer("main").render(_model(
+        funestra="main", kind=HudKind.MAIN, active=True, title="Unlocked",
+        facts=HudFacts(main_mode=MainMode.KINO))).bgra))
 
     assert satellite == main
 
