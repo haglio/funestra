@@ -14,6 +14,7 @@ from shared_ui.palette import (
     BG_BUTTON,
     BLUE,
     BORDER_PANEL,
+    GREEN,
     RED,
     TEXT_MUTED,
     TEXT_PRIMARY,
@@ -1763,3 +1764,13 @@ def test_a_hud_is_wide_enough_for_the_widest_title_its_kind_can_show(funestra, k
 
     assert long.bgra.shape[1] == short.bgra.shape[1]
     assert long.bgra.shape[1] >= TITLE_X + font.getlength(widest) + PAD + MINUS_ROOM
+
+
+def test_a_favorites_trash_is_drawn_as_a_green_star_under_a_red_slashed_ring():
+    rendered = HudRenderer("portrait").render(_model(
+        kind=HudKind.SATELLITE, facts=HudFacts(funestra="portrait", favorite=True)))
+    x, y, w, h = _button_rect(rendered, "portrait_trash")
+    inside = _rgb(rendered.bgra)[y:y + h, x:x + w]
+
+    assert (inside == np.array(GREEN)).all(axis=-1).any()
+    assert (inside == np.array(RED)).all(axis=-1).any()

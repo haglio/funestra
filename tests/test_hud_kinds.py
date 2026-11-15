@@ -17,6 +17,7 @@ from funestra.hud_controls import (
 from funestra.hud_icons import (
     MINIMIZE_FUNESTRA_ICON,
     SHARED_ICON,
+    UNFAVORITE_ICON,
     shared_icon,
     shared_icon_name,
 )
@@ -1162,3 +1163,49 @@ def test_trash_and_the_lock_touch_with_no_gap_between_them():
         lock = next(index for index, b in enumerate(row) if b.command.endswith("_lock"))
         assert "trash" in row[lock - 1].command
         assert not row[lock].group_break, kind
+
+
+def _trash_of(kind: HudKind, facts: HudFacts) -> Button:
+    return next(b for row in hud_rows(kind, facts) for b in row if "trash" in b.command)
+
+
+_EVERY_TRASH = ((HudKind.MAIN, _main_facts(main_mode=MainMode.KINO), "main_trash"),
+                (HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU), "genau_trash_flick"),
+                (HudKind.SATELLITE, HudFacts(funestra="portrait"), "portrait_trash"),
+                (HudKind.SLIDESHOW, HudFacts(funestra="landscape"), "landscape_trash"))
+
+
+def test_every_hud_has_a_trash_kino_on_the_main_funestra_included():
+    for kind, facts, command in _EVERY_TRASH:
+        assert _trash_of(kind, facts).command == command
+        assert _trash_of(kind, facts).icon == shared_icon("trash")
+
+
+def test_on_a_favorite_every_trash_becomes_the_star_struck_through_posting_the_same_verb():
+    for kind, facts, command in _EVERY_TRASH:
+        button = _trash_of(kind, replace(facts, favorite=True))
+        assert button.command == command
+        assert button.icon == UNFAVORITE_ICON
+        assert button.tooltip.startswith("Unfavorite")
+
+
+def test_genau_has_a_reset_that_puts_everything_back():
+    reset = next(b for b in _second_row(main_mode=MainMode.GENAU) if b.command == "genau_reset")
+
+    assert reset.tooltip.startswith("Reset")
+    assert next(b for b in _second_row(main_mode=MainMode.GENAU, nothing_to_reset=True)
+                if b.command == "genau_reset").dim
+
+
+def test_every_button_kino_and_genau_share_sits_in_the_same_place_in_both():
+    def placed(mode):
+        row = _second_row(main_mode=mode, plays_vr=True, plays_flat=True)
+        return {short: rect for rect, b in place_rows([list(row)], x=0, y=0)
+                for short in (b.command.removeprefix("main_").removeprefix("genau_"),)}
+
+    kino, genau = placed(MainMode.KINO), placed(MainMode.GENAU)
+    kino["trash_flick"] = kino.pop("trash")
+    shared = {"trash_flick", "lock", "fmode", "reset", "shuffle", "latest",
+              "orientation_portrait", "orientation_landscape", "projection_vr", "projection_flat"}
+
+    assert {name: kino[name][0] for name in shared} == {name: genau[name][0] for name in shared}

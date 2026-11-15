@@ -36,3 +36,4 @@ NEXT_ICON = shared_icon("chevron_right")
 LOCK_ICON = shared_icon("lock")
 
 TOGGLE_SWITCH = "\0switch"
+UNFAVORITE_ICON = "\0unfavorite"

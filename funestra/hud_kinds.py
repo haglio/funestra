@@ -24,7 +24,7 @@ from .hud_controls import (
     trash_button_under,
     versions_button,
 )
-from .hud_icons import MINIMIZE_FUNESTRA_ICON, shared_icon
+from .hud_icons import MINIMIZE_FUNESTRA_ICON, UNFAVORITE_ICON, shared_icon
 from .hud_title import (
     F_MODE_LABEL,
     LATEST_LABEL,
@@ -95,6 +95,7 @@ class HudFacts:
     has_compilation: bool = False
     jump_to: str = ""
     flipped: bool = False
+    favorite: bool = False
     flick_one: str = ""
     flick_many: str = ""
     media: Included = BOTH
@@ -162,6 +163,8 @@ SLIDESHOW_RESET_TOOLTIPS = {
     False: f"Reset — both filters off, {RESET_PUTS_BACK_THE_SPEED}, and this set from the top",
 }
 
+GENAU_RESET_TOOLTIP = f"Reset — everything back to how Genau starts: no filter, no lock, no {F_MODE_LABEL}"
+
 MODE_BUTTONS = (
     ("main_kino_activate", "Kino", MainMode.KINO),
     ("genau_activate", "Genau", MainMode.GENAU),
@@ -214,11 +217,22 @@ def _lock(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     else:
         tooltip = lock_tooltip(facts.locked, _noun(facts, shows))
     return (lock_button(facts.funestra, locked=facts.locked, tooltip=tooltip,
-                        group_break=shows is Shows.KINO),)
+                        group_break=False),)
 
 
-def _slide_trash(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
-    return (trash_button(facts.funestra),)
+def _slide_trash(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
+    return (_unless_a_favorite(trash_button(facts.funestra), facts, shows),)
+
+
+def _video_trash(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
+    return (_unless_a_favorite(trash_button("main"), facts, shows),)
+
+
+def _unless_a_favorite(trash: Button, facts: HudFacts, shows: Shows) -> Button:
+    if not facts.favorite:
+        return trash
+    return replace(trash, icon=UNFAVORITE_ICON, danger=False,
+                   tooltip=f"Unfavorite this {_noun(facts, shows)} and move on to the next")
 
 
 def _fmode(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
@@ -239,8 +253,9 @@ def _flip(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
                    lit=facts.flipped, group_break=True),)
 
 
-def _flick_trash(_facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
-    return (trash_button_under("genau_trash_flick", "Send to Trash — move it out"),)
+def _flick_trash(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
+    return (_unless_a_favorite(trash_button_under("genau_trash_flick", "Send to Trash — move it out"),
+                               facts, shows),)
 
 
 def _media(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
@@ -257,6 +272,9 @@ def _reset(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     if shows is Shows.SLIDES:
         return (reset_button(facts.funestra, nothing_to_reset=facts.nothing_to_reset,
                              tooltip=SLIDESHOW_RESET_TOOLTIPS[facts.hosted]),)
+    if shows is Shows.GENAU:
+        return (reset_button("genau", nothing_to_reset=facts.nothing_to_reset,
+                             tooltip=GENAU_RESET_TOOLTIP),)
     return (reset_button(facts.funestra, nothing_to_reset=facts.nothing_to_reset,
                          tooltip=RESET_TOOLTIP),)
 
@@ -340,10 +358,11 @@ TRANSPORT_CONTROLS: tuple[HudControl, ...] = (
     HudControl("transport", EVERY_SHOW, _transport, Row.TOP),
     HudControl("funscript_jump", EVERY_SHOW, _funscript_jump, Row.TOP),
     HudControl("trash", _SLIDES, _slide_trash),
+    HudControl("video_trash", _KINO, _video_trash),
     HudControl("trash_flick", _GENAU, _flick_trash),
     HudControl("lock", EVERY_SHOW, _lock),
     HudControl("fmode", EVERY_SHOW, _fmode),
-    HudControl("reset", _KINO | _SLIDES, _reset),
+    HudControl("reset", EVERY_SHOW, _reset),
     HudControl("browse_order", EVERY_SHOW, _browse_order),
     HudControl("inclusions", _KINO | _GENAU, _inclusion_buttons),
     HudControl("media", _SLIDES, _media),
