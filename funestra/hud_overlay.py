@@ -150,7 +150,6 @@ class HudOverlay:
         self._drive_gate = drive.gate
         self._visualizer = drive.visualizer
         self._published_drive: DriveHud | None = None
-        self._drive: DriveHud | None = None
         self._engine = drawn_on.engine
         self.overlay_id = drawn_on.overlay_id
         self._clock = clock
@@ -227,11 +226,8 @@ class HudOverlay:
             self._model = model
             redraw = True
         drive = self._motion()
-        if drive is not None and self._visualizer is not None:
+        if drive is not None:
             self._visualizer.publish(drive, self._clock())
-        elif drive != self._drive:
-            self._drive = drive
-            redraw = True
         if redraw or self._draw_owed:
             self._draw()
         if self._clicks is not None:
@@ -365,8 +361,8 @@ class HudOverlay:
         return replace(self.hud_place, corner=corner).origin(hud=size, viewport=self._viewport)
 
     def _motion(self) -> DriveHud | None:
-        if (self._drive_file is None or self._model is None or not self._model.osr2
-                or (self._visualizer is None and self._model.kind is not None)):
+        if (self._visualizer is None or self._drive_file is None or self._model is None
+                or not self._model.osr2):
             return None
         self._published_drive = read_drive(self._drive_file) or self._published_drive
         if self._drive_gate is None:
@@ -385,11 +381,6 @@ class HudOverlay:
             return
         corner = self._model.hud_corner if self._over_the_video else HudCorner.UPPER_LEFT
         model = replace(self._model, playback_speed=self._playback_speed, hud_corner=corner)
-        if model.kind is None:
-            model = replace(model, drive=model.drive if self._drive_file is None else self._drive,
-                            drive_composed=self._drive_gate is not None)
-            if self._visualizer is not None:
-                model = replace(model, osr2="", drive=None)
         if self._playing is not None and model.facts is not None:
             model = replace(model, facts=replace(model.facts, **self._playing._asdict()))
         self._draw_owed = True
