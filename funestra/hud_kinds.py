@@ -163,6 +163,8 @@ SLIDESHOW_RESET_TOOLTIPS = {
     False: f"Reset — both filters off, {RESET_PUTS_BACK_THE_SPEED}, and this set from the top",
 }
 
+ADVANCE_INTERVAL = "advance_interval"
+
 GENAU_RESET_TOOLTIP = f"Reset — everything back to how Genau starts: no filter, no {F_MODE_LABEL}, locked, shuffled"
 
 MODE_BUTTONS = (
@@ -438,7 +440,7 @@ def _flick_seconds_row(facts: HudFacts) -> tuple[Button, ...]:
     return (
         Button("", f"{facts.flick_one.capitalize()} seconds", "", width=FIT_THE_WORD),
         Button("genau_flick_seconds_down", LESS_ICON, "Move on sooner"),
-        Button("", "", "", width=VALUE_W, host_value="advance_interval"),
+        Button("", "", "", width=VALUE_W, host_value=ADVANCE_INTERVAL),
         Button("genau_flick_seconds_up", MORE_ICON, f"Leave each {facts.flick_one} longer"),
     )
 
@@ -457,7 +459,7 @@ def _pace_row(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     if shows is Shows.KINO:
         return playback_speed_buttons("main_funestra")
     if shows is Shows.GENAU:
-        return _flick_seconds_row(facts)
+        return _one_group_each(playback_speed_buttons("main_funestra"), _flick_seconds_row(facts))
     return () if facts.clip_seconds is None else clip_seconds_row(facts.funestra, facts.clip_seconds)
 
 

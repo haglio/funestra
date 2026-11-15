@@ -1774,3 +1774,11 @@ def test_a_favorites_trash_is_drawn_as_a_green_star_under_a_red_slashed_ring():
 
     assert (inside == np.array(GREEN)).all(axis=-1).any()
     assert (inside == np.array(RED)).all(axis=-1).any()
+
+
+def test_genaus_seconds_show_their_number():
+    rendered = HudRenderer("main").render(_model(
+        funestra="main", kind=HudKind.MAIN, playback_speed=1.0,
+        facts=HudFacts(main_mode=MainMode.GENAU, pace_s=7, flick_one="pip", flick_many="pips")))
+
+    assert "7s" in [button.icon for _rect, button in rendered.targets.buttons]

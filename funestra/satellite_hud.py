@@ -32,7 +32,7 @@ from .hud_button import (
     rows_raw,
 )
 from .hud_controls import PLAYBACK_SPEED, playback_speed_buttons
-from .hud_kinds import HudFacts, HudKind, facts_from_raw, facts_raw, hud_rows
+from .hud_kinds import ADVANCE_INTERVAL, HudFacts, HudKind, facts_from_raw, facts_raw, hud_rows
 from .hud_placement import HudCorner, HudEdge
 from .hud_sections import blocks_height, stack
 from .hud_title import SEPARATOR
@@ -379,6 +379,8 @@ def rows_with_the_speed(model: HudModel) -> list[list[Button]]:
     if not any(button.host_value == PLAYBACK_SPEED for row in rows for button in row):
         rows.append(list(playback_speed_buttons(model.funestra)))
     rate = {PLAYBACK_SPEED: format_rate(model.playback_speed)}
+    if model.facts is not None:
+        rate[ADVANCE_INTERVAL] = f"{model.facts.pace_s}s"
     return [[reading_its_host_value(button, rate) for button in row] for row in rows]
 
 
