@@ -462,11 +462,11 @@ class TestPaceRows:
         assert "main_funestra_speed_up" in actions
         assert "genau_flick_seconds_down" not in actions
 
-    def test_genau_has_the_pace_and_no_video_rate(self):
+    def test_genau_has_the_video_rate_and_the_pace(self):
         actions = _actions(_main_facts(main_mode=MainMode.GENAU))
         assert "genau_flick_seconds_down" in actions
         assert "genau_flick_seconds_up" in actions
-        assert "main_funestra_speed_down" not in actions
+        assert "main_funestra_speed_down" in actions
 
     def test_the_rate_is_a_read_out_between_the_arrows_that_the_funestra_fills(self):
         row = next(row for row in main_hud_rows(_main_facts(main_mode=MainMode.KINO))
@@ -480,6 +480,7 @@ class TestPaceRows:
                    if any(b.command == "genau_flick_seconds_down" for b in row))
 
         assert [b.icon or b.host_value for b in row] == [
+            "Playback speed", _MINUS, "playback_speed", _PLUS,
             "Pip seconds", _MINUS, "advance_interval", _PLUS]
         assert row[-1].tooltip == "Leave each pip longer"
 
@@ -1209,3 +1210,12 @@ def test_every_button_kino_and_genau_share_sits_in_the_same_place_in_both():
               "orientation_portrait", "orientation_landscape", "projection_vr", "projection_flat"}
 
     assert {name: kino[name][0] for name in shared} == {name: genau[name][0] for name in shared}
+
+
+def test_genaus_stroke_seconds_follow_the_playback_speed_on_kinos_speed_row():
+    kino = hud_rows(HudKind.MAIN, _main_facts(main_mode=MainMode.KINO))[-1]
+    genau = hud_rows(HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU))[-1]
+
+    assert _commands(genau)[:len(kino)] == _commands(kino)
+    assert genau[len(kino)].icon == "Pip seconds"
+    assert genau[len(kino)].group_break
