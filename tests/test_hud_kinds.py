@@ -653,7 +653,7 @@ class TestLayout:
     def test_a_main_hud_in_the_headset_has_no_window_to_minimize(self):
         video = [b.command for b in main_hud_rows(_main_facts(main_mode=MainMode.KINO), in_vr=True)[0]]
         genau = [b.command for b in main_hud_rows(_main_facts(main_mode=MainMode.GENAU), in_vr=True)[0]
-                 if b.command]
+                 if not b.dim]
 
         assert video == ["main_kino_activate", "genau_activate", "main_take_osr2",
                          "main_prev", "main_nudge_prev", "main_nudge_next", "main_next",
@@ -1013,24 +1013,20 @@ def test_the_main_funestras_top_row_holds_the_modes_the_osr2_button_and_the_tran
         "browse_library", "main_funestra_record_tap", "genaumacher_save"]
 
 
-def test_genau_brings_only_previous_and_next_up_to_the_top_row():
-    top = hud_rows(HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU))[0]
-
-    assert [c for c in _commands(top) if c] == [
-        "main_kino_activate", "genau_activate", "main_take_osr2",
-        "genau_prev_flick", "genau_next_flick", "main_minimize", "main_crown", "browse_library"]
-
-
-def test_genau_leaves_an_empty_gap_where_kinos_skip_buttons_and_funscript_jump_stand():
+def test_genau_shows_kinos_skip_buttons_and_funscript_jump_dimmed_in_their_places():
     kino = _placed(_main_facts(main_mode=MainMode.KINO))
-    genau = _placed(_main_facts(main_mode=MainMode.GENAU))
+    genau_facts = _main_facts(main_mode=MainMode.GENAU)
+    genau = _placed(genau_facts)
+    shown = {b.command: b for b in hud_rows(HudKind.MAIN, genau_facts)[0]}
 
-    assert genau["genau_prev_flick"][0] == kino["main_prev"][0]
-    assert genau["genau_next_flick"][0] == kino["main_next"][0]
-    gaps = [b for b in hud_rows(HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU))[0]
-            if not b.command]
-    assert gaps
-    assert all(not b.icon and not b.tooltip for b in gaps)
+    for kinos, genaus in (("main_prev", "genau_prev_flick"), ("main_nudge_prev", "genau_nudge_prev"),
+                          ("main_nudge_next", "genau_nudge_next"), ("main_next", "genau_next_flick"),
+                          ("main_funestra_funscript_jump", "genau_funscript_jump")):
+        assert genau[genaus][0] == kino[kinos][0], genaus
+    for dimmed in ("genau_nudge_prev", "genau_nudge_next", "genau_funscript_jump"):
+        assert shown[dimmed].dim
+        assert "not in Genau" in shown[dimmed].tooltip
+    assert not shown["genau_next_flick"].dim
 
 
 def test_a_satellites_top_row_starts_with_the_osr2_button_then_the_transport():

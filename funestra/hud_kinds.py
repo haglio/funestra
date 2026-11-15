@@ -7,7 +7,7 @@ from itertools import product
 
 from shared_ui.spacing import BUTTON_WORD_W
 
-from .hud_button import BUTTON, FIT_THE_WORD, Button
+from .hud_button import FIT_THE_WORD, Button
 from .hud_controls import (
     RESET_PUTS_BACK_THE_SPEED,
     RESET_TOOLTIP,
@@ -17,9 +17,7 @@ from .hud_controls import (
     funscript_jump_button,
     lock_button,
     lock_tooltip,
-    next_button,
     playback_speed_buttons,
-    previous_button,
     reset_button,
     transport,
     trash_button,
@@ -49,7 +47,7 @@ from .inclusion_pair import (
     media_pair,
 )
 from .loop_cycle import ACTION, OFF, SEED
-from .main_hud import GAP, VALUE_W, ModeHud
+from .main_hud import VALUE_W, ModeHud
 from .modes import LengthMode, MainMode
 
 
@@ -186,20 +184,22 @@ def _noun(facts: HudFacts, shows: Shows) -> str:
 
 def _transport(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     if shows is Shows.GENAU:
-        return (previous_button("genau_prev_flick", noun=facts.flick_one),
-                _empty_gap(2 * BUTTON + GAP),
-                next_button("genau_next_flick", noun=facts.flick_one))
+        previous, back, forward, following = transport(
+            "genau", noun=facts.flick_one, longer_than_a_step=False, cannot_step=NOT_IN_GENAU)
+        return (replace(previous, command="genau_prev_flick"), back, forward,
+                replace(following, command="genau_next_flick"))
     return transport(facts.funestra, noun=_noun(facts, shows),
                      longer_than_a_step=facts.longer_than_a_step, image=facts.image)
 
 
-def _empty_gap(width: int) -> Button:
-    return Button("", "", "", width=width)
+NOT_IN_GENAU = "not in Genau"
 
 
 def _funscript_jump(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     if shows is Shows.GENAU:
-        return (_empty_gap(BUTTON),)
+        jump = funscript_jump_button("genau_funscript_jump", noun=facts.flick_one,
+                                     has_osr2=True, has_funscript=True)
+        return (replace(jump, dim=True, tooltip=f"{jump.tooltip} ({NOT_IN_GENAU})"),)
     command = ("main_funestra_funscript_jump" if shows is Shows.KINO
                else f"{facts.funestra}_funscript_jump")
     return (funscript_jump_button(command, noun=_noun(facts, shows), has_osr2=facts.has_osr2,
