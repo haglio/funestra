@@ -12,8 +12,8 @@ from .hud_controls import (
     RESET_PUTS_BACK_THE_SPEED,
     RESET_TOOLTIP,
     browse_order_buttons,
-    favorites_only_tooltip,
-    fmode_button,
+    enhanced_button,
+    favorites_button,
     funscript_jump_button,
     lock_button,
     lock_tooltip,
@@ -26,7 +26,7 @@ from .hud_controls import (
 )
 from .hud_icons import MINIMIZE_FUNESTRA_ICON, UNFAVORITE_ICON, shared_icon
 from .hud_title import (
-    F_MODE_LABEL,
+    FAVORITES_LABEL,
     LATEST_LABEL,
     SEPARATOR,
     SHUFFLE_LABEL,
@@ -42,7 +42,6 @@ from .inclusion_pair import (
     PROJECTION,
     Included,
     InclusionPair,
-    enhancement_pair,
     lengths_included,
     media_pair,
 )
@@ -74,7 +73,8 @@ class HudFacts:
     funestra: str = "main"
     main_mode: MainMode = MainMode.KINO
     locked: bool = False
-    f_mode: bool = False
+    favorites: bool = False
+    enhanced: bool = False
     latest: bool | None = None
     longer_than_a_step: bool = False
     image: bool = False
@@ -99,7 +99,6 @@ class HudFacts:
     flick_one: str = ""
     flick_many: str = ""
     media: Included = BOTH
-    enhancement: Included = BOTH
     hosted: bool = False
     clip_seconds: int | None = None
 
@@ -165,7 +164,7 @@ SLIDESHOW_RESET_TOOLTIPS = {
 
 ADVANCE_INTERVAL = "advance_interval"
 
-GENAU_RESET_TOOLTIP = f"Reset — everything back to how Genau starts: no filter, no {F_MODE_LABEL}, locked, shuffled"
+GENAU_RESET_TOOLTIP = f"Reset — everything back to how Genau starts: no filter, no {FAVORITES_LABEL}, locked, shuffled"
 
 MODE_BUTTONS = (
     ("main_kino_activate", "Kino", MainMode.KINO),
@@ -237,14 +236,17 @@ def _unless_a_favorite(trash: Button, facts: HudFacts, shows: Shows) -> Button:
                    tooltip=f"Unfavorite this {_noun(facts, shows)} and move on to the next")
 
 
-def _fmode(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
-    tooltip = {
-        Shows.KINO: f"{F_MODE_LABEL} — play only the well funscripted videos",
-        Shows.GENAU: ("Showing the favorites only — press for all of them" if facts.f_mode
-                      else f"{F_MODE_LABEL} — play only the favorites"),
-        Shows.SLIDES: favorites_only_tooltip(),
-    }[shows]
-    return (fmode_button(facts.funestra, tooltip, lit=facts.f_mode),)
+def _things(facts: HudFacts, shows: Shows) -> str:
+    return {Shows.KINO: "videos", Shows.GENAU: facts.flick_many, Shows.SLIDES: "items"}[shows]
+
+
+def _special_collections(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
+    things = _things(facts, shows)
+    enhanced = enhanced_button(facts.funestra, things=things, lit=facts.enhanced)
+    if shows is Shows.GENAU:
+        enhanced = replace(enhanced, lit=False, dim=True,
+                           tooltip=f"{enhanced.tooltip} ({NOT_IN_GENAU})")
+    return enhanced, favorites_button(facts.funestra, things=things, lit=facts.favorites)
 
 
 def _flip(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
@@ -263,11 +265,6 @@ def _flick_trash(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
 def _media(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
     return media_pair(facts.funestra).buttons(facts.media, remembered=False, things="items")
 
-
-def _enhancement(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
-    enhanced, originals = enhancement_pair(facts.funestra).buttons(
-        facts.enhancement, remembered=False, things="items")
-    return replace(enhanced, enhanced=True), originals
 
 
 def _reset(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
@@ -363,12 +360,11 @@ TRANSPORT_CONTROLS: tuple[HudControl, ...] = (
     HudControl("video_trash", _KINO, _video_trash),
     HudControl("trash_flick", _GENAU, _flick_trash),
     HudControl("lock", EVERY_SHOW, _lock),
-    HudControl("fmode", EVERY_SHOW, _fmode),
     HudControl("reset", EVERY_SHOW, _reset),
     HudControl("browse_order", EVERY_SHOW, _browse_order),
     HudControl("inclusions", _KINO | _GENAU, _inclusion_buttons),
     HudControl("media", _SLIDES, _media),
-    HudControl("enhancement", _SLIDES, _enhancement),
+    HudControl("special_collections", EVERY_SHOW, _special_collections),
     HudControl("compilation", _KINO, _compilation),
     HudControl("clip_scene", _KINO, _clip_scene),
     HudControl("versions", _KINO | _SLIDES, _versions),
@@ -514,16 +510,16 @@ def main_title(facts: HudFacts, block: ModeHud) -> str:
     if facts.main_mode is MainMode.GENAU and not facts.locked and facts.pace_s:
         order = SEPARATOR.join(part for part in (order, f"{facts.pace_s}s") if part)
     return hud_title(HudTitleFacts(locked=facts.locked, playing_set=playing_set, order=order,
-                                   f_mode=block.scripted_filter, filters=title_filters(facts)))
+                                   favorites=facts.favorites, enhanced=facts.enhanced,
+                                   filters=title_filters(facts)))
 
 
 def slideshow_title(facts: HudFacts, *, loop: str = "", action_filter: str = "") -> str:
     return hud_title(HudTitleFacts(
         playing_set=looping_label(loop) if loop else "", locked=facts.locked,
         order="" if facts.latest is None else LATEST_LABEL if facts.latest else SHUFFLE_LABEL,
-        f_mode=facts.f_mode,
-        filters=(media_pair("").title_word(facts.media),
-                 enhancement_pair("").title_word(facts.enhancement), action_filter)))
+        favorites=facts.favorites, enhanced=facts.enhanced,
+        filters=(media_pair("").title_word(facts.media), action_filter)))
 
 
 _ONE_OR_BOTH: tuple[Included, ...] = (BOTH, (True, False), (False, True))
@@ -534,16 +530,17 @@ def title_choices(kind: HudKind) -> tuple[str, ...]:
     if kind is HudKind.MAIN:
         return tuple(sorted({
             main_title(HudFacts(main_mode=mode, locked=locked, latest=latest, pace_s=_LONGEST_PACE,
+                                favorites=favorites, enhanced=enhanced,
                                 plays_flat=projection[0], plays_vr=projection[1],
                                 length_mode=length, plays_portrait=orientation[0],
-                                plays_landscape=orientation[1]),
-                       ModeHud(scripted_filter=f_mode))
-            for mode, locked, latest, f_mode, projection, length, orientation in product(
-                MainMode, (True, False), (True, False, None), (True, False), _ONE_OR_BOTH,
-                (LengthMode.MIXED, LengthMode.FULL, LengthMode.CLIPS), _ONE_OR_BOTH)}))
+                                plays_landscape=orientation[1]), ModeHud())
+            for mode, locked, latest, favorites, enhanced, projection, length, orientation in product(
+                MainMode, (True, False), (True, False, None), (True, False), (True, False),
+                _ONE_OR_BOTH, (LengthMode.MIXED, LengthMode.FULL, LengthMode.CLIPS),
+                _ONE_OR_BOTH)}))
     return tuple(sorted({
-        slideshow_title(HudFacts(locked=locked, latest=latest, f_mode=f_mode, media=media,
-                                 enhancement=enhancement), loop=loop)
-        for loop, locked, latest, f_mode, media, enhancement in product(
+        slideshow_title(HudFacts(locked=locked, latest=latest, favorites=favorites, media=media,
+                                 enhanced=enhanced), loop=loop)
+        for loop, locked, latest, favorites, media, enhanced in product(
             (OFF, SEED, ACTION), (True, False), (True, False), (True, False), _ONE_OR_BOTH,
-            _ONE_OR_BOTH)}))
+            (True, False))}))

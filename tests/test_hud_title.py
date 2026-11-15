@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from funestra.hud_title import (
-    F_MODE_LABEL,
+    FAVORITES_LABEL,
     LATEST_LABEL,
     LOCKED_LABEL,
     SHUFFLE_LABEL,
@@ -12,10 +12,6 @@ from funestra.hud_title import (
 )
 
 
-def test_f_mode_is_spelled_with_a_small_m_in_every_app():
-    assert F_MODE_LABEL == "F-mode"
-
-
 def test_an_idle_funestra_says_only_whether_it_is_holding_what_is_on_screen():
     assert hud_title(HudTitleFacts(locked=True)) == LOCKED_LABEL
     assert hud_title(HudTitleFacts(locked=False)) == UNLOCKED_LABEL
@@ -24,8 +20,8 @@ def test_an_idle_funestra_says_only_whether_it_is_holding_what_is_on_screen():
 def test_the_slots_run_from_the_set_being_played_down_to_the_finest_filter():
     assert hud_title(HudTitleFacts(
         playing_set="Looping seeds", locked=True, order="Latest",
-        f_mode=True, filters=("alpha",),
-    )) == f"Looping seeds · {LOCKED_LABEL} · Latest · {F_MODE_LABEL} · alpha"
+        favorites=True, filters=("alpha",),
+    )) == f"Looping seeds · {LOCKED_LABEL} · Latest · {FAVORITES_LABEL} · alpha"
 
 
 def test_a_set_playing_through_drops_unlocked_but_keeps_locked():
@@ -48,8 +44,8 @@ def test_the_enhanced_narrowing_has_a_slot_of_its_own_after_f_mode_named_like_ev
     assert hud_title(HudTitleFacts(locked=False, order=SHUFFLE_LABEL, enhanced=True)) == (
         f"{UNLOCKED_LABEL} · Shuffle · Enhanceds")
     assert hud_title(HudTitleFacts(
-        locked=True, f_mode=True, enhanced=True, filters=("alpha",))) == (
-        f"{LOCKED_LABEL} · {F_MODE_LABEL} · Enhanceds · alpha")
+        locked=True, favorites=True, enhanced=True, filters=("alpha",))) == (
+        f"{LOCKED_LABEL} · {FAVORITES_LABEL} · Enhanceds · alpha")
     assert hud_title(HudTitleFacts(locked=True, enhanced=False)) == LOCKED_LABEL
 
 

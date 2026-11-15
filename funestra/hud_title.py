@@ -12,7 +12,7 @@ UNLOCKED_LABEL = "Unlocked"
 LATEST_LABEL = "Latest"
 SHUFFLE_LABEL = "Shuffle"
 
-F_MODE_LABEL = "F-mode"
+FAVORITES_LABEL = "Favorites"
 
 PLAYBACK_SPEED_LABEL = "Playback speed"
 
@@ -29,7 +29,7 @@ class HudTitleFacts:
     locked: bool
     playing_set: str = ""
     order: str = ""
-    f_mode: bool = False
+    favorites: bool = False
     enhanced: bool = False
     filters: Sequence[str] = ()
 
@@ -42,8 +42,8 @@ def hud_title(facts: HudTitleFacts) -> str:
         parts.append(UNLOCKED_LABEL)
     if facts.order:
         parts.append(facts.order)
-    if facts.f_mode:
-        parts.append(F_MODE_LABEL)
+    if facts.favorites:
+        parts.append(FAVORITES_LABEL)
     if facts.enhanced:
         parts.append(ENHANCED_LABEL)
     parts.extend(word for word in facts.filters if word)

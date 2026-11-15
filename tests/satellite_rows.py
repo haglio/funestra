@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from funestra.hud_button import FIT_THE_WORD, Button
-from funestra.hud_icons import FMODE_ICON, MINIMIZE_ICON, shared_icon
+from funestra.hud_icons import FAVORITES_ICON, MINIMIZE_ICON, shared_icon
 
 
 @dataclass(frozen=True)
@@ -25,7 +25,7 @@ def bar(funestra: str = "portrait", *, minimize: bool = True, **state) -> tuple[
         own("next", "⏭"),
         own("lock", "🔒", lit=lit.locked, favorite=True, group_break=True),
         own("trash", shared_icon("trash"), danger=True),
-        own("fmode", FMODE_ICON, lit=lit.favorites, favorite=True),
+        own("favorites", FAVORITES_ICON, lit=lit.favorites, favorite=True),
         *(() if lit.enhanced is None else (
             own("enhanced", shared_icon("enhance_filter"), lit=lit.enhanced,
                 enhanced=True, group_break=True),)),

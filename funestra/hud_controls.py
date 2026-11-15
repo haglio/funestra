@@ -5,14 +5,21 @@ from .funestra_verbs import SEEK_BACK, SEEK_FWD
 from .hud_button import FIT_THE_WORD, Button
 from .hud_icons import (
     BACK_ICON,
-    FMODE_ICON,
+    ENHANCED_ICON,
+    FAVORITES_ICON,
     FORWARD_ICON,
     LOCK_ICON,
     NEXT_ICON,
     PREVIOUS_ICON,
     shared_icon,
 )
-from .hud_title import F_MODE_LABEL, LATEST_LABEL, PLAYBACK_SPEED_LABEL, SHUFFLE_LABEL
+from .hud_title import (
+    ENHANCED_LABEL,
+    FAVORITES_LABEL,
+    LATEST_LABEL,
+    PLAYBACK_SPEED_LABEL,
+    SHUFFLE_LABEL,
+)
 from .main_hud import VALUE_W
 from .status import FunestraStatus
 
@@ -27,8 +34,8 @@ NONE_FOR_THIS_ONE = " (none for this one)"
 AN_IMAGE = "this is an image"
 TRASH_TOOLTIP = "Unfavorite it — or send it to Trash when it is not a favorite"
 RESET_PUTS_BACK_THE_SPEED = "normal speed"
-RESET_TOOLTIP = (f"Reset — no filter, no lock, no loop, no {F_MODE_LABEL}, {RESET_PUTS_BACK_THE_SPEED}, "
-                 "shuffled from the top")
+RESET_TOOLTIP = (f"Reset — no filter, no lock, no loop, no {FAVORITES_LABEL}, no {ENHANCED_LABEL}, "
+                 f"{RESET_PUTS_BACK_THE_SPEED}, shuffled from the top")
 
 
 def longer_than_a_step(duration_ms: float) -> bool:
@@ -113,12 +120,21 @@ def trash_button_under(command: str, tooltip: str) -> Button:
     return Button(command, TRASH_ICON, tooltip, danger=True)
 
 
-def favorites_only_tooltip() -> str:
-    return f"{F_MODE_LABEL} — browse only the favorites on this Funestra"
+def _only_the(kept: str, label: str, things: str, *, on: bool) -> str:
+    if on:
+        return f"Playing only the {kept} {things} — press for all of them"
+    return f"{label} — play only the {kept} {things}"
 
 
-def fmode_button(funestra: str, tooltip: str, *, lit: bool) -> Button:
-    return Button(f"{funestra}_fmode", FMODE_ICON, tooltip, lit=lit, favorite=True)
+def favorites_button(funestra: str, *, things: str, lit: bool) -> Button:
+    return Button(f"{funestra}_favorites", FAVORITES_ICON,
+                  _only_the("favorite", FAVORITES_LABEL, things, on=lit), lit=lit, favorite=True)
+
+
+def enhanced_button(funestra: str, *, things: str, lit: bool) -> Button:
+    return Button(f"{funestra}_enhanced", ENHANCED_ICON,
+                  _only_the("enhanced", ENHANCED_LABEL, things, on=lit), lit=lit, enhanced=True,
+                  group_break=True)
 
 
 def reset_button(funestra: str, *, nothing_to_reset: bool, tooltip: str,
