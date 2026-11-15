@@ -64,11 +64,6 @@ class ScrubberRowDraw(NamedTuple):
     heatmap: object = None
 
 
-_WIDEST_ROWS = (
-    RowHud(playhead=_HELD_FLICK_TIME_TEXT, loop=(0, 999)),
-    RowHud(playhead=_HELD_VIDEO_TIME_TEXT),
-)
-
 
 @dataclass(frozen=True)
 class RowLayout:
@@ -131,10 +126,6 @@ class RowSection:
         if row.loop is not None:
             return before + LEAST_TRACK + PLACE_W
         return 2 * (before + PLACE_W)
-
-    @staticmethod
-    def least_width_for_any_row() -> int:
-        return max(RowSection.least_width(row) for row in _WIDEST_ROWS)
 
     def draw(self, image: Image.Image, layout: RowLayout, row: RowHud,
              *, heatmap: np.ndarray | None = None) -> None:
