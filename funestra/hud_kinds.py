@@ -163,7 +163,7 @@ SLIDESHOW_RESET_TOOLTIPS = {
     False: f"Reset — both filters off, {RESET_PUTS_BACK_THE_SPEED}, and this set from the top",
 }
 
-GENAU_RESET_TOOLTIP = f"Reset — everything back to how Genau starts: no filter, no lock, no {F_MODE_LABEL}"
+GENAU_RESET_TOOLTIP = f"Reset — everything back to how Genau starts: no filter, no {F_MODE_LABEL}, locked, shuffled"
 
 MODE_BUTTONS = (
     ("main_kino_activate", "Kino", MainMode.KINO),
