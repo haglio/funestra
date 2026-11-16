@@ -1268,7 +1268,7 @@ class TestTheBlockASourcePaintsAtTheFootSoAHostWithWorkToReportShowsOneHudNotTwo
         assert (self._rendered(block).bgra.shape[0]
                 > self._rendered().bgra.shape[0])
 
-    def test_it_is_painted_over_the_nav_map(self, thumb):
+    def test_it_is_painted_under_the_nav_map(self, thumb):
         block = _Block()
         rendered = self._rendered(
             block, corner=HudCell(path="c.mp4", thumb=thumb),
@@ -1276,7 +1276,7 @@ class TestTheBlockASourcePaintsAtTheFootSoAHostWithWorkToReportShowsOneHudNotTwo
         painted = np.argwhere((_rgb(rendered.bgra) == np.array(_Block.MARK)).all(axis=-1))
 
         assert painted.size
-        assert painted[:, 0].max() < _nav_map_top(rendered)
+        assert painted[:, 0].min() > rendered.targets.click[0][0][1]
 
     def test_the_nav_map_is_set_off_from_it_by_a_line(self, thumb):
         block = _Block()
@@ -1285,16 +1285,9 @@ class TestTheBlockASourcePaintsAtTheFootSoAHostWithWorkToReportShowsOneHudNotTwo
             seeds=(HudCell(path="s.mp4", thumb=thumb),), seed_count=2)
         painted = np.argwhere((_rgb(rendered.bgra) == np.array(_Block.MARK)).all(axis=-1))
 
-        assert _lines_between(rendered, painted[:, 0].max() + 1, _nav_map_top(rendered)) == 1
+        nav_map_end = max(y + h for (_x, y, _w, h), _path in rendered.targets.click)
 
-    def test_it_is_set_off_from_the_sets_own_bands_by_a_line(self):
-        block = _Block()
-        rendered = self._rendered(block)
-        painted = np.argwhere((_rgb(rendered.bgra) == np.array(_Block.MARK)).all(axis=-1))
-        bands_end = max(y + h for (_x, y, _w, h), button in rendered.targets.buttons
-                        if button is not block.button)
-
-        assert _lines_between(rendered, bands_end, painted[:, 0].min()) == 1
+        assert _lines_between(rendered, nav_map_end, painted[:, 0].min()) == 1
 
     def test_the_hud_widens_to_hold_it(self):
         wide = _Block(size=(600, 30))
@@ -1569,7 +1562,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
 
     @staticmethod
     def _nav_map(rendered) -> tuple[int, int]:
-        return _nav_map_top(rendered), rendered.bgra.shape[0] - PAD
+        return _nav_map_top(rendered), max(y + h for (_x, y, _w, h), _path in rendered.targets.click)
 
     def test_a_hud_carrying_every_section_has_a_line_between_each_and_the_next(self, thumb):
         block = _Block()
@@ -1580,7 +1573,7 @@ class TestEverySectionIsSetOffFromTheNextByALine:
         painted = np.argwhere((_rgb(rendered.bgra) == np.array(_Block.MARK)).all(axis=-1))
         _x, row_y, _w, row_h = rendered.targets.row.rect
         sections = [self._status(rendered), self._controls(rendered), (row_y, row_y + row_h),
-                    (painted[:, 0].min(), painted[:, 0].max() + 1), self._nav_map(rendered)]
+                    self._nav_map(rendered), (painted[:, 0].min(), painted[:, 0].max() + 1)]
 
         lines = _dividers(rendered)
 

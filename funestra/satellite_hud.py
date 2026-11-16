@@ -219,9 +219,9 @@ class SectionHeights(NamedTuple):
 
 def hud_layout(*, heights: SectionHeights, bars: int = 0, nav_map: bool = True) -> HudLayout:
     stacked = stack(PAD, [heights.title, blocks_height([CTRL_BTN] * bars, BLOCK_GAP),
-                          heights.row, heights.host_controls, heights.foot,
-                          NAV_MAP_H if nav_map else 0])
-    _title, bars_top, row_top, host_controls_top, foot_top, nav_map_top = stacked.tops
+                          heights.row, heights.host_controls,
+                          NAV_MAP_H if nav_map else 0, heights.foot])
+    _title, bars_top, row_top, host_controls_top, nav_map_top, foot_top = stacked.tops
     return HudLayout(bars_top, row_top, host_controls_top,
                      foot_top, nav_map_top, stacked.end + PAD, stacked.dividers)
 
