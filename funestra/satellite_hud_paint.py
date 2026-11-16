@@ -275,7 +275,8 @@ class HudRenderer:
             if row
         ), default=0)
         foot_w, foot_h = model.foot.size() if model.foot is not None else (0, 0)
-        width = hud_width(model.funestra,
+        nav_map = has_a_nav_map(model)
+        width = hud_width(model.funestra, nav_map=nav_map,
                           content_width=max(
                                 bar_width,
                                 2 * PAD + foot_w if foot_w else 0,
@@ -290,7 +291,7 @@ class HudRenderer:
             heights=SectionHeights(
                 self._title_height(), row_h,
                 HostControlsSection.height if host_controls is not None else 0, foot_h),
-            bars=len(rows), nav_map=has_a_nav_map(model.funestra))
+            bars=len(rows), nav_map=nav_map)
         return _Sizes(rows, widths, foot_h, width, row_h, layout)
 
     def _drawn_whole(self, model: HudModel, drawn_for: tuple | None, scrubber_row: RowHud | None,
