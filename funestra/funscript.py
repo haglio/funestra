@@ -57,7 +57,7 @@ class Funscript:
         self._planned_grid_values: tuple[float, ...] = ()
         self._looped_key: tuple[int, int] | None = None
         self._looped_value: Funscript = self
-        self._followed_key: tuple[int, Funscript] | None = None
+        self._followed_key: tuple[int, int, Funscript] | None = None
         self._followed_value: Funscript = self
 
     @property
@@ -139,13 +139,15 @@ class Funscript:
                 if t + k * period < laid_out_until])
         return self._looped_value
 
-    def followed_by(self, following: Funscript, seam_ms: int) -> Funscript:
+    def followed_by(self, following: Funscript, seam_ms: int, *,
+                    horizon_ms: int = QUIET_LEAD_IN_MS) -> Funscript:
         if self._followed_key is None or self._followed_key[0] != seam_ms \
-                or self._followed_key[1] is not following:
+                or self._followed_key[1] != horizon_ms \
+                or self._followed_key[2] is not following:
             head = [(t + seam_ms, p) for t, p in following.actions
-                    if t <= QUIET_LEAD_IN_MS
+                    if t <= horizon_ms
                     and (not self.actions or t + seam_ms > self.actions[-1][0])]
-            self._followed_key = (seam_ms, following)
+            self._followed_key = (seam_ms, horizon_ms, following)
             self._followed_value = Funscript(actions=self.actions + head) if head else self
         return self._followed_value
 

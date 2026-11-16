@@ -18,6 +18,10 @@ from .seeking import OwedSeek, seek_if_taken
 
 logger = logging.getLogger(__name__)
 
+LOOK_AHEAD_MS = 15_000
+
+_CLIPS_LAID_AHEAD = 4
+
 
 class Playback:
     def __init__(
@@ -107,10 +111,16 @@ class Playback:
         duration = round(self._engine.duration_ms)
         if duration <= 0:
             return script
-        next_script = self._rides.funscript(self._lineup.what_the_roll_puts_up)
-        if next_script is None:
-            return script
-        return script.followed_by(next_script, duration)
+        laid_out, seam = script, duration
+        for video in self._lineup.coming_up(_CLIPS_LAID_AHEAD):
+            coming = self._rides.funscript(video)
+            if coming is None or not coming.actions:
+                break
+            laid_out = laid_out.followed_by(coming, seam, horizon_ms=LOOK_AHEAD_MS)
+            seam += max(1, coming.actions[-1][0])
+            if seam > duration + LOOK_AHEAD_MS:
+                break
+        return laid_out
 
     @property
     def has_funscript(self) -> bool:

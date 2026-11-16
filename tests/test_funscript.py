@@ -613,3 +613,10 @@ class TestFollowedByTheNextVideosScript:
         bridged = runs_long.followed_by(Funscript(actions=[(33, 100), (1_333, 0)]), 5_000)
 
         assert bridged.actions == [(0, 0), (5_500, 100), (6_000, 0), (6_333, 0)]
+
+    def test_a_wider_horizon_carries_more_of_the_following_script_for_the_readouts_look_ahead(self):
+        follower = Funscript(actions=[(0, 0), (6_000, 100), (12_000, 0)])
+
+        bridged = self._ends_dense().followed_by(follower, 5_000, horizon_ms=15_000)
+
+        assert bridged.actions[-1] == (17_000, 0)
