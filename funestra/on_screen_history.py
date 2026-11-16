@@ -7,6 +7,7 @@ from dataclasses import dataclass
 class ShownEntry:
     path: str
     started_at: float
+    asked_for: bool = False
 
 
 class OnScreenHistory:
@@ -14,17 +15,29 @@ class OnScreenHistory:
         self.history_s = history_s
         self._entries: list[ShownEntry] = []
         self._last_seen_at = 0.0
+        self._a_change_is_asked_for = False
 
-    def observe(self, path: str, *, now: float) -> None:
+    def a_change_was_asked_for(self) -> None:
+        self._a_change_is_asked_for = True
+
+    def observe(self, path: str, *, now: float, playing_for: float | None = None) -> None:
         if not path:
             return
         if self._entries and self._entries[-1].path == path:
             self._last_seen_at = now
             return
-        started_at = (self._last_seen_at + now) / 2 if self._entries else now
-        self._entries.append(ShownEntry(path, started_at))
+        self._entries.append(ShownEntry(path, self._started_at(now, playing_for),
+                                        self._a_change_is_asked_for))
+        self._a_change_is_asked_for = False
         self._last_seen_at = now
         self._prune(now - self.history_s)
+
+    def _started_at(self, now: float, playing_for: float | None) -> float:
+        if not self._entries:
+            return now
+        if playing_for is None:
+            return (self._last_seen_at + now) / 2
+        return max(self._last_seen_at, now - playing_for)
 
     def _prune(self, cutoff: float) -> None:
         keep_from = 0
@@ -35,6 +48,6 @@ class OnScreenHistory:
 
     def path_at(self, when: float) -> str:
         for entry in reversed(self._entries):
-            if entry.started_at <= when:
+            if entry.started_at <= when or entry.asked_for:
                 return entry.path
         return ""
