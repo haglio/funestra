@@ -20,6 +20,7 @@ from .ken_burns import Fit, KenBurns, Moves, View
 from .libmpv_loader import add_libmpv_to_path, libmpv_dirs
 from .lost_gpu import LostGpu
 from .mpv_gate import CallGate, mpv_call
+from .output_colors import OutputColors
 
 logger = logging.getLogger(__name__)
 
@@ -502,6 +503,7 @@ class MpvEngine(_MpvControl):
         )
         self._wid = int(wid)
         self._adopt(mpv.MPV(**options))
+        OutputColors().watch(self._mpv)
 
     def _hear(self, level: str, prefix: str, text: str) -> None:
         _log_mpv(level, prefix, text)
