@@ -33,6 +33,7 @@ class FunscriptTCodeDriver:
         self._took_over = True
         self._park_started: float | None = None
         self._park_total_ms: int = _PARK_INTERVAL_MS
+        self._segment_deadline: float | None = None
 
     def update(
         self, position_ms: int, fs: Funscript, *, now: float | None = None,
@@ -86,19 +87,29 @@ class FunscriptTCodeDriver:
             remaining = max(1, round((next_t - position_ms) / speed))
         else:
             next_t, remaining = fs.actions[-1][0], 100
+        if next_index == self._last_segment and self._segment_deadline is not None:
+            remaining = min(remaining, max(50, round((self._segment_deadline - now) * 1000)))
         self._send(
             to_tcode_position(fs.paced_position_at(next_t, speed, max_intensity=max_intensity)),
             remaining, now)
 
     def _send(self, position: int, interval_ms: int, now: float) -> None:
-        self._sink.send(format_tcode_command(
-            "L0", position, self._glide.interval_ms(interval_ms, now)))
+        interval_ms = self._glide.interval_ms(interval_ms, now)
+        self._segment_deadline = now + interval_ms / 1000
+        self._sink.send(format_tcode_command("L0", position, interval_ms))
 
     def reset(self) -> None:
         self._last_segment = -1
         self._last_send_time = -1.0
         self._took_over = True
+        self._segment_deadline = None
         self._glide.begin()
+
+    def new_script(self) -> None:
+        self._last_segment = -1
+        self._last_send_time = -1.0
+        self._took_over = False
+        self._segment_deadline = None
 
     def want(self, wanted: bool) -> None:
         self._sink.want(wanted)

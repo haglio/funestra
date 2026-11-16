@@ -31,6 +31,7 @@ class FakeTCode:
         self.max_intensities: list[int] = []
         self.parks = 0
         self.resets = 0
+        self.new_scripts = 0
         self.wanted: list[bool] = []
         self.closed = False
 
@@ -47,6 +48,9 @@ class FakeTCode:
 
     def reset(self) -> None:
         self.resets += 1
+
+    def new_script(self) -> None:
+        self.new_scripts += 1
 
     def close(self) -> None:
         self.closed = True

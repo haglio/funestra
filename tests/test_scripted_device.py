@@ -142,7 +142,7 @@ class TestFollowingThePlayhead:
 
         assert tcode.resets == 0
 
-    def test_starting_an_item_takes_the_device_over_and_forgets_where_the_last_one_was(self):
+    def test_starting_an_item_forgets_where_the_last_one_was_so_the_restart_is_no_rewind(self):
         tcode = FakeTCode()
         device = ScriptedDevice(tcode)
         device.follow(1000.0, SCRIPT, speed=1.0)
@@ -150,7 +150,7 @@ class TestFollowingThePlayhead:
         device.start_an_item()
         device.follow(0.0, SCRIPT, speed=1.0)
 
-        assert tcode.resets == 1
+        assert tcode.resets == 0
 
     def test_after_a_resume_nothing_is_sent_until_the_playhead_has_moved(self):
         tcode = FakeTCode()
@@ -174,3 +174,23 @@ class TestFollowingThePlayhead:
         device.follow(0.0, SCRIPT, speed=1.0, over_an_image=True)
 
         assert len(tcode.updates) == 1
+
+
+class TestANewClipsScript:
+    def test_is_carried_straight_into_with_no_fresh_takeover(self):
+        tcode = FakeTCode()
+        device = ScriptedDevice(tcode)
+        device.follow(4900.0, SCRIPT, speed=1.0)
+
+        device.follow(16.0, Funscript(actions=[(33, 100), (333, 0)]), speed=1.0)
+
+        assert (tcode.resets, tcode.new_scripts) == (0, 2)
+
+    def test_a_jump_back_inside_the_same_script_still_takes_the_device_over(self):
+        tcode = FakeTCode()
+        device = ScriptedDevice(tcode)
+        device.follow(4900.0, SCRIPT, speed=1.0)
+
+        device.follow(16.0, SCRIPT, speed=1.0)
+
+        assert (tcode.resets, tcode.new_scripts) == (1, 1)
