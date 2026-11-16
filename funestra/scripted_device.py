@@ -16,6 +16,9 @@ class _Unconnected:
     def reset(self) -> None:
         pass
 
+    def new_script(self) -> None:
+        pass
+
     def want(self, wanted: bool) -> None:
         pass
 
@@ -30,6 +33,7 @@ class ScriptedDevice:
         self._tcode.want(enabled)
         self._max_intensity = FULL_INTENSITY
         self._last_position_ms = 0.0
+        self._last_script = None
         self._resumed_at: float | None = None
 
     def set_enabled(self, enabled: bool) -> None:
@@ -44,7 +48,6 @@ class ScriptedDevice:
         self._tcode.reset()
 
     def start_an_item(self) -> None:
-        self.take_over()
         self._last_position_ms = 0.0
 
     def resume_at(self, position_ms: float) -> None:
@@ -53,7 +56,10 @@ class ScriptedDevice:
 
     def follow(self, position_ms: float, script, *, speed: float, rolled: bool = False,
                over_an_image: bool = False) -> None:
-        if not rolled and position_ms + REWIND_MS < self._last_position_ms:
+        if script is not None and script is not self._last_script:
+            self._tcode.new_script()
+            self._last_script = script
+        elif not rolled and position_ms + REWIND_MS < self._last_position_ms:
             self.take_over()
         self._last_position_ms = position_ms
         if self._the_playhead_has_moved_since_the_resume(position_ms, over_an_image):

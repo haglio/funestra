@@ -279,3 +279,15 @@ def test_a_funscript_driver_wants_the_osr2_through_its_slot():
     driver.want(False)
 
     assert sink.wanted == [True, False]
+
+
+class TestAStalledPlayhead:
+    def test_a_resend_while_the_video_has_not_advanced_sends_only_the_time_left_like_the_parks(self):
+        sink = FakeSink()
+        driver = FunscriptTCodeDriver(sink)
+        fs = Funscript(actions=[(0, 0), (1000, 100)])
+
+        driver.update(0, fs, now=0.0)
+        driver.update(0, fs, now=0.15)
+
+        assert sink.sent == ["L09999I1000", "L09999I850"]
