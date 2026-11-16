@@ -510,14 +510,21 @@ class TestTheOsr2:
 
         assert tcode.resets == before + 1
 
-    def test_every_jump_of_the_clock_starts_it_from_wherever_it_is(self, tmp_path):
+    def test_a_seek_or_a_speed_change_starts_it_from_wherever_it_is(self, tmp_path):
         playback, _engine, tcode = _driving(tmp_path, entries=3)
-        jumps = (lambda: playback.step(1), lambda: playback.seek_to(2500),
-                 lambda: playback.set_speed(2.0))
+        jumps = (lambda: playback.seek_to(2500), lambda: playback.set_speed(2.0))
         for jump in jumps:
             before = tcode.resets
             jump()
             assert tcode.resets == before + 1
+
+    def test_a_jump_to_another_clip_is_carried_straight_into_with_no_fresh_takeover(self, tmp_path):
+        playback, _engine, tcode = _driving(tmp_path, entries=3)
+        before = tcode.resets
+
+        playback.step(1)
+
+        assert tcode.resets == before
 
     def test_the_script_the_device_follows_carries_the_next_clips_opening_actions_past_this_clips_end(self, tmp_path):
         playback, engine, tcode = _driving(tmp_path)
@@ -527,8 +534,19 @@ class TestTheOsr2:
         playback.advance()
 
         followed = tcode.updates[-1][1]
-        assert followed.actions == [(0, 0), (1000, 90), (2000, 0),
-                                    (5000, 0), (6000, 90), (7000, 0)]
+        assert followed.actions[:6] == [(0, 0), (1000, 90), (2000, 0),
+                                        (5000, 0), (6000, 90), (7000, 0)]
+
+    def test_the_readouts_look_ahead_reaches_through_the_queued_clips_scripts(self, tmp_path):
+        playback, engine, tcode = _driving(tmp_path, entries=3, scripted=(0, 1, 2))
+        playback.set_tcode_enabled(True)
+        engine.position_ms = 4900
+
+        playback.advance()
+
+        followed = tcode.updates[-1][1]
+        assert (8000, 90) in followed.actions
+        assert followed.actions[-1] == (13000, 0)
 
     def test_a_clip_it_rolls_onto_by_itself_is_carried_straight_on_with_no_fresh_takeover(self, tmp_path):
         playback, engine, tcode = _driving(tmp_path)

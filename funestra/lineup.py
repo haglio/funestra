@@ -75,6 +75,11 @@ class Lineup:
     def what_the_roll_puts_up(self) -> Path:
         return self.on_screen if self.rolls_onto_itself else self._file_at(self._index + 1)
 
+    def coming_up(self, count: int) -> list[Path]:
+        if self.rolls_onto_itself:
+            return [self.on_screen] * count
+        return [self._file_at(self._index + ahead) for ahead in range(1, count + 1)]
+
     def roll(self) -> None:
         if not self.rolls_onto_itself:
             self._frame = None
