@@ -189,12 +189,12 @@ def map_block_width(funestra: str) -> int:
             + NAV_MAP_RIGHT_RESERVE)
 
 
-def has_a_nav_map(funestra: str) -> bool:
-    return funestra in WIDEST_FULL_HEIGHT_SHAPE
+def has_a_nav_map(model: HudModel) -> bool:
+    return model.funestra in WIDEST_FULL_HEIGHT_SHAPE or model.corner is not None
 
 
-def hud_width(funestra: str, *, content_width: int = 0) -> int:
-    if not has_a_nav_map(funestra):
+def hud_width(funestra: str, *, content_width: int = 0, nav_map: bool = True) -> int:
+    if not nav_map:
         return content_width
     return max(2 * PAD + map_block_width(funestra), content_width)
 

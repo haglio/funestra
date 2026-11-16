@@ -1782,3 +1782,14 @@ def test_genaus_seconds_show_their_number():
         facts=HudFacts(main_mode=MainMode.GENAU, pace_s=7, flick_one="pip", flick_many="pips")))
 
     assert "7s" in [button.icon for _rect, button in rendered.targets.buttons]
+
+
+def test_a_slideshow_of_both_shapes_has_room_for_its_whole_nav_map(thumb):
+    rendered = HudRenderer("both").render(_crowded("both", thumb))
+    height, width = rendered.bgra.shape[:2]
+
+    loop = {kind: rect for rect, kind in rendered.targets.loop}
+    _lx, ly, _lw, lh = loop["action"]
+    assert ly + lh == height - PAD
+    assert all(x + w <= width - PAD and y + h <= height - PAD
+               for (x, y, w, h), _path in rendered.targets.click)
