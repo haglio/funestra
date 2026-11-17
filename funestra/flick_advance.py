@@ -47,7 +47,7 @@ def tick_flick_advance(
     *,
     playing: bool,
     on_screen_flick: Path | None,
-    step_flick: Callable[[int], None],
+    advance: Callable[[], None],
 ) -> None:
     dt = now - state._last_tick
     state._last_tick = now
@@ -77,4 +77,4 @@ def tick_flick_advance(
         state._elapsed %= state.interval
     else:
         state._awaiting_switch = True
-        step_flick(1)
+        advance()

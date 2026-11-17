@@ -54,11 +54,24 @@ class TestApplyRuntimeCommand:
             "PREV",
             engine=engine,
             paused=paused,
-            step_flick=steps.append,
+            step_flick=lambda step, **_: steps.append(step),
         )
 
         assert handled is True
         assert steps == [-1]
+
+    def test_a_step_carries_when_it_was_pressed(self):
+        steps: list[tuple[int, float]] = []
+
+        handled = _answered(
+            "NEXT 12.250",
+            engine=BeatEngine(phase=0.0, last_tick=0.0),
+            paused=Flag(),
+            step_flick=lambda step, *, pressed_at: steps.append((step, pressed_at)),
+        )
+
+        assert handled is True
+        assert steps == [(1, 12.25)]
 
     def test_next_steps_forward(self):
         steps: list[int] = []
@@ -69,7 +82,7 @@ class TestApplyRuntimeCommand:
             "NEXT",
             engine=engine,
             paused=paused,
-            step_flick=steps.append,
+            step_flick=lambda step, **_: steps.append(step),
         )
 
         assert handled is True
@@ -444,7 +457,7 @@ class TestApplyRuntimeCommand:
             "UNKNOWN",
             engine=engine,
             paused=paused,
-            step_flick=steps.append,
+            step_flick=lambda step, **_: steps.append(step),
         )
 
         assert handled is False
@@ -777,7 +790,7 @@ class TestAnUnhandledCommand:
             apply_runtime_command(command, GenauControls(
                 engine=BeatEngine(phase=0.0, last_tick=0.0),
                 paused=Flag(),
-                step_flick=lambda _step: None,
+                step_flick=lambda _step, **_: None,
                 **collaborators,
             ))
 

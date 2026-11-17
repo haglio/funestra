@@ -46,7 +46,7 @@ class FlicksOnScreen:
         tick_flick_advance(
             state, now, playing=playing,
             on_screen_flick=self.path if self.frame_count else None,
-            step_flick=self.selection.step)
+            advance=self.selection.advance)
 
     def heard(self, heard: bool) -> None:
         self.notifier.notify_visible(heard)

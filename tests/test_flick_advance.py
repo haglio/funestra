@@ -19,12 +19,12 @@ _TICK_S = 0.1
 def _run(state, *, playing=True, seconds=30.0, start=0.0, on_screen="flick"):
     calls: list[int] = []
     tick_flick_advance(
-        state, start, playing=playing, on_screen_flick=on_screen, step_flick=calls.append,
+        state, start, playing=playing, on_screen_flick=on_screen, advance=lambda: calls.append(1),
     )
     for i in range(int(seconds / _TICK_S)):
         tick_flick_advance(
             state, start + _TICK_S * (i + 1),
-            playing=playing, on_screen_flick=on_screen, step_flick=calls.append,
+            playing=playing, on_screen_flick=on_screen, advance=lambda: calls.append(1),
         )
     return calls
 
@@ -36,7 +36,7 @@ def _series(state, start, stop, on_screen):
         now = round(start + _TICK_S * i, 3)
         tick_flick_advance(
             state, now, playing=True, on_screen_flick=on_screen,
-            step_flick=lambda _delta, _now=now: fires.append(_now),
+            advance=lambda _now=now: fires.append(_now),
         )
     return fires
 

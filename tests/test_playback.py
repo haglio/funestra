@@ -41,6 +41,24 @@ class TestNavigation:
         playback.step(-1)
         assert engine.opened[-1] == tmp_path / "v1.mp4"
 
+    def test_a_step_pressed_before_the_video_moved_on_by_itself_is_already_done(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=3, clock=lambda: 10.0)
+        engine.run_out()
+        playback.advance()
+
+        playback.step(1, pressed_at=9.5)
+
+        assert playback.current_video == tmp_path / "v1.mp4"
+
+    def test_a_step_pressed_after_the_video_moved_on_by_itself_steps(self, tmp_path):
+        playback, engine = _make_playback(tmp_path, entries=3, clock=lambda: 10.0)
+        engine.run_out()
+        playback.advance()
+
+        playback.step(1, pressed_at=10.5)
+
+        assert playback.current_video == tmp_path / "v2.mp4"
+
 
 class TestSeeking:
     def test_seek_to_reaches_the_engine(self, tmp_path):

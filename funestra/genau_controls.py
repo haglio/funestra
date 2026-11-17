@@ -6,7 +6,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .control_registry import Control, Verb, bind, look_up
+from .control_registry import Control, Verb, bind, look_up, pressed_at
 from .device_walk import RoomHold
 from .flag import Flag
 from .flick_advance import (
@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 class GenauControls:
     engine: BeatEngine
     paused: Flag
-    step_flick: Callable[[int], None]
+    step_flick: Callable[..., None]
     condemn_flick: Callable[..., object] | None = None
     robot_hand: RobotHandState | None = None
     learned_motion_state: LearnedMotionState | None = None
@@ -174,8 +174,8 @@ def _quit(controls: GenauControls, _value: str) -> bool:
 
 
 def _step_flick(step: int) -> Act:
-    def act(controls: GenauControls, _value: str) -> bool:
-        controls.step_flick(step)
+    def act(controls: GenauControls, value: str) -> bool:
+        controls.step_flick(step, pressed_at=pressed_at(value))
         return True
     return act
 
@@ -334,7 +334,8 @@ CONTROLS: tuple[Control, ...] = (
     ),
     Control(
         name="flick",
-        verbs=(Verb(PREV, _step_flick(-1)), Verb(NEXT, _step_flick(1))),
+        verbs=(Verb(PREV, _step_flick(-1), may_name_its_item=True),
+               Verb(NEXT, _step_flick(1), may_name_its_item=True)),
     ),
     Control(
         name="condemn",

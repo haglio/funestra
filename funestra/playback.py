@@ -36,6 +36,9 @@ class Playback:
         self._held_by_the_pace = False
         self._speed = NORMAL_RATE
         self._loads = 0
+        self._clock = setup.clock
+        self._rolled_at: float | None = None
+        self._asked_load = 0
         self._play_points = setup.play_points or PlayPoints(None)
         self._owed_seek = OwedSeek()
         self._switching_versions = False
@@ -64,6 +67,10 @@ class Playback:
     @property
     def loads(self) -> int:
         return self._loads
+
+    @property
+    def asked_load(self) -> int:
+        return self._asked_load
 
     @property
     def switching_versions(self) -> bool:
@@ -167,8 +174,16 @@ class Playback:
     def showing_image(self) -> bool:
         return self._lineup.an_image_was_put_up or self._engine.showing_image
 
-    def step(self, delta: int) -> None:
+    def step(self, delta: int, *, pressed_at: float | None = None) -> None:
+        if self._moved_on_by_itself_since(pressed_at):
+            logger.info("A step pressed at %.3f was already done: the video moved on by itself",
+                        pressed_at)
+            return
         self.load(self.index + delta)
+        self._asked_load = self._loads
+
+    def _moved_on_by_itself_since(self, pressed_at: float | None) -> bool:
+        return None not in (pressed_at, self._rolled_at) and self._rolled_at > pressed_at
 
     def seek_by(self, delta_ms: float) -> None:
         self.seek_to(self._engine.position_ms + delta_ms)
@@ -288,6 +303,7 @@ class Playback:
             return False
         self._play_points.ended()
         self._lineup.roll()
+        self._rolled_at = self._clock()
         self._mark = None
         self._ab_loop = None
         self._loads += 1

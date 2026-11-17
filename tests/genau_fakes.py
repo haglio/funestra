@@ -50,8 +50,11 @@ class FakeSelection:
         self.adopt_calls = 0
         self.pending_flick_name = pending_flick_name
 
-    def step(self, delta: int) -> None:
+    def step(self, delta: int, *, pressed_at: float | None = None) -> None:
         self.step_calls.append(delta)
+
+    def advance(self) -> None:
+        self.step(1)
 
     def condemn_current(self) -> bool:
         self.discard_calls += 1

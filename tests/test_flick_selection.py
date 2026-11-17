@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytest
+
 from funestra.flick_cache import FlickCacheStore
 from funestra.flick_selection import FlickSelectionController, FlickSelectionParts
 from funestra.flick_sequence import FlickSequenceController
@@ -50,7 +52,7 @@ class FakeNotifier:
         self.flick_notifications.append(path)
 
 
-def _build_controller(*paths: str, loader_busy: bool = False, condemn_flick=None):
+def _build_controller(*paths: str, loader_busy: bool = False, condemn_flick=None, clock=None):
     flick_store = FlickCacheStore(limit=3)
     sequence = FlickSequenceController([Path(path) for path in paths])
     loader = FakeLoader(flick_store, is_busy=loader_busy)
@@ -58,6 +60,8 @@ def _build_controller(*paths: str, loader_busy: bool = False, condemn_flick=None
     notifier = FakeNotifier()
 
     kwargs = {} if condemn_flick is None else {"condemn_flick": condemn_flick}
+    if clock is not None:
+        kwargs["clock"] = clock
     controller = FlickSelectionController(FlickSelectionParts(
         sequence=sequence,
         flick_store=flick_store,
@@ -118,6 +122,18 @@ def test_step_switches_immediately_when_cached():
     assert notifier.flick_notifications == [Path("b.mp4")]
     assert renderer.prepare_calls == 1
     assert controller.pending_flick_name is None
+
+
+@pytest.mark.parametrize(("pressed_at", "number"), [(9.5, 2), (10.5, 3)])
+def test_a_step_pressed_before_the_flick_moved_on_by_itself_is_already_done(pressed_at, number):
+    controller, flick_store, *_ = _build_controller("a.mp4", "b.mp4", "c.mp4", clock=lambda: 10.0)
+    for name in ("b.mp4", "c.mp4"):
+        flick_store.flick_cache[Path(name)] = {"frames": ["f0"]}
+    controller.advance()
+
+    controller.step(1, pressed_at=pressed_at)
+
+    assert controller.current_number == number
 
 
 def test_step_waits_for_the_next_flick_to_decode_so_the_screen_never_goes_blank():
