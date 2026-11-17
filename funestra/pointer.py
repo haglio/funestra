@@ -28,6 +28,10 @@ class Pointer:
         if self._hud is not None:
             self._hud.wheel(mx, my, steps)
 
+    def right_press(self, mx: int, my: int) -> None:
+        if self._hud is not None:
+            self._hud.right_press(mx, my)
+
     def release(self) -> None:
         if self._hud is not None:
             self._hud.release()

@@ -1044,6 +1044,23 @@ class TestTheBlockAtTheFoot:
 
         assert _commands(tmp_path) == ["portrait_foot_press|30|7", "portrait_foot_release|30|7"]
 
+    def test_a_right_click_on_the_block_asks_the_source_for_its_menu_there(self):
+        overlay, posted = _a_windows_own_hud(FakeEngine(), foot=_Foot())
+        left, top = self._foot_at(overlay)
+
+        taken = overlay.right_press(left + 30, top + 7)
+
+        assert taken is True
+        assert posted == ["foot_menu|30|7"]
+        assert overlay.holding is False
+
+    def test_a_right_click_off_the_block_asks_for_nothing(self):
+        overlay, posted = _a_windows_own_hud(FakeEngine(), foot=_Foot())
+
+        assert overlay.right_press(MARGIN + 2, MARGIN + 2) is True
+        assert overlay.right_press(2000, 2000) is False
+        assert posted == []
+
     def test_a_hud_without_a_block_has_nothing_at_its_foot_to_press(self):
         overlay, _posted = _a_windows_own_hud(FakeEngine())
 
