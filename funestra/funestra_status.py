@@ -24,6 +24,7 @@ def status_fields(playback, handoff_touch_ms: int | None) -> dict[str, str]:
         "portrait": "" if playback.portrait is None else "1" if playback.portrait else "0",
         "loads": str(playback.loads),
         "asked_load": str(playback.asked_load),
+        "asked_step": str(playback.asked_step),
         "idle": "1" if playback.idle else "0",
     }
 

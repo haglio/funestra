@@ -55,13 +55,13 @@ class TestStatusFields:
 
     def test_publishes_which_load_a_step_asked_for_so_a_reader_tells_it_from_a_roll(self, tmp_path):
         playback, engine = make_playback(tmp_path, entries=3)
-        playback.step(1)
+        playback.step(-1)
         asked = status_fields(playback, None)
         engine.run_out()
         playback.advance()
         rolled = status_fields(playback, None)
 
-        assert asked["asked_load"] == asked["loads"]
+        assert (asked["asked_load"], asked["asked_step"]) == (asked["loads"], "-1")
         assert rolled["asked_load"] == asked["loads"] != rolled["loads"]
 
     def test_key_order_is_the_published_file_order(self):
@@ -80,13 +80,14 @@ class TestStatusFields:
             portrait = None
             loads = 0
             asked_load = 0
+            asked_step = 0
             idle = False
 
         assert list(status_fields(Stub(), None)) == [
             "video", "position_ms", "duration_ms", "paused", "locked",
             "speed", "picture", "read_at", "showing", "playlist_length",
             "has_funscript", "funscript_resting", "handoff_touch_ms", "portrait",
-            "loads", "asked_load", "idle",
+            "loads", "asked_load", "asked_step", "idle",
         ]
 
     def test_the_shape_of_the_item_is_published_once_the_funestra_has_measured_it(self, tmp_path):

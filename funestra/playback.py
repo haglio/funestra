@@ -38,7 +38,7 @@ class Playback:
         self._loads = 0
         self._clock = setup.clock
         self._rolled_at: float | None = None
-        self._asked_load = 0
+        self._asked_load = self._asked_step = 0
         self._play_points = setup.play_points or PlayPoints(None)
         self._owed_seek = OwedSeek()
         self._switching_versions = False
@@ -71,6 +71,10 @@ class Playback:
     @property
     def asked_load(self) -> int:
         return self._asked_load
+
+    @property
+    def asked_step(self) -> int:
+        return self._asked_step
 
     @property
     def switching_versions(self) -> bool:
@@ -180,7 +184,7 @@ class Playback:
                         pressed_at)
             return
         self.load(self.index + delta)
-        self._asked_load = self._loads
+        self._asked_load, self._asked_step = self._loads, delta
 
     def _moved_on_by_itself_since(self, pressed_at: float | None) -> bool:
         return None not in (pressed_at, self._rolled_at) and self._rolled_at > pressed_at
