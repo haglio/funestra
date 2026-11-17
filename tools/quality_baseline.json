@@ -13,5 +13,16 @@
     "funestra/tcode_driver.py": 1
   },
   "prose_lines": {},
-  "trailing_comments": {}
+  "trailing_comments": {},
+  "wall_clock_waits": {
+    "tests/import_checks.py": 1,
+    "tests/test_broker.py": 1,
+    "tests/test_broker_feed.py": 9,
+    "tests/test_funestra.py": 3,
+    "tests/test_lost_gpu.py": 2,
+    "tests/test_mpv_control.py": 10,
+    "tests/test_mpv_gate.py": 24,
+    "tests/test_playlist.py": 1,
+    "tests/test_status.py": 1
+  }
 }
