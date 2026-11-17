@@ -51,6 +51,7 @@ class MessageLevel(StrEnum):
     WARNING = "warning"
     NORMAL = "notice"
     HIGHLIGHT = "favorite"
+    ERROR = "error"
 
 
 def read_mode[M: Enum, D](enum: type[M], raw: object, default: D) -> M | D:
