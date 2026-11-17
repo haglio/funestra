@@ -13,6 +13,7 @@ class WaveformShape(Enum):
     TRIANGLE = "triangle"
     ROUNDED_SQUARE = "rounded_square"
     SAWTOOTH = "sawtooth"
+    REVERSE_SAWTOOTH = "reverse_sawtooth"
 
 MIN_BPM = 5.0
 MAX_BPM = 200.0
@@ -26,6 +27,7 @@ RETRACT_CENTER = 100
 
 MAX_TICK_SECONDS = 0.1
 
+_SAWTOOTH_FAST_SHARE = 0.3
 _ROUNDING = 1e-9
 _HALVINGS = 40
 _BEND = 80
@@ -208,11 +210,16 @@ def _waveform_raw(phase: float, shape: WaveformShape) -> float:
         k = 3.0
         return (1 - math.tanh(k * math.cos(2 * math.pi * frac)) / math.tanh(k)) / 2
     if shape is WaveformShape.SAWTOOTH:
-        rise = 0.3
-        if frac < rise:
-            return frac / rise
-        return 1 - (frac - rise) / (1 - rise)
+        return _climb_then_fall(frac, climb=1 - _SAWTOOTH_FAST_SHARE)
+    if shape is WaveformShape.REVERSE_SAWTOOTH:
+        return _climb_then_fall(frac, climb=_SAWTOOTH_FAST_SHARE)
     return (1 - math.cos(2 * math.pi * phase)) / 2
+
+
+def _climb_then_fall(frac: float, *, climb: float) -> float:
+    if frac < climb:
+        return frac / climb
+    return 1 - (frac - climb) / (1 - climb)
 
 
 class Waveform(NamedTuple):

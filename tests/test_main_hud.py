@@ -68,6 +68,7 @@ class TestShapeLabel:
         assert shape_label("sine") == "Sine"
         assert shape_label("rounded_square") == "Square"
         assert shape_label("sawtooth") == "Sawtooth"
+        assert shape_label("reverse_sawtooth") == "Reverse sawtooth"
 
     def test_an_unknown_shape_is_titled_rather_than_dropped(self):
         assert shape_label("half_moon") == "Half Moon"

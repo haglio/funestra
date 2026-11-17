@@ -118,19 +118,44 @@ class TestSawtoothWaveform:
     def test_the_cycle_starts_at_the_base(self):
         assert phase_to_position(0.0, shape=WaveformShape.SAWTOOTH) == 0
 
-    def test_phase_half_is_falling(self):
-        pos = phase_to_position(0.5, shape=WaveformShape.SAWTOOTH)
-        assert 6000 < pos < 8000
+    def test_the_slow_climb_is_halfway_up_halfway_through_it(self):
+        assert phase_to_position(0.35, shape=WaveformShape.SAWTOOTH) == pytest.approx(5000, abs=1)
 
-    def test_peak_at_rise_fraction(self):
-        assert phase_to_position(0.3, shape=WaveformShape.SAWTOOTH) == 9999
+    def test_the_peak_comes_after_the_slow_climb(self):
+        assert phase_to_position(0.7, shape=WaveformShape.SAWTOOTH) == 9999
+
+    def test_the_fall_back_toward_the_base_is_fast(self):
+        assert phase_to_position(0.85, shape=WaveformShape.SAWTOOTH) == pytest.approx(5000, abs=1)
 
     def test_the_cycle_ends_back_at_the_base(self):
         assert phase_to_position(1.0, shape=WaveformShape.SAWTOOTH) == pytest.approx(0, abs=1)
 
+
+class TestReverseSawtoothWaveform:
+    def test_the_cycle_starts_at_the_base(self):
+        assert phase_to_position(0.0, shape=WaveformShape.REVERSE_SAWTOOTH) == 0
+
+    def test_phase_half_is_falling(self):
+        pos = phase_to_position(0.5, shape=WaveformShape.REVERSE_SAWTOOTH)
+        assert 6000 < pos < 8000
+
+    def test_peak_at_rise_fraction(self):
+        assert phase_to_position(0.3, shape=WaveformShape.REVERSE_SAWTOOTH) == 9999
+
+    def test_the_cycle_ends_back_at_the_base(self):
+        assert phase_to_position(1.0, shape=WaveformShape.REVERSE_SAWTOOTH) == pytest.approx(
+            0, abs=1)
+
     def test_asymmetric_rise_is_faster(self):
-        pos = phase_to_position(0.15, shape=WaveformShape.SAWTOOTH)
+        pos = phase_to_position(0.15, shape=WaveformShape.REVERSE_SAWTOOTH)
         assert 4000 < pos < 6000
+
+
+class TestTheTwoSawtoothsMirrorEachOther:
+    @pytest.mark.parametrize("phase", [0.05, 0.2, 0.3, 0.45, 0.6, 0.7, 0.9])
+    def test_the_sawtooth_played_backwards_is_the_reverse_sawtooth(self, phase):
+        assert phase_to_position(phase, shape=WaveformShape.SAWTOOTH) == pytest.approx(
+            phase_to_position(1 - phase, shape=WaveformShape.REVERSE_SAWTOOTH), abs=1)
 
 
 class TestWaveformContinuousPhase:
@@ -493,8 +518,13 @@ class TestCycleShape:
         cycle_shape(state)
         assert state.shape is WaveformShape.TRIANGLE
 
-    def test_wraps_from_last_to_first(self):
+    def test_the_reverse_sawtooth_follows_the_sawtooth(self):
         state = RobotHandState(shape=WaveformShape.SAWTOOTH)
+        cycle_shape(state)
+        assert state.shape is WaveformShape.REVERSE_SAWTOOTH
+
+    def test_wraps_from_last_to_first(self):
+        state = RobotHandState(shape=WaveformShape.REVERSE_SAWTOOTH)
         cycle_shape(state)
         assert state.shape is WaveformShape.SINE
 
@@ -506,7 +536,7 @@ class TestCycleShape:
     def test_backward_wraps_from_first_to_last(self):
         state = RobotHandState(shape=WaveformShape.SINE)
         cycle_shape(state, -1)
-        assert state.shape is WaveformShape.SAWTOOTH
+        assert state.shape is WaveformShape.REVERSE_SAWTOOTH
 
 
 class TestAdjustSpeed:
