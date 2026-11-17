@@ -160,7 +160,7 @@ class TestPainter:
     def test_an_ordinary_toggle_that_is_on_fills_the_familys_blue_since_the_active_gray_could_not_be_told_from_off(self):
         blue = BLUE
         shade, _pixels = self._busiest_shade(
-            "robot_hand_toggle_learned",
+            "robot_hand_learned_on",
             MainHudModel(main_mode=MainMode.GENAU,
                          osr2_rows=motion_rows(learned=True)))
 

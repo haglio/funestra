@@ -78,14 +78,26 @@ _WAVEFORM_FACES = {
 }
 
 
-def aim_row(*, learned: bool, shape: str, control: str) -> tuple[Button, ...]:
+HUMAN_INSPIRED_ON = "robot_hand_learned_on"
+WAVEFORM_ON = "robot_hand_learned_off"
+NEXT_WAVEFORM = "robot_hand_cycle_shape"
+ROBOT_HAND_OFF = "robot_hand_off"
+ROBOT_HAND_OFF_SAYS = ("Robot Hand off: the OSR2 stays parked wherever there is no funscript, "
+                       "and for the whole of a video with no funscript")
+
+
+def aim_row(*, learned: bool, shape: str, control: str,
+            off: bool = False) -> tuple[Button, ...]:
+    waveform = not (learned or off)
     return (
         *_osr2_switch(control),
-        Button("robot_hand_toggle_learned", shared_icon("human"),
+        Button(HUMAN_INSPIRED_ON, shared_icon("human"),
                "Human inspired: motion drawn from real hand-made scripts, not a waveform",
-               lit=learned, group_break=True),
-        Button("robot_hand_cycle_shape", shared_icon(_WAVEFORM_FACES.get(shape, "wave")),
-               f"Waveform: {shape_label(shape)}"),
+               lit=learned and not off, group_break=True),
+        Button(NEXT_WAVEFORM if waveform else WAVEFORM_ON,
+               shared_icon(_WAVEFORM_FACES.get(shape, "wave")),
+               f"Waveform: {shape_label(shape)}", lit=waveform),
+        Button(ROBOT_HAND_OFF, shared_icon("cross"), ROBOT_HAND_OFF_SAYS, lit=off),
     )
 
 

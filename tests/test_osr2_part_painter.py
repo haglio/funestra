@@ -58,13 +58,13 @@ def test_it_has_no_minus_since_nothing_under_it_could_be_uncovered():
 def test_its_first_line_is_the_row_that_aims_the_device():
     painter, bgra = _painted()
 
-    assert _button_rect(painter, "robot_hand_toggle_learned")[1] == PAD
+    assert _button_rect(painter, "robot_hand_learned_on")[1] == PAD
     assert _dividers(bgra) == []
 
 
 def test_nothing_is_drawn_beside_the_row_that_aims_the_device():
     painter, bgra = _painted()
-    x, y, w, h = _button_rect(painter, "robot_hand_toggle_learned")
+    x, y, w, h = _button_rect(painter, "robot_hand_learned_on")
 
     assert (_rgb(bgra)[y:y + h, x + w:-1] == BG_PRIMARY).all()
 
@@ -72,7 +72,7 @@ def test_nothing_is_drawn_beside_the_row_that_aims_the_device():
 def test_it_keeps_no_room_for_a_minus_in_a_lower_corner():
     painter, _bgra = _painted(hud_corner=HudCorner.LOWER_LEFT)
 
-    assert _button_rect(painter, "robot_hand_toggle_learned")[0] == PAD
+    assert _button_rect(painter, "robot_hand_learned_on")[0] == PAD
 
 
 def test_the_drive_visualizer_is_drawn_with_bars_to_drag():
@@ -83,11 +83,11 @@ def test_the_drive_visualizer_is_drawn_with_bars_to_drag():
 
 def test_a_press_on_the_row_that_aims_the_device_asks_for_its_command():
     painter, _bgra = _painted()
-    x, y, _w, _h = _button_rect(painter, "robot_hand_toggle_learned")
+    x, y, _w, _h = _button_rect(painter, "robot_hand_learned_on")
     left, top = hud_xy()
 
     assert painter.covers(x + left + 1, y + top + 1)
-    assert painter.press_at(x + left + 1, y + top + 1) == "robot_hand_toggle_learned"
+    assert painter.press_at(x + left + 1, y + top + 1) == "robot_hand_learned_on"
     assert not painter.holding
 
 

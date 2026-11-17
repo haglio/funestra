@@ -73,8 +73,12 @@ class TestShapeLabel:
         assert shape_label("half_moon") == "Half Moon"
 
 
-def _aim_row(*, learned=False, shape="sine", control=OSR2_DRIVING):
-    return aim_row(learned=learned, shape=shape, control=control)
+def _aim_row(*, learned=False, shape="sine", control=OSR2_DRIVING, off=False):
+    return aim_row(learned=learned, shape=shape, control=control, off=off)
+
+
+def _lit_motion(**kwargs) -> list[bool]:
+    return [button.lit for button in _aim_row(**kwargs)[4:]]
 
 
 def _button(row, command: str) -> Button:
@@ -92,11 +96,18 @@ class TestTheRowThatAimsTheDevice:
         _label, _off, switch, _on = row[:4]
         assert switch.icon == TOGGLE_SWITCH
         assert [button.command for button in row[4:]] == [
-            "robot_hand_toggle_learned", "robot_hand_cycle_shape"]
+            "robot_hand_learned_on", "robot_hand_cycle_shape", "robot_hand_off"]
         assert row[4].group_break
 
+    def test_the_robot_hand_off_button_comes_last_wearing_the_familys_cross(self):
+        last = _aim_row()[-1]
+
+        assert last.command == "robot_hand_off"
+        assert last.icon == shared_icon("cross")
+        assert shared_icon_name(last.icon) in icon_names()
+
     def test_human_inspired_wears_the_familys_human_figure(self):
-        face = _button(_aim_row(), "robot_hand_toggle_learned").icon
+        face = _button(_aim_row(), "robot_hand_learned_on").icon
 
         assert face == shared_icon("human")
         assert shared_icon_name(face) in icon_names()
@@ -145,9 +156,22 @@ class TestTheRowThatAimsTheDevice:
         assert says(OSR2_RETRACTED).startswith("OSR2 control off")
         assert "far end" in says(OSR2_RETRACTED)
 
-    def test_human_inspired_lights_while_it_has_the_motion(self):
-        assert _button(_aim_row(learned=True), "robot_hand_toggle_learned").lit
-        assert not _button(_aim_row(), "robot_hand_toggle_learned").lit
+    def test_the_three_motion_buttons_light_one_at_a_time_as_radio_buttons(self):
+        assert _lit_motion(learned=True) == [True, False, False]
+        assert _lit_motion() == [False, True, False]
+        assert _lit_motion(off=True) == [False, False, True]
+
+    def test_a_click_on_any_motion_button_sets_that_one(self):
+        def commands(**kwargs) -> list[str]:
+            return [button.command for button in _aim_row(**kwargs)[4:]]
+
+        assert commands(learned=True) == [
+            "robot_hand_learned_on", "robot_hand_learned_off", "robot_hand_off"]
+        assert commands(off=True) == [
+            "robot_hand_learned_on", "robot_hand_learned_off", "robot_hand_off"]
+
+    def test_a_click_on_the_lit_waveform_button_moves_to_the_next_shape(self):
+        assert _aim_row()[5].command == "robot_hand_cycle_shape"
 
     def test_the_waveform_button_names_the_waveform_the_motion_is_in(self):
         row = _aim_row(shape="rounded_square")
