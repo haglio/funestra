@@ -130,6 +130,11 @@ def test_build_status_text_names_no_flick_before_one_is_up():
     assert "flick=\n" in text
 
 
+def test_build_status_text_says_whether_the_robot_hand_is_off():
+    assert "robot_hand_off=0" in build_status_text(RobotHandState())
+    assert "robot_hand_off=1" in build_status_text(RobotHandState(off=True))
+
+
 def test_build_status_text_says_whether_the_learned_motion_has_the_hand():
     assert "learned=0" in build_status_text(RobotHandState())
     assert "learned=0" in build_status_text(

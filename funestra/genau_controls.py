@@ -131,12 +131,20 @@ def _learned_toggled(controls: GenauControls, _value: str) -> bool:
 
 
 def _learned_on(controls: GenauControls, _value: str) -> bool:
+    controls.robot_hand.off = False
     enable_learned_motion(controls.learned_motion_state)
     return True
 
 
 def _learned_off(controls: GenauControls, _value: str) -> bool:
+    controls.robot_hand.off = False
     disable_learned_motion(controls.learned_motion_state)
+    return True
+
+
+def _robot_hand_off(controls: GenauControls, _value: str) -> bool:
+    disable_learned_motion(controls.learned_motion_state)
+    controls.robot_hand.off = True
     return True
 
 
@@ -301,12 +309,13 @@ CONTROLS: tuple[Control, ...] = (
         ),
     ),
     Control(
-        name="learned",
-        needs=("learned_motion_state",),
+        name="motion",
+        needs=("learned_motion_state", "robot_hand"),
         verbs=(
             Verb("TOGGLE_LEARNED", _learned_toggled),
             Verb("LEARNED_ON", _learned_on),
             Verb("LEARNED_OFF", _learned_off),
+            Verb("ROBOT_HAND_OFF", _robot_hand_off),
         ),
     ),
     Control(

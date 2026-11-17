@@ -40,6 +40,7 @@ class Seam:
             center=start.get("center", 40),
             intended_center=start.get("center", 40),
             shape=start.get("shape", WaveformShape.TRIANGLE),
+            off=bool(start.get("off", False)),
         )
         self.learned = LearnedMotionState(model=LearnedModel(),
                                           active=bool(start.get("learned", False)))
@@ -104,6 +105,7 @@ class Seam:
             "shape": self.direct.shape,
             "phase": round(self.engine.phase, 6),
             "learned": self.learned.active,
+            "off": self.direct.off,
             "locked": self.advance.locked,
             "interval": self.advance.interval,
             "steps": tuple(self.selection.step_calls),
@@ -158,6 +160,10 @@ SEAM = [
     ("TOGGLE_LEARNED", {"learned": True}, {"learned": False}),
     ("LEARNED_ON", {}, {"learned": True}),
     ("LEARNED_OFF", {"learned": True}, {"learned": False}),
+    ("ROBOT_HAND_OFF", {"learned": True}, {"learned": False, "off": True}),
+    ("LEARNED_ON", {"off": True}, {"learned": True, "off": False}),
+    ("LEARNED_OFF", {"off": True}, {"off": False}),
+    ("TOGGLE_LEARNED", {"off": True}, {"learned": True, "off": False}),
     ("TOGGLE_LOCK", {}, {"locked": True}),
     ("TOGGLE_LOCK", {"locked": True}, {"locked": False}),
     ("LOCK_ON", {}, {"locked": True}),

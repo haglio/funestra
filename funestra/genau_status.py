@@ -41,6 +41,7 @@ def build_status_text(
     advance = flick_advance or FlickAdvanceState()
     return (
         f"learned={'1' if learned is not None and learned.active else '0'}\n"
+        f"robot_hand_off={'1' if hand.off else '0'}\n"
         f"locked={'1' if advance.locked else '0'}\n"
         f"flick={on_screen.path if on_screen.path is not None else ''}\n"
         f"up_at={_up_at(on_screen)}\n"

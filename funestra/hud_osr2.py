@@ -27,6 +27,7 @@ from .osr2_visualizer import (
     DRIVEN_BY_FUNSCRIPT,
     DRIVEN_BY_NEUTRAL,
     DRIVEN_BY_NOTHING,
+    DRIVEN_BY_PARKED,
     DRIVEN_BY_ROBOT_HAND,
     DriveHud,
     draw_level_bar,
@@ -81,13 +82,20 @@ _OSR2_AT_THE_PLAYHEAD = {
     DRIVEN_BY_ROBOT_HAND: Osr2State.ROBOT_HAND,
     DRIVEN_BY_FUNSCRIPT: Osr2State.FUNSCRIPT,
     DRIVEN_BY_NEUTRAL: BUFFER,
+    DRIVEN_BY_PARKED: OSR2_PARKED,
 }
 
 
 def driving_at_the_playhead(drive: DriveHud | None, osr2: str, *, composed: bool) -> str:
-    if not composed or drive is None or not drive.segments:
+    if drive is None:
         return ""
-    return _OSR2_AT_THE_PLAYHEAD.get(drive.driven, osr2)
+    if composed and drive.segments:
+        return _OSR2_AT_THE_PLAYHEAD.get(drive.driven, osr2)
+    return OSR2_PARKED if _the_hand_is_off_while_it_drives(drive, osr2) else ""
+
+
+def _the_hand_is_off_while_it_drives(drive: DriveHud, osr2: str) -> bool:
+    return osr2 == Osr2State.ROBOT_HAND and drive.driven == DRIVEN_BY_PARKED
 
 
 _DRIVEN_BY_OSR2 = {
@@ -116,7 +124,7 @@ class VisualizerResolver:
             drive = replace(drive, driven=DRIVEN_BY_NOTHING, segments=())
         elif control in _HELD:
             drive = replace(drive, segments=(), driven=DRIVEN_BY_NEUTRAL)
-        elif not (composed and drive.segments):
+        elif not ((composed and drive.segments) or _the_hand_is_off_while_it_drives(drive, osr2)):
             drive = replace(drive, driven=_DRIVEN_BY_OSR2.get(osr2, DRIVEN_BY_NOTHING))
         held_or_off = osr2 != Osr2State.AUTO and (control in _HELD or unheard)
         if held_or_off or not (drive.live or composed):

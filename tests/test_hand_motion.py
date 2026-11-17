@@ -46,6 +46,17 @@ class StraightUp:
         self.rested += 1
 
 
+class TestRobotHandOff:
+    def test_with_the_robot_hand_off_it_rests_at_home_however_its_bars_are_set(self):
+        motion = HandMotion(RobotHandState(off=True, amplitude=60, intended_center=60),
+                            ways_the_hand_moves(None))
+
+        heights, _slide = motion.trace(TraceSpan(0.0, 60.0, 8, 4.0))
+
+        assert [motion.height(phase) for phase in (0.0, 0.3, 0.7)] == [0.0, 0.0, 0.0]
+        assert heights == [0.0] * 9
+
+
 class TestTheBars:
     def test_with_nothing_else_in_play_the_hand_swings_as_its_bars_and_shape_say(self):
         hand = RobotHandState(amplitude=60, intended_center=40, shape=WaveformShape.TRIANGLE)

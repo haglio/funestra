@@ -37,6 +37,17 @@ class TheBars:
         pass
 
 
+class AtHome:
+    def height(self, hand: RobotHandState, phase: float, lead_s: float) -> float:
+        return 0.0
+
+    def trace(self, hand: RobotHandState, span: TraceSpan) -> tuple[list[float], float]:
+        return [0.0] * (span.samples + 1), 0.0
+
+
+_AT_HOME = AtHome()
+
+
 class Learned:
     def __init__(self, state: LearnedMotionState | None) -> None:
         self._state = state
@@ -74,7 +85,9 @@ class HandMotion:
         self._ways = tuple(ways)
 
     @property
-    def _way(self) -> Way:
+    def _way(self) -> Way | AtHome:
+        if self._hand.off:
+            return _AT_HOME
         return next(way for way in self._ways if way.in_play)
 
     def tick(self, now: float, *, start_fraction: float = 0.0) -> None:
