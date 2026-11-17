@@ -38,7 +38,13 @@ from .hud import (
     text_width,
 )
 from .hud_button import Button
-from .robot_hand import FULL_INTENSITY, POSITION_MAX, amplitude_ceiling, speed_ceiling
+from .robot_hand import (
+    FULL_INTENSITY,
+    POSITION_MAX,
+    RobotHandState,
+    amplitude_ceiling,
+    speed_ceiling,
+)
 from .trace_grid import SLIDE_QUANTUM_MS
 
 DRIVEN_BY_ROBOT_HAND = "robot_hand"
@@ -71,6 +77,10 @@ _RULER_INK = (*WHITE, 150)
 
 # Pillow's line has no antialiasing of its own, so the trace is drawn this many times larger and scaled back down.
 _SUPERSAMPLE = 4
+
+
+def driven_by_the_robot_hand(hand: RobotHandState) -> str:
+    return DRIVEN_BY_PARKED if hand.off else DRIVEN_BY_ROBOT_HAND
 
 
 def trace_ink(driven: str):

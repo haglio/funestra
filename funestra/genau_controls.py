@@ -30,12 +30,14 @@ from .funestra_verbs import (
     TOGGLE_LOCK,
     TRASH,
 )
-from .hand_motion import HandMotion, ways_the_hand_moves
-from .learned_motion import (
-    LearnedMotionState,
-    disable_learned_motion,
-    enable_learned_motion,
+from .hand_motion import (
+    HandMotion,
+    choose_human_inspired,
+    choose_the_waveform,
+    turn_the_robot_hand_off,
+    ways_the_hand_moves,
 )
+from .learned_motion import LearnedMotionState
 from .main_hud import OSR2_PARKED, OSR2_RETRACTED
 from .playlist import item_from_line
 from .robot_hand import (
@@ -130,22 +132,15 @@ def _learned_toggled(controls: GenauControls, _value: str) -> bool:
     return _learned_on(controls, _value)
 
 
-def _learned_on(controls: GenauControls, _value: str) -> bool:
-    controls.robot_hand.off = False
-    enable_learned_motion(controls.learned_motion_state)
-    return True
+def _choosing(choose) -> Act:
+    def act(controls: GenauControls, _value: str) -> bool:
+        choose(controls.robot_hand, controls.learned_motion_state)
+        return True
+    return act
 
 
-def _learned_off(controls: GenauControls, _value: str) -> bool:
-    controls.robot_hand.off = False
-    disable_learned_motion(controls.learned_motion_state)
-    return True
-
-
-def _robot_hand_off(controls: GenauControls, _value: str) -> bool:
-    disable_learned_motion(controls.learned_motion_state)
-    controls.robot_hand.off = True
-    return True
+_learned_on = _choosing(choose_human_inspired)
+_learned_off = _choosing(choose_the_waveform)
 
 
 def _lock_toggled(controls: GenauControls, _value: str) -> bool:
@@ -315,7 +310,7 @@ CONTROLS: tuple[Control, ...] = (
             Verb("TOGGLE_LEARNED", _learned_toggled),
             Verb("LEARNED_ON", _learned_on),
             Verb("LEARNED_OFF", _learned_off),
-            Verb("ROBOT_HAND_OFF", _robot_hand_off),
+            Verb("ROBOT_HAND_OFF", _choosing(turn_the_robot_hand_off)),
         ),
     ),
     Control(

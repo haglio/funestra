@@ -72,6 +72,21 @@ class Learned:
             learned_motion.rest_at_floor(self._state)
 
 
+def choose_human_inspired(hand: RobotHandState, learned: LearnedMotionState) -> None:
+    hand.off = False
+    learned_motion.enable_learned_motion(learned)
+
+
+def choose_the_waveform(hand: RobotHandState, learned: LearnedMotionState) -> None:
+    hand.off = False
+    learned_motion.disable_learned_motion(learned)
+
+
+def turn_the_robot_hand_off(hand: RobotHandState, learned: LearnedMotionState) -> None:
+    learned_motion.disable_learned_motion(learned)
+    hand.off = True
+
+
 def ways_the_hand_moves(learned: LearnedMotionState | None) -> tuple[Way, ...]:
     return (
         Learned(learned),
