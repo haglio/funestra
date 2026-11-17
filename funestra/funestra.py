@@ -308,6 +308,9 @@ class Funestra:
     def wheel(self, x: int, y: int, steps: int, *, viewport: tuple[int, int]) -> None:
         self._pointer.wheel(x, y, steps)
 
+    def right_press(self, x: int, y: int, *, viewport: tuple[int, int]) -> None:
+        self._pointer.right_press(x, y)
+
     def leave(self) -> None:
         self._pointer.leave()
 

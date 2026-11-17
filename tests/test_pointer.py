@@ -13,6 +13,7 @@ class _StubHud:
         self.motions: list[tuple[int, int]] = []
         self.drags: list[tuple[int, int]] = []
         self.wheels: list[tuple[int, int, int]] = []
+        self.right_presses: list[tuple[int, int]] = []
         self.holding = False
 
     def press(self, x: int, y: int) -> bool:
@@ -21,6 +22,10 @@ class _StubHud:
 
     def wheel(self, x: int, y: int, steps: int) -> bool:
         self.wheels.append((x, y, steps))
+        return self._takes
+
+    def right_press(self, x: int, y: int) -> bool:
+        self.right_presses.append((x, y))
         return self._takes
 
     def motion(self, x: int, y: int) -> None:
@@ -81,6 +86,14 @@ class TestTheItem:
         pointer.wheel(*ON_THE_VIDEO, 3)
 
         assert hud.wheels == [(*ON_THE_VIDEO, 3)]
+        assert asked == []
+
+    def test_a_right_click_is_the_huds_alone_and_never_pauses_the_item(self):
+        pointer, hud, asked = _pointer(hud_takes=False)
+
+        pointer.right_press(*ON_THE_VIDEO)
+
+        assert hud.right_presses == [ON_THE_VIDEO]
         assert asked == []
 
 

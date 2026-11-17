@@ -650,6 +650,17 @@ class TestALockKeyPressedForIt:
         assert lock.lit
 
 
+class TestARightClick:
+    def test_off_the_hud_asks_for_nothing_where_a_press_would_pause_everything(self, tmp_path):
+        funestra, engine = _wearing_a_hud(tmp_path)
+        left, top, hud = engine.overlays[HUD_OVERLAY_ID]
+
+        funestra.right_press(left + hud.shape[1] // 2, top + hud.shape[0] + 20,
+                             viewport=WINDOW)
+
+        assert _asked(tmp_path) == []
+
+
 class TestACornerTheHudIsNotIn:
     def test_a_press_there_asks_the_room_to_open_the_hud_there(self, tmp_path):
         funestra, _engine = _wearing_a_hud(tmp_path)

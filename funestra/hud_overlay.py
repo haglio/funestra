@@ -37,6 +37,7 @@ FOOT_PRESS = "foot_press"
 FOOT_DRAG = "foot_drag"
 FOOT_RELEASE = "foot_release"
 FOOT_WHEEL = "foot_wheel"
+FOOT_MENU = "foot_menu"
 
 _EMPTY_TARGETS = HudTargets(click=[], loop=[], filter=[], expand=None)
 
@@ -283,11 +284,17 @@ class HudOverlay:
         return True
 
     def wheel(self, x: int, y: int, steps: int) -> bool:
+        return self._only_on_the_foot(x, y, FOOT_WHEEL, steps)
+
+    def right_press(self, x: int, y: int) -> bool:
+        return self._only_on_the_foot(x, y, FOOT_MENU)
+
+    def _only_on_the_foot(self, x: int, y: int, verb: str, *values: int) -> bool:
         if self._clicks is None or not self.covers(x, y):
             return False
         self._pointer_at = self._local(x, y)
         if self._foot_covers(*self._pointer_at):
-            self._post_on_the_foot(FOOT_WHEEL, steps)
+            self._post_on_the_foot(verb, *values)
         return True
 
     def _track_duration(self) -> float:
