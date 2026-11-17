@@ -1092,3 +1092,20 @@ def test_the_controller_refuses_to_be_built_without_the_hands_state_so_no_hand_l
     with pytest.raises(ValueError, match="hand"):
         GenauRefreshController(hand_less, built.flicks, broker=built.broker, files=built.files,
                                tuning=built.tuning, logger=built.logger)
+
+
+def test_the_status_says_when_the_flick_on_screen_went_up_so_a_late_reader_can_date_a_change(
+        tmp_path):
+    status = tmp_path / "genau_status.txt"
+    clock = [5.0]
+    built = _build_controller(status_file=status, now_source=lambda: clock[0])
+
+    built["controller"].refresh()
+    clock[0] = 6.0
+    built["controller"].refresh()
+    assert "up_at=5.000\n" in status.read_text(encoding="utf-8")
+
+    built["renderer"].current_flick_path = Path("other.mp4")
+    clock[0] = 7.0
+    built["controller"].refresh()
+    assert "up_at=7.000\n" in status.read_text(encoding="utf-8")

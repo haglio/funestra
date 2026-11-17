@@ -31,6 +31,7 @@ class GenauRefreshController:
         self.logger = logger
         self.failures = TickFailures(logger)
         self.now_source = now_source
+        self._up: tuple[object, float | None] = (None, None)
         self.motion = controls.hand_motion
         self.device = HandsDevice(controls.robot_hand, controls.tcode_enabled, tcode_sender)
         self.under_the_device = FlickUnderTheDevice(controls, self.device)
@@ -75,7 +76,7 @@ class GenauRefreshController:
 
         self.flicks.say_what_is_loading()
         self.flicks.fetch_the_ones_nearby()
-        self._publish_status()
+        self._publish_status(now)
 
     def _drain_commands(self) -> None:
         for cmd in self.files.commands(self.logger):
@@ -123,13 +124,20 @@ class GenauRefreshController:
     def _over_a_video(self) -> bool:
         return self.controls.hud is not None and self.controls.hud.on
 
-    def _publish_status(self) -> None:
+    def _went_up_at(self, now: float) -> float | None:
+        path = self.flicks.path
+        if path != self._up[0]:
+            self._up = (path, None if path is None else now)
+        return self._up[1]
+
+    def _publish_status(self, now: float) -> None:
         write_status_file(self.files.status_file, build_status_text(
             self.controls.robot_hand,
             learned=self.controls.learned_motion_state,
             flick_advance=self.controls.flick_advance_state,
             on_screen=FlickOnScreen(
-                self.flicks.path, self.controls.flick_flip.on, self.flicks.portrait),
+                self.flicks.path, self.controls.flick_flip.on, self.flicks.portrait,
+                self._went_up_at(now)),
         ))
 
     def seek_the_time_on_screen(self, seconds: float) -> None:
