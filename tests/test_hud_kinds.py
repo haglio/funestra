@@ -49,11 +49,11 @@ from funestra.satellite_hud import HudModel
 from funestra.satellite_hud_paint import HudRenderer
 
 _EVERY_KIND_OF_HUD = (
-    (HudKind.MAIN, HudFacts(funestra="main", main_mode=MainMode.KINO)),
-    (HudKind.MAIN, HudFacts(funestra="main", main_mode=MainMode.GENAU, flick_one="pip")),
-    (HudKind.SATELLITE, HudFacts(funestra="portrait")),
-    (HudKind.SATELLITE, HudFacts(funestra="landscape", in_vr=True)),
-    (HudKind.SLIDESHOW, HudFacts(funestra="portrait", clip_seconds=5)),
+    (HudKind.MAIN, HudFacts(funestra="main", main_mode=MainMode.KINO, favorites=False)),
+    (HudKind.MAIN, HudFacts(funestra="main", main_mode=MainMode.GENAU, flick_one="pip", favorites=False)),
+    (HudKind.SATELLITE, HudFacts(funestra="portrait", favorites=False)),
+    (HudKind.SATELLITE, HudFacts(funestra="landscape", in_vr=True, favorites=False)),
+    (HudKind.SLIDESHOW, HudFacts(funestra="portrait", clip_seconds=5, favorites=False)),
 )
 
 
@@ -77,7 +77,7 @@ _MINUS, _PLUS = shared_icon("minus"), shared_icon("plus")
 
 
 def _main_facts(**over) -> HudFacts:
-    return HudFacts(**{"funestra": "main", "flick_one": "pip", "flick_many": "pips",
+    return HudFacts(**{"funestra": "main", "flick_one": "pip", "flick_many": "pips", "favorites": False,
                        "locked": True, "crowned": True, "has_osr2": True, **over})
 
 
@@ -173,6 +173,24 @@ class TestTransport:
 
 def _row_holding(kind: HudKind, facts: HudFacts, command: str) -> tuple[Button, ...]:
     return next(row for row in hud_rows(kind, facts) if any(b.command == command for b in row))
+
+
+class TestAnAppThatHasNotMovedToFavorites:
+    def test_its_main_funestra_keeps_f_mode_and_no_star_or_plus(self):
+        commands = [b.command for row in hud_rows(HudKind.MAIN, HudFacts(funestra="main", f_mode=True))
+                    for b in row]
+
+        assert "main_fmode" in commands
+        assert {"main_favorites", "main_enhanced"}.isdisjoint(commands)
+        assert _button(HudFacts(funestra="main", f_mode=True), "main_fmode").lit
+
+    def test_its_slideshow_keeps_the_enhanced_and_originals_pair(self):
+        commands = [b.command for row in hud_rows(HudKind.SLIDESHOW, HudFacts(funestra="portrait"))
+                    for b in row]
+
+        assert {"portrait_fmode", "portrait_enhancement_enhanced",
+                "portrait_enhancement_originals"} <= set(commands)
+        assert "portrait_favorites" not in commands
 
 
 class TestTheSpecialCollections:
@@ -796,7 +814,7 @@ class TestOrientationPair:
 
 
 def _window_buttons(funestra: str, *, in_vr: bool, crowned: bool) -> tuple[Button, ...]:
-    return window_buttons(HudFacts(funestra=funestra, in_vr=in_vr, crowned=crowned))
+    return window_buttons(HudFacts(favorites=False, funestra=funestra, in_vr=in_vr, crowned=crowned))
 
 
 def test_a_satellites_own_buttons_are_its_minimize_button_and_the_portraits_crown():
@@ -975,14 +993,14 @@ def test_reset_is_faded_with_nothing_to_put_back():
 
 
 def test_a_slideshow_on_its_own_puts_the_transport_and_minimize_on_a_top_row_of_their_own():
-    top, second = hud_rows(HudKind.SLIDESHOW, HudFacts(funestra="portrait", crowned=True, latest=False))
+    top, second = hud_rows(HudKind.SLIDESHOW, HudFacts(favorites=False, funestra="portrait", crowned=True, latest=False))
 
     assert _names(top) == ["prev", "nudge_prev", "nudge_next", "next", "funscript_jump", "minimize"]
     assert _names(second) == SLIDESHOW_THE_ROW[5:]
 
 
 def test_a_slideshow_on_its_own_in_the_headset_has_no_minimize():
-    top = hud_rows(HudKind.SLIDESHOW, HudFacts(funestra="portrait", in_vr=True))[0]
+    top = hud_rows(HudKind.SLIDESHOW, HudFacts(favorites=False, funestra="portrait", in_vr=True))[0]
 
     assert "minimize" not in _names(top)
 
@@ -1064,7 +1082,7 @@ def test_genau_shows_kinos_skip_buttons_and_funscript_jump_dimmed_in_their_place
 
 
 def test_a_satellites_top_row_starts_with_the_osr2_button_then_the_transport():
-    top = hud_rows(HudKind.SATELLITE, HudFacts(funestra="portrait", has_osr2=True))[0]
+    top = hud_rows(HudKind.SATELLITE, HudFacts(favorites=False, funestra="portrait", has_osr2=True))[0]
 
     assert _commands(top) == [
         "portrait_take_osr2", "portrait_prev", "portrait_nudge_prev", "portrait_nudge_next",
@@ -1073,15 +1091,15 @@ def test_a_satellites_top_row_starts_with_the_osr2_button_then_the_transport():
 
 
 def test_in_the_headset_the_top_row_ends_after_skip_ahead():
-    top = hud_rows(HudKind.SATELLITE, HudFacts(funestra="landscape", in_vr=True))[0]
+    top = hud_rows(HudKind.SATELLITE, HudFacts(favorites=False, funestra="landscape", in_vr=True))[0]
 
     assert _commands(top)[-1] == "landscape_funscript_jump"
 
 
 
 def test_trash_sits_right_before_the_lock_and_reset_right_after_it():
-    for kind, facts in ((HudKind.SATELLITE, HudFacts(funestra="portrait")),
-                        (HudKind.SLIDESHOW, HudFacts(funestra="portrait")),
+    for kind, facts in ((HudKind.SATELLITE, HudFacts(favorites=False, funestra="portrait")),
+                        (HudKind.SLIDESHOW, HudFacts(favorites=False, funestra="portrait")),
                         (HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU))):
         commands = [command for row in hud_rows(kind, facts) for command in _commands(row)]
         lock = next(index for index, command in enumerate(commands) if command.endswith("_lock"))
@@ -1092,7 +1110,7 @@ def test_trash_sits_right_before_the_lock_and_reset_right_after_it():
 def test_every_row_label_is_only_as_wide_as_its_words():
     for kind, facts in ((HudKind.MAIN, _main_facts(main_mode=MainMode.KINO)),
                         (HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU)),
-                        (HudKind.SATELLITE, HudFacts(funestra="portrait", clip_seconds=4))):
+                        (HudKind.SATELLITE, HudFacts(favorites=False, funestra="portrait", clip_seconds=4))):
         labels = [button for row in hud_rows(kind, facts) for button in row
                   if button.is_a_name and not button.command and button.icon]
         assert labels, kind
@@ -1157,7 +1175,7 @@ def test_every_title_a_kind_of_hud_can_show_is_among_its_choices_but_the_unbound
                                 plays_portrait=False), ModeHud())
 
     assert shown in title_choices(HudKind.MAIN)
-    assert slideshow_title(HudFacts(locked=True, latest=False, media=(True, False)),
+    assert slideshow_title(HudFacts(favorites=False, locked=True, latest=False, media=(True, False)),
                            loop="action") in title_choices(HudKind.SATELLITE)
 
 
@@ -1194,7 +1212,7 @@ def test_compilation_full_scene_and_versions_close_kinos_row_as_one_group():
 
 
 def test_trash_and_the_lock_touch_with_no_gap_between_them():
-    for kind, facts in ((HudKind.SATELLITE, HudFacts(funestra="portrait")),
+    for kind, facts in ((HudKind.SATELLITE, HudFacts(favorites=False, funestra="portrait")),
                         (HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU))):
         row = hud_rows(kind, facts)[1]
         lock = next(index for index, b in enumerate(row) if b.command.endswith("_lock"))
@@ -1208,8 +1226,8 @@ def _trash_of(kind: HudKind, facts: HudFacts) -> Button:
 
 _EVERY_TRASH = ((HudKind.MAIN, _main_facts(main_mode=MainMode.KINO), "main_trash"),
                 (HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU), "genau_trash_flick"),
-                (HudKind.SATELLITE, HudFacts(funestra="portrait"), "portrait_trash"),
-                (HudKind.SLIDESHOW, HudFacts(funestra="landscape"), "landscape_trash"))
+                (HudKind.SATELLITE, HudFacts(favorites=False, funestra="portrait"), "portrait_trash"),
+                (HudKind.SLIDESHOW, HudFacts(favorites=False, funestra="landscape"), "landscape_trash"))
 
 
 def test_every_hud_has_a_trash_kino_on_the_main_funestra_included():

@@ -7,6 +7,7 @@ from .hud_icons import (
     BACK_ICON,
     ENHANCED_ICON,
     FAVORITES_ICON,
+    FMODE_ICON,
     FORWARD_ICON,
     LOCK_ICON,
     NEXT_ICON,
@@ -15,6 +16,7 @@ from .hud_icons import (
 )
 from .hud_title import (
     ENHANCED_LABEL,
+    F_MODE_LABEL,
     FAVORITES_LABEL,
     LATEST_LABEL,
     PLAYBACK_SPEED_LABEL,
@@ -118,6 +120,14 @@ def trash_button(funestra: str) -> Button:
 
 def trash_button_under(command: str, tooltip: str) -> Button:
     return Button(command, TRASH_ICON, tooltip, danger=True)
+
+
+def favorites_only_tooltip() -> str:
+    return f"{F_MODE_LABEL} — browse only the favorites on this Funestra"
+
+
+def fmode_button(funestra: str, tooltip: str, *, lit: bool) -> Button:
+    return Button(f"{funestra}_fmode", FMODE_ICON, tooltip, lit=lit, favorite=True)
 
 
 def _only_the(kept: str, label: str, things: str, *, on: bool) -> str:

@@ -46,6 +46,7 @@ class ModeHud:
     compilation: str = ""
     position: int = 0
     total: int = 0
+    scripted_filter: bool = False
 
 
 OSR2_PARKED = "parked"
