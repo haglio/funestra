@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .control_registry import Control, Verb, bind, look_up
+from .control_registry import Control, Verb, bind, look_up, pressed_at
 from .funestra_verbs import (
     CLEAR_FRAME,
     FORGET_VERSIONS,
@@ -64,8 +64,8 @@ Act = Callable[[FunestraControls, str], bool]
 
 
 def _stepper(step: int) -> Act:
-    def act(controls: FunestraControls, _value: str) -> bool:
-        controls.playback.step(step)
+    def act(controls: FunestraControls, value: str) -> bool:
+        controls.playback.step(step, pressed_at=pressed_at(value))
         return True
     return act
 
@@ -224,7 +224,8 @@ def _next_funscripted(controls: FunestraControls, _value: str) -> bool:
 CONTROLS: tuple[Control, ...] = (
     Control(
         name="playlist_position",
-        verbs=(Verb(NEXT, _stepper(1)), Verb(PREV, _stepper(-1))),
+        verbs=(Verb(NEXT, _stepper(1), may_name_its_item=True),
+               Verb(PREV, _stepper(-1), may_name_its_item=True)),
     ),
     Control(
         name="playhead",

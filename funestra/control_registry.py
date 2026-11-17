@@ -39,6 +39,10 @@ def bind(controls: tuple[Control, ...]) -> Mapping[str, tuple[Control, Verb]]:
     return bound
 
 
+def pressed_at(value: str) -> float | None:
+    return float(value) if value else None
+
+
 def act(control: Control, verb: Verb, controls: Any, value: str) -> bool:
     if not control.can_act(controls):
         return False

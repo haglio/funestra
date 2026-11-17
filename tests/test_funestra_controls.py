@@ -108,6 +108,17 @@ class TestApplyCommand:
         assert apply_command(PREV, controls) is True
         assert controls.playback.current_video.name == "v0.mp4"
 
+    def test_a_step_carries_when_it_was_pressed(self, tmp_path):
+        controls = _controls(tmp_path)
+        pressed = []
+        controls.playback.step = lambda delta, *, pressed_at=None: pressed.append((delta, pressed_at))
+
+        assert apply_command(f"{NEXT} 12.250", controls) is True
+        assert apply_command(f"{PREV} 13.500", controls) is True
+        assert apply_command(NEXT, controls) is True
+
+        assert pressed == [(1, 12.25), (-1, 13.5), (1, None)]
+
     def test_lock_on_and_lock_off_hold_whatever_the_lock_was_since_a_speaker_asks_for_the_state_they_want(self, tmp_path):
         controls = _controls(tmp_path)
         for _twice in range(2):
@@ -275,8 +286,8 @@ class TestApplyCommand:
 
     def test_a_value_on_a_verb_that_takes_none_is_refused(self, tmp_path):
         controls = _controls(tmp_path)
-        assert apply_command(f"{NEXT} 5", controls) is False
-        assert controls.playback.current_video.name == "v0.mp4"
+        assert apply_command(f"{SEEK_FWD} 5", controls) is False
+        assert controls.playback.position_ms == 0.0
 
     def test_seek_fwd_and_back_move_ten_seconds_through_the_clip_on_screen(self, tmp_path):
         playback, engine = make_playback(tmp_path, entries=2, duration_ms=60_000.0)

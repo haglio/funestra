@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import logging
+import time
 from pathlib import Path
 from typing import Any, NamedTuple
+
+logger = logging.getLogger(__name__)
 
 
 class FlickSelectionParts(NamedTuple):
@@ -11,13 +15,15 @@ class FlickSelectionParts(NamedTuple):
     renderer: Any
     notifier: Any
     condemn_flick: Any = lambda _path: None
+    clock: Any = time.monotonic
 
 
 class FlickSelectionController:
     def __init__(self, parts: FlickSelectionParts):
         (self.sequence, self.flick_store, self.loader, self.renderer, self.notifier,
-         self.condemn_flick) = parts
+         self.condemn_flick, self._clock) = parts
         self._pending_path: Path | None = None
+        self._advanced_at: float | None = None
 
     @property
     def count(self) -> int:
@@ -61,7 +67,15 @@ class FlickSelectionController:
         else:
             self.set_current_flick(up)
 
-    def step(self, delta: int) -> None:
+    def advance(self) -> None:
+        self._advanced_at = self._clock()
+        self.step(1)
+
+    def step(self, delta: int, *, pressed_at: float | None = None) -> None:
+        if None not in (pressed_at, self._advanced_at) and self._advanced_at > pressed_at:
+            logger.info("A step pressed at %.3f was already done: the flick moved on by itself",
+                        pressed_at)
+            return
         path = self.sequence.step(delta)
 
         if self.loader.frames_ready(path):

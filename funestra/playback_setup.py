@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+import time
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -15,6 +16,7 @@ class PlaybackSetup:
     funscripts: Mapping[Path, Path] | None = None
     points_of_interest: Mapping[Path, tuple] | None = None
     tcode: object = None
+    clock: Callable[[], float] = time.monotonic
 
 
 PLAIN_PLAYBACK = PlaybackSetup()
