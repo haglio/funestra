@@ -62,6 +62,15 @@ class FlickSequenceController:
         self._index = (self._index + delta) % len(self._flicks)
         return self.current_path
 
+    def remove(self, flick: Path) -> bool:
+        index = _index_of(self._flicks, flick)
+        if index is None or index == self._index:
+            return False
+        del self._flicks[index]
+        if index < self._index:
+            self._index -= 1
+        return True
+
     def remove_current(self) -> Path | None:
         if len(self._flicks) <= 1:
             return None

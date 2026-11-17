@@ -4,6 +4,7 @@ import json
 import logging
 import threading
 
+import pytest
 from funestra_fakes import FakeTCode, make_playback
 
 from funestra import funestra_verbs
@@ -120,6 +121,54 @@ class TestApplyCommand:
         controls = _controls(tmp_path)
         assert apply_command(TRASH, controls) is True
         assert [p.name for p in controls.playback.playlist] == ["v1.mp4", "v2.mp4"]
+
+    def test_trash_naming_a_video_already_gone_from_the_screen_drops_that_one_and_lets_the_screen_be(
+            self, tmp_path):
+        controls = _controls(tmp_path)
+        apply_command(NEXT, controls)
+
+        assert apply_command(f"{TRASH} {tmp_path / 'v0.mp4'}", controls) is True
+
+        assert [p.name for p in controls.playback.playlist] == ["v1.mp4", "v2.mp4"]
+        assert controls.playback.current_video.name == "v1.mp4"
+        assert controls.playback.loads == 2
+
+    def test_trash_naming_the_video_on_screen_discards_it_as_a_bare_trash_does(self, tmp_path):
+        controls = _controls(tmp_path)
+
+        assert apply_command(f"{TRASH} {tmp_path / 'v0.mp4'}", controls) is True
+
+        assert [p.name for p in controls.playback.playlist] == ["v1.mp4", "v2.mp4"]
+        assert controls.playback.current_video.name == "v1.mp4"
+
+    @pytest.mark.parametrize("verb", [LOCK_ON, TOGGLE_LOCK])
+    def test_a_lock_naming_a_video_already_gone_from_the_screen_brings_it_back_and_locks_it(
+            self, tmp_path, verb):
+        controls = _controls(tmp_path)
+        apply_command(NEXT, controls)
+
+        assert apply_command(f"{verb} {tmp_path / 'v0.mp4'}", controls) is True
+
+        assert controls.playback.current_video.name == "v0.mp4"
+        assert controls.playback.is_locked is True
+
+    def test_a_toggle_naming_the_video_on_screen_toggles_it(self, tmp_path):
+        controls = _controls(tmp_path)
+        apply_command(LOCK_ON, controls)
+
+        assert apply_command(f"{TOGGLE_LOCK} {tmp_path / 'v0.mp4'}", controls) is True
+
+        assert controls.playback.is_locked is False
+
+    def test_an_unlock_naming_a_video_already_gone_from_the_screen_leaves_the_screen_be(
+            self, tmp_path):
+        controls = _controls(tmp_path)
+        apply_command(NEXT, controls)
+        apply_command(LOCK_ON, controls)
+
+        assert apply_command(f"{LOCK_OFF} {tmp_path / 'v0.mp4'}", controls) is True
+
+        assert (controls.playback.current_video.name, controls.playback.is_locked) == ("v1.mp4", True)
 
     def test_let_go_plays_nothing_so_the_file_on_screen_can_be_moved(self, tmp_path):
         controls = _controls(tmp_path)

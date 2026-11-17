@@ -292,6 +292,42 @@ class TestDiscardCurrent:
 
         assert renderer.current_flick_path == Path("b.mp4")
 
+    def test_a_trash_aimed_at_a_flick_already_gone_from_the_screen_condemns_that_one_and_leaves_the_screen_be(
+            self):
+        condemned: list[Path] = []
+        controller, flick_store, _loader, renderer, _notifier = _build_controller(
+            "a.mp4", "b.mp4", "c.mp4", condemn_flick=condemned.append,
+        )
+        flick_store.flick_cache[Path("b.mp4")] = {"frames": ["f0"]}
+        controller.step(1)
+
+        assert controller.condemn(Path("a.mp4")) is True
+
+        assert condemned == [Path("a.mp4")]
+        assert (controller.count, controller.current_path) == (2, Path("b.mp4"))
+        assert renderer.current_flick_path == Path("b.mp4")
+
+    def test_a_trash_aimed_at_the_flick_on_screen_condemns_it_as_a_bare_trash_does(self):
+        condemned: list[Path] = []
+        controller, _store, _loader, renderer, _notifier = _build_controller(
+            "a.mp4", "b.mp4", condemn_flick=condemned.append,
+        )
+
+        assert controller.condemn(Path("a.mp4")) is True
+
+        assert condemned == [Path("a.mp4")]
+        assert renderer.current_flick_path == Path("b.mp4")
+
+    def test_a_trash_aimed_at_a_flick_no_longer_listed_condemns_nothing(self):
+        condemned: list[Path] = []
+        controller, _store, _loader, _renderer, _notifier = _build_controller(
+            "a.mp4", "b.mp4", condemn_flick=condemned.append,
+        )
+
+        assert controller.condemn(Path("gone.mp4")) is False
+
+        assert (condemned, controller.count) == ([], 2)
+
     def test_the_only_flick_is_never_condemned(self):
         condemned: list[Path] = []
         controller, _store, _loader, renderer, _notifier = _build_controller(

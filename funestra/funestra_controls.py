@@ -77,15 +77,19 @@ def _seeker(delta_ms: int) -> Act:
     return act
 
 
+def _aimed_at(value: str) -> PlaylistItem | None:
+    return item_from_line(value) if value.strip() else None
+
+
 def _lock_set(locked: bool) -> Act:
-    def act(controls: FunestraControls, _value: str) -> bool:
-        controls.playback.set_locked(locked)
+    def act(controls: FunestraControls, value: str) -> bool:
+        controls.playback.set_locked(locked, aimed_at=_aimed_at(value))
         return True
     return act
 
 
-def _toggle_lock(controls: FunestraControls, _value: str) -> bool:
-    controls.playback.set_locked(not controls.playback.is_locked)
+def _toggle_lock(controls: FunestraControls, value: str) -> bool:
+    controls.playback.toggle_lock(aimed_at=_aimed_at(value))
     return True
 
 
@@ -103,8 +107,9 @@ def _show(controls: FunestraControls, value: str) -> bool:
     return controls.show(value.strip().lower())
 
 
-def _discard(controls: FunestraControls, _value: str) -> bool:
-    controls.playback.discard()
+def _discard(controls: FunestraControls, value: str) -> bool:
+    aimed_at = _aimed_at(value)
+    controls.playback.discard(None if aimed_at is None else aimed_at.path)
     return True
 
 
@@ -227,10 +232,12 @@ CONTROLS: tuple[Control, ...] = (
     ),
     Control(
         name="lock",
-        verbs=(Verb(TOGGLE_LOCK, _toggle_lock), Verb(LOCK_ON, _lock_set(True)),
-               Verb(LOCK_OFF, _lock_set(False))),
+        verbs=(Verb(TOGGLE_LOCK, _toggle_lock, may_name_its_item=True),
+               Verb(LOCK_ON, _lock_set(True), may_name_its_item=True),
+               Verb(LOCK_OFF, _lock_set(False), may_name_its_item=True)),
     ),
-    Control(name="clip", verbs=(Verb(TRASH, _discard), Verb(LET_GO, _let_go))),
+    Control(name="clip", verbs=(Verb(TRASH, _discard, may_name_its_item=True),
+                                Verb(LET_GO, _let_go))),
     Control(
         name="version",
         verbs=(

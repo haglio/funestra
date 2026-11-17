@@ -98,6 +98,14 @@ class Lineup:
     def put_next(self, video: Path) -> None:
         self._index = put_up_next(self._videos, self._index, video, self.place_of(video))
 
+    def drop(self, video: Path) -> None:
+        place = self.place_of(video)
+        if place is None or place == self._index:
+            return
+        self._versions.pop(self._videos.pop(place), None)
+        if place < self._index:
+            self._index -= 1
+
     def discard(self) -> bool:
         if len(self._videos) <= 1:
             return False
