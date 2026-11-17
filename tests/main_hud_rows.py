@@ -55,5 +55,5 @@ def main_hud_rows(mode: str = "kino", lights: RowLights = NO_LIGHTS, *,
 
 
 def motion_rows(*, learned: bool = False) -> tuple[tuple[Button, ...], ...]:
-    return ((Button("robot_hand_toggle_learned", "hi", "Human inspired", lit=learned),),)
+    return ((Button("robot_hand_learned_on", "hi", "Human inspired", lit=learned),),)
 
