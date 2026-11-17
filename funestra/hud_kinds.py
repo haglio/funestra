@@ -242,11 +242,8 @@ def _things(facts: HudFacts, shows: Shows) -> str:
 
 def _special_collections(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     things = _things(facts, shows)
-    enhanced = enhanced_button(facts.funestra, things=things, lit=facts.enhanced)
-    if shows is Shows.GENAU:
-        enhanced = replace(enhanced, lit=False, dim=True,
-                           tooltip=f"{enhanced.tooltip} ({NOT_IN_GENAU})")
-    return enhanced, favorites_button(facts.funestra, things=things, lit=facts.favorites)
+    return (enhanced_button(facts.funestra, things=things, lit=facts.enhanced),
+            favorites_button(facts.funestra, things=things, lit=facts.favorites))
 
 
 def _flip(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:

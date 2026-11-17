@@ -226,12 +226,13 @@ class TestTheSpecialCollections:
         assert _button(on, "main_enhanced").tooltip == (
             "Playing only the enhanced videos — press for all of them")
 
-    def test_genau_grays_the_enhanceds_since_no_stroke_has_an_enhanced_version(self):
-        enhanced = _button(_main_facts(main_mode=MainMode.GENAU), "main_enhanced")
+    def test_genaus_enhanceds_lights_while_it_plays_only_the_enhanced_ones_as_kinos_does(self):
+        facts = _main_facts(main_mode=MainMode.GENAU)
+        off = _button(facts, "main_enhanced")
+        on = _button(replace(facts, enhanced=True), "main_enhanced")
 
-        assert enhanced.dim
-        assert enhanced.tooltip.endswith("(not in Genau)")
-        assert not _button(_main_facts(main_mode=MainMode.GENAU), "main_favorites").dim
+        assert (off.dim, off.lit, on.lit, on.enhanced) == (False, False, True, True)
+        assert off.tooltip == f"{ENHANCED_LABEL} — play only the enhanced {facts.flick_many}"
 
     def test_a_slideshow_names_its_items(self):
         row = {b.command: b for b in _button_row(favorites_filter=True)}
