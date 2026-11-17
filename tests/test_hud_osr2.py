@@ -38,6 +38,7 @@ from funestra.osr2_visualizer import (
     DRIVEN_BY_AUTO,
     DRIVEN_BY_FUNSCRIPT,
     DRIVEN_BY_NOTHING,
+    DRIVEN_BY_PARKED,
     DRIVEN_BY_ROBOT_HAND,
     DriveHud,
     trace_ink,
@@ -307,6 +308,31 @@ class TestTheVisualizerUnderIt:
         drive = DriveHud(driven="funscript", segments=((0, "funscript"), (40, "robot_hand")))
 
         assert driving_at_the_playhead(drive, Osr2State.ROBOT_HAND, composed=False) == ""
+
+
+class TestWithTheRobotHandOff:
+    def test_the_line_says_parked_where_the_robot_hand_would_have_driven(self):
+        composed = DriveHud(driven=DRIVEN_BY_PARKED,
+                            segments=((0, "funscript"), (40, DRIVEN_BY_PARKED)))
+
+        assert driving_at_the_playhead(composed, Osr2State.FUNSCRIPT, composed=True) == OSR2_PARKED
+
+    def test_a_video_with_no_funscript_says_parked_for_the_whole_of_it(self):
+        drive = DriveHud(driven=DRIVEN_BY_PARKED)
+
+        assert driving_at_the_playhead(drive, Osr2State.ROBOT_HAND, composed=False) == OSR2_PARKED
+
+    def test_a_funscript_driving_a_video_the_funestra_did_not_compose_still_says_so(self):
+        drive = DriveHud(driven=DRIVEN_BY_PARKED)
+
+        assert driving_at_the_playhead(drive, Osr2State.FUNSCRIPT, composed=False) == ""
+
+    def test_a_video_with_no_funscript_is_drawn_parked_rather_than_blue(self):
+        drive = VisualizerResolver(clock=lambda: 0.0).resolve(
+            DriveHud(driven=DRIVEN_BY_PARKED, waveform=(0.0, 0.0)),
+            osr2=Osr2State.ROBOT_HAND, control=OSR2_DRIVING, composed=False)
+
+        assert drive.driven == DRIVEN_BY_PARKED
 
 
 class TestTheLineAHudShows:

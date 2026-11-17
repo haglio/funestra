@@ -97,6 +97,7 @@ class RobotHandState:
     intended_center: int = 50
     shape: WaveformShape = WaveformShape.SINE
     max_intensity: int = FULL_INTENSITY
+    off: bool = False
     exact_bars: tuple[float, float, float] | None = field(default=None, compare=False,
                                                            repr=False)
 

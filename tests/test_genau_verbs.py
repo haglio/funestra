@@ -819,7 +819,7 @@ class TestLearnedMotionVerbs:
 
         handled = _answered("TOGGLE_LEARNED", engine=BeatEngine(phase=0.0, last_tick=0.0),
                             paused=Flag(), step_flick=lambda _step: None,
-                            learned_motion_state=learned)
+                            learned_motion_state=learned, robot_hand=RobotHandState())
 
         assert handled is True
         assert learned.active is True
@@ -827,7 +827,8 @@ class TestLearnedMotionVerbs:
     def test_learned_on_and_off_say_which_way(self):
         learned = self._learned(active=True)
         collaborators = {"engine": BeatEngine(phase=0.0, last_tick=0.0), "paused": Flag(),
-                             "step_flick": lambda _step: None, "learned_motion_state": learned}
+                             "step_flick": lambda _step: None, "learned_motion_state": learned,
+                             "robot_hand": RobotHandState()}
 
         assert _answered("LEARNED_OFF", **collaborators) is True
         assert learned.active is False

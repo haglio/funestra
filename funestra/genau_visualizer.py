@@ -5,7 +5,13 @@ from pathlib import Path
 
 from .flick_flip import HALF_A_LOOP
 from .genau_controls import GenauControls
-from .osr2_visualizer import TRACE_SAMPLES, DriveHud, DrivePublisher
+from .osr2_visualizer import (
+    DRIVEN_BY_PARKED,
+    DRIVEN_BY_ROBOT_HAND,
+    TRACE_SAMPLES,
+    DriveHud,
+    DrivePublisher,
+)
 from .robot_hand import (
     MIN_BPM,
     POSITION_MAX,
@@ -107,6 +113,7 @@ class GenauVisualizer:
             slide=slide,
             edge=edge,
             max_intensity=ds.max_intensity,
+            driven=DRIVEN_BY_PARKED if ds.off else DRIVEN_BY_ROBOT_HAND,
         )
 
     def _trace(self, display_seconds: float, start_phase: float,

@@ -8,6 +8,7 @@ from funestra.osr2_visualizer import (
     DRIVEN_BY_FUNSCRIPT,
     DRIVEN_BY_NEUTRAL,
     DRIVEN_BY_NOTHING,
+    DRIVEN_BY_PARKED,
     DRIVEN_BY_ROBOT_HAND,
     POSITION_MAX,
     TRACE_SAMPLES,
@@ -143,6 +144,13 @@ def _descent_entry(r: _Reading, turn_start: int) -> tuple[float, int | None]:
 
 
 def _at(r: _Reading, sample_ms: int, planned: float) -> tuple[float, str]:
+    value, who = _driven_at(r, sample_ms, planned)
+    if who == DRIVEN_BY_ROBOT_HAND and r.base.driven == DRIVEN_BY_PARKED:
+        return value, DRIVEN_BY_PARKED
+    return value, who
+
+
+def _driven_at(r: _Reading, sample_ms: int, planned: float) -> tuple[float, str]:
     if r.script.is_resting_at(sample_ms):
         return _resting_at(r, sample_ms)
     turn_start, _turn_end = r.script.turn_bounds_at(sample_ms)
@@ -224,7 +232,7 @@ def osr2_visualizer(
         reading,
         round(anchor_ms + TRACE_SAMPLES * reading.step), scripted[TRACE_SAMPLES])
     height, who_now = _at(reading, reading.position_ms, _planned_position(reading))
-    marker = (base.position if who_now == DRIVEN_BY_ROBOT_HAND
+    marker = (base.position if who_now in (DRIVEN_BY_ROBOT_HAND, DRIVEN_BY_PARKED)
               else round(height * POSITION_MAX))
     return replace(
         base,

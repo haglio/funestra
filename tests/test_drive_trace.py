@@ -13,6 +13,7 @@ from funestra.osr2_visualizer import (
     DRIVEN_BY_FUNSCRIPT,
     DRIVEN_BY_NEUTRAL,
     DRIVEN_BY_NOTHING,
+    DRIVEN_BY_PARKED,
     DRIVEN_BY_ROBOT_HAND,
     POSITION_MAX,
     TRACE_SAMPLES,
@@ -121,6 +122,20 @@ class TestOneLineTwoDrivers:
         assert _colors(hud) == [
             DRIVEN_BY_FUNSCRIPT, DRIVEN_BY_NEUTRAL, DRIVEN_BY_NOTHING]
         assert set(hud.waveform[gap_start:]) == {0.0}
+
+
+def _robot_hand_off() -> DriveHud:
+    return _motion(driven=DRIVEN_BY_PARKED, waveform=(0.0,) * TRACE_SAMPLES)
+
+
+class TestWithTheRobotHandOff:
+    def test_the_stretch_before_a_script_lies_parked_at_home_instead_of_blue(self):
+        hud = _read(_script_ahead(), at=0, published=_robot_hand_off())
+        parked_until = hud.runs[0][1]
+
+        assert _colors(hud) == [DRIVEN_BY_PARKED, DRIVEN_BY_NEUTRAL, DRIVEN_BY_FUNSCRIPT]
+        assert set(hud.waveform[:parked_until]) == {0.0}
+        assert hud.driven == DRIVEN_BY_PARKED
 
 
 class TestTheRampDownOntoThePark:

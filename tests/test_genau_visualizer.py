@@ -15,7 +15,7 @@ from funestra.learned_motion import (
     enable_learned_motion,
     tick_learned_motion,
 )
-from funestra.osr2_visualizer import PUBLISH_INTERVAL_S, TRACE_SAMPLES
+from funestra.osr2_visualizer import DRIVEN_BY_PARKED, PUBLISH_INTERVAL_S, TRACE_SAMPLES
 from funestra.robot_hand import MIN_BPM, POSITION_MAX, RobotHandState, bpm_for_speed
 from funestra.robot_hand_beat import BeatEngine
 
@@ -137,6 +137,17 @@ class TestWhatTheLineIsEachTime:
         counting.update(1.1, AutoMotion(phase=1.01, bpm=87.0))
 
         assert wrapping.drive == counting.drive
+
+
+class TestWithTheRobotHandOff:
+    def test_the_line_lies_flat_at_home_and_says_the_osr2_is_parked(self):
+        visualizer = _visualizer(controls=_controls(direct=RobotHandState(
+            speed=50, amplitude=60, off=True)))
+
+        visualizer.update(1.0)
+
+        assert visualizer.drive.driven == DRIVEN_BY_PARKED
+        assert set(visualizer.drive.waveform) == {0.0}
 
 
 class TestTheSpanTheTraceIsDrawnOver:
