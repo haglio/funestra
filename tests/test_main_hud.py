@@ -156,6 +156,13 @@ class TestTheRowThatAimsTheDevice:
         assert says(OSR2_RETRACTED).startswith("OSR2 control off")
         assert "far end" in says(OSR2_RETRACTED)
 
+    def test_an_app_that_does_not_say_whether_the_hand_is_off_keeps_the_two_buttons_it_answers(self):
+        row = aim_row(learned=True, shape="sine", control=OSR2_DRIVING)
+
+        assert [button.command for button in row[4:]] == [
+            "robot_hand_toggle_learned", "robot_hand_cycle_shape"]
+        assert [button.lit for button in row[4:]] == [True, False]
+
     def test_the_three_motion_buttons_light_one_at_a_time_as_radio_buttons(self):
         assert _lit_motion(learned=True) == [True, False, False]
         assert _lit_motion() == [False, True, False]

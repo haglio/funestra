@@ -304,7 +304,7 @@ CONTROLS: tuple[Control, ...] = (
         ),
     ),
     Control(
-        name="motion",
+        name="learned",
         needs=("learned_motion_state", "robot_hand"),
         verbs=(
             Verb("TOGGLE_LEARNED", _learned_toggled),
