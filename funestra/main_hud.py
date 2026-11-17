@@ -30,7 +30,7 @@ GAP = BUTTON_GAP
 ROW_GAP = BUTTON_ROW_GAP
 GROUP_GAP = BUTTON_GROUP_GAP
 
-_SHAPE_LABELS = {"rounded_square": "Square"}
+_SHAPE_LABELS = {"rounded_square": "Square", "reverse_sawtooth": "Reverse sawtooth"}
 
 
 def shape_label(shape: str) -> str:
@@ -74,6 +74,7 @@ _WAVEFORM_FACES = {
     WaveformShape.TRIANGLE.value: "wave_triangle",
     WaveformShape.ROUNDED_SQUARE.value: "wave_square",
     WaveformShape.SAWTOOTH.value: "wave_sawtooth",
+    WaveformShape.REVERSE_SAWTOOTH.value: "wave_reverse_sawtooth",
 }
 
 

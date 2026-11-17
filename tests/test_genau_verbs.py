@@ -289,7 +289,7 @@ class TestApplyRuntimeCommand:
         )
 
         assert handled is True
-        assert ds.shape == WaveformShape.SAWTOOTH
+        assert ds.shape == WaveformShape.REVERSE_SAWTOOTH
 
     def test_direct_commands_ignored_without_direct_state(self):
         engine = BeatEngine(phase=0.0, last_tick=0.0)
