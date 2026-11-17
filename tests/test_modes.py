@@ -19,7 +19,7 @@ _WIRE_WORDS = {
     SatellitesMode: {"kino", "origenerator"},
     Osr2State: {"off", "auto", "funscript", "robot_hand", "unplugged", "no_answer"},
     LengthMode: {"mixed", "clips", "full", "none"},
-    MessageLevel: {"warning", "notice", "favorite"},
+    MessageLevel: {"warning", "notice", "favorite", "error"},
 }
 
 
