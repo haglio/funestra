@@ -612,6 +612,20 @@ class TestTrashCommand:
         assert handled is True
         assert calls == [1]
 
+    def test_a_trash_naming_its_flick_condemns_the_one_it_names(self):
+        aimed: list[Path] = []
+
+        handled = _answered(
+            "TRASH C:/made-up/one.mp4",
+            engine=BeatEngine(phase=0.0, last_tick=0.0),
+            paused=Flag(),
+            step_flick=lambda _step: None,
+            condemn_flick=lambda flick=None: aimed.append(flick),
+        )
+
+        assert handled is True
+        assert aimed == [Path("C:/made-up/one.mp4")]
+
     def test_trash_ignored_without_a_way_to_condemn(self):
         handled = _answered(
             "TRASH",

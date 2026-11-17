@@ -12,6 +12,7 @@ class Verb:
     spelling: str
     act: Act
     takes_a_value: bool = False
+    may_name_its_item: bool = False
 
 
 @dataclass(frozen=True)
@@ -41,7 +42,7 @@ def bind(controls: tuple[Control, ...]) -> Mapping[str, tuple[Control, Verb]]:
 def act(control: Control, verb: Verb, controls: Any, value: str) -> bool:
     if not control.can_act(controls):
         return False
-    if verb.takes_a_value != bool(value):
+    if not verb.may_name_its_item and verb.takes_a_value != bool(value):
         return False
     return verb.act(controls, value)
 

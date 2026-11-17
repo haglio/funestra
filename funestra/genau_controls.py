@@ -59,7 +59,7 @@ class GenauControls:
     engine: BeatEngine
     paused: Flag
     step_flick: Callable[[int], None]
-    condemn_flick: Callable[[], None] | None = None
+    condemn_flick: Callable[..., object] | None = None
     robot_hand: RobotHandState | None = None
     learned_motion_state: LearnedMotionState | None = None
     flick_advance_state: FlickAdvanceState | None = None
@@ -180,8 +180,12 @@ def _step_flick(step: int) -> Act:
     return act
 
 
-def _condemn(controls: GenauControls, _value: str) -> bool:
-    controls.condemn_flick()
+def _condemn(controls: GenauControls, value: str) -> bool:
+    aimed_at = item_from_line(value) if value.strip() else None
+    if aimed_at is None:
+        controls.condemn_flick()
+    else:
+        controls.condemn_flick(aimed_at.path)
     return True
 
 
@@ -335,7 +339,7 @@ CONTROLS: tuple[Control, ...] = (
     Control(
         name="condemn",
         needs=("condemn_flick",),
-        verbs=(Verb(TRASH, _condemn),),
+        verbs=(Verb(TRASH, _condemn, may_name_its_item=True),),
     ),
     Control(
         name="play_file",

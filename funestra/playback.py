@@ -250,9 +250,17 @@ class Playback:
             self._points_told = points
             self._engine.set_points_of_interest(points)
 
-    def set_locked(self, locked: bool) -> None:
+    def set_locked(self, locked: bool, *, aimed_at: PlaylistItem | None = None) -> None:
+        if aimed_at is not None and aimed_at.path != self.current_video:
+            if not locked:
+                return
+            self.play_file(*aimed_at, aimed_at.points_of_interest)
         self._locked = locked
         self._hold_or_roll()
+
+    def toggle_lock(self, *, aimed_at: PlaylistItem | None = None) -> None:
+        gone_from_the_screen = aimed_at is not None and aimed_at.path != self.current_video
+        self.set_locked(gone_from_the_screen or not self._locked, aimed_at=aimed_at)
 
     @property
     def _holds(self) -> bool:
@@ -290,7 +298,11 @@ class Playback:
         self._tell_the_places()
         return True
 
-    def discard(self) -> None:
+    def discard(self, video: Path | None = None) -> None:
+        if video is not None and video != self.current_video:
+            self._lineup.drop(video)
+            self._stage_next()
+            return
         if self._lineup.discard():
             self.load(self.index)
 

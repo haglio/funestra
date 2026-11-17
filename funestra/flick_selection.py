@@ -71,6 +71,15 @@ class FlickSelectionController:
         self._pending_path = path
         self.loader.request_flick_load(path)
 
+    def condemn(self, flick: Path | None = None) -> bool:
+        if flick is None or flick == self.sequence.current_path:
+            return self.condemn_current()
+        if not self.sequence.remove(flick):
+            return False
+        self.condemn_flick(flick)
+        self.flick_store.flick_cache.pop(flick, None)
+        return True
+
     def condemn_current(self) -> bool:
         condemned = self.sequence.current_path
         successor = self.sequence.remove_current()
