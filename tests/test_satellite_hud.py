@@ -650,7 +650,7 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
         assert parsed == HudModel(funestra="portrait")
 
     def test_the_facts_a_source_publishes_survive_the_round_trip_and_name_its_buttons(self):
-        facts = HudFacts(funestra="portrait", locked=True, latest=True, media=(True, False),
+        facts = HudFacts(favorites=False, funestra="portrait", locked=True, latest=True, media=(True, False),
                          main_mode=MainMode.GENAU, length_mode=LengthMode.CLIPS, clip_seconds=6,
                          hosted=True)
         parsed = parse_hud(hud_text(HudModel(funestra="portrait", kind=HudKind.SATELLITE,
@@ -660,7 +660,7 @@ class TestThePublishedHudIsWrittenWhereItIsRead:
         assert parsed.rows == hud_rows(HudKind.SATELLITE, facts)
 
     def test_a_source_that_publishes_facts_still_sends_its_rows_to_an_older_reader(self):
-        facts = HudFacts(funestra="portrait", hosted=True)
+        facts = HudFacts(favorites=False, funestra="portrait", hosted=True)
         raw = json.loads(hud_text(HudModel(funestra="portrait", kind=HudKind.SLIDESHOW,
                                            facts=facts)))
 
