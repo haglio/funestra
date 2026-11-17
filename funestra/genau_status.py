@@ -22,6 +22,11 @@ class FlickOnScreen:
     path: Path | None = None
     flipped: bool = False
     portrait: bool | None = None
+    up_at: float | None = None
+
+
+def _up_at(on_screen: FlickOnScreen) -> str:
+    return "" if on_screen.up_at is None else f"{on_screen.up_at:.3f}"
 
 
 def build_status_text(
@@ -38,6 +43,7 @@ def build_status_text(
         f"learned={'1' if learned is not None and learned.active else '0'}\n"
         f"locked={'1' if advance.locked else '0'}\n"
         f"flick={on_screen.path if on_screen.path is not None else ''}\n"
+        f"up_at={_up_at(on_screen)}\n"
         f"flipped={'1' if on_screen.flipped else '0'}\n"
         f"portrait={_flag_or_unknown(on_screen.portrait)}\n"
         f"shape={hand.shape.value}\n"
