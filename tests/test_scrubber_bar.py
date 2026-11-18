@@ -8,6 +8,7 @@ from funestra.scrubber_bar import (
     TrackMarks,
     bar_track_x,
     progress_bar_bgra,
+    time_at_x,
 )
 from funestra.volume import PLACE_W
 
@@ -15,6 +16,17 @@ from funestra.volume import PLACE_W
 def _rgba(bar, y, x):
     px = bar[y, x]
     return int(px[2]), int(px[1]), int(px[0]), int(px[3])
+
+
+class TestTimeAtX:
+    def test_a_point_along_the_track_names_the_time_under_it(self):
+        assert time_at_x(10, 60_000, 10, 110) == 0
+        assert time_at_x(60, 60_000, 10, 110) == 30_000
+        assert time_at_x(110, 60_000, 10, 110) == 60_000
+
+    def test_a_point_off_either_end_of_the_track_names_that_end(self):
+        assert time_at_x(-50, 60_000, 10, 110) == 0
+        assert time_at_x(500, 60_000, 10, 110) == 60_000
 
 
 class TestBarTrackX:
