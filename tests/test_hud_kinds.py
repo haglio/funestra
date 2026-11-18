@@ -118,7 +118,7 @@ class TestTransport:
     def test_kino_mode_steps_the_video_and_acts_on_it(self):
         actions = _actions(_main_facts(main_mode=MainMode.KINO))
         for action in ("main_prev", "main_next", "main_nudge_prev",
-                       "main_nudge_next", "main_favorites", "browse_library",
+                       "main_nudge_next", "main_favorites",
                        "genaumacher_save", "main_funestra_record_tap"):
             assert action in actions, action
 
@@ -148,13 +148,6 @@ class TestTransport:
 
         for action in ("main_nudge_prev", "genaumacher_save", "main_funestra_record_tap"):
             assert action not in actions
-
-    def test_genau_browses_its_flicks_from_the_same_button_kino_browses_its_library(self):
-        kino = _button(_main_facts(main_mode=MainMode.KINO), "browse_library")
-        genau = _button(_main_facts(main_mode=MainMode.GENAU), "browse_library")
-
-        assert (kino.icon, kino.tooltip) == (genau.icon, "Browse the library")
-        assert genau.tooltip == "Browse the pips"
 
     def test_genaus_transport_names_its_flicks_in_the_overlays_word(self):
         def tips(**facts):
@@ -654,23 +647,23 @@ class TestLayout:
             assert [b.command for b in first][:3] == [
                 "main_kino_activate", "genau_activate", "main_take_osr2"]
 
-    def test_the_browse_rides_the_mode_row_in_both_modes_and_the_rest_only_over_a_video(self):
+    def test_the_snippet_buttons_ride_the_mode_row_only_over_a_video(self):
         video = [b.command for b in main_hud_rows(_main_facts(main_mode=MainMode.KINO))[0]]
         genau = [b.command for b in main_hud_rows(_main_facts(main_mode=MainMode.GENAU))[0]]
 
-        assert video[-3:] == ["browse_library", "main_funestra_record_tap", "genaumacher_save"]
-        assert genau[-1:] == ["browse_library"]
+        assert video[-2:] == ["main_funestra_record_tap", "genaumacher_save"]
+        assert not {"main_funestra_record_tap", "genaumacher_save", "browse_library"} & set(genau)
+        assert "browse_library" not in video
 
     def test_the_save_is_named_for_the_snippet_it_saves(self):
         assert _button(_main_facts(main_mode=MainMode.KINO), "genaumacher_save").tooltip == "Save snippet"
 
-    def test_the_file_actions_stand_apart_from_the_crown_and_from_each_other(self):
+    def test_the_snippet_buttons_stand_apart_from_the_crown_and_beside_each_other(self):
         by_action = _placed(_main_facts(main_mode=MainMode.KINO))
-        crown, browse = by_action["main_crown"], by_action["browse_library"]
+        crown = by_action["main_crown"]
         record, save = by_action["main_funestra_record_tap"], by_action["genaumacher_save"]
 
-        assert browse[0] - (crown[0] + crown[2]) == GROUP_GAP
-        assert record[0] - (browse[0] + browse[2]) == GROUP_GAP
+        assert record[0] - (crown[0] + crown[2]) == GROUP_GAP
         assert save[0] - (record[0] + record[2]) == GAP
 
     def test_the_crown_is_lit_while_the_main_funestra_holds_it(self):
@@ -705,9 +698,9 @@ class TestLayout:
         assert video == ["main_kino_activate", "genau_activate", "main_take_osr2",
                          "main_prev", "main_nudge_prev", "main_nudge_next", "main_next",
                          "main_funestra_funscript_jump",
-                         "browse_library", "main_funestra_record_tap", "genaumacher_save"]
+                         "main_funestra_record_tap", "genaumacher_save"]
         assert genau == ["main_kino_activate", "genau_activate", "main_take_osr2",
-                         "genau_prev_flick", "genau_next_flick", "browse_library"]
+                         "genau_prev_flick", "genau_next_flick"]
 
     def test_minimize_this_funestra_wears_a_screen_with_an_arrow_not_the_huds_own_minus(self):
         button = _button(_main_facts(main_mode=MainMode.GENAU), "main_minimize")
@@ -741,7 +734,7 @@ class TestFaces:
         named = {shared_icon_name(b.icon) for b in _every_button()
                  if b.icon.startswith(SHARED_ICON)}
 
-        assert {"trash", "reset", "crown", "folder", "chevron_left", "lock"} <= named
+        assert {"trash", "reset", "crown", "chevron_left", "lock"} <= named
         assert not named - set(icon_names())
 
     def test_the_bin_takes_something_away(self):
@@ -1044,7 +1037,7 @@ def test_the_main_funestras_top_row_holds_the_modes_the_osr2_button_and_the_tran
         "main_kino_activate", "genau_activate", "main_take_osr2",
         "main_prev", "main_nudge_prev", "main_nudge_next", "main_next",
         "main_funestra_funscript_jump", "main_minimize", "main_crown",
-        "browse_library", "main_funestra_record_tap", "genaumacher_save"]
+        "main_funestra_record_tap", "genaumacher_save"]
 
 
 def test_genau_shows_kinos_skip_buttons_and_funscript_jump_dimmed_in_their_places():
