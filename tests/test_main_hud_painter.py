@@ -883,7 +883,7 @@ class TestNothingDriving:
         painter = Osr2PartPainter()
         painter.rgba(MainHud(main_hud_model=MainHudModel(
             main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
-            osr2_rows=(aim_row(learned=False, shape="sine", control=OSR2_DRIVING),))))
+            osr2_rows=(aim_row(learned=False, shape="sine", control=OSR2_DRIVING, off=False),))))
         label = next(rect for rect, button in painter.buttons if button.icon == "OSR2 control")
 
         assert label[2] > text_width(load_font(8), "OSR2 control")
