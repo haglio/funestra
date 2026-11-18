@@ -298,7 +298,7 @@ def test_the_dot_sits_in_the_same_corner_at_the_same_size_on_a_satellites_hud_as
         _model(active=True, title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))).bgra))
     main = white_box(_rgb(HudRenderer("main").render(_model(
         funestra="main", kind=HudKind.MAIN, active=True, title="Unlocked",
-        facts=HudFacts(favorites=False, main_mode=MainMode.KINO))).bgra))
+        facts=HudFacts(main_mode=MainMode.KINO))).bgra))
 
     assert satellite[0] == main[0]
     assert satellite[2:] == main[2:]
@@ -315,7 +315,7 @@ def test_the_title_sits_as_far_from_the_top_on_the_main_funestras_hud_as_on_a_sa
         _model(active=True, title="Unlocked", corner=HudCell(path="c.mp4", thumb=thumb))).bgra))
     main = ink_rows(_rgb(HudRenderer("main").render(_model(
         funestra="main", kind=HudKind.MAIN, active=True, title="Unlocked",
-        facts=HudFacts(favorites=False, main_mode=MainMode.KINO))).bgra))
+        facts=HudFacts(main_mode=MainMode.KINO))).bgra))
 
     assert satellite == main
 
@@ -1737,7 +1737,7 @@ def test_a_hud_is_wide_enough_for_the_widest_title_its_kind_can_show(funestra, k
 
     def drawn(title: str):
         return HudRenderer(funestra).render(_model(funestra=funestra, kind=kind, title=title,
-                                                   facts=HudFacts(favorites=False, funestra=funestra)))
+                                                   facts=HudFacts(funestra=funestra)))
 
     short, long = drawn("Locked"), drawn(widest)
 
@@ -1747,7 +1747,7 @@ def test_a_hud_is_wide_enough_for_the_widest_title_its_kind_can_show(funestra, k
 
 def test_a_favorites_trash_is_drawn_as_a_green_star_under_a_red_slashed_ring():
     rendered = HudRenderer("portrait").render(_model(
-        kind=HudKind.SATELLITE, facts=HudFacts(favorites=False, funestra="portrait", favorite=True)))
+        kind=HudKind.SATELLITE, facts=HudFacts(funestra="portrait", favorite=True)))
     x, y, w, h = _button_rect(rendered, "portrait_trash")
     inside = _rgb(rendered.bgra)[y:y + h, x:x + w]
 
@@ -1758,7 +1758,7 @@ def test_a_favorites_trash_is_drawn_as_a_green_star_under_a_red_slashed_ring():
 def test_genaus_seconds_show_their_number():
     rendered = HudRenderer("main").render(_model(
         funestra="main", kind=HudKind.MAIN, playback_speed=1.0,
-        facts=HudFacts(favorites=False, main_mode=MainMode.GENAU, pace_s=7, flick_one="pip", flick_many="pips")))
+        facts=HudFacts(main_mode=MainMode.GENAU, pace_s=7, flick_one="pip", flick_many="pips")))
 
     assert "7s" in [button.icon for _rect, button in rendered.targets.buttons]
 

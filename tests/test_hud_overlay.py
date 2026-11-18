@@ -1034,7 +1034,7 @@ class TestTheBlockAtTheFoot:
 class TestWhatTheButtonsGrayOnIsTheFunestrasOwn:
     @staticmethod
     def _shown(playing: PlayingFacts | None) -> dict:
-        model = HudModel(funestra="portrait", kind=HudKind.SATELLITE, facts=HudFacts(favorites=False,
+        model = HudModel(funestra="portrait", kind=HudKind.SATELLITE, facts=HudFacts(
             funestra="portrait", has_osr2=True, has_funscript=False, longer_than_a_step=False))
         overlay = HudOverlay(source=WindowsOwnHud(lambda: model, lambda command: None),
                              drawn_on=DrawnOn(FakeEngine()), clock=lambda: 0.0)
