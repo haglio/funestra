@@ -76,6 +76,10 @@ def bar_x(ms, duration_ms, x0, x1):
     return x0 + int(frac * (x1 - x0 - 1))
 
 
+def time_at_x(x, duration_ms, x0, x1) -> float:
+    return min(1.0, max(0.0, (x - x0) / max(1, x1 - x0))) * duration_ms
+
+
 def framed_track(width, height, track=None):
     bar = np.zeros((height, width, 4), dtype=np.uint8)
     x0, x1 = track or bar_track_x(width)

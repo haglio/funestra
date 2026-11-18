@@ -15,7 +15,13 @@ from .playhead import (
     time_text_width,
     video_playhead,
 )
-from .scrubber_bar import SCRUBBER_HEIGHT, TrackMarks, bar_track_x, progress_bar_bgra
+from .scrubber_bar import (
+    SCRUBBER_HEIGHT,
+    TrackMarks,
+    bar_track_x,
+    progress_bar_bgra,
+    time_at_x,
+)
 from .volume import (
     PLACE_W,
     VOLUME_CONTROL_H,
@@ -226,8 +232,7 @@ class RowPress:
 
 
 def scrub_to(px: int, layout: RowLayout, *, duration_ms: float) -> float:
-    x0, x1 = layout.track
-    return min(1.0, max(0.0, (px - x0) / max(1, x1 - x0))) * duration_ms
+    return time_at_x(px, duration_ms, *layout.track)
 
 
 def volume_to(px: int, py: int, layout: RowLayout) -> int:
