@@ -559,6 +559,28 @@ class TestAPress:
         assert len(engine.seeks) == 1
         assert abs(engine.seeks[0] - engine.duration_ms / 2) <= engine.duration_ms / (x1 - x0)
 
+    def test_held_on_the_track_holds_the_clip_still_until_let_go(self, tmp_path):
+        funestra, engine = _wearing_a_hud(tmp_path)
+
+        funestra.press(*_on_the_row(funestra, engine), viewport=WINDOW)
+        held = engine.paused
+        funestra.tick(viewport=WINDOW)
+        held_through_a_tick = engine.paused
+        funestra.release()
+
+        assert (held, held_through_a_tick, engine.paused) == (True, True, False)
+
+    def test_a_paused_clip_stays_paused_after_a_scrub(self, tmp_path):
+        funestra, engine = _wearing_a_hud(tmp_path)
+        (tmp_path / "paused.txt").write_text("1", encoding="utf-8")
+        funestra.tick(viewport=WINDOW)
+
+        funestra.press(*_on_the_row(funestra, engine), viewport=WINDOW)
+        funestra.release()
+        funestra.tick(viewport=WINDOW)
+
+        assert engine.paused is True
+
     def test_on_the_speaker_unmutes_this_engine(self, tmp_path):
         funestra, engine = _wearing_a_hud(tmp_path)
 

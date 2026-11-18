@@ -36,7 +36,7 @@ class Box(NamedTuple):
 
 
 class TrackMarks(NamedTuple):
-    position_ms: float
+    position_ms: float | None
     duration_ms: float
     loop_bounds: tuple[float, float] | None = None
     record_in_ms: float | None = None
@@ -96,11 +96,12 @@ def draw_track_marks(bgra, box: Box, marks: TrackMarks):
     if marks.loop_bounds is not None:
         mark(marks.loop_bounds[0], MARK_W, YELLOW)
         mark(marks.loop_bounds[1], MARK_W, YELLOW)
-    mark(marks.position_ms, CURSOR_W, CURSOR)
+    if marks.position_ms is not None:
+        mark(marks.position_ms, CURSOR_W, CURSOR)
 
 
 def progress_bar_bgra(marks: TrackMarks, width, height=SCRUBBER_HEIGHT, *, heatmap=None,
-                      track=None):
+                      track=None, opaque=False):
     bar, box = framed_track(width, height, track)
     if heatmap is None or not len(heatmap):
         paint_rect(bar, box, BAR_FILL)
@@ -109,4 +110,6 @@ def progress_bar_bgra(marks: TrackMarks, width, height=SCRUBBER_HEIGHT, *, heatm
         bar[box.y0:box.y1, box.x0:box.x1, 3] = HEATMAP_ALPHA_PRESENT_BUT_UNOBTRUSIVE_UNDER_THE_VIDEO
     draw_border(bar, box, BORDER_W, BAR_BORDER)
     draw_track_marks(bar, box, marks)
+    if opaque:
+        bar[..., 3][bar[..., 3] > 0] = 255
     return bar

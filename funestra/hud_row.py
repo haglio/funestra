@@ -15,6 +15,7 @@ from .playhead import (
     time_text_width,
     video_playhead,
 )
+from .scrub import Scrub
 from .scrubber_bar import (
     SCRUBBER_HEIGHT,
     TrackMarks,
@@ -190,8 +191,9 @@ def row_part(px: int, py: int, layout: RowLayout) -> str:
 
 
 class RowPress:
-    def __init__(self, *, seek=None, seek_loop=None, set_volume=None, toggle_mute=None) -> None:
-        self._seek = seek
+    def __init__(self, *, seek=None, seek_loop=None, set_volume=None, toggle_mute=None,
+                 hold=None) -> None:
+        self._scrub = Scrub(seek=seek or _nothing, hold=hold or _nothing)
         self._seek_loop = seek_loop
         self._set_volume = set_volume
         self._toggle_mute = toggle_mute
@@ -218,17 +220,23 @@ class RowPress:
 
     def release(self) -> None:
         self._holding = ""
+        self._scrub.release()
 
     def _act(self, px: int, py: int, *, layout: RowLayout, duration_ms: float) -> None:
         px, py = layout.local(px, py)
-        if self._holding == SCRUBBER and self._seek is not None:
-            self._seek(scrub_to(px, layout, duration_ms=duration_ms))
+        if self._holding == SCRUBBER:
+            moment = scrub_to(px, layout, duration_ms=duration_ms)
+            (self._scrub.drag if self._scrub.held else self._scrub.press)(moment)
         elif self._holding == DIAL and self._seek_loop is not None:
             self._seek_loop(turn_to(px, py, layout))
         elif self._holding == VOLUME and self._set_volume is not None:
             self._set_volume(volume_to(px, py, layout))
         elif self._holding == MUTE and self._toggle_mute is not None:
             self._toggle_mute()
+
+
+def _nothing(_value) -> None:
+    pass
 
 
 def scrub_to(px: int, layout: RowLayout, *, duration_ms: float) -> float:

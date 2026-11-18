@@ -78,6 +78,11 @@ class TestProgressBar:
         white = [x for x in range(x0, x1) if _rgba(bar, my, x) == (255, 255, 255, 255)]
         assert len(white) >= 3
 
+    def test_no_playcursor_before_the_video_says_where_it_is(self):
+        bar = progress_bar_bgra(TrackMarks(None, 10_000), 1000)
+        middle = bar.shape[0] // 2
+        assert all(_rgba(bar, middle, x)[:3] != (255, 255, 255) for x in range(bar.shape[1]))
+
     def test_draws_prominent_yellow_loop_marks(self):
         bar = progress_bar_bgra(TrackMarks(0, 10_000, (2_500, 7_500)), 1000)
         x0, x1 = bar_track_x(1000)
@@ -119,6 +124,17 @@ class TestProgressBar:
         middle = bar.shape[0] // 2
         assert [_rgba(bar, middle, x) for x in range(x0 + 10, x1 - 10)] == [
             (*colors[x - x0], HEATMAP_ALPHA_PRESENT_BUT_UNOBTRUSIVE_UNDER_THE_VIDEO) for x in range(x0 + 10, x1 - 10)]
+
+    def test_a_bar_drawn_on_a_pane_rather_than_over_a_video_hides_whatever_is_behind_it(self):
+        x0, x1 = bar_track_x(1000)
+        colors = [(40, 90, 220)] * (x1 - x0)
+
+        for heatmap in (None, colors):
+            bar = progress_bar_bgra(TrackMarks(5_000, 10_000), 1000, heatmap=heatmap, opaque=True)
+
+            middle = bar.shape[0] // 2
+            assert {int(bar[middle, x, 3]) for x in range(x0, x1)} == {255}
+            assert bar[middle, x1 + 2, 3] == 0
 
     def test_the_track_ends_before_the_volume_slot(self):
         bar = progress_bar_bgra(TrackMarks(10_000, 10_000), 1000)
