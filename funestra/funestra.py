@@ -115,6 +115,7 @@ class Funestra:
         self._channels = channels
         self._hud_surface = setup.hud_surface
         self._stop = threading.Event()
+        self._paused_before_the_scrub: bool | None = None
         self._playback = Playback(
             [item.path for item in setup.playlist], engine=engine,
             setup=setup.playback_setup(start_paused=(
@@ -217,7 +218,8 @@ class Funestra:
 
     def _row_press(self) -> RowPress:
         moved = self._setup.on_volume_moved
-        return RowPress(seek=self._seek_along_the_track, seek_loop=self._seek_round_the_dial,
+        return RowPress(seek=self._seek_along_the_track, hold=self._hold_for_a_scrub,
+                        seek_loop=self._seek_round_the_dial,
                         set_volume=told_to_the_host(self._volume.set_level, self._volume, moved),
                         toggle_mute=told_to_the_host(
                             self._volume.toggle_mute, self._volume, moved))
@@ -228,6 +230,14 @@ class Funestra:
             frame.seek_time(ms)
             return
         self._row.seek_along_the_track(ms)
+
+    def _hold_for_a_scrub(self, held: bool) -> None:
+        if held:
+            self._paused_before_the_scrub = self.playback.is_paused
+            self.playback.set_paused(True)
+            return
+        paused, self._paused_before_the_scrub = self._paused_before_the_scrub, None
+        self.playback.set_paused(bool(paused))
 
     def _seek_round_the_dial(self, turn: float) -> None:
         frame = self._front.own_frame()
@@ -303,7 +313,11 @@ class Funestra:
     def tick(self, *, viewport: tuple[int, int]) -> None:
         channels = self._channels
         if channels.paused is not None:
-            self.playback.set_paused(read_paused_state(channels.paused, logger=logger))
+            paused = read_paused_state(channels.paused, logger=logger)
+            if self._paused_before_the_scrub is None:
+                self.playback.set_paused(paused)
+            else:
+                self._paused_before_the_scrub = paused
         if channels.command is not None:
             for command in consume_command_file(channels.command, logger=logger, uppercase=False):
                 self.apply(command)
