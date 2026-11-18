@@ -7,7 +7,6 @@ from shared_ui.orientation import LANDSCAPE, PORTRAIT
 from funestra.hud_button import Button
 from funestra.hud_controls import lit_or_remembered
 from funestra.hud_icons import shared_icon
-from funestra.hud_title import ENHANCED_LABEL
 from funestra.modes import LengthMode
 
 Included = tuple[bool, bool]
@@ -120,9 +119,6 @@ def lengths_included(length: LengthMode) -> Included:
     return next(included for included, mode in _LENGTHS.items() if mode is length)
 
 
-ORIGINALS_LABEL = "Originals"
-
-
 def _pair(shape: str, name: str, first: Kind, second: Kind,
           spelled: tuple[str, str]) -> InclusionPair:
     first_alone, second_alone = spelled
@@ -135,9 +131,3 @@ def media_pair(shape: str) -> InclusionPair:
     return _pair(shape, "media", Kind("Images", shared_icon("photo"), "images"),
                  Kind("Videos", shared_icon("play"), "videos"), ("images", "videos"))
 
-
-def enhancement_pair(shape: str) -> InclusionPair:
-    return _pair(shape, "enhancement",
-                 Kind(ENHANCED_LABEL, shared_icon("plus"), "enhanced {things}"),
-                 Kind(ORIGINALS_LABEL, shared_icon("originals"), "original {things}"),
-                 ("enhanced", "originals"))

@@ -14,8 +14,6 @@ from .hud_controls import (
     browse_order_buttons,
     enhanced_button,
     favorites_button,
-    favorites_only_tooltip,
-    fmode_button,
     funscript_jump_button,
     lock_button,
     lock_tooltip,
@@ -28,7 +26,6 @@ from .hud_controls import (
 )
 from .hud_icons import MINIMIZE_FUNESTRA_ICON, UNFAVORITE_ICON, shared_icon
 from .hud_title import (
-    F_MODE_LABEL,
     FAVORITES_LABEL,
     LATEST_LABEL,
     SEPARATOR,
@@ -45,7 +42,6 @@ from .inclusion_pair import (
     PROJECTION,
     Included,
     InclusionPair,
-    enhancement_pair,
     lengths_included,
     media_pair,
 )
@@ -77,9 +73,8 @@ class HudFacts:
     funestra: str = "main"
     main_mode: MainMode = MainMode.KINO
     locked: bool = False
-    favorites: bool | None = None
+    favorites: bool = False
     enhanced: bool = False
-    f_mode: bool = False
     latest: bool | None = None
     longer_than_a_step: bool = False
     image: bool = False
@@ -104,7 +99,6 @@ class HudFacts:
     flick_one: str = ""
     flick_many: str = ""
     media: Included = BOTH
-    enhancement: Included = BOTH
     hosted: bool = False
     clip_seconds: int | None = None
 
@@ -247,31 +241,9 @@ def _things(facts: HudFacts, shows: Shows) -> str:
 
 
 def _special_collections(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
-    if facts.favorites is None:
-        return ()
     things = _things(facts, shows)
     return (enhanced_button(facts.funestra, things=things, lit=facts.enhanced),
             favorites_button(facts.funestra, things=things, lit=facts.favorites))
-
-
-def _fmode(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
-    if facts.favorites is not None:
-        return ()
-    tooltip = {
-        Shows.KINO: f"{F_MODE_LABEL} — play only the well funscripted videos",
-        Shows.GENAU: ("Showing the favorites only — press for all of them" if facts.f_mode
-                      else f"{F_MODE_LABEL} — play only the favorites"),
-        Shows.SLIDES: favorites_only_tooltip(),
-    }[shows]
-    return (fmode_button(facts.funestra, tooltip, lit=facts.f_mode),)
-
-
-def _enhancement(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
-    if facts.favorites is not None:
-        return ()
-    enhanced, originals = enhancement_pair(facts.funestra).buttons(
-        facts.enhancement, remembered=False, things="items")
-    return replace(enhanced, enhanced=True), originals
 
 
 def _flip(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
@@ -385,12 +357,10 @@ TRANSPORT_CONTROLS: tuple[HudControl, ...] = (
     HudControl("video_trash", _KINO, _video_trash),
     HudControl("trash_flick", _GENAU, _flick_trash),
     HudControl("lock", EVERY_SHOW, _lock),
-    HudControl("fmode", EVERY_SHOW, _fmode),
     HudControl("reset", EVERY_SHOW, _reset),
     HudControl("browse_order", EVERY_SHOW, _browse_order),
     HudControl("inclusions", _KINO | _GENAU, _inclusion_buttons),
     HudControl("media", _SLIDES, _media),
-    HudControl("enhancement", _SLIDES, _enhancement),
     HudControl("special_collections", EVERY_SHOW, _special_collections),
     HudControl("compilation", _KINO, _compilation),
     HudControl("clip_scene", _KINO, _clip_scene),
@@ -537,17 +507,16 @@ def main_title(facts: HudFacts, block: ModeHud) -> str:
     if facts.main_mode is MainMode.GENAU and not facts.locked and facts.pace_s:
         order = SEPARATOR.join(part for part in (order, f"{facts.pace_s}s") if part)
     return hud_title(HudTitleFacts(locked=facts.locked, playing_set=playing_set, order=order,
-                                   favorites=bool(facts.favorites), enhanced=facts.enhanced,
-                                   f_mode=block.scripted_filter, filters=title_filters(facts)))
+                                   favorites=facts.favorites, enhanced=facts.enhanced,
+                                   filters=title_filters(facts)))
 
 
 def slideshow_title(facts: HudFacts, *, loop: str = "", action_filter: str = "") -> str:
     return hud_title(HudTitleFacts(
         playing_set=looping_label(loop) if loop else "", locked=facts.locked,
         order="" if facts.latest is None else LATEST_LABEL if facts.latest else SHUFFLE_LABEL,
-        favorites=bool(facts.favorites), enhanced=facts.enhanced, f_mode=facts.f_mode,
-        filters=(media_pair("").title_word(facts.media),
-                 enhancement_pair("").title_word(facts.enhancement), action_filter)))
+        favorites=facts.favorites, enhanced=facts.enhanced,
+        filters=(media_pair("").title_word(facts.media), action_filter)))
 
 
 _ONE_OR_BOTH: tuple[Included, ...] = (BOTH, (True, False), (False, True))

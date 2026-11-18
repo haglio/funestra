@@ -821,7 +821,7 @@ def _main_hud_channels(tmp_path: Path, lines: list[str], *, commands: str = "") 
 
 def _publish_main_hud(tmp_path: Path, *, has_osr2: bool = True, **over) -> None:
     model = HudModel(funestra="main", kind=HudKind.MAIN, osr2=Osr2State.ROBOT_HAND,
-                     facts=HudFacts(favorites=False, main_mode=MainMode.KINO, locked=True, has_osr2=has_osr2),
+                     facts=HudFacts(main_mode=MainMode.KINO, locked=True, has_osr2=has_osr2),
                      **over)
     (tmp_path / "main_hud.json").write_text(hud_text(model), encoding="utf-8")
 
