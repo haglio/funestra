@@ -86,33 +86,18 @@ ROBOT_HAND_OFF_SAYS = ("Robot Hand off: the OSR2 stays parked wherever there is 
                        "and for the whole of a video with no funscript")
 
 
-def aim_row(*, learned: bool, shape: str, control: str,
-            off: bool | None = None) -> tuple[Button, ...]:
-    if off is None:
-        return _osr2_switch(control) + _two_motion_buttons(learned=learned, shape=shape)
+def aim_row(*, learned: bool, shape: str, control: str, off: bool) -> tuple[Button, ...]:
     waveform = not (learned or off)
     return (
         *_osr2_switch(control),
-        _human_inspired(HUMAN_INSPIRED_ON, lit=learned and not off),
-        _waveform(NEXT_WAVEFORM if waveform else WAVEFORM_ON, shape, lit=waveform),
+        Button(HUMAN_INSPIRED_ON, shared_icon("human"),
+               "Human inspired: motion drawn from real hand-made scripts, not a waveform",
+               lit=learned and not off, group_break=True),
+        Button(NEXT_WAVEFORM if waveform else WAVEFORM_ON,
+               shared_icon(_WAVEFORM_FACES.get(shape, "wave")),
+               f"Waveform: {shape_label(shape)}", lit=waveform),
         Button(ROBOT_HAND_OFF, shared_icon("cross"), ROBOT_HAND_OFF_SAYS, lit=off),
     )
-
-
-def _two_motion_buttons(*, learned: bool, shape: str) -> tuple[Button, ...]:
-    return (_human_inspired("robot_hand_toggle_learned", lit=learned),
-            _waveform(NEXT_WAVEFORM, shape, lit=False))
-
-
-def _human_inspired(command: str, *, lit: bool) -> Button:
-    return Button(command, shared_icon("human"),
-                  "Human inspired: motion drawn from real hand-made scripts, not a waveform",
-                  lit=lit, group_break=True)
-
-
-def _waveform(command: str, shape: str, *, lit: bool) -> Button:
-    return Button(command, shared_icon(_WAVEFORM_FACES.get(shape, "wave")),
-                  f"Waveform: {shape_label(shape)}", lit=lit)
 
 
 def _osr2_switch(control: str) -> tuple[Button, ...]:
