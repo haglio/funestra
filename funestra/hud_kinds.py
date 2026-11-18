@@ -145,7 +145,6 @@ class HudControl:
 VIDEO = "video"
 SLIDE = "slide"
 
-OPEN_ICON = shared_icon("folder")
 RECORD_ICON = shared_icon("disc")
 SAVE_ICON = shared_icon("save")
 LESS_ICON = shared_icon("minus")
@@ -408,13 +407,11 @@ def window_buttons(facts: HudFacts) -> tuple[Button, ...]:
                lit=facts.crowned),)))
 
 
-def _file_controls(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
+def _snippet_controls(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     if shows is Shows.GENAU:
-        return (Button("browse_library", OPEN_ICON, f"Browse the {facts.flick_many}",
-                       group_break=True),)
+        return ()
     recording, repeating = facts.snippet == SNIPPET_RECORDING, facts.snippet == SNIPPET_REPEATING
     return (
-        Button("browse_library", OPEN_ICON, "Browse the library", group_break=True),
         Button("main_funestra_record_tap", RECORD_ICON,
                "Stop recording — mark the snippet's out point" if recording
                else "Repeating the snippet — press to drop it" if repeating
@@ -462,7 +459,7 @@ def _top_row(kind: HudKind, facts: HudFacts, shows: Shows,
     osr2 = (osr2_button(facts.funestra, has_it=facts.has_osr2),)
     if kind is HudKind.MAIN:
         return _one_group_each(_modes(facts), osr2, on_top, window_buttons(facts),
-                               _file_controls(facts, shows))
+                               _snippet_controls(facts, shows))
     return _one_group_each(osr2, on_top, window_buttons(facts))
 
 
