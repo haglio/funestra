@@ -9,6 +9,44 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-19 — A Funestra's loop does only what changed, and writes down its late passes
+
+Work on the section "Every Funestra's own loop" of the smoothness audit of
+2026-11-18 (`audit/performance-2026-11-18/findings.md`, beside the repos).
+
+New for a host, each with a default that leaves a host as it was:
+`FunestraSetup.frame_ms` (the length of a frame the late-frame record holds a
+pass to, 16.7 ms unless said), `FunestraSetup.off_the_loop` (who does a
+Funestra's file writes and slow jobs: `off_the_loop.AtOnce` unless said,
+`off_the_loop.BehindTheLoop` under `Funestra.on_window`), and
+`GenauRefreshController(publish=...)` for Genau's drive file.
+
+Changed: `GenauFiles.room_is_paused()` takes no logger. No app called it.
+
+Left alone, and why:
+
+- The headset's and Origenerator's own Funestras are built around engines of
+  their own, so they keep `AtOnce` until each passes
+  `FunestraSetup(off_the_loop=BehindTheLoop())`, and the headset its 11 ms
+  frame as `frame_ms`. Genau's drive file is written on the loop until Fun
+  Time passes `publish=`.
+- A whole redraw of a HUD still rasterizes every icon afresh: shared_ui's
+  `paste_icon` calls its `pil_icon` with no cache, and the cache belongs there.
+- A change of the Job Queue's picture still redraws the whole Satellite HUD
+  and decodes the picture on the loop, at most every 150 ms and only while it
+  changes.
+- The OSR2 readout a Funestra composes costs about 0.2 ms a pass where the
+  OSR2 section shows. It counts passes to tell a stalled playhead and to pick
+  Kino's hand-over, so composing it less often would move the hand-over.
+- The scrubber's row is not sent to mpv as an overlay of its own: measured
+  against real mpv, that saves about 0.02 ms of an overlay-add.
+- Three that change what is seen or heard wait on the owner: the half second a
+  single click on a nav map cell waits, Radio stations playing muted while
+  nobody hears them, and Genau's work behind Kino.
+- Four whose gain nobody has measured are as they were: the scalers mpv draws
+  with, mpv's cache on a looping file, the stepping of a still image's pan, and
+  opening a video at its remembered place in one step.
+
 ## 2026-11-18 — Genau's status file is written by a `StatusFile`
 
 `write_status_file(path, text)` gives way to `StatusFile(path).write(text)`,
