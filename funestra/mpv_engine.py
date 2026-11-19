@@ -505,6 +505,8 @@ class MpvEngine(_MpvControl):
         options.update(
             wid=str(int(wid)),
             vo="gpu",
+            d3d11_output_csp="srgb",
+            target_colorspace_hint="no",
             input_vo_keyboard=False,
             log_handler=self._hear,
         )

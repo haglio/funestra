@@ -78,3 +78,13 @@ def test_moving_to_another_display_logs_the_colors_again(monkeypatch, caplog):
         "Video output ? on ?, display \\\\.\\DISPLAY2: transfer srgb, primaries bt.709, "
         "peak 1.00 (203 cd/m2)",
     ]
+
+
+def test_an_on_screen_funestra_renders_sdr_colors_on_any_monitor(monkeypatch):
+    asked = {}
+    monkeypatch.setattr(mpv_engine, "_import_mpv", lambda: SimpleNamespace(
+        MPV=lambda **options: asked.update(options) or FakeMpv()))
+
+    MpvEngine(4242)
+
+    assert (asked["d3d11_output_csp"], asked["target_colorspace_hint"]) == ("srgb", "no")
