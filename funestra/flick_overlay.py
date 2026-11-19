@@ -211,6 +211,8 @@ class FlickOverlay:
         self._loading, self._loading_at = loading, viewport
 
     def hide(self) -> None:
+        if self._backdrop_at is None and not self._tiles_up and not self._loading:
+            return
         for ident in (BACKDROP_OVERLAY_ID, LOADING_OVERLAY_ID,
                       *(FIRST_TILE_OVERLAY_ID + index for index in range(self._tiles_up))):
             self._engine.remove_overlay(ident)

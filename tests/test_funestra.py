@@ -1905,3 +1905,11 @@ class TestAPassWithNothingChanged:
 
         told_through = {"paused.txt", "playlist.tsv", "portrait_hud.json", "cmd.txt"}
         assert [name for name in opened.names if name in told_through] == []
+
+    def test_asks_mpv_to_take_down_no_overlay_that_is_not_up(self, tmp_path):
+        funestra, engine = _wearing_a_hud(tmp_path)
+
+        for _ in range(5):
+            funestra.tick(viewport=WINDOW)
+
+        assert engine.overlays_removed == []

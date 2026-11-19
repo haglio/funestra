@@ -322,3 +322,13 @@ def test_the_scaled_frames_can_be_let_go_of_for_when_genau_leaves_the_screen_and
 
     assert overlay.scaled_frames_kept == 0
     assert scaled == [0]
+
+
+def test_hidden_with_nothing_up_it_asks_mpv_to_take_nothing_down_since_each_removal_repacks_the_hud():
+    engine = FakeEngine()
+    overlay = FlickOverlay(engine)
+
+    for _ in range(5):
+        overlay.hide()
+
+    assert engine.overlays_removed == []
