@@ -110,6 +110,12 @@ class _ScaledFrames:
     def holds(self, frame: np.ndarray) -> bool:
         return id(frame) in self._kept
 
+    def let_go(self) -> None:
+        if self._showing is None:
+            return
+        with self._lock:
+            self._showing, self._kept, self._asked_ahead = None, {}, False
+
     def get(self, flick_frame: FlickFrame, size: tuple[int, int]) -> np.ndarray:
         frame = flick_frame.frame
         showing = _Showing(flick_frame.flick, flick_frame.count, size)
@@ -176,6 +182,9 @@ class FlickOverlay:
 
     def holds_scaled(self, frame: np.ndarray) -> bool:
         return self._scaled.holds(frame)
+
+    def let_go_of_the_scaled_frames(self) -> None:
+        self._scaled.let_go()
 
     def _show_the_frame(self, flick_frame: FlickFrame, viewport: tuple[int, int]) -> None:
         frame = flick_frame.frame

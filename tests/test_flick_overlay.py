@@ -308,3 +308,17 @@ def test_a_loading_notice_follows_the_window_to_its_new_right_edge():
     overlay.show(FlickFrame(frame=None, loading="Loading alpha.mp4"), viewport=(800, 480))
 
     assert engine.overlays[LOADING_OVERLAY_ID][0] == x_before + 160
+
+
+def test_the_scaled_frames_can_be_let_go_of_for_when_genau_leaves_the_screen_and_scaling_ahead_for_them_stops(scaled):
+    ahead: list = []
+    overlay = FlickOverlay(FakeEngine(), off_the_window_s_thread=ahead.append)
+    frames = _flick(3)
+    overlay.show(FlickFrame(frame=frames[0], count=3, flick=_ALPHA, frames=frames), viewport=(64, 32))
+
+    overlay.let_go_of_the_scaled_frames()
+    for job in ahead:
+        job()
+
+    assert overlay.scaled_frames_kept == 0
+    assert scaled == [0]
