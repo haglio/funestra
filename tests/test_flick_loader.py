@@ -166,3 +166,34 @@ def test_taking_up_a_prefetched_flick_never_trims_out_the_flick_on_screen():
     assert controller.frames_ready(adopted) is True
 
     assert on_screen in flick_store.flick_cache
+
+
+def test_what_is_read_beside_the_frames_is_read_on_the_decode_thread_before_the_frames_are_ready():
+    path = Path("demo.mp4")
+    controller, _flick_store, load_state, _prefetch_state, starter, _logger, _active_loaded = _make_loader()
+    read: list[tuple[Path, bool]] = []
+    controller.read_beside_the_frames = lambda flick: read.append((flick, load_state.request_id_done is None))
+    controller.request_flick_load(path)
+    target, args, _name = starter.calls[0]
+
+    target(*args)
+
+    assert read == [(path, True)]
+    assert load_state.request_id_done == 1
+
+
+def test_a_read_beside_the_frames_that_fails_is_warned_of_and_the_frames_still_arrive():
+    path = Path("demo.mp4")
+    controller, _flick_store, load_state, _prefetch_state, starter, logger, _active_loaded = _make_loader()
+
+    def fails(_flick: Path) -> None:
+        raise ValueError("no record")
+
+    controller.read_beside_the_frames = fails
+    controller.request_flick_load(path)
+    target, args, _name = starter.calls[0]
+
+    target(*args)
+
+    assert (load_state.loaded_frames, load_state.load_error) == (["f0", "f1"], None)
+    logger.warning.assert_called_once()

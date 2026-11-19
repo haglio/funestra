@@ -1210,3 +1210,10 @@ def test_given_no_way_to_start_a_thread_the_window_s_pass_sends_as_it_always_did
     built["controller"].refresh()
 
     assert len(tcode.sends) == 1
+
+
+def test_a_flick_s_flip_is_read_beside_its_decode_and_not_on_the_window_s_pass_when_it_comes_up():
+    flip = FlickFlip()
+    built = _build_controller(entry={"frames": [object() for _ in range(8)]}, flick_flip=flip)
+
+    assert built["loader"].read_beside_the_frames == flip.read_ahead

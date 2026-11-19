@@ -30,6 +30,7 @@ class GenauRefreshController:
             raise ValueError("Genau runs with the hand's state and no hand-less mode")
         self.controls = controls
         self.flicks = flicks
+        flicks.read_on_the_decode_thread(controls.flick_flip.read_ahead)
         self.broker = broker
         self.files = files
         self._status = StatusFile(files.status_file)
