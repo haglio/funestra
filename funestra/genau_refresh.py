@@ -115,7 +115,7 @@ class GenauRefreshController:
         hand = self.controls.robot_hand
         shared = snapshot(self.broker)
         if shared.auto_active:
-            self.controls.paused.on = self.files.room_is_paused(self.logger)
+            self.controls.paused.on = self.files.room_is_paused()
             return Beat(
                 robot_hand_active=False,
                 auto_active=shared.auto_active,

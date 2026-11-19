@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import builtins
+import io
 import json
 import logging
+import os
 import queue
 import time
 from dataclasses import replace
@@ -1861,3 +1864,44 @@ class TestZoomingTheItem:
         funestra.motion(40, 40, held=False, viewport=WINDOW)
 
         assert engine.pans == [(10, 5)]
+
+
+class _Opened:
+    def __init__(self, monkeypatch) -> None:
+        self.names: list[str] = []
+        real = io.open
+
+        def counting(file, *args, **kwargs):
+            if isinstance(file, (str, os.PathLike)):
+                self.names.append(Path(file).name)
+            return real(file, *args, **kwargs)
+
+        monkeypatch.setattr(io, "open", counting)
+        monkeypatch.setattr(builtins, "open", counting)
+
+
+class TestAPassWithNothingChanged:
+    def test_opens_none_of_the_files_a_main_funestra_is_told_through(self, tmp_path, monkeypatch):
+        _radio_beside_the_playlist(tmp_path, ["a.mp4"])
+        funestra, _engine, _kino = _main(tmp_path, osr2_visualizer=tmp_path / "visualizer.txt")
+        (tmp_path / "paused.txt").write_text("0", encoding="utf-8")
+        publish_drive(tmp_path / "drive.txt", DriveHud(speed=40))
+        funestra.tick(viewport=WINDOW)
+        opened = _Opened(monkeypatch)
+
+        for _ in range(5):
+            funestra.tick(viewport=WINDOW)
+
+        told_through = {"paused.txt", "playlist.tsv", "playlist.radio.tsv", "main_hud.json",
+                        "drive.txt", "cmd.txt"}
+        assert [name for name in opened.names if name in told_through] == []
+
+    def test_opens_none_of_the_files_a_satellite_is_told_through(self, tmp_path, monkeypatch):
+        funestra, _engine = _wearing_a_hud(tmp_path)
+        opened = _Opened(monkeypatch)
+
+        for _ in range(5):
+            funestra.tick(viewport=WINDOW)
+
+        told_through = {"paused.txt", "playlist.tsv", "portrait_hud.json", "cmd.txt"}
+        assert [name for name in opened.names if name in told_through] == []

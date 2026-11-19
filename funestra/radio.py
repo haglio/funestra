@@ -7,6 +7,8 @@ from typing import Protocol
 
 from app_support.file_channel import write_whole
 
+from .replaced_file import ReplacedFile
+
 logger = logging.getLogger(__name__)
 
 
@@ -53,20 +55,16 @@ def read_radio(path: Path) -> list[list[Path]]:
 
 class RadioFile:
     def __init__(self, path: Path) -> None:
-        self._path = path
-        self._seen: tuple[int, int] | None = None
+        self._file = ReplacedFile(path)
+        self._file.replaced()
+        if not self._file.holds_something:
+            self._file.was_read()
 
     def changed(self) -> list[list[Path]] | None:
-        try:
-            stat = self._path.stat()
-        except OSError:
-            seen = None
-        else:
-            seen = (stat.st_mtime_ns, stat.st_size)
-        if seen == self._seen:
+        if not self._file.replaced():
             return None
-        self._seen = seen
-        return [] if seen is None else read_radio(self._path)
+        self._file.was_read()
+        return read_radio(self._file.path) if self._file.holds_something else []
 
 
 class Radio:

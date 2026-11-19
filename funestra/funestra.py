@@ -13,7 +13,7 @@ from app_support.osr2_slot import Osr2Sender
 from .control_registry import look_up
 from .dashboard import ask
 from .drive_gate import DriveGate
-from .file_channel import consume_command_file, read_paused_state
+from .file_channel import consume_command_file
 from .flick_overlay import FlickFrame, FlickOverlay
 from .frame_record import NO_COUNTS, FrameRecord
 from .funestra_controls import VERBS, FunestraControls
@@ -47,6 +47,7 @@ from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
 from .radio import Radio, RadioFile, radio_file_for
+from .replaced_file import PausedFlag
 from .runs_here import RunsHere, User
 from .satellite_hud import HudModel
 from .scrubber import Heatmap
@@ -118,11 +119,11 @@ class Funestra:
         self._hud_surface = setup.hud_surface
         self._stop = threading.Event()
         self._paused_before_the_scrub: bool | None = None
+        self._paused_flag = None if channels.paused is None else PausedFlag(channels.paused)
         self._playback = Playback(
             [item.path for item in setup.playlist], engine=engine,
-            setup=setup.playback_setup(start_paused=(
-                channels.paused is not None
-                and read_paused_state(channels.paused, logger=logger))))
+            setup=setup.playback_setup(
+                start_paused=self._paused_flag is not None and self._paused_flag.read()))
         self._follower = (None if channels.playlist is None
                           else PlaylistFollower(channels.playlist, take=self.take_the_list))
         self._drive_gate = DriveGate(self.playback)
@@ -352,8 +353,8 @@ class Funestra:
 
     def _hear_what_it_is_told(self) -> None:
         channels = self._channels
-        if channels.paused is not None:
-            paused = read_paused_state(channels.paused, logger=logger)
+        if self._paused_flag is not None:
+            paused = self._paused_flag.read()
             if self._paused_before_the_scrub is None:
                 self.playback.set_paused(paused)
             else:
