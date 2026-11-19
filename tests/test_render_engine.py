@@ -17,6 +17,7 @@ class FakeHandle:
     def __init__(self, **_options) -> None:
         self.observers: dict[str, list] = {}
         self.event_callbacks: list = []
+        self.duration = None
 
     def observe_property(self, name, handler) -> None:
         self.observers.setdefault(name, []).append(handler)

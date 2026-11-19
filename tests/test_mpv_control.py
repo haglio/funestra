@@ -25,29 +25,64 @@ from funestra.mpv_engine import (
 
 
 class FakeMpv:
+    frame_drop_count = decoder_frame_drop_count = vo_delayed_frame_count = 0
 
     def __init__(self, *, pos: int = 0, count: int = 2) -> None:
-        self.playlist_pos = pos
-        self.playlist_count = count
-        self.calls: list[tuple] = []
         self.observers: dict[str, object] = {}
         self.heard: dict[str, object] = {}
+        self.event_callbacks: list = []
+        self.reads: list[str] = []
+        self._playlist_pos = pos
+        self._idle_active = False
+        self.duration = None
+        self.playlist_count = count
+        self.calls: list[tuple] = []
         self.audio_device_list: list[dict] = []
         self.audio_device = "auto"
         self.__dict__.update(dict.fromkeys(PLACING, 0.0))
 
+    @property
+    def playlist_pos(self) -> int:
+        self.reads.append("playlist-pos")
+        return self._playlist_pos
+
+    @playlist_pos.setter
+    def playlist_pos(self, pos: int) -> None:
+        self._playlist_pos = pos
+        self.report("playlist-pos", pos)
+
+    @property
+    def idle_active(self) -> bool:
+        self.reads.append("idle-active")
+        return self._idle_active
+
+    @idle_active.setter
+    def idle_active(self, idle: bool) -> None:
+        self._idle_active = idle
+        self.report("idle-active", idle)
+
     def observe_property(self, name: str, handler) -> None:
         self.observers[name] = handler
+        if name == "playlist-pos":
+            handler(name, self._playlist_pos)
+
+    def register_event_callback(self, callback) -> None:
+        self.event_callbacks.append(callback)
+
+    def send(self, event_id: int) -> None:
+        for callback in self.event_callbacks:
+            callback(SimpleNamespace(event_id=SimpleNamespace(value=event_id)))
 
     def report(self, name: str, value) -> None:
         if name in self.heard and self.heard[name] == value:
             return
         self.heard[name] = value
-        self.observers[name](name, value)
+        if name in self.observers:
+            self.observers[name](name, value)
 
     def playlist_clear(self) -> None:
         self.calls.append(("clear",))
-        if self.playlist_pos >= 0:
+        if self._playlist_pos >= 0:
             self.playlist_pos, self.playlist_count = 0, 1
 
     def playlist_remove(self, index: int) -> None:
@@ -68,7 +103,7 @@ class FakeMpv:
         self.calls.append(("command", name, *args))
 
     def _nothing_after_the_entry_playing(self) -> bool:
-        return not 0 <= self.playlist_pos < self.playlist_count - 1
+        return not 0 <= self._playlist_pos < self.playlist_count - 1
 
     def __setattr__(self, name: str, value) -> None:
         if name in PLACING:
@@ -305,10 +340,10 @@ class BlockingMpv(FakeMpv):
         self.terminated = 0
 
     @property
-    def time_pos(self):
+    def frame_drop_count(self):
         self.entered.set()
         self.release.wait(10.0)
-        return 1.0
+        return 1
 
     def terminate(self) -> None:
         self.terminated += 1
@@ -318,7 +353,7 @@ class BlockingMpv(FakeMpv):
 def test_close_waits_for_a_read_that_is_still_inside_mpv():
     mpv = BlockingMpv()
     control = Control(mpv)
-    reading = threading.Thread(target=lambda: control.position_ms)
+    reading = threading.Thread(target=control.frame_counts)
     reading.start()
     assert mpv.entered.wait(5.0)
 
@@ -338,7 +373,7 @@ def test_the_frame_rate_is_answered_while_a_read_is_stuck_inside_mpv():
     mpv = BlockingMpv()
     control = Control(mpv)
     mpv.report("container-fps", 25.0)
-    reading = threading.Thread(target=lambda: control.position_ms)
+    reading = threading.Thread(target=control.frame_counts)
     reading.start()
     assert mpv.entered.wait(5.0)
 
@@ -1409,3 +1444,83 @@ def test_a_video_starting_over_keeps_its_zoom():
     control.push_still()
 
     assert placing(mpv) == zoomed
+
+
+START_FILE, FILE_LOADED = 6, 8
+
+
+def test_what_a_pass_asks_about_the_file_playing_is_answered_from_what_mpv_reported():
+    mpv = FakeMpv()
+    control = Control(mpv)
+    mpv.report("time-pos", 1.5)
+    mpv.report("duration", 20.0)
+    mpv.playlist_pos = 1
+    mpv.idle_active = False
+    mpv.reads.clear()
+
+    for _ in range(5):
+        answers = (control.position_ms, control.duration_ms, control.advanced_to_next,
+                   control.idle)
+
+    assert (answers, mpv.reads) == ((1_500.0, 20_000.0, True, False), [])
+
+
+class SlowToReport(FakeMpv):
+    def report(self, name: str, value) -> None:
+        if name != "playlist-pos" or self.reporting:
+            super().report(name, value)
+
+    reporting = True
+
+
+def test_a_roll_is_not_read_twice_while_mpv_has_yet_to_report_its_playlist_cleared():
+    mpv = SlowToReport()
+    control = Control(mpv)
+    mpv.playlist_pos = 1
+    mpv.reporting = False
+
+    control.settle_on_the_next()
+
+    assert control.advanced_to_next is False
+
+
+def test_a_seek_moves_the_playhead_it_answers_with_at_once_as_mpv_itself_does():
+    control = Control(FakeMpv())
+
+    control.seek_ms(4_200.0)
+
+    assert control.position_ms == 4_200.0
+
+
+def test_between_two_files_there_is_no_length_or_playhead_to_answer_with():
+    mpv = FakeMpv()
+    control = Control(mpv)
+    mpv.report("time-pos", 9.0)
+    mpv.report("duration", 20.0)
+
+    mpv.send(START_FILE)
+
+    assert (control.position_ms, control.duration_ms) == (0.0, 0.0)
+
+
+def test_opening_a_file_forgets_the_length_and_playhead_of_the_one_before():
+    mpv = FakeMpv()
+    control = Control(mpv)
+    mpv.report("time-pos", 9.0)
+    mpv.report("duration", 20.0)
+
+    control.load(Path("beta.mp4"))
+
+    assert (control.position_ms, control.duration_ms) == (0.0, 0.0)
+
+
+def test_a_file_as_long_as_the_one_before_it_still_gets_its_length_since_mpv_reports_no_change():
+    mpv = FakeMpv()
+    control = Control(mpv)
+    mpv.report("duration", 5.0)
+    mpv.send(START_FILE)
+    mpv.duration = 5.0
+
+    mpv.send(FILE_LOADED)
+
+    assert control.duration_ms == 5_000.0
