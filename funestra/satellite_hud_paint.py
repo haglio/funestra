@@ -194,6 +194,15 @@ class _DrawnButTheRow:
     targets: HudTargets
 
 
+def _fitted_thumbnail(thumb: str, place_w: int) -> Image.Image | None:
+    try:
+        image = Image.open(thumb).convert("RGBA")
+    except OSError:
+        return None
+    scale = min(place_w / max(1, image.width), MAP_THUMB_H / max(1, image.height))
+    return image.resize((max(1, round(image.width * scale)), max(1, round(image.height * scale))))
+
+
 class HudRenderer:
     def __init__(self, funestra: str) -> None:
         self._funestra = funestra
@@ -202,7 +211,7 @@ class HudRenderer:
         self._tiny = load_font(SIZE_TINY)
         self._pointer: tuple[int, int] | None = None
         self._icon = load_font(SIZE_BODY, SYMBOL_FONT)
-        self._thumbs_by_path: dict[str, Image.Image] = {}
+        self._thumbs_by_path: dict[str, Image.Image | None] = {}
         self._scrubber_row = RowSection()
         self._host_controls = HostControlsSection()
         self._widest_titles: dict[HudKind, int] = {}
@@ -211,17 +220,9 @@ class HudRenderer:
     def _thumbnail(self, cell: HudCell) -> Image.Image:
         place_w = place_width(self._funestra)
         if cell.thumb:
-            cached = self._thumbs_by_path.get(cell.thumb)
-            if cached is None:
-                try:
-                    image = Image.open(cell.thumb).convert("RGBA")
-                except OSError:
-                    image = None
-                if image is not None:
-                    scale = min(place_w / max(1, image.width), MAP_THUMB_H / max(1, image.height))
-                    cached = image.resize((max(1, round(image.width * scale)),
-                                           max(1, round(image.height * scale))))
-                    self._thumbs_by_path[cell.thumb] = cached
+            if cell.thumb not in self._thumbs_by_path:
+                self._thumbs_by_path[cell.thumb] = _fitted_thumbnail(cell.thumb, place_w)
+            cached = self._thumbs_by_path[cell.thumb]
             if cached is not None:
                 return cached
         return Image.new("RGBA", (place_w, MAP_THUMB_H), (*_PLACEHOLDER, 255))

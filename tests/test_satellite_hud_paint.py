@@ -948,6 +948,23 @@ def test_a_missing_thumbnail_still_draws_the_nav_map():
     assert (w, h) == (place_width("portrait"), MAP_THUMB_H)
 
 
+def test_a_thumbnail_that_would_not_open_is_not_tried_again_at_every_draw(tmp_path, monkeypatch):
+    opened = []
+    real = satellite_hud_paint.Image.open
+    monkeypatch.setattr(satellite_hud_paint.Image, "open",
+                        lambda path, *a, **kw: opened.append(path) or real(path, *a, **kw))
+    gone = [str(tmp_path / f"gone {n}.png") for n in range(3)]
+    model = _model(corner=HudCell(path="c.mp4", thumb=gone[0]),
+                   seeds=(HudCell(path="s1.mp4", thumb=gone[1]),),
+                   actions=(HudCell(path="a1.mp4", thumb=gone[2], label="alpha"),))
+    renderer = HudRenderer("portrait")
+
+    for _ in range(10):
+        renderer.render(model)
+
+    assert sorted(opened) == sorted(gone)
+
+
 def test_hovering_a_button_draws_its_tooltip(thumb):
     renderer = HudRenderer("portrait")
     model = _model(corner=HudCell(path="c.mp4", thumb=thumb))
