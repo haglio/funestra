@@ -195,6 +195,8 @@ class _MpvControl:
         self._video_dims = (0, 0)
         self._source_dims = (0, 0)
         self._tiling = (1, "no")
+        self._decoder: str | None = None
+        self._decoder_said_for: str | None = None
 
     def _adopt(self, handle) -> None:
         self._mpv = handle
@@ -205,6 +207,7 @@ class _MpvControl:
         # not read, since a property read waits on mpv's core lock, which a file being opened holds
         # for hundreds of milliseconds.
         handle.observe_property("video-out-params", self._note_video_dims)
+        handle.observe_property("hwdec-current", self._note_decoder)
         handle.observe_property("video-dec-params", self._note_source_dims)
 
     def _note_frame_rate(self, _name: str, value) -> None:
@@ -222,9 +225,28 @@ class _MpvControl:
         else:
             self._video_dims = (0, 0)
 
+    def _note_decoder(self, _name: str, value) -> None:
+        self._decoder = value
+
     def _note_source_dims(self, _name: str, value) -> None:
         if isinstance(value, dict) and value.get("dw") and value.get("dh"):
             self._source_dims = (int(value["dw"]), int(value["dh"]))
+            self._say_the_decoder_once_a_file()
+
+    def _say_the_decoder_once_a_file(self) -> None:
+        if self._image_track or self._decoder_said_for == self._path:
+            return
+        self._decoder_said_for = self._path
+        width, height = self._source_dims
+        decoder = self._decoder or "no"
+        if decoder == "no":
+            logger.warning("mpv decodes this %dx%d video on the processor, with no help from "
+                           "the graphics card", width, height)
+        elif decoder.endswith("-copy"):
+            logger.warning("mpv decodes this %dx%d video with %s, which copies each frame back "
+                           "from the graphics card", width, height, decoder)
+        else:
+            logger.info("mpv decodes this %dx%d video with %s", width, height, decoder)
 
     @property
     def source_dims(self) -> tuple[int, int]:

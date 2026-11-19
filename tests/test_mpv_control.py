@@ -1239,3 +1239,55 @@ def test_the_frame_counts_are_mpvs_own_counters_of_dropped_and_delayed_frames():
     mpv.frame_drop_count, mpv.decoder_frame_drop_count, mpv.vo_delayed_frame_count = 4, None, 2
 
     assert Control(mpv).frame_counts() == (4, 0, 2)
+
+
+def _decoder_lines(caplog) -> list[tuple[str, str]]:
+    return [(r.levelname, r.getMessage()) for r in caplog.records
+            if r.name == "funestra.mpv_engine" and "decod" in r.getMessage()]
+
+
+def _open_a_video(mpv: FakeMpv, path: str, decoder, source=PORTRAIT_SOURCE) -> None:
+    mpv.report("path", path)
+    mpv.report("current-tracks/video/image", False)
+    mpv.report("hwdec-current", decoder)
+    mpv.report("video-dec-params", source)
+
+
+def test_each_video_opened_says_once_which_decoder_mpv_chose(caplog):
+    caplog.set_level(logging.INFO, logger="funestra.mpv_engine")
+    mpv = FakeMpv()
+    Control(mpv)
+
+    _open_a_video(mpv, "made-up-one.mp4", "nvdec")
+    mpv.report("video-dec-params", {"w": 1080, "h": 1920, "dw": 1080, "dh": 1920, "rotate": 0})
+    _open_a_video(mpv, "made-up-two.mp4", "nvdec")
+
+    assert _decoder_lines(caplog) == [
+        ("INFO", "mpv decodes this 1080x1920 video with nvdec"),
+        ("INFO", "mpv decodes this 1080x1920 video with nvdec"),
+    ]
+
+
+@pytest.mark.parametrize("decoder", ["d3d11va-copy", "nvdec-copy", "no", "", None])
+def test_a_video_decoded_on_the_processor_or_copied_back_is_warned_of(caplog, decoder):
+    caplog.set_level(logging.INFO, logger="funestra.mpv_engine")
+    mpv = FakeMpv()
+    Control(mpv)
+
+    _open_a_video(mpv, "made-up-one.mp4", decoder)
+
+    [(level, line)] = _decoder_lines(caplog)
+    assert level == "WARNING"
+    assert line.startswith("mpv decodes this 1080x1920 video ")
+    assert ("copies each frame back from the graphics card" in line) == str(decoder).endswith("-copy")
+
+
+def test_an_image_says_nothing_of_a_decoder(caplog):
+    caplog.set_level(logging.INFO, logger="funestra.mpv_engine")
+    mpv = FakeMpv()
+    control = Control(mpv)
+
+    show_an_image(control, mpv)
+    mpv.report("video-dec-params", {"w": 1920, "h": 1080, "dw": 1920, "dh": 1080})
+
+    assert _decoder_lines(caplog) == []
