@@ -18,6 +18,7 @@ from .main_hud import ModeHud
 from .modes import MainMode, Osr2State
 from .name_copy import COPY_NAME, copy_while_the_funestra_plays_on
 from .osr2_visualizer import DriveHud, DrivePublisher, read_drive
+from .replaced_file import ReplacedFile
 from .satellite_hud import (
     MARGIN,
     MINUS_INSET,
@@ -82,17 +83,20 @@ _ON_NO_CONTROL = _Hover("", "", None, None)
 
 class PublishedHud:
     def __init__(self, hud_file: Path, command_file: Path) -> None:
-        self._hud_file = Path(hud_file)
+        self._hud_file = ReplacedFile(hud_file)
         self._command_file = Path(command_file)
         self._published = ""
 
     def next(self, shown: HudModel | None) -> tuple[HudModel | None, bool]:
+        if not self._hud_file.replaced():
+            return shown, False
         try:
-            text = self._hud_file.read_text(encoding="utf-8")
+            text = self._hud_file.path.read_text(encoding="utf-8")
         except FileNotFoundError:
             text = ""
         except OSError:
             return shown, False
+        self._hud_file.was_read()
         if text == self._published:
             return shown, False
         self._published = text
@@ -152,7 +156,7 @@ class HudOverlay:
         self._source = source
         self._step_here = step_here
         self._clipboard = clipboard
-        self._drive_file = None if drive.file is None else Path(drive.file)
+        self._drive_file = None if drive.file is None else ReplacedFile(drive.file)
         self._drive_gate = drive.gate
         self._visualizer = drive.visualizer
         self._published_drive: DriveHud | None = None
@@ -395,13 +399,21 @@ class HudOverlay:
         if (self._visualizer is None or self._drive_file is None or self._model is None
                 or not self._model.osr2):
             return None
-        self._published_drive = read_drive(self._drive_file) or self._published_drive
+        self._read_the_drive_if_it_was_replaced()
         if self._drive_gate is None:
             return self._published_drive
         facts = self._model.facts
         return self._drive_gate.visualizer(
             self._published_drive, device_drives_itself=self._model.osr2 == Osr2State.AUTO,
             video_shows=facts is None or facts.main_mode is MainMode.KINO)
+
+    def _read_the_drive_if_it_was_replaced(self) -> None:
+        if not self._drive_file.replaced():
+            return
+        drive = read_drive(self._drive_file.path)
+        if drive is not None:
+            self._drive_file.was_read()
+            self._published_drive = drive
 
     def _draw(self) -> None:
         hover = self._hover.on(self._model)
