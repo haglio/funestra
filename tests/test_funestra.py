@@ -1816,3 +1816,29 @@ def test_a_funestra_named_for_the_osr2_slot_reaches_the_osr2_through_it():
     sender, said = heard.get_nowait()
     assert sender == "portrait"
     assert said.startswith("L00000I")
+
+
+class _SlowToPush(FakeEngine):
+    def __init__(self, clock: _Clock, took_s: float) -> None:
+        super().__init__()
+        self._clock, self._took_s = clock, took_s
+
+    def push_still(self) -> None:
+        self._clock.now += self._took_s
+
+
+def test_a_pass_that_runs_past_the_hosts_budget_is_written_down_with_its_slowest_step(
+        tmp_path, caplog):
+    caplog.set_level(logging.INFO, logger="funestra.frame_record")
+    clock = _Clock()
+    channels = _channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
+    funestra = Funestra(_SlowToPush(clock, 0.012), FunestraSetup(
+        channels=channels, playlist=read_playlist(channels.playlist),
+        frame_ms=11.0, frame_clock=clock))
+
+    funestra.tick(viewport=WINDOW)
+
+    assert [record.getMessage() for record in caplog.records
+            if record.name == "funestra.frame_record"] == [
+        "Late pass: 12.0 ms of a 11.0 ms budget, longest step the still's pan "
+        "(12.0 ms); 1 late pass(es) since the last line"]

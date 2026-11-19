@@ -16,6 +16,7 @@ from pathlib import Path
 import numpy as np
 
 from .audio_outputs import Output, pick_output
+from .frame_record import NO_COUNTS, MpvCounts
 from .ken_burns import Fit, KenBurns, Moves, View
 from .libmpv_loader import add_libmpv_to_path, libmpv_dirs
 from .lost_gpu import LostGpu
@@ -465,6 +466,12 @@ class _MpvControl:
     def remove_overlay(self, ident: int) -> None:
         self._mpv.overlay_remove(ident)
         self._overlays.pop(ident, None)
+
+    @mpv_call(NO_COUNTS)
+    def frame_counts(self) -> MpvCounts:
+        mpv = self._mpv
+        return (int(mpv.frame_drop_count or 0), int(mpv.decoder_frame_drop_count or 0),
+                int(mpv.vo_delayed_frame_count or 0))
 
     def close(self) -> None:
         # Destroying mpv under a call still inside it is an access violation; a leaked handle at exit is not.

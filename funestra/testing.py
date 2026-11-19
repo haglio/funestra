@@ -101,6 +101,9 @@ class FakeEngine(RefusesSeeks):
         self.settled = 0
         self.points_told: list[tuple] = []
 
+    def frame_counts(self) -> tuple[int, int, int]:
+        return (0, 0, 0)
+
     def tile_to_fill(self, window_width: int, window_height: int) -> None:
         self.tiled_to.append((window_width, window_height))
 
