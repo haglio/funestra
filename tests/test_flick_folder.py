@@ -307,4 +307,38 @@ class TestSeveralFoldersBrowsedAsOne:
 
 
 def test_a_flick_that_cannot_be_read_sorts_oldest():
-    assert _modified_at(Path("no") / "such" / "flick.mp4") == 0.0
+    class GoneSinceTheListing:
+        def stat(self):
+            raise FileNotFoundError("flick.mp4")
+
+    assert _modified_at(GoneSinceTheListing()) == 0.0
+
+
+class TestTheFolderWalk:
+    @pytest.fixture
+    def stats(self, monkeypatch):
+        asked: list[Path] = []
+        real_stat, real_isfile = Path.stat, os.path.isfile
+        monkeypatch.setattr(Path, "stat",
+                            lambda self, **kw: asked.append(self) or real_stat(self, **kw))
+        monkeypatch.setattr(os.path, "isfile",
+                            lambda path: asked.append(Path(path)) or real_isfile(path))
+        return asked
+
+    @staticmethod
+    def _five_flicks(tmp_path: Path) -> None:
+        for place in ("AI/a.mp4", "AI/b.mkv", "non_AI/c.mp4", "d.mp4", "e.webm", "notes.txt"):
+            (tmp_path / place).parent.mkdir(parents=True, exist_ok=True)
+            (tmp_path / place).touch()
+
+    def test_asks_the_disk_nothing_more_about_each_flick_it_listed(self, tmp_path: Path, stats):
+        self._five_flicks(tmp_path)
+
+        assert len(scan_flicks(tmp_path, shuffle_on_load=False)) == 5
+        assert stats == []
+
+    def test_the_latest_order_reads_each_date_from_the_listing(self, tmp_path: Path, stats):
+        self._five_flicks(tmp_path)
+
+        assert len(scan_flicks(tmp_path, recent=True)) == 5
+        assert stats == []

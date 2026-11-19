@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import os
 import random
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from pathlib import Path
 
 from app_support import haglio_settings
@@ -15,11 +16,23 @@ from app_support.trash_names import spot_in_trash
 SUPPORTED_VIDEO_EXTS = {".mp4", ".mkv", ".mov", ".avi", ".webm", ".m4v"}
 
 
-def _modified_at(path: Path) -> float:
+def _modified_at(entry: os.DirEntry) -> float:
     try:
-        return path.stat().st_mtime
+        return entry.stat().st_mtime
     except OSError:
         return 0.0
+
+
+def _videos_under(folder: Path) -> Iterator[os.DirEntry]:
+    try:
+        entries = list(os.scandir(folder))
+    except OSError:
+        return
+    for entry in entries:
+        if entry.is_dir(follow_symlinks=False):
+            yield from _videos_under(Path(entry.path))
+        elif entry.is_file() and Path(entry.name).suffix.lower() in SUPPORTED_VIDEO_EXTS:
+            yield entry
 
 
 def scan_flicks(
@@ -27,14 +40,15 @@ def scan_flicks(
     shuffle=random.shuffle,
 ) -> list[Path]:
     folders = (Path(folders),) if isinstance(folders, (str, Path)) else tuple(Path(f) for f in folders)
-    files = [path for folder in folders for path in sorted(folder.rglob("*"))
-             if path.is_file() and path.suffix.lower() in SUPPORTED_VIDEO_EXTS]
-    if not files:
+    entries = [entry for folder in folders
+               for entry in sorted(_videos_under(folder), key=lambda entry: Path(entry.path))]
+    if not entries:
         raise RuntimeError(f"No video {haglio_settings.value('genau_flick_words', 'many')} found in: "
                            f"{', '.join(str(f) for f in folders)}")
     if recent:
-        return sorted(files, key=_modified_at, reverse=True)
-    if shuffle_on_load:
+        entries.sort(key=_modified_at, reverse=True)
+    files = [Path(entry.path) for entry in entries]
+    if shuffle_on_load and not recent:
         shuffle(files)
     return files
 
