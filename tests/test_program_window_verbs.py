@@ -30,6 +30,9 @@ class _Window:
     def restore(self) -> None:
         self.did.append("restore")
 
+    def focus(self) -> None:
+        self.did.append("focus")
+
 
 def _verbs(lifted=None):
     window = _Window()
@@ -44,11 +47,11 @@ def test_hide_show_and_minimize_are_the_windows_own():
     assert window.did == ["hide", "minimize"]
 
 
-def test_show_brings_back_a_window_that_was_hidden_or_minimized():
+def test_show_brings_back_a_window_that_was_hidden_or_minimized_and_hands_it_the_keyboard():
     verbs, window = _verbs()
 
     assert verbs(WINDOW_SHOW) is True
-    assert window.did == ["restore", "show"]
+    assert window.did == ["restore", "show", "focus"]
 
 
 def test_place_moves_the_window_and_gives_it_its_size():
