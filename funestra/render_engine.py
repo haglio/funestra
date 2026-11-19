@@ -67,6 +67,9 @@ class MpvRenderEngine(_MpvControl):
         self._drawn_file.asked_for(str(path))
         super().load(path)
 
+    def wake_on_updates(self, wake: Callable[[], None]) -> None:
+        self._render_context.update_cb = wake
+
     @property
     @mpv_call(False)
     def has_frame_to_draw(self) -> bool:

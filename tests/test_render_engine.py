@@ -57,6 +57,8 @@ class FakeRenderContext:
     def announce(self, flags: int) -> None:
         self.frame_waiting = True
         self.next_frame_flags = flags
+        if getattr(self, "update_cb", None) is not None:
+            self.update_cb()
 
 
 class FakeRenderParam:
@@ -129,3 +131,14 @@ def test_an_offscreen_engine_frames_its_close_ups_for_the_target_it_last_drew_in
     engine.render(0, 1600, 900)
 
     assert engine._fit().viewport == (1600, 900)
+
+
+def test_a_host_told_of_mpvs_updates_is_woken_each_time_mpv_has_a_frame_to_draw(engine):
+    engine = render_engine.MpvRenderEngine(lambda _name: 0)
+    woken: list[bool] = []
+
+    engine.wake_on_updates(lambda: woken.append(True))
+    engine._render_context.announce(FRAME_PRESENT)
+    engine._render_context.announce(FRAME_PRESENT)
+
+    assert woken == [True, True]
