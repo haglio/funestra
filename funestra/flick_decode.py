@@ -25,10 +25,18 @@ def _ffprobe_size(path: Path) -> tuple[int, int]:
     return int(width), int(height)
 
 
-def load_flick_frames(path: Path, _frame_cache_dir: Path | None = None) -> list[np.ndarray]:
-    width, height = _ffprobe_size(path)
-    frame_size = width * height * 3
+def _read_whole(stream, frame: np.ndarray) -> bool:
+    into = memoryview(frame).cast("B")
+    filled = 0
+    while filled < len(into):
+        read = stream.readinto(into[filled:])
+        if not read:
+            return False
+        filled += read
+    return True
 
+
+def load_flick_frames(path: Path, _frame_cache_dir: Path | None = None) -> list[np.ndarray]:
     cmd = [
         "ffmpeg",
         "-v",
@@ -52,15 +60,20 @@ def load_flick_frames(path: Path, _frame_cache_dir: Path | None = None) -> list[
     frames: list[np.ndarray] = []
 
     try:
+        width, height = _ffprobe_size(path)
+    except BaseException:
+        proc.kill()
+        proc.stdout.close()
+        proc.stderr.close()
+        proc.wait()
+        raise
+
+    try:
         while True:
-            buf = proc.stdout.read(frame_size) if proc.stdout else b""
-            if not buf:
+            frame = np.empty((height, width, 3), dtype=np.uint8)
+            if not _read_whole(proc.stdout, frame):
                 break
-            if len(buf) != frame_size:
-                break
-            frames.append(
-                np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3)).copy()
-            )
+            frames.append(frame)
     finally:
         if proc.stdout:
             proc.stdout.close()
