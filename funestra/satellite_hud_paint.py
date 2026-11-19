@@ -25,16 +25,19 @@ from funestra.hud import (
     ButtonGroundState,
     ButtonLook,
     Hud,
+    Tooltip,
     active_dot_top,
     button_ground,
     draw_active_dot,
     draw_button,
     draw_character,
     draw_icon,
+    draw_the_tooltip,
     draw_tooltip,
     load_font,
     text_width,
     to_bgra,
+    tooltip_for,
 )
 from funestra.hud_button import Button
 from funestra.hud_icons import SHARED_ICON, shared_icon, shared_icon_name
@@ -185,13 +188,64 @@ class _Drawing(NamedTuple):
     host_controls: HostControlsHud | None
 
 
+class _Patch(NamedTuple):
+    rect: Rect
+    image: Image.Image
+
+
+class _BitmapsInTurn:
+    # mpv copies an overlay as it takes it, so the bitmap from two draws back is free to draw
+    # on again, and only the patches differ from one draw of an unchanged HUD to the next.
+
+    def __init__(self, image: Image.Image) -> None:
+        self._as_drawn = to_bgra(image)
+        self._pair = [self._as_drawn.copy(), self._as_drawn.copy()]
+        self._patched: list[tuple[Rect, ...]] = [(), ()]
+        self._turn = 0
+
+    def with_the(self, patches: list[_Patch]) -> np.ndarray:
+        turn, self._turn = self._turn, 1 - self._turn
+        bitmap = self._pair[turn]
+        rects = tuple(patch.rect for patch in patches)
+        for x, y, width, height in self._patched[turn]:
+            if (x, y, width, height) not in rects:
+                bitmap[y:y + height, x:x + width] = self._as_drawn[y:y + height, x:x + width]
+        for (x, y, width, height), image in patches:
+            bitmap[y:y + height, x:x + width] = to_bgra(image)
+        self._patched[turn] = rects
+        return bitmap
+
+
 @dataclass(frozen=True)
 class _DrawnButTheRow:
     drawn_for: tuple
     image: Image.Image
-    bgra: np.ndarray
+    bitmaps: _BitmapsInTurn
     row_rect: tuple[int, int, int, int]
     targets: HudTargets
+
+
+class _TooltipAlone(NamedTuple):
+    over: _DrawnButTheRow
+    drawn_with: DrawnWith
+    patch: _Patch
+
+
+def _overlap(one: Rect, other: Rect) -> bool:
+    return (one[0] < other[0] + other[2] and other[0] < one[0] + one[2]
+            and one[1] < other[1] + other[3] and other[1] < one[1] + one[3])
+
+
+def _around(one: Rect, other: Rect) -> Rect:
+    left, top = min(one[0], other[0]), min(one[1], other[1])
+    right = max(one[0] + one[2], other[0] + other[2])
+    bottom = max(one[1] + one[3], other[1] + other[3])
+    return (left, top, right - left, bottom - top)
+
+
+def _cut(image: Image.Image, rect: Rect) -> Image.Image:
+    x, y, width, height = rect
+    return image.crop((x, y, x + width, y + height))
 
 
 def _fitted_thumbnail(thumb: str, place_w: int) -> Image.Image | None:
@@ -216,6 +270,7 @@ class HudRenderer:
         self._host_controls = HostControlsSection()
         self._widest_titles: dict[HudKind, int] = {}
         self._drawn: _DrawnButTheRow | None = None
+        self._tooltip_alone: _TooltipAlone | None = None
 
     def _thumbnail(self, cell: HudCell) -> Image.Image:
         place_w = place_width(self._funestra)
@@ -261,7 +316,7 @@ class HudRenderer:
                         drive=None)
         drawn_for = self._all_but_the_row(model, scrubber_row, drawn_with, host_controls)
         if drawn_for is not None and self._drawn is not None and self._drawn.drawn_for == drawn_for:
-            return self._with_the_row(self._drawn, scrubber_row, heatmap)
+            return self._with_the_row(self._drawn, scrubber_row, heatmap, drawn_with)
         return self._drawn_whole(model, drawn_for, scrubber_row, heatmap,
                                  _Drawing(drawn_with, host_controls))
 
@@ -349,10 +404,9 @@ class HudRenderer:
         targets = replace(nav_map_targets, tracks=[], row=row, foot=foot_rect, buttons=buttons,
                           favorite=favorite, host_controls=host_controls)
         if drawn_for is not None:
-            self._drawn = _DrawnButTheRow(drawn_for, image, to_bgra(image), row.rect, targets)
-            return self._with_the_row(self._drawn, scrubber_row, heatmap)
-        if row is not None:
-            self._scrubber_row.draw(image, row, scrubber_row, heatmap=heatmap)
+            self._drawn = _DrawnButTheRow(drawn_for, image, _BitmapsInTurn(image), row.rect,
+                                          targets)
+            return self._with_the_row(self._drawn, scrubber_row, heatmap, drawn_with)
         if drawn_with.hover_tip:
             draw_tooltip(draw, self._tiny, drawn_with.hover_tip, drawn_with.hover_pos,
                          image.size)
@@ -389,19 +443,45 @@ class HudRenderer:
     def _all_but_the_row(self, model: HudModel, scrubber_row: RowHud | None,
                          drawn_with: DrawnWith,
                          host_controls: HostControlsHud | None) -> tuple | None:
-        if scrubber_row is None or drawn_with.hover_tip:
+        if scrubber_row is None:
             return None
         return model, self._scrubber_row.least_width(scrubber_row), drawn_with, host_controls
 
-    def _with_the_row(self, drawn: _DrawnButTheRow, scrubber_row: RowHud, heatmap) -> RenderedHud:
-        x, y, width, height = drawn.row_rect
-        region = drawn.image.crop((x, y, x + width, y + height))
-        self._scrubber_row.draw(region, row_layout(scrubber_row, rect=(0, 0, width, height)), scrubber_row,
-                            heatmap=heatmap)
-        bgra = drawn.bgra.copy()
-        bgra[y:y + height, x:x + width] = to_bgra(region)
-        return RenderedHud(bgra, replace(drawn.targets,
-                                         row=row_layout(scrubber_row, rect=drawn.row_rect)))
+    def _with_the_row(self, drawn: _DrawnButTheRow, scrubber_row: RowHud, heatmap,
+                      drawn_with: DrawnWith) -> RenderedHud:
+        _x, _y, width, height = drawn.row_rect
+        row = _Patch(drawn.row_rect, _cut(drawn.image, drawn.row_rect))
+        self._scrubber_row.draw(row.image, row_layout(scrubber_row, rect=(0, 0, width, height)),
+                                scrubber_row, heatmap=heatmap)
+        patches = self._under_the_tooltip(drawn, row, drawn_with) if drawn_with.hover_tip else [row]
+        return RenderedHud(drawn.bitmaps.with_the(patches),
+                           replace(drawn.targets,
+                                   row=row_layout(scrubber_row, rect=drawn.row_rect)))
+
+    def _under_the_tooltip(self, drawn: _DrawnButTheRow, row: _Patch,
+                           drawn_with: DrawnWith) -> list[_Patch]:
+        tooltip = tooltip_for(self._tiny, drawn_with.hover_tip, drawn_with.hover_pos,
+                              drawn.image.size)
+        if tooltip is None:
+            return [row]
+        if not _overlap(tooltip.rect, row.rect):
+            return [row, self._the_tooltip_alone(drawn, drawn_with, tooltip)]
+        both = _around(tooltip.rect, row.rect)
+        image = _cut(drawn.image, both)
+        image.paste(row.image, (row.rect[0] - both[0], row.rect[1] - both[1]))
+        draw_the_tooltip(ImageDraw.Draw(image), self._tiny, tooltip.moved_by(-both[0], -both[1]))
+        return [_Patch(both, image)]
+
+    def _the_tooltip_alone(self, drawn: _DrawnButTheRow, drawn_with: DrawnWith,
+                           tooltip: Tooltip) -> _Patch:
+        kept = self._tooltip_alone
+        if kept is None or kept.over is not drawn or kept.drawn_with != drawn_with:
+            image = _cut(drawn.image, tooltip.rect)
+            draw_the_tooltip(ImageDraw.Draw(image), self._tiny,
+                             tooltip.moved_by(-tooltip.rect[0], -tooltip.rect[1]))
+            kept = self._tooltip_alone = _TooltipAlone(drawn, drawn_with,
+                                                       _Patch(tooltip.rect, image))
+        return kept.patch
 
     def _draw_nav_map(self, hud: Hud, model: HudModel, top: int, nav: _NavMap,
                       hover_loop: str) -> HudTargets:

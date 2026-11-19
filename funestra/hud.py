@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import NamedTuple
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -113,25 +114,49 @@ _TOOLTIP_EDGE = 2
 _TOOLTIP_OFFSET = (14, 16)
 
 
-def draw_tooltip(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: str,
-                 pos: tuple[int, int], bounds: tuple[int, int]) -> tuple[int, int, int, int]:
+class Tooltip(NamedTuple):
+    lines: tuple[str, ...]
+    rect: tuple[int, int, int, int]
+
+    def moved_by(self, dx: int, dy: int) -> Tooltip:
+        x, y, w, h = self.rect
+        return Tooltip(self.lines, (x + dx, y + dy, w, h))
+
+
+def tooltip_for(font: ImageFont.FreeTypeFont, text: str, pos: tuple[int, int],
+                bounds: tuple[int, int]) -> Tooltip | None:
     room = max(1, bounds[0] - 2 * (_TOOLTIP_EDGE + TOOLTIP_PAD))
     lines = wrap_text(font, text, room)
     if not lines:
-        return (0, 0, 0, 0)
+        return None
     ascent, descent = font.getmetrics()
-    line_h = ascent + descent
     w = max(text_width(font, line) for line in lines) + 2 * TOOLTIP_PAD
-    h = line_h * len(lines) + 2 * TOOLTIP_PAD
+    h = (ascent + descent) * len(lines) + 2 * TOOLTIP_PAD
     x = max(_TOOLTIP_EDGE, min(pos[0] + _TOOLTIP_OFFSET[0], bounds[0] - w - _TOOLTIP_EDGE))
     y = max(_TOOLTIP_EDGE, min(pos[1] + _TOOLTIP_OFFSET[1], bounds[1] - h - _TOOLTIP_EDGE))
+    return Tooltip(tuple(lines), (x, y, w, h))
+
+
+def draw_the_tooltip(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont,
+                     tooltip: Tooltip) -> None:
+    x, y, w, h = tooltip.rect
+    ascent, descent = font.getmetrics()
+    line_h = ascent + descent
     draw.rounded_rectangle([x, y, x + w - 1, y + h - 1], radius=TOOLTIP_RADIUS,
                            fill=(*BG_PRIMARY, TOOLTIP_ALPHA),
                            outline=(*BORDER_PANEL, 255), width=1)
-    for index, line in enumerate(lines):
+    for index, line in enumerate(tooltip.lines):
         draw.text((x + w / 2, y + TOOLTIP_PAD + index * line_h + ascent), line,
                   font=font, anchor="ms", fill=(*TEXT_PRIMARY, 255))
-    return (x, y, w, h)
+
+
+def draw_tooltip(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: str,
+                 pos: tuple[int, int], bounds: tuple[int, int]) -> tuple[int, int, int, int]:
+    tooltip = tooltip_for(font, text, pos, bounds)
+    if tooltip is None:
+        return (0, 0, 0, 0)
+    draw_the_tooltip(draw, font, tooltip)
+    return tooltip.rect
 
 
 def to_bgra(image: Image.Image) -> np.ndarray:
@@ -196,6 +221,10 @@ class KeptBitmap:
     def rgba(self, hud) -> tuple[bytes, tuple[int, int]]:
         self._ensure(hud)
         return self._image.tobytes(), self._image.size
+
+    def image(self, hud) -> Image.Image:
+        self._ensure(hud)
+        return self._image
 
     def _ensure(self, hud) -> bool:
         if hud == self._painted and self._image is not None:

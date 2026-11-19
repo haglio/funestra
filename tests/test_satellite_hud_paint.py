@@ -1782,3 +1782,80 @@ def test_a_slideshow_of_both_shapes_has_room_for_its_whole_nav_map(thumb):
     assert ly + lh == height - PAD
     assert all(x + w <= width - PAD and y + h <= height - PAD
                for (x, y, w, h), _path in rendered.targets.click)
+
+
+def _moving(frames: int) -> list[RowHud]:
+    return [RowHud(position_ms=40.0 * frame, duration_ms=60_000,
+                   volume=VolumeHud(volume=40, muted=False)) for frame in range(frames)]
+
+
+def _drawn_from_nothing(model: HudModel, row: RowHud, drawn_with: DrawnWith) -> np.ndarray:
+    return HudRenderer(model.funestra).render(model, scrubber_row=row, drawn_with=drawn_with).bgra
+
+
+class TestAHudWhoseScrubberAloneMoves:
+    TIP = DrawnWith(video="scene one", hover_tip="A made-up tooltip", hover_pos=(40, 40))
+    PLAIN = DrawnWith(video="scene one")
+
+    def test_draws_its_buttons_once_however_many_frames_follow(self, monkeypatch):
+        drawn: list[Button] = []
+        real = satellite_hud_paint.draw_button
+        monkeypatch.setattr(satellite_hud_paint, "draw_button",
+                            lambda image, draw, rect, button, look: (
+                                drawn.append(button), real(image, draw, rect, button, look)))
+        renderer = HudRenderer("portrait")
+        renderer.render(_model(), scrubber_row=_moving(1)[0], drawn_with=self.PLAIN)
+        once = len(drawn)
+
+        for row in _moving(6):
+            renderer.render(_model(), scrubber_row=row, drawn_with=self.PLAIN)
+
+        assert once > 0
+        assert len(drawn) == once
+
+    def test_draws_its_buttons_once_under_a_tooltip_too(self, monkeypatch):
+        drawn: list[Button] = []
+        real = satellite_hud_paint.draw_button
+        monkeypatch.setattr(satellite_hud_paint, "draw_button",
+                            lambda image, draw, rect, button, look: (
+                                drawn.append(button), real(image, draw, rect, button, look)))
+        renderer = HudRenderer("portrait")
+        renderer.render(_model(), scrubber_row=_moving(1)[0], drawn_with=self.TIP)
+        once = len(drawn)
+
+        for row in _moving(6):
+            renderer.render(_model(), scrubber_row=row, drawn_with=self.TIP)
+
+        assert len(drawn) == once
+
+    @pytest.mark.parametrize("hover_pos", [(40, 40), (20, 10_000), (10_000, 10_000)])
+    def test_shows_under_a_tooltip_what_a_hud_drawn_from_nothing_shows(self, hover_pos):
+        tip = replace(self.TIP, hover_pos=hover_pos)
+        renderer = HudRenderer("portrait")
+
+        for row in _moving(4):
+            kept = renderer.render(_model(), scrubber_row=row, drawn_with=tip).bgra
+
+            assert np.array_equal(kept, _drawn_from_nothing(_model(), row, tip))
+
+    def test_shows_no_trace_of_a_tooltip_once_the_pointer_has_left(self):
+        renderer = HudRenderer("portrait")
+        rows = _moving(8)
+        for row in rows[:4]:
+            renderer.render(_model(), scrubber_row=row, drawn_with=self.TIP)
+
+        for row in rows[4:]:
+            kept = renderer.render(_model(), scrubber_row=row, drawn_with=self.PLAIN).bgra
+
+            assert np.array_equal(kept, _drawn_from_nothing(_model(), row, self.PLAIN))
+
+    def test_hands_back_a_bitmap_the_next_draw_leaves_as_it_was(self):
+        renderer = HudRenderer("portrait")
+        first_row, second_row = _moving(2)
+        first = renderer.render(_model(), scrubber_row=first_row, drawn_with=self.PLAIN).bgra
+        as_handed_back = first.copy()
+
+        second = renderer.render(_model(), scrubber_row=second_row, drawn_with=self.PLAIN).bgra
+
+        assert second is not first
+        assert np.array_equal(first, as_handed_back)

@@ -735,6 +735,18 @@ def _minimized_satellite(tmp_path: Path, clock: _Clock) -> tuple[Funestra, FakeE
             clock=clock)), engine
 
 
+def test_a_minimized_hud_is_not_sent_again_while_only_the_playhead_moves(tmp_path):
+    funestra, engine = _minimized_satellite(tmp_path, _Clock())
+    funestra.tick(viewport=WINDOW)
+    sent = list(engine.overlays_sent)
+
+    for frame in range(5):
+        engine.position_ms = 40.0 * (frame + 1)
+        funestra.tick(viewport=WINDOW)
+
+    assert (sent, engine.overlays_sent[len(sent):]) == ([HUD_OVERLAY_ID], [])
+
+
 class TestTheNameOfWhatHasJustStarted:
     def test_a_minimized_hud_names_it_beside_its_plus(self, tmp_path):
         funestra, engine = _minimized_satellite(tmp_path, _Clock())
