@@ -190,3 +190,24 @@ class TestDragging:
         pointer.motion(*LOWER_EDGE, held=True)
 
         assert asked == []
+
+
+class TestAPressMadeAgain:
+    def _pointer(self, *, hud_takes: bool):
+        asked: list[str] = []
+        return Pointer(hud=_StubHud(takes=hud_takes), item=lambda: asked.append("pause"),
+                       item_again=lambda: asked.append("again")), asked
+
+    def test_on_the_item_it_asks_for_the_pause_and_says_it_was_made_again(self):
+        pointer, asked = self._pointer(hud_takes=False)
+
+        pointer.press_again(*ON_THE_VIDEO)
+
+        assert asked == ["pause", "again"]
+
+    def test_on_the_hud_it_is_one_more_press_of_the_huds(self):
+        pointer, asked = self._pointer(hud_takes=True)
+
+        pointer.press_again(*ON_THE_VIDEO)
+
+        assert asked == []

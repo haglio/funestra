@@ -5,7 +5,8 @@ from .status import status_fields as leading_fields
 from .volume import VolumeHud
 
 
-def status_fields(playback, handoff_touch_ms: int | None) -> dict[str, str]:
+def status_fields(playback, handoff_touch_ms: int | None, *,
+                  read_at: float = 0.0) -> dict[str, str]:
     return {
         **leading_fields(FunestraStatus(
             video=str(playback.current_video),
@@ -15,6 +16,7 @@ def status_fields(playback, handoff_touch_ms: int | None) -> dict[str, str]:
             locked=playback.is_locked,
             speed=playback.speed,
             image=playback.showing_image,
+            read_at=read_at,
         )),
         "showing": str(playback.showing),
         "playlist_length": str(playback.playlist_length),

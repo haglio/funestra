@@ -42,7 +42,7 @@ from funestra.osr2_visualizer import DriveHud, DrivePublisher, publish_drive, re
 from funestra.outside_buttons import OutsideButtons
 from funestra.playhead import FIGURE_SPACE
 from funestra.playlist import PlaylistItem, read_playlist
-from funestra.pointer import OMNIPAUSE_TOGGLE
+from funestra.pointer import OMNIPAUSE_TOGGLE, PRESSED_AGAIN
 from funestra.radio import radio_file_for, write_radio
 from funestra.runs_here import _Nobody
 from funestra.satellite_hud import MARGIN, HudModel, hud_text
@@ -437,8 +437,8 @@ def test_its_status_read_in_process_is_what_its_status_file_says(tmp_path):
 
     funestra.tick(viewport=WINDOW)
 
-    assert funestra.status_fields() == dict(
-        line.split("=", 1) for line in _status(tmp_path).splitlines())
+    written = dict(line.split("=", 1) for line in _status(tmp_path).splitlines())
+    assert {**funestra.status_fields(), "read_at": written["read_at"]} == written
 
 
 def test_a_list_handed_over_in_process_is_played_as_one_read_off_the_playlist_file(tmp_path):
@@ -2041,3 +2041,19 @@ def test_a_flag_written_twice_in_place_inside_one_tick_of_the_file_clock_is_stil
     funestra.tick(viewport=WINDOW)
 
     assert engine.paused is True
+
+
+def test_a_press_made_again_on_the_item_asks_the_app_for_the_pause_and_tells_it_so(tmp_path):
+    funestra, _engine = _funestra(tmp_path, [str(_videos(tmp_path, "v0")[0])], in_a_session=True)
+
+    funestra.press_again(300, 200, viewport=WINDOW)
+
+    assert _asked(tmp_path) == [OMNIPAUSE_TOGGLE, PRESSED_AGAIN]
+
+
+def test_the_status_says_when_the_position_was_read_on_the_clock_every_program_shares(tmp_path):
+    channels = _channels(tmp_path, [str(_videos(tmp_path, "v0")[0])])
+    funestra = Funestra(FakeEngine(), FunestraSetup(
+        channels=channels, playlist=read_playlist(channels.playlist), clock=lambda: 1234.5))
+
+    assert funestra.status_fields()["read_at"] == "1234.500"
