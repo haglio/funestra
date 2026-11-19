@@ -18,6 +18,7 @@ from .flick_overlay import FlickFrame, FlickOverlay
 from .funestra_controls import VERBS, FunestraControls
 from .funestra_setup import FunestraSetup
 from .funestra_status import status_fields, volume_fields
+from .funestra_verbs import LOCK_PRESSED
 from .funscript_jumps import FunscriptJumps
 from .hud_controls import longer_than_a_step
 from .hud_corners import HudCorners
@@ -359,6 +360,10 @@ class Funestra:
         return False if self._engine.showing_video else None
 
     def apply(self, command: str) -> None:
+        if command.split(maxsplit=1)[:1] == [LOCK_PRESSED]:
+            if self._hud is not None:
+                self._hud.lock_pressed()
+            return
         self.playback.follow_a_roll()
         if self._runs_here.apply(command) or self._setup.window_verbs(command):
             return
