@@ -10,7 +10,7 @@ from .flick_under_the_device import FlickUnderTheDevice
 from .flicks_on_screen import FlicksOnScreen
 from .genau_controls import GenauControls, apply_runtime_command
 from .genau_files import GenauFiles
-from .genau_status import FlickOnScreen, build_status_text, write_status_file
+from .genau_status import FlickOnScreen, StatusFile, build_status_text
 from .genau_visualizer import AutoMotion, GenauVisualizer
 from .hands_device import HandsDevice
 from .robot_hand_beat import Beat, BeatTuning, advance_beat
@@ -27,6 +27,7 @@ class GenauRefreshController:
         self.flicks = flicks
         self.broker = broker
         self.files = files
+        self._status = StatusFile(files.status_file)
         self.tuning = tuning
         self.logger = logger
         self.failures = TickFailures(logger)
@@ -131,7 +132,7 @@ class GenauRefreshController:
         return self._up[1]
 
     def _publish_status(self, now: float) -> None:
-        write_status_file(self.files.status_file, build_status_text(
+        self._status.write(build_status_text(
             self.controls.robot_hand,
             learned=self.controls.learned_motion_state,
             flick_advance=self.controls.flick_advance_state,

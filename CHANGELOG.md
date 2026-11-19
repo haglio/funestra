@@ -9,6 +9,12 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-18 — Genau's status file is written by a `StatusFile`
+
+`write_status_file(path, text)` gives way to `StatusFile(path).write(text)`,
+which keeps the text it last wrote in memory instead of reading the file back
+at every tick to see whether it changed. No app called the old name.
+
 ## 2026-11-15 — F-mode is Favorites, and Enhanceds stands beside it
 
 Every HUD's F button is now Favorites, wearing the star, and Enhanceds is one

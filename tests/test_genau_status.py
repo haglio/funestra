@@ -4,7 +4,7 @@ from pathlib import Path
 
 from funestra import genau_status
 from funestra.flick_advance import FlickAdvanceState
-from funestra.genau_status import FlickOnScreen, build_status_text, write_status_file
+from funestra.genau_status import FlickOnScreen, StatusFile, build_status_text
 from funestra.learned_motion import LearnedMotionState
 from funestra.robot_hand import RobotHandState, WaveformShape
 
@@ -81,24 +81,25 @@ def test_build_status_text_ctr_not_at_limits():
     assert "ctr_at_min=0" in text
 
 
-def test_write_status_file_creates_file(tmp_path: Path):
+def test_the_status_file_creates_file(tmp_path: Path):
     path = tmp_path / "genau_status.txt"
 
-    write_status_file(path, build_status_text(RobotHandState()))
+    StatusFile(path).write(build_status_text(RobotHandState()))
 
     assert path.exists()
     text = path.read_text(encoding="utf-8")
     assert "shape=sine" in text
 
 
-def test_write_status_file_skips_when_unchanged(tmp_path: Path):
+def test_the_status_file_skips_when_unchanged(tmp_path: Path):
     text = build_status_text(RobotHandState())
     path = tmp_path / "genau_status.txt"
+    status = StatusFile(path)
 
-    assert write_status_file(path, text) is True
+    assert status.write(text) is True
     written_at = path.stat().st_mtime_ns
 
-    assert write_status_file(path, text) is False
+    assert status.write(text) is False
     assert path.stat().st_mtime_ns == written_at, "the file was rewritten anyway"
 
 
@@ -157,7 +158,7 @@ def test_build_status_text_leaves_the_shape_empty_until_a_flick_is_up():
     assert "portrait=\n" in build_status_text(RobotHandState())
 
 
-def test_write_status_file_replaces_the_record_whole_so_a_poller_never_reads_half(
+def test_the_status_file_replaces_the_record_whole_so_a_poller_never_reads_half(
         tmp_path: Path, monkeypatch):
     published = []
     monkeypatch.setattr(genau_status, "publish_whole",
@@ -165,7 +166,7 @@ def test_write_status_file_replaces_the_record_whole_so_a_poller_never_reads_hal
     path = tmp_path / "genau_status.txt"
     text = build_status_text(RobotHandState())
 
-    assert write_status_file(path, text) is True
+    assert StatusFile(path).write(text) is True
     assert published == [(path, text)]
 
 
@@ -184,3 +185,33 @@ def test_the_status_says_the_max_intensity_the_hand_is_held_to():
     text = build_status_text(RobotHandState(max_intensity=35))
 
     assert "max_intensity=35\n" in text
+
+
+def test_a_status_written_many_times_over_is_never_read_back_and_written_once_per_change(
+        tmp_path: Path, monkeypatch):
+    published = []
+    monkeypatch.setattr(genau_status, "publish_whole",
+                        lambda path, text: published.append(text) or True)
+    reads = []
+    real = Path.read_text
+    monkeypatch.setattr(Path, "read_text", lambda self, **kw: reads.append(self) or real(self, **kw))
+    status = StatusFile(tmp_path / "genau_status.txt")
+    still, moving = (build_status_text(RobotHandState(playing=playing)) for playing in (False, True))
+
+    for text in [still] * 60 + [moving] * 60:
+        status.write(text)
+
+    assert reads == []
+    assert published == [still, moving]
+
+
+def test_a_status_the_disk_refused_is_written_again_at_the_next_tick(tmp_path: Path, monkeypatch):
+    answers = [False, True]
+    published = []
+    monkeypatch.setattr(genau_status, "publish_whole",
+                        lambda path, text: published.append(text) or answers.pop(0))
+    status = StatusFile(tmp_path / "genau_status.txt")
+    text = build_status_text(RobotHandState())
+
+    assert [status.write(text), status.write(text), status.write(text)] == [False, True, False]
+    assert published == [text, text]
