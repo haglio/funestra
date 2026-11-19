@@ -592,6 +592,25 @@ class TestAPress:
         assert _asked(tmp_path) == ["omnipause_toggle"]
 
 
+class TestANextPressedOnItsHud:
+    def test_steps_it_at_once_and_tells_the_session_the_step_is_done(self, tmp_path):
+        videos = _videos(tmp_path, "v0", "v1")
+        funestra, engine = _funestra(tmp_path, [str(video) for video in videos],
+                                     hud=True, commands="")
+        _publish_hud(tmp_path, rows=[[{"command": "portrait_next", "glyph": "N",
+                                       "tooltip": "Next", "width": 18}]])
+        funestra.tick(viewport=WINDOW)
+        left, top, _hud = engine.overlays[HUD_OVERLAY_ID]
+        (bx, by, bw, bh), _button = next((rect, b) for rect, b in funestra.hud.targets.buttons
+                                         if b.command == "portrait_next")
+
+        funestra.press(left + bx + bw // 2, top + by + bh // 2, viewport=WINDOW)
+
+        assert engine.opened[-1] == videos[1]
+        told, pressed_at = _asked(tmp_path)
+        assert (told, pressed_at[0]) == ("portrait_next", "!")
+
+
 class TestACornerTheHudIsNotIn:
     def test_a_press_there_asks_the_room_to_open_the_hud_there(self, tmp_path):
         funestra, _engine = _wearing_a_hud(tmp_path)

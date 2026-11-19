@@ -199,7 +199,7 @@ class Funestra:
                     width=None if self._hud_surface is None else self._hud_surface.width),
                 drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
                 row=self._row_press(), host_controls=self._setup.host_controls,
-                clock=self._setup.clock,
+                clock=self._setup.clock, step_here=self.apply,
             )
         if channels.hud is not None:
             return HudOverlay(
@@ -207,7 +207,7 @@ class Funestra:
                 drawn_on=DrawnOn(drawn_on, over_the_video=self._hud_surface is None,
                                  minus_on_the_hud=self._hud_surface is None),
                 drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
-                row=self._row_press(), clock=self._setup.clock,
+                row=self._row_press(), clock=self._setup.clock, step_here=self.apply,
             )
         return None
 
