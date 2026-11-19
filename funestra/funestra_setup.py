@@ -4,6 +4,7 @@ import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, NamedTuple
 
+from .frame_record import DESKTOP_FRAME_MS
 from .play_points import PlayPoints
 from .playback import funscripts_of, points_of_interest_of
 from .playback_setup import PlaybackSetup
@@ -40,6 +41,8 @@ class FunestraSetup(NamedTuple):
     radio: Tuner | None = None
     on_volume_moved: Callable[[VolumeHud], None] | None = None
     clock: Callable[[], float] = time.monotonic
+    frame_ms: float = DESKTOP_FRAME_MS
+    frame_clock: Callable[[], float] = time.perf_counter
 
     def playback_setup(self, start_paused: bool) -> PlaybackSetup:
         return PlaybackSetup(

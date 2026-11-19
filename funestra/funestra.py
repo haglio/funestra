@@ -15,6 +15,7 @@ from .dashboard import ask
 from .drive_gate import DriveGate
 from .file_channel import consume_command_file, read_paused_state
 from .flick_overlay import FlickFrame, FlickOverlay
+from .frame_record import NO_COUNTS, FrameRecord
 from .funestra_controls import VERBS, FunestraControls
 from .funestra_setup import FunestraSetup
 from .funestra_status import status_fields, volume_fields
@@ -149,6 +150,9 @@ class Funestra:
         )
         self._loop_frames = LoopFrames(engine)
         self._short_of_memory = False
+        self._frame_record = FrameRecord(
+            setup.frame_ms, clock=setup.frame_clock,
+            mpv_counts=getattr(engine, "frame_counts", lambda: NO_COUNTS))
 
     @property
     def playback(self) -> Playback:
@@ -312,6 +316,28 @@ class Funestra:
         self._pointer.leave()
 
     def tick(self, *, viewport: tuple[int, int]) -> None:
+        record = self._frame_record
+        record.begin()
+        self._hear_what_it_is_told()
+        record.lap("the files it is told through")
+        self._runs_here.tick()
+        record.lap("what runs here")
+        self.playback.advance()
+        record.lap("playback")
+        if self._status is not None:
+            self._status.write(self.playback)
+        record.lap("the status file")
+        if self._setup.tiles:
+            self._engine.tile_to_fill(*viewport)
+        self._engine.push_still()
+        record.lap("the still's pan")
+        self._tune_the_radio()
+        record.lap("the Radio")
+        self._paint_if_there_is_memory(viewport)
+        record.lap("the HUD and what is drawn over the item")
+        record.end()
+
+    def _hear_what_it_is_told(self) -> None:
         channels = self._channels
         if channels.paused is not None:
             paused = read_paused_state(channels.paused, logger=logger)
@@ -324,15 +350,6 @@ class Funestra:
                 self.apply(command)
         if self._follower is not None:
             self._follower.tick()
-        self._runs_here.tick()
-        self.playback.advance()
-        if self._status is not None:
-            self._status.write(self.playback)
-        if self._setup.tiles:
-            self._engine.tile_to_fill(*viewport)
-        self._engine.push_still()
-        self._tune_the_radio()
-        self._paint_if_there_is_memory(viewport)
 
     def close(self) -> None:
         self._runs_here.close()

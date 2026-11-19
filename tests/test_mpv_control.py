@@ -1232,3 +1232,10 @@ def test_a_windowed_engine_frames_its_close_ups_for_the_window_it_draws_into(mon
     engine = MpvEngine(desktop)
 
     assert engine._fit().viewport == _client_size(desktop)
+
+
+def test_the_frame_counts_are_mpvs_own_counters_of_dropped_and_delayed_frames():
+    mpv = FakeMpv()
+    mpv.frame_drop_count, mpv.decoder_frame_drop_count, mpv.vo_delayed_frame_count = 4, None, 2
+
+    assert Control(mpv).frame_counts() == (4, 0, 2)
