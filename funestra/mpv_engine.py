@@ -199,7 +199,7 @@ class _MpvControl:
         self._decoder: str | None = None
         self._decoder_said_for: str | None = None
         self._zoomed: View | None = None
-        self._pace_s = 0.0
+        self._zoomed_on: str | None = None
 
     def _adopt(self, handle) -> None:
         self._mpv = handle
@@ -347,9 +347,8 @@ class _MpvControl:
 
     def _begin_the_new_clip(self, path: str | None) -> None:
         self._on_the_clock = path
-        if self._zoomed is not None:
+        if path != self._zoomed_on:
             self._zoomed = None
-            self._ken_burns.set_pace(self._pace_s, self._now())
         self._ken_burns.new_image(self._now())
 
     @property
@@ -374,9 +373,7 @@ class _MpvControl:
         self._mpv.pause = paused
 
     def set_pace(self, seconds: float) -> None:
-        self._pace_s = seconds or 0.0
-        if self._zoomed is None:
-            self._ken_burns.set_pace(self._pace_s, self._now())
+        self._ken_burns.set_pace(seconds or 0.0, self._now())
 
     def set_points_of_interest(self, places: tuple) -> None:
         self._ken_burns.set_points_of_interest(places, self._now())
@@ -412,9 +409,8 @@ class _MpvControl:
         self._ken_burns.hold_for(seconds)
 
     def zoom_at(self, x: int, y: int, *, steps: int) -> None:
-        on_screen = self._on_screen()
-        self._ken_burns.set_pace(0.0, self._now())
-        self._zoomed = zoomed_at(on_screen, self._fit(), (x, y), steps)
+        self._zoomed = zoomed_at(self._on_screen(), self._fit(), (x, y), steps)
+        self._zoomed_on = self._on_the_clock
 
     def pan_by(self, dx: int, dy: int) -> None:
         if self._zoomed is not None:

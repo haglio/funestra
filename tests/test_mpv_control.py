@@ -1377,21 +1377,36 @@ def test_zooming_an_image_stops_its_drift_where_the_zoom_left_it():
     assert placing(mpv) == zoomed
 
 
-def test_a_zoomed_image_waits_for_him_rather_than_moving_on():
+def test_a_zoomed_image_still_moves_on_when_its_time_is_up():
     mpv, control = an_image_with_the_next_staged(pace_s=4.0, viewport=WIDE)
     control.zoom_at(960, 540, steps=1)
 
     pushed_at(control, 105.0)
 
-    assert moved_on(mpv) == 0
+    assert moved_on(mpv) == 1
 
 
-def test_the_image_after_a_zoomed_one_drifts_at_the_pace_set_while_zoomed():
+def test_the_image_after_a_zoomed_one_drifts():
     mpv, control = zoomed_on_an_image(pace_s=4.0, now=100.0)
-    control.set_pace(6.0)
 
     control.load(Path("made-up-next.png"))
-    control.now = 103.0
+    control.now = 102.0
     control.push_still()
 
     assert mpv.video_zoom == pytest.approx(math.log2(CREEP.at(0.5).zoom))
+
+
+def test_a_video_starting_over_keeps_its_zoom():
+    mpv = FakeMpv()
+    control = Control(mpv, viewport=WIDE)
+    control.load(Path("made-up-scene.mp4"))
+    mpv.report("current-tracks/video/image", False)
+    mpv.report("video-out-params", {"dw": 1920, "dh": 1080})
+    control.zoom_at(960, 540, steps=1)
+    control.push_still()
+    zoomed = placing(mpv)
+
+    control.load(Path("made-up-scene.mp4"))
+    control.push_still()
+
+    assert placing(mpv) == zoomed
