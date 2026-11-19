@@ -152,3 +152,29 @@ def test_every_id_it_draws_with_is_under_the_huds():
             HUD_OVERLAY_ID, CORNER_PLUS_OVERLAY_ID)
 
     assert max(BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID + 3, LOADING_OVERLAY_ID) < min(huds)
+
+
+def test_a_loading_notice_that_has_not_changed_is_not_drawn_or_put_up_again(monkeypatch):
+    drawn: list[str] = []
+    real = module.loading_message_bgra
+    monkeypatch.setattr(module, "loading_message_bgra",
+                        lambda text: drawn.append(text) or real(text))
+    engine = SpyEngine()
+    overlay = FlickOverlay(engine)
+
+    for _pass in range(3):
+        overlay.show(FlickFrame(frame=None, loading="Loading alpha.mp4"), viewport=(640, 480))
+
+    assert drawn == ["Loading alpha.mp4"]
+    assert engine.put_up == [BACKDROP_OVERLAY_ID, LOADING_OVERLAY_ID]
+
+
+def test_a_loading_notice_follows_the_window_to_its_new_right_edge():
+    engine = FakeEngine()
+    overlay = FlickOverlay(engine)
+    overlay.show(FlickFrame(frame=None, loading="Loading alpha.mp4"), viewport=(640, 480))
+    x_before, _y, message = engine.overlays[LOADING_OVERLAY_ID]
+
+    overlay.show(FlickFrame(frame=None, loading="Loading alpha.mp4"), viewport=(800, 480))
+
+    assert engine.overlays[LOADING_OVERLAY_ID][0] == x_before + 160
