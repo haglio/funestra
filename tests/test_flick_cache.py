@@ -55,6 +55,35 @@ class TestDecodeRequestState:
         assert state.load_error is None
 
 
+    def test_frames_coming_in_are_answered_for_the_flick_being_decoded_and_no_other(self):
+        state, frames = DecodeRequestState(), ["first"]
+        request_id = state.begin(Path("flick.mp4"))
+
+        state.record_first_frame(frames, request_id)
+
+        assert state.frames_coming_in_for(Path("flick.mp4")) is frames
+        assert state.frames_coming_in_for(Path("other.mp4")) is None
+
+    def test_a_first_frame_from_a_decode_since_replaced_is_not_answered_for_the_new_flick(self):
+        state = DecodeRequestState()
+        replaced = state.begin(Path("old.mp4"))
+        state.begin(Path("new.mp4"))
+
+        state.record_first_frame(["old first"], replaced)
+
+        assert state.frames_coming_in_for(Path("new.mp4")) is None
+
+    def test_a_finished_decode_has_no_frames_still_coming_in(self):
+        state = DecodeRequestState()
+        request_id = state.begin(Path("flick.mp4"))
+        state.record_first_frame(["first"], request_id)
+        state.record_success(Path("flick.mp4"), ["first"], request_id)
+
+        state.take_completed_result()
+
+        assert state.frames_coming_in_for(Path("flick.mp4")) is None
+
+
 class TestFlickCacheStore:
     def test_flick_entry_for_marks_path_recently_used(self):
         store = FlickCacheStore(limit=2)

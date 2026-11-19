@@ -36,6 +36,7 @@ class DecodeRequestState:
     loaded_frames: list | None = None
     load_error: str | None = None
     request_id_done: int | None = None
+    coming_in: list | None = None
 
     def begin(self, path: Path) -> int:
         self.request_id += 1
@@ -45,10 +46,18 @@ class DecodeRequestState:
         self.loaded_frames = None
         self.load_error = None
         self.request_id_done = None
+        self.coming_in = None
         return self.request_id
 
     def is_decoding(self, path: Path) -> bool:
         return self.loading and self.decoding_path == path
+
+    def record_first_frame(self, frames: list, request_id: int) -> None:
+        if request_id == self.request_id:
+            self.coming_in = frames
+
+    def frames_coming_in_for(self, path: Path) -> list | None:
+        return self.coming_in if self.is_decoding(path) else None
 
     def record_success(self, path: Path, frames: list, request_id: int) -> None:
         self.loaded_flick_path = path
@@ -80,6 +89,7 @@ class DecodeRequestState:
         self.request_id_done = None
         self.loading = False
         self.decoding_path = None
+        self.coming_in = None
         return path, frames, error
 
 

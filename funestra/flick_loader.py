@@ -33,6 +33,12 @@ class FlickLoadController:
                 path, protected_paths=self._flick_on_screen()):
             self.logger.info("Adopted the prefetched %s", path.name)
             return True
+        coming_in = (self.load_state.frames_coming_in_for(path)
+                     or self.prefetch_state.frames_coming_in_for(path))
+        if coming_in:
+            self.logger.info("Showing %s while the rest of it is decoded", path.name)
+            self.flick_store.cache_flick(path, coming_in, protected_paths=self._flick_on_screen())
+            return True
         return False
 
     def request_flick_load(self, path: Path) -> None:
@@ -60,15 +66,23 @@ class FlickLoadController:
         )
 
     def adopt_loaded_flick_if_ready(self) -> None:
+        self._put_up_the_flick_on_screen_at_its_first_frame()
         result = self.load_state.take_completed_result()
         if result is None:
             return
 
         path, frames, err = result
-        if err:
+        if err or path in self.flick_store.flick_cache:
             return
 
         self._adopt(path, frames)
+
+    def _put_up_the_flick_on_screen_at_its_first_frame(self) -> None:
+        path = self.current_flick_path_getter()
+        if path is None or path in self.flick_store.flick_cache:
+            return
+        if self.frames_ready(path):
+            self.on_active_flick_loaded()
 
     def adopt_prefetch_if_ready(self) -> None:
         result = self.prefetch_state.take_completed_result()
@@ -80,6 +94,8 @@ class FlickLoadController:
             return
 
         self.logger.info("Prefetch ready: %s (%d frames)", path.name, len(frames) if frames else 0)
+        if path in self.flick_store.flick_cache:
+            return
         if self.current_flick_path_getter() == path:
             self._adopt(path, frames)
             return
@@ -102,7 +118,11 @@ class FlickLoadController:
     def _decode_thread_fn(self, path: Path, request_id: int, state, log_error) -> None:
         began_for_the_log_line_alone = time.monotonic()
         try:
-            frames = self.decode_flick(path)
+            frames: list = []
+            for frame in self.decode_flick(path):
+                frames.append(frame)
+                if len(frames) == 1:
+                    state.record_first_frame(frames, request_id)
             elapsed = time.monotonic() - began_for_the_log_line_alone
             self.logger.info("Decoded %s: %d frames in %.2fs", path.name, len(frames), elapsed)
             state.record_success(path, frames, request_id)
