@@ -3,6 +3,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+from funestra_fakes import stamped_long_ago
+
 from funestra import playlist_follower
 from funestra.playlist import PlaylistItem, write_playlist
 from funestra.playlist_follower import PlaylistFollower
@@ -130,6 +132,7 @@ class TestAListThatHasNotChanged:
             self, tmp_path, monkeypatch):
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, *(f"video {n}.mp4" for n in range(5)))
+        stamped_long_ago(playlist)
         follower = PlaylistFollower(playlist, take=lambda items: None)
         opened: list[Path] = []
         parsed: list[str] = []

@@ -9,7 +9,7 @@ from typing import NamedTuple, Protocol
 from app_support.file_channel import write_whole
 
 from .off_the_loop import at_once
-from .replaced_file import ReplacedFile
+from .written_file import WrittenFile
 
 logger = logging.getLogger(__name__)
 
@@ -57,16 +57,19 @@ def read_radio(path: Path) -> list[list[Path]]:
 
 class RadioFile:
     def __init__(self, path: Path) -> None:
-        self._file = ReplacedFile(path)
-        self._file.replaced()
-        if not self._file.holds_something:
-            self._file.was_read()
+        self._file = WrittenFile(path)
+        self._handed_on: list[list[Path]] | None = None
 
     def changed(self) -> list[list[Path]] | None:
-        if not self._file.replaced():
+        if not self._file.may_have_been_written():
             return None
+        there = self._file.holds_something
+        stations = read_radio(self._file.path) if there else []
         self._file.was_read()
-        return read_radio(self._file.path) if self._file.holds_something else []
+        if stations == (self._handed_on or []) and (there or self._handed_on is None):
+            return None
+        self._handed_on = stations
+        return stations
 
 
 class _Opened(NamedTuple):

@@ -18,7 +18,6 @@ from .main_hud import ModeHud
 from .modes import MainMode, Osr2State
 from .name_copy import COPY_NAME, copy_while_the_funestra_plays_on
 from .osr2_visualizer import DriveHud, DrivePublisher, published_here, read_drive
-from .replaced_file import ReplacedFile
 from .satellite_hud import (
     MARGIN,
     MINUS_INSET,
@@ -31,6 +30,7 @@ from .satellite_hud import (
 )
 from .satellite_hud_clicks import HudClicks, button_tooltip
 from .satellite_hud_paint import DrawnWith, HudRenderer
+from .written_file import WrittenFile
 
 HUD_OVERLAY_ID = 10
 
@@ -84,13 +84,13 @@ _ON_NO_CONTROL = _Hover("", "", None, None)
 class PublishedHud:
     def __init__(self, hud_file: Path, command_file: Path,
                  ask: Callable[[Path | None, str], None] = ask) -> None:
-        self._hud_file = ReplacedFile(hud_file)
+        self._hud_file = WrittenFile(hud_file)
         self._command_file = Path(command_file)
         self._ask = ask
         self._published = ""
 
     def next(self, shown: HudModel | None) -> tuple[HudModel | None, bool]:
-        if not self._hud_file.replaced():
+        if not self._hud_file.may_have_been_written():
             return shown, False
         try:
             text = self._hud_file.path.read_text(encoding="utf-8")
@@ -164,7 +164,7 @@ class HudOverlay:
         self._source = source
         self._step_here = step_here
         self._clipboard = clipboard
-        self._drive_file = None if drive.file is None else ReplacedFile(drive.file)
+        self._drive_file = None if drive.file is None else WrittenFile(drive.file)
         self._drive_gate = drive.gate
         self._visualizer = drive.visualizer
         self._published_drive: DriveHud | None = None
@@ -421,7 +421,7 @@ class HudOverlay:
         if here is not None:
             self._published_drive = here
             return
-        if not self._drive_file.replaced():
+        if not self._drive_file.may_have_been_written():
             return
         drive = read_drive(self._drive_file.path)
         if drive is not None:

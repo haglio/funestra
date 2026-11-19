@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import os
+import time
+from collections.abc import Callable
 from pathlib import Path
 
 from app_support.file_channel import read_whole
@@ -8,13 +10,23 @@ from app_support.file_channel import read_whole
 _Written = tuple[int, int, int]
 _NEVER_READ = (-1, -1, -1)
 
+# Windows stamps a file from a clock that can stand still for 15.6 ms, so two writes in place, of
+# one length, inside one tick of it leave nothing os.stat can tell apart. A file stamped this
+# lately is taken as written again however it reads.
+STAMPED_TOO_LATELY_TO_TELL_NS = 200_000_000
 
-class ReplacedFile:
-    # The family's channel files are replaced, never rewritten in place, so each write is a new
-    # file with an identity of its own, though Windows can stamp two writes with one time.
 
-    def __init__(self, path: Path) -> None:
+def stamped_too_lately_to_tell(mtime_ns: int, now_ns: int) -> bool:
+    return abs(now_ns - mtime_ns) <= STAMPED_TOO_LATELY_TO_TELL_NS
+
+
+class WrittenFile:
+    # The family's channel files are replaced, so each write is a new file with an identity of
+    # its own, which tells two writes apart though Windows stamped both with one time.
+
+    def __init__(self, path: Path, *, now_ns: Callable[[], int] = time.time_ns) -> None:
         self._path = Path(path)
+        self._now_ns = now_ns
         self._read_as: _Written | None = _NEVER_READ
         self._found: _Written | None = None
 
@@ -22,7 +34,7 @@ class ReplacedFile:
     def path(self) -> Path:
         return self._path
 
-    def replaced(self) -> bool:
+    def may_have_been_written(self) -> bool:
         try:
             found = os.stat(self._path)
         except OSError:
@@ -36,16 +48,18 @@ class ReplacedFile:
         return self._found is not None and self._found[1] > 0
 
     def was_read(self) -> None:
-        self._read_as = self._found
+        lately = self._found is not None and stamped_too_lately_to_tell(
+            self._found[2], self._now_ns())
+        self._read_as = _NEVER_READ if lately else self._found
 
 
 class PausedFlag:
-    def __init__(self, path: Path) -> None:
-        self._file = ReplacedFile(path)
+    def __init__(self, path: Path, *, now_ns: Callable[[], int] = time.time_ns) -> None:
+        self._file = WrittenFile(path, now_ns=now_ns)
         self._paused = False
 
     def read(self) -> bool:
-        if not self._file.replaced():
+        if not self._file.may_have_been_written():
             return self._paused
         if not self._file.holds_something:
             self._file.was_read()

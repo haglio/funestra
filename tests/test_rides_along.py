@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
+
+from funestra_fakes import stamped_long_ago
 
 from funestra import rides_along
 from funestra.playlist import PlaylistItem
@@ -71,6 +74,7 @@ def _reads(monkeypatch) -> list[Path]:
 
 def test_a_funscript_read_under_one_list_is_not_read_again_under_the_next(tmp_path, monkeypatch):
     script = _script(tmp_path, "one.funscript", 80)
+    stamped_long_ago(script)
     before = RidesAlong({ONE: script})
     read_before = before.funscript(ONE)
     reads = _reads(monkeypatch)
@@ -84,6 +88,7 @@ def test_a_funscript_read_under_one_list_is_not_read_again_under_the_next(tmp_pa
 def test_a_funscript_written_again_since_it_was_read_is_read_again_under_the_next_list(
         tmp_path, monkeypatch):
     script = _script(tmp_path, "one.funscript", 80)
+    stamped_long_ago(script)
     before = RidesAlong({ONE: script})
     before.funscript(ONE)
     _script(tmp_path, "one.funscript", 55)
@@ -116,3 +121,19 @@ def test_with_nobody_to_hand_it_to_a_funscript_coming_up_is_read_where_it_is_ask
 
     assert rides.funscript_once_read(TWO).actions == [(0, 0), (1000, 60)]
     assert rides.funscript_once_read(ONE) is None
+
+
+def test_a_funscript_read_while_its_stamp_was_too_new_to_tell_writes_apart_is_read_again(
+        tmp_path, monkeypatch):
+    script = _script(tmp_path, "one.funscript", 80)
+    one_stamp = script.stat()
+    before = RidesAlong({ONE: script})
+    before.funscript(ONE)
+    _script(tmp_path, "one.funscript", 55)
+    os.utime(script, ns=(one_stamp.st_atime_ns, one_stamp.st_mtime_ns))
+    reads = _reads(monkeypatch)
+
+    after = RidesAlong({ONE: script}, read_before=before)
+
+    assert after.funscript(ONE).actions == [(0, 0), (1000, 55)]
+    assert reads == [script]
