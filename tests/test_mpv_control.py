@@ -1291,3 +1291,107 @@ def test_an_image_says_nothing_of_a_decoder(caplog):
     mpv.report("video-dec-params", {"w": 1920, "h": 1080, "dw": 1920, "dh": 1080})
 
     assert _decoder_lines(caplog) == []
+
+
+def test_a_wheel_notch_zooms_in_keeping_the_point_under_the_pointer_where_it_was():
+    mpv = FakeMpv()
+    control = Control(mpv, viewport=WIDE)
+    show_an_image(control, mpv)
+
+    control.zoom_at(480, 270, steps=1)
+    control.push_still()
+
+    assert mpv.video_zoom == pytest.approx(math.log2(1.25))
+    assert (mpv.video_align_x, mpv.video_align_y) == pytest.approx((-0.5, -0.5))
+
+
+def placing(mpv: FakeMpv) -> tuple[float, float, float]:
+    return mpv.video_zoom, mpv.video_align_x, mpv.video_align_y
+
+
+def zoomed_on_an_image(pace_s: float = 0.0, **control) -> tuple[FakeMpv, Control]:
+    mpv = FakeMpv()
+    control = Control(mpv, viewport=WIDE, **control)
+    control.set_pace(pace_s)
+    show_an_image(control, mpv)
+    control.zoom_at(960, 540, steps=1)
+    control.push_still()
+    return mpv, control
+
+
+def test_the_wheel_never_zooms_out_past_the_whole_item():
+    mpv, control = zoomed_on_an_image()
+
+    control.zoom_at(100, 100, steps=-3)
+    control.push_still()
+
+    assert placing(mpv) == (0.0, 0.0, 0.0)
+
+
+def test_a_drag_moves_the_zoomed_item_the_way_the_mouse_went():
+    mpv, control = zoomed_on_an_image()
+
+    control.pan_by(100, 0)
+    control.push_still()
+
+    assert placing(mpv) == pytest.approx((math.log2(1.25), -5 / 12, 0.0))
+
+
+def test_a_drag_stops_at_the_items_edge():
+    mpv, control = zoomed_on_an_image()
+
+    control.pan_by(1000, -1000)
+    control.push_still()
+
+    assert placing(mpv) == pytest.approx((math.log2(1.25), -1.0, 1.0))
+
+
+def test_a_drag_at_normal_size_moves_nothing():
+    mpv = FakeMpv()
+    control = Control(mpv, viewport=WIDE)
+    show_an_image(control, mpv)
+
+    control.pan_by(100, 100)
+    control.push_still()
+
+    assert placing(mpv) == (0.0, 0.0, 0.0)
+
+
+def test_the_next_item_comes_on_at_normal_size():
+    mpv, control = zoomed_on_an_image()
+
+    control.load(Path("made-up-next.mp4"))
+    mpv.report("current-tracks/video/image", False)
+    control.push_still()
+
+    assert placing(mpv) == (0.0, 0.0, 0.0)
+
+
+def test_zooming_an_image_stops_its_drift_where_the_zoom_left_it():
+    mpv, control = zoomed_on_an_image(pace_s=4.0, now=100.0)
+    zoomed = placing(mpv)
+
+    control.now = 102.0
+    control.push_still()
+
+    assert placing(mpv) == zoomed
+
+
+def test_a_zoomed_image_waits_for_him_rather_than_moving_on():
+    mpv, control = an_image_with_the_next_staged(pace_s=4.0, viewport=WIDE)
+    control.zoom_at(960, 540, steps=1)
+
+    pushed_at(control, 105.0)
+
+    assert moved_on(mpv) == 0
+
+
+def test_the_image_after_a_zoomed_one_drifts_at_the_pace_set_while_zoomed():
+    mpv, control = zoomed_on_an_image(pace_s=4.0, now=100.0)
+    control.set_pace(6.0)
+
+    control.load(Path("made-up-next.png"))
+    control.now = 103.0
+    control.push_still()
+
+    assert mpv.video_zoom == pytest.approx(math.log2(CREEP.at(0.5).zoom))

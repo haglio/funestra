@@ -1842,3 +1842,22 @@ def test_a_pass_that_runs_past_the_hosts_budget_is_written_down_with_its_slowest
             if record.name == "funestra.frame_record"] == [
         "Late pass: 12.0 ms of a 11.0 ms budget, longest step the still's pan "
         "(12.0 ms); 1 late pass(es) since the last line"]
+
+
+class TestZoomingTheItem:
+    def test_the_wheel_beside_the_hud_zooms_the_item_at_the_pointer(self, tmp_path):
+        funestra, engine = _wearing_a_hud(tmp_path)
+
+        funestra.wheel(2, 2, 1, viewport=WINDOW)
+
+        assert engine.zooms == [(2, 2, 1)]
+
+    def test_a_drag_with_the_wheel_button_down_moves_the_zoomed_item(self, tmp_path):
+        funestra, engine = _wearing_a_hud(tmp_path)
+
+        funestra.wheel_press(2, 2, viewport=WINDOW)
+        funestra.motion(12, 7, held=False, viewport=WINDOW)
+        funestra.wheel_release()
+        funestra.motion(40, 40, held=False, viewport=WINDOW)
+
+        assert engine.pans == [(10, 5)]

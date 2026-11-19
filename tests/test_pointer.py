@@ -38,11 +38,16 @@ class _StubHud:
     def release(self) -> None:
         self.holding = False
 
+    def covers(self, x: int, y: int) -> bool:
+        return self._takes
+
 
 def _pointer(*, hud: bool = True, hud_takes: bool = True):
     stub = _StubHud(takes=hud_takes) if hud else None
-    asked: list[str] = []
-    return Pointer(hud=stub, item=lambda: asked.append("pause")), stub, asked
+    asked: list = []
+    return Pointer(hud=stub, item=lambda: asked.append("pause"),
+                   zoom=lambda *zoom: asked.append(("zoom", *zoom)),
+                   pan=lambda *pan: asked.append(("pan", *pan))), stub, asked
 
 
 class TestTheItem:
@@ -80,8 +85,8 @@ class TestTheItem:
 
         pointer.press(*ON_THE_VIDEO)
 
-    def test_the_wheel_is_the_huds_alone(self):
-        pointer, hud, asked = _pointer(hud_takes=False)
+    def test_the_wheel_the_hud_takes_zooms_nothing(self):
+        pointer, hud, asked = _pointer()
 
         pointer.wheel(*ON_THE_VIDEO, 3)
 
@@ -95,6 +100,56 @@ class TestTheItem:
 
         assert hud.right_presses == [ON_THE_VIDEO]
         assert asked == []
+
+    def test_the_wheel_off_the_hud_zooms_at_the_pointer(self):
+        pointer, _hud, asked = _pointer(hud_takes=False)
+
+        pointer.wheel(*ON_THE_VIDEO, -2)
+
+        assert asked == [("zoom", *ON_THE_VIDEO, -2)]
+
+    def test_a_window_with_no_hud_zooms_from_the_whole_item(self):
+        pointer, _hud, asked = _pointer(hud=False)
+
+        pointer.wheel(*LOWER_EDGE, 1)
+
+        assert asked == [("zoom", *LOWER_EDGE, 1)]
+
+
+class TestTheWheelButton:
+    def test_a_drag_with_the_wheel_button_down_moves_the_item_as_far_as_the_mouse_went(self):
+        pointer, _hud, asked = _pointer(hud_takes=False)
+
+        pointer.wheel_press(300, 200)
+        pointer.motion(310, 195, held=False)
+        pointer.motion(330, 190, held=False)
+
+        assert asked == [("pan", 10, -5), ("pan", 20, -5)]
+
+    def test_the_wheel_button_coming_up_ends_the_drag(self):
+        pointer, _hud, asked = _pointer(hud_takes=False)
+        pointer.wheel_press(300, 200)
+
+        pointer.wheel_release()
+        pointer.motion(310, 200, held=False)
+
+        assert asked == []
+
+    def test_the_wheel_button_pressed_on_the_hud_moves_nothing(self):
+        pointer, _hud, asked = _pointer()
+
+        pointer.wheel_press(300, 200)
+        pointer.motion(310, 200, held=False)
+
+        assert asked == []
+
+    def test_a_window_with_no_hud_drags_from_the_whole_item(self):
+        pointer, _hud, asked = _pointer(hud=False)
+
+        pointer.wheel_press(300, 200)
+        pointer.motion(300, 230, held=False)
+
+        assert asked == [("pan", 0, 30)]
 
 
 class TestDragging:
@@ -133,6 +188,5 @@ class TestDragging:
         pointer, _hud, asked = _pointer(hud=False)
 
         pointer.motion(*LOWER_EDGE, held=True)
-        pointer.wheel(*LOWER_EDGE, 1)
 
         assert asked == []

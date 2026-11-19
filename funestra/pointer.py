@@ -6,16 +6,21 @@ OMNIPAUSE_TOGGLE = "omnipause_toggle"
 NOWHERE = (-1, -1)
 
 
-def _nothing() -> None:
+def _nothing(*_where: int) -> None:
     pass
 
 
 class Pointer:
     def __init__(self, *, hud=None, corners=None,
-                 item: Callable[[], None] = _nothing) -> None:
+                 item: Callable[[], None] = _nothing,
+                 zoom: Callable[[int, int, int], None] = _nothing,
+                 pan: Callable[[int, int], None] = _nothing) -> None:
         self._hud = hud
         self._corners = corners
         self._item = item
+        self._zoom = zoom
+        self._pan = pan
+        self._dragging_from: tuple[int, int] | None = None
 
     def press(self, mx: int, my: int) -> None:
         if self._hud is not None and self._hud.press(mx, my):
@@ -25,8 +30,15 @@ class Pointer:
         self._item()
 
     def wheel(self, mx: int, my: int, steps: int) -> None:
-        if self._hud is not None:
-            self._hud.wheel(mx, my, steps)
+        if self._hud is None or not self._hud.wheel(mx, my, steps):
+            self._zoom(mx, my, steps)
+
+    def wheel_press(self, mx: int, my: int) -> None:
+        if self._hud is None or not self._hud.covers(mx, my):
+            self._dragging_from = (mx, my)
+
+    def wheel_release(self) -> None:
+        self._dragging_from = None
 
     def right_press(self, mx: int, my: int) -> None:
         if self._hud is not None:
@@ -43,6 +55,10 @@ class Pointer:
             self._corners.leave()
 
     def motion(self, mx: int, my: int, *, held: bool) -> None:
+        if self._dragging_from is not None:
+            fx, fy = self._dragging_from
+            self._dragging_from = (mx, my)
+            self._pan(mx - fx, my - fy)
         if self._hud is None:
             return
         self._hud.motion(mx, my)

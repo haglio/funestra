@@ -104,12 +104,12 @@ class Fit:
                     _align_within((y0 + y1) / 2, room_y, close, view.zoom, view.align_y))
 
     def _room(self) -> tuple[float, float]:
-        fitted = self._fitted()
+        fitted = self.fitted()
         if fitted is None:
             return 1.0, 1.0
         return self.viewport[0] / fitted[0], self.viewport[1] / fitted[1]
 
-    def _fitted(self) -> tuple[float, float] | None:
+    def fitted(self) -> tuple[float, float] | None:
         (viewport_w, viewport_h), (shown_w, shown_h) = self.viewport, self.shown
         if not (viewport_w and viewport_h and shown_w and shown_h):
             return None
