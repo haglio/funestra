@@ -72,10 +72,17 @@ def _points_in(column: str) -> tuple:
 
 
 def read_playlist(path: Path) -> list[PlaylistItem]:
+    return parse_playlist(playlist_text(path))
+
+
+def playlist_text(path: Path) -> str:
     try:
-        text = path.read_text(encoding="utf-8")
+        return path.read_text(encoding="utf-8")
     except OSError:
-        return []
+        return ""
+
+
+def parse_playlist(text: str) -> list[PlaylistItem]:
     items: list[PlaylistItem] = []
     for raw in text.splitlines():
         line = raw.strip()

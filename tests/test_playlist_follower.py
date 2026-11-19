@@ -73,9 +73,9 @@ class TestAReadThatLandsInsideTheWrite:
         taken: list[list[PlaylistItem]] = []
         follower = PlaylistFollower(playlist, take=taken.append)
         _write(playlist, "a show.png")
-        real = playlist_follower.read_playlist
-        answers = [[], []]
-        monkeypatch.setattr(playlist_follower, "read_playlist",
+        real = playlist_follower.playlist_text
+        answers = ["", ""]
+        monkeypatch.setattr(playlist_follower, "playlist_text",
                             lambda path: answers.pop(0) if answers else real(path))
 
         follower.tick()
@@ -121,3 +121,20 @@ class TestTheReloadVerb:
         follower.read_now()
 
         assert _names(taken) == [["a show.png"]]
+
+
+class TestAListThatHasNotChanged:
+    def test_is_parsed_once_however_many_frames_follow_since_a_frame_comes_sixty_times_a_second(
+            self, tmp_path, monkeypatch):
+        playlist = tmp_path / "landscape.tsv"
+        _write(playlist, *(f"video {n}.mp4" for n in range(5)))
+        parsed: list[str] = []
+        real = playlist_follower.parse_playlist
+        monkeypatch.setattr(playlist_follower, "parse_playlist",
+                            lambda text: parsed.append(text) or real(text))
+        follower = PlaylistFollower(playlist, take=lambda items: None)
+
+        for _ in range(60):
+            follower.tick()
+
+        assert len(parsed) == 1
