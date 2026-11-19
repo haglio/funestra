@@ -9,7 +9,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from funestra.funestra_priority import D3DKMT_SCHEDULINGPRIORITYCLASS_HIGH, ahead_on_the_processor
+from funestra.funestra_priority import (
+    D3DKMT_SCHEDULINGPRIORITYCLASS_HIGH,
+    D3DKMT_SCHEDULINGPRIORITYCLASS_REALTIME,
+    ahead_on_the_processor,
+)
 
 THIS_PROCESS = -1
 ERROR_ACCESS_DENIED = 5
@@ -24,16 +28,28 @@ def _kernel32(*, found: int = subprocess.NORMAL_PRIORITY_CLASS, allowed: bool = 
     return kernel32
 
 
+class _Function:
+    def __init__(self, call) -> None:
+        self._call = call
+        self.argtypes: object = None
+        self.restype: object = None
+
+    def __call__(self, *args):
+        return self._call(*args)
+
+
 class _Gdi32:
     def __init__(self, *, found: int = D3DKMT_SCHEDULINGPRIORITYCLASS_NORMAL, status: int = 0) -> None:
         self._found, self._status = found, status
         self.classes_set: list[int] = []
+        self.D3DKMTGetProcessSchedulingPriorityClass = _Function(self._read)
+        self.D3DKMTSetProcessSchedulingPriorityClass = _Function(self._set)
 
-    def D3DKMTGetProcessSchedulingPriorityClass(self, process, found) -> int:
+    def _read(self, process, found) -> int:
         found._obj.value = self._found
         return 0
 
-    def D3DKMTSetProcessSchedulingPriorityClass(self, process, priority_class: int) -> int:
+    def _set(self, process, priority_class: int) -> int:
         self.classes_set.append(priority_class)
         return self._status
 
@@ -52,9 +68,9 @@ class _LiveSession:
             self.held = False
 
 
-def _ahead(kernel32=None, last_error=None, *, gdi32=None, live_session=None):
+def _ahead(kernel32=None, last_error=None, *, gdi32=None, live_session=None, **chosen):
     return ahead_on_the_processor(kernel32 or _kernel32(), last_error, gdi32=gdi32 or _Gdi32(),
-                                  live_session=live_session or _LiveSession())
+                                  live_session=live_session or _LiveSession(), **chosen)
 
 
 def _priority_set_last(kernel32) -> tuple[int, int]:
@@ -123,6 +139,15 @@ def test_the_funestra_draws_ahead_of_background_work_on_the_graphics_card_and_pu
 
     assert while_playing == [D3DKMT_SCHEDULINGPRIORITYCLASS_HIGH]
     assert gdi32.classes_set == [D3DKMT_SCHEDULINGPRIORITYCLASS_HIGH, D3DKMT_SCHEDULINGPRIORITYCLASS_NORMAL]
+
+
+def test_the_headset_can_ask_to_go_first_on_the_graphics_card():
+    gdi32 = _Gdi32()
+
+    with _ahead(gdi32=gdi32, graphics_card_class=D3DKMT_SCHEDULINGPRIORITYCLASS_REALTIME):
+        while_playing = list(gdi32.classes_set)
+
+    assert while_playing == [D3DKMT_SCHEDULINGPRIORITYCLASS_REALTIME]
 
 
 def test_a_graphics_card_refusal_is_said_and_nothing_is_put_back(caplog):

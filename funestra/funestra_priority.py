@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 _ABOVE_NORMAL_PRIORITY_CLASS = 0x8000
 D3DKMT_SCHEDULINGPRIORITYCLASS_HIGH = 4
+D3DKMT_SCHEDULINGPRIORITYCLASS_REALTIME = 5
 _THIS_PROCESS = ctypes.wintypes.HANDLE(-1)
 
 
@@ -21,7 +22,10 @@ def _kernel32():
 
 
 def _gdi32():
-    gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
+    return ctypes.WinDLL("gdi32", use_last_error=True)
+
+
+def _declared(gdi32):
     gdi32.D3DKMTGetProcessSchedulingPriorityClass.argtypes = [
         ctypes.wintypes.HANDLE, ctypes.POINTER(ctypes.c_int)]
     gdi32.D3DKMTGetProcessSchedulingPriorityClass.restype = ctypes.c_long
@@ -34,11 +38,12 @@ def _gdi32():
 def ahead_on_the_processor(kernel32=None,
                            last_error: Callable[[], int] | None = None, *,
                            gdi32=None,
+                           graphics_card_class: int = D3DKMT_SCHEDULINGPRIORITYCLASS_HIGH,
                            live_session: Callable[[], AbstractContextManager[None]] = holding_a_live_session,
                            ) -> Iterator[None]:
     with (live_session(),
           _ahead_of_background_processor_work(_kernel32() if kernel32 is None else kernel32, last_error),
-          _ahead_on_the_graphics_card(_gdi32() if gdi32 is None else gdi32)):
+          _ahead_on_the_graphics_card(_declared(_gdi32() if gdi32 is None else gdi32), graphics_card_class)):
         yield
 
 
@@ -58,11 +63,11 @@ def _ahead_of_background_processor_work(kernel32, last_error: Callable[[], int] 
 
 
 @contextmanager
-def _ahead_on_the_graphics_card(gdi32) -> Iterator[None]:
+def _ahead_on_the_graphics_card(gdi32, graphics_card_class: int) -> Iterator[None]:
     found = ctypes.c_int()
     gdi32.D3DKMTGetProcessSchedulingPriorityClass(_THIS_PROCESS, ctypes.byref(found))
     status = gdi32.D3DKMTSetProcessSchedulingPriorityClass(
-        _THIS_PROCESS, D3DKMT_SCHEDULINGPRIORITYCLASS_HIGH)
+        _THIS_PROCESS, graphics_card_class)
     if status:
         logger.warning(
             "Windows would not put this Funestra ahead of background work on the graphics card "
