@@ -108,3 +108,33 @@ def test_mpvs_counters_are_asked_at_most_once_a_second(lines):
         _pass(record, clock, paint=5.0)
 
     assert len(asked) == 1
+
+
+def test_a_record_asked_for_every_step_names_each_step_of_the_late_pass_and_what_it_uploaded(lines):
+    clock = Clock()
+    record = FrameRecord(11.1, every_step=True, clock=clock)
+
+    record.begin()
+    for step, ms in (("frames", 9.0), ("layers", 0.5), ("eyes", 4.0)):
+        clock.wind_ms(ms)
+        record.lap(step)
+    record.end(uploaded_bytes=8_300_000)
+
+    assert lines() == ["Late pass: 13.5 ms of a 11.1 ms budget, longest step frames (9.0 ms); "
+                       "1 late pass(es) since the last line; its steps frames 9.0, layers 0.5, "
+                       "eyes 4.0 ms, 8.3 MB uploaded"]
+
+
+def test_the_steps_named_are_those_of_the_worst_late_pass_since_the_last_line(lines):
+    clock = Clock()
+    record = FrameRecord(11.1, every_step=True, clock=clock)
+
+    _pass(record, clock, frames=20.0)
+    _pass(record, clock, frames=2.0, eyes=12.0)
+    _pass(record, clock, frames=1.0, eyes=30.0)
+    clock.wind_ms(QUIET_S * 1000.0)
+    _pass(record, clock, frames=1.0)
+
+    assert lines()[-1] == ("Late pass: 31.0 ms of a 11.1 ms budget, longest step eyes (30.0 ms); "
+                           "2 late pass(es) since the last line; its steps frames 1.0, eyes 30.0 ms, "
+                           "0.0 MB uploaded")
