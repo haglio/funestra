@@ -1367,14 +1367,13 @@ def test_the_next_item_comes_on_at_normal_size():
     assert placing(mpv) == (0.0, 0.0, 0.0)
 
 
-def test_zooming_an_image_stops_its_drift_where_the_zoom_left_it():
+def test_a_zoomed_image_goes_on_drifting_under_the_zoom():
     mpv, control = zoomed_on_an_image(pace_s=4.0, now=100.0)
-    zoomed = placing(mpv)
 
     control.now = 102.0
     control.push_still()
 
-    assert placing(mpv) == zoomed
+    assert mpv.video_zoom == pytest.approx(math.log2(CREEP.at(0.5).zoom * 1.25))
 
 
 def test_a_zoomed_image_still_moves_on_when_its_time_is_up():
