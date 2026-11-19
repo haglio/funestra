@@ -45,7 +45,7 @@ from .outside_buttons import OutsideButtons
 from .playback import Playback
 from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
-from .pointer import OMNIPAUSE_TOGGLE, Pointer
+from .pointer import OMNIPAUSE_TOGGLE, PRESSED_AGAIN, Pointer
 from .radio import Radio, RadioFile, radio_file_for
 from .runs_here import RunsHere, User
 from .satellite_hud import HudModel
@@ -141,6 +141,7 @@ class Funestra:
             self._hud, engine, post=self._where_the_hud_asks(channels))
         self._pointer = Pointer(hud=self._hud, corners=self._corners,
                                 item=self._press_on_the_item(channels),
+                                item_again=partial(ask, channels.dashboard_cmd, PRESSED_AGAIN),
                                 zoom=self._zoom_at, pan=engine.pan_by)
         self._runs_here = RunsHere(
             {name: make(self.playback) for name, make in (setup.users or {}).items()})
@@ -166,7 +167,8 @@ class Funestra:
 
     def status_fields(self) -> dict[str, str]:
         return {
-            **status_fields(self.playback, self._drive_gate.handoff_touch()),
+            **status_fields(self.playback, self._drive_gate.handoff_touch(),
+                            read_at=self._setup.clock()),
             **volume_fields(self._volume.hud),
             **self._runs_here.status_fields()}
 
@@ -326,6 +328,9 @@ class Funestra:
 
     def press(self, x: int, y: int, *, viewport: tuple[int, int]) -> None:
         self._pointer.press(x, y)
+
+    def press_again(self, x: int, y: int, *, viewport: tuple[int, int]) -> None:
+        self._pointer.press_again(x, y)
 
     def release(self) -> None:
         self._pointer.release()
