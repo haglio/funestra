@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from funestra.broker_feed import BrokerFeed
 from funestra.funscript import Funscript
 from funestra.playback import Playback
@@ -104,3 +106,11 @@ class WorkerTheTestRuns:
             done = work()
             if then is not None:
                 then(done)
+
+
+LONG_AGO_NS = 1_000_000_000 * 60 * 60 * 24 * 365 * 40
+
+
+def stamped_long_ago(*files) -> None:
+    for file in files:
+        os.utime(file, ns=(LONG_AGO_NS, LONG_AGO_NS))

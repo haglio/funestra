@@ -17,7 +17,7 @@ import numpy as np
 import pytest
 from app_support.osr2_slot import Osr2Slot
 from app_support.threading_utils import start_daemon_thread
-from funestra_fakes import WorkerTheTestRuns
+from funestra_fakes import WorkerTheTestRuns, stamped_long_ago
 from host_controls_fakes import AHost, middle_of
 
 from funestra.flick_overlay import (
@@ -1943,6 +1943,8 @@ class TestAPassWithNothingChanged:
         funestra, _engine, _kino = _main(tmp_path, osr2_visualizer=tmp_path / "visualizer.txt")
         (tmp_path / "paused.txt").write_text("0", encoding="utf-8")
         publish_drive(tmp_path / "drive.txt", DriveHud(speed=40))
+        stamped_long_ago(*(tmp_path / name for name in (
+            "paused.txt", "playlist.tsv", "playlist.radio.tsv", "main_hud.json", "drive.txt")))
         funestra.tick(viewport=WINDOW)
         opened = _Opened(monkeypatch)
 
@@ -1955,6 +1957,8 @@ class TestAPassWithNothingChanged:
 
     def test_opens_none_of_the_files_a_satellite_is_told_through(self, tmp_path, monkeypatch):
         funestra, _engine = _wearing_a_hud(tmp_path)
+        stamped_long_ago(tmp_path / "playlist.tsv", tmp_path / "portrait_hud.json")
+        funestra.tick(viewport=WINDOW)
         opened = _Opened(monkeypatch)
 
         for _ in range(5):
@@ -2022,3 +2026,18 @@ class TestWhatAFunestraHandsOffItsLoop:
         funestra.close()
 
         assert (worker.delivered, worker.closed) == (2, True)
+
+
+def test_a_flag_written_twice_in_place_inside_one_tick_of_the_file_clock_is_still_heard(tmp_path):
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
+                                 commands="")
+    flag = tmp_path / "paused.txt"
+    flag.write_text("0", encoding="utf-8")
+    one_stamp = flag.stat()
+    funestra.tick(viewport=WINDOW)
+
+    flag.write_text("1", encoding="utf-8")
+    os.utime(flag, ns=(one_stamp.st_atime_ns, one_stamp.st_mtime_ns))
+    funestra.tick(viewport=WINDOW)
+
+    assert engine.paused is True

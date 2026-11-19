@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import time
 from collections import OrderedDict
 from collections.abc import Callable, Iterable, Mapping
 from functools import partial
@@ -11,6 +12,7 @@ from .funscript import Funscript
 from .funscript import load as load_funscript
 from .off_the_loop import at_once
 from .playlist import PlaylistItem
+from .written_file import stamped_too_lately_to_tell
 
 _SCRIPTS_HELD = 8
 
@@ -31,7 +33,10 @@ def _written(path: Path) -> _Written:
 
 
 def _read(path: Path) -> _Read:
-    return _Read(_written(path), load_funscript(path))
+    written = _written(path)
+    if written is not None and stamped_too_lately_to_tell(written[2], time.time_ns()):
+        written = None
+    return _Read(written, load_funscript(path))
 
 
 def _by_path(items: Iterable[PlaylistItem], field: str) -> dict:
@@ -59,7 +64,7 @@ class RidesAlong:
 
     def read_and_not_written_since(self) -> list[tuple[Path, _Read]]:
         return [(path, read) for path, read in self._read.items()
-                if _written(path) == read.written]
+                if read.written is not None and _written(path) == read.written]
 
     @classmethod
     def of(cls, items: Iterable[PlaylistItem]) -> RidesAlong:

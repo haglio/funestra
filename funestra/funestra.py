@@ -47,7 +47,6 @@ from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, Pointer
 from .radio import Radio, RadioFile, radio_file_for
-from .replaced_file import PausedFlag
 from .runs_here import RunsHere, User
 from .satellite_hud import HudModel
 from .scrubber import Heatmap
@@ -57,6 +56,7 @@ from .tcode import UdpTCodeSink
 from .tcode_driver import FunscriptTCodeDriver
 from .volume import VolumeHud
 from .volume_control import told_to_the_host
+from .written_file import PausedFlag
 
 logger = logging.getLogger(__name__)
 
