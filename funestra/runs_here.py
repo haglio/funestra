@@ -23,6 +23,11 @@ class User(Protocol):
     def close(self) -> None: ...
 
 
+@runtime_checkable
+class WaitsToBeShown(Protocol):
+    def ready_to_show(self) -> bool: ...
+
+
 class _Nobody:
     def apply_command(self, command: str) -> bool:
         return False
@@ -53,6 +58,7 @@ class RunsHere:
     def __init__(self, users: Mapping[str, User] | None) -> None:
         self._users: dict[str, User] = dict(users) if users else {NOBODY: _Nobody()}
         self._showing = next(iter(self._users))
+        self._getting_ready: str | None = None
         self.front.set_showing(True)
 
     def __getitem__(self, name: str) -> User:
@@ -69,11 +75,22 @@ class RunsHere:
     def show(self, name: str) -> bool:
         if name not in self._users:
             return False
+        self._getting_ready = name
+        self._show_when_ready()
+        return True
+
+    def _show_when_ready(self) -> None:
+        name = self._getting_ready
+        if name is None:
+            return
+        user = self._users[name]
+        if isinstance(user, WaitsToBeShown) and not user.ready_to_show():
+            return
+        self._getting_ready = None
         if name != self._showing:
             self.front.set_showing(False)
             self._showing = name
             self.front.set_showing(True)
-        return True
 
     def apply(self, command: str) -> bool:
         return any(user.apply_command(command) for user in self._users.values())
@@ -84,6 +101,7 @@ class RunsHere:
     def tick(self) -> None:
         for user in self._users.values():
             user.tick()
+        self._show_when_ready()
 
     def status_fields(self) -> dict[str, str]:
         return {key: value for user in self._users.values()

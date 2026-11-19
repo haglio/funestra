@@ -121,3 +121,38 @@ def test_a_window_nothing_runs_on_has_a_nobody_that_answers_nothing():
     assert runs.front.own_frame() is None
     runs.tick()
     runs.close()
+
+
+class Readying(Runner):
+    def __init__(self, answers: str = "") -> None:
+        super().__init__(answers)
+        self.ready = False
+
+    def ready_to_show(self) -> bool:
+        return self.ready
+
+
+def test_one_not_ready_to_show_takes_the_window_on_the_pass_it_is_ready():
+    kino, genau = Runner("KINO_"), Readying("GENAU_")
+    runs = RunsHere({"kino": kino, "genau": genau})
+
+    assert runs.show("genau") is True
+    runs.tick()
+    held = (runs.showing, list(kino.showing), list(genau.showing))
+    genau.ready = True
+    runs.tick()
+
+    assert held == ("kino", [True], [])
+    assert (runs.showing, kino.showing, genau.showing) == ("genau", [True, False], [True])
+
+
+def test_showing_another_while_one_gets_ready_forgets_the_one_getting_ready():
+    kino, genau = Runner("KINO_"), Readying("GENAU_")
+    runs = RunsHere({"kino": kino, "genau": genau})
+
+    runs.show("genau")
+    runs.show("kino")
+    genau.ready = True
+    runs.tick()
+
+    assert (runs.showing, genau.showing) == ("kino", [])
