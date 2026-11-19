@@ -4,8 +4,10 @@ import logging
 import threading
 import time
 from collections.abc import Callable
+from pathlib import Path
 
 from .broker_feed import BrokerFeed, snapshot
+from .file_channel import publish_whole
 from .flick_advance import set_elapsed
 from .flick_under_the_device import FlickUnderTheDevice
 from .flicks_on_screen import FlicksOnScreen
@@ -25,7 +27,8 @@ class GenauRefreshController:
     def __init__(self, controls: GenauControls, flicks: FlicksOnScreen, *, broker: BrokerFeed,
                  files: GenauFiles, tuning: BeatTuning, tcode_sender=None,
                  logger: logging.Logger, now_source: Callable[[], float] = time.monotonic,
-                 start_thread: Callable | None = None):
+                 start_thread: Callable | None = None,
+                 publish: Callable[[Path, str], bool] = publish_whole):
         if controls.robot_hand is None:
             raise ValueError("Genau runs with the hand's state and no hand-less mode")
         self.controls = controls
@@ -50,6 +53,7 @@ class GenauRefreshController:
             beats_per_loop=tuning.beats_per_loop,
             tcode_sender=tcode_sender,
             drive_file=files.drive,
+            publish=publish,
         )
         if start_thread is not None:
             stop = controls.stop_event

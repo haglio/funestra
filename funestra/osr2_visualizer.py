@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 from typing import NamedTuple
@@ -368,16 +369,28 @@ def publish_drive(path: Path, hud: DriveHud) -> bool:
 PUBLISH_INTERVAL_S = SLIDE_QUANTUM_MS / 1000
 
 
+_published_here: dict[Path, DriveHud] = {}
+
+
+def published_here(path: Path) -> DriveHud | None:
+    return _published_here.get(Path(path))
+
+
 class DrivePublisher:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *,
+                 publish: Callable[[Path, str], bool] = publish_whole) -> None:
         self._path = Path(path)
+        self._publish = publish
         self._last: float | None = None
 
     def publish(self, hud: DriveHud, now: float) -> None:
         if self._last is not None and now - self._last < PUBLISH_INTERVAL_S:
             return
         self._last = now
-        publish_drive(self._path, hud)
+        if hud == _published_here.get(self._path):
+            return
+        if self._publish(self._path, drive_text(hud)):
+            _published_here[self._path] = hud
 
 
 def read_drive(path: Path) -> DriveHud | None:

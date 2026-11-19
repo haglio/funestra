@@ -40,9 +40,11 @@ class VolumeControl:
 
 
 class AppVolume:
-    def __init__(self, engine, *, dashboard_cmd_file: Path | None, live: bool) -> None:
+    def __init__(self, engine, *, dashboard_cmd_file: Path | None, live: bool,
+                 ask: Callable[[Path | None, str], None] = ask) -> None:
         self._engine = engine
         self._dashboard_cmd_file = dashboard_cmd_file
+        self._ask = ask
         self._hud = VolumeHud()
         if live:
             engine.set_muted(False)
@@ -58,11 +60,11 @@ class AppVolume:
 
     def toggle_mute(self) -> None:
         self._hud = replace(self._hud, muted=not self._hud.muted)
-        ask(self._dashboard_cmd_file, "audio_mute" if self._hud.muted else "audio_unmute")
+        self._ask(self._dashboard_cmd_file, "audio_mute" if self._hud.muted else "audio_unmute")
 
     def set_level(self, level: int) -> None:
         self._hud = VolumeHud(volume=level, muted=False)
-        ask(self._dashboard_cmd_file, f"audio_set_volume|{level}")
+        self._ask(self._dashboard_cmd_file, f"audio_set_volume|{level}")
 
 
 def told_to_the_host(move: Callable[..., None], volume, on_moved) -> Callable[..., None]:

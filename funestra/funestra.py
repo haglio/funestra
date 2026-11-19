@@ -11,7 +11,6 @@ from typing import Protocol, runtime_checkable
 from app_support.osr2_slot import Osr2Sender
 
 from .control_registry import look_up
-from .dashboard import ask
 from .drive_gate import DriveGate
 from .file_channel import consume_command_file
 from .flick_overlay import FlickFrame, FlickOverlay
@@ -40,6 +39,7 @@ from .loop_frames import IN_FRAME_OVERLAY_ID, OUT_FRAME_OVERLAY_ID, LoopFrames
 from .main_hud import ModeHud
 from .messages import MessageWriter
 from .mpv_engine import MpvEngine
+from .off_the_loop import BehindTheLoop
 from .osr2_visualizer import DrivePublisher
 from .outside_buttons import OutsideButtons
 from .playback import Playback
@@ -117,6 +117,7 @@ class Funestra:
         self._setup = setup
         self._channels = channels
         self._hud_surface = setup.hud_surface
+        self._off_the_loop = setup.off_the_loop
         self._stop = threading.Event()
         self._paused_before_the_scrub: bool | None = None
         self._paused_flag = None if channels.paused is None else PausedFlag(channels.paused)
@@ -147,10 +148,11 @@ class Funestra:
             volume=self._volume, show=self._runs_here.show,
             funscript_jumps=FunscriptJumps(self.playback, MessageWriter(channels.notice)))
         self._status = (
-            StatusWriter(channels.status, lambda _playback: self.status_fields())
+            StatusWriter(channels.status, lambda _playback: self.status_fields(),
+                         publish=self._off_the_loop.publish)
             if channels.status else None
         )
-        self._loop_frames = LoopFrames(engine)
+        self._loop_frames = LoopFrames(engine, behind=self._off_the_loop.do)
         self._short_of_memory = False
         self._frame_record = FrameRecord(
             setup.frame_ms, clock=setup.frame_clock,
@@ -201,7 +203,8 @@ class Funestra:
             )
         if channels.console is not None:
             return HudOverlay(
-                source=ConsoleHud(channels.console, channels.dashboard_cmd, self._top_block),
+                source=ConsoleHud(channels.console, channels.dashboard_cmd, self._top_block,
+                                  self._off_the_loop.ask),
                 drawn_on=DrawnOn(
                     drawn_on, minus_on_the_hud=self._hud_surface is None,
                     width=None if self._hud_surface is None else self._hud_surface.width),
@@ -211,7 +214,8 @@ class Funestra:
             )
         if channels.hud is not None:
             return HudOverlay(
-                source=PublishedHud(channels.hud, channels.dashboard_cmd),
+                source=PublishedHud(channels.hud, channels.dashboard_cmd,
+                                    self._off_the_loop.ask),
                 drawn_on=DrawnOn(drawn_on, over_the_video=self._hud_surface is None,
                                  minus_on_the_hud=self._hud_surface is None),
                 drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
@@ -219,9 +223,9 @@ class Funestra:
             )
         return None
 
-    @staticmethod
-    def _visualizer_for(channels: Channels) -> DrivePublisher | None:
-        return None if channels.osr2_readout is None else DrivePublisher(channels.osr2_readout)
+    def _visualizer_for(self, channels: Channels) -> DrivePublisher | None:
+        return (None if channels.osr2_readout is None
+                else DrivePublisher(channels.osr2_readout, publish=self._off_the_loop.publish))
 
     def _row_press(self) -> RowPress:
         moved = self._setup.on_volume_moved
@@ -255,16 +259,16 @@ class Funestra:
     def on_window(cls, wid: int, setup: FunestraSetup) -> Funestra:
         return cls(
             MpvEngine(wid, muted=setup.muted, loop_file=False, prefetch=True, audio=setup.audible),
-            setup._replace(tcode=osr2_line(setup.channels)))
+            setup._replace(tcode=osr2_line(setup.channels), off_the_loop=BehindTheLoop()))
 
     def _where_the_hud_asks(self, channels: Channels) -> Callable[[str], None]:
         if channels.dashboard_cmd is not None:
-            return partial(ask, channels.dashboard_cmd)
+            return partial(self._off_the_loop.ask, channels.dashboard_cmd)
         return self.apply
 
     def _press_on_the_item(self, channels: Channels) -> Callable[[], None]:
         if channels.dashboard_cmd is not None:
-            return lambda: ask(channels.dashboard_cmd, OMNIPAUSE_TOGGLE)
+            return partial(self._off_the_loop.ask, channels.dashboard_cmd, OMNIPAUSE_TOGGLE)
         return self._ask_what_runs_here_to_pause
 
     def _ask_what_runs_here_to_pause(self) -> None:
@@ -332,6 +336,7 @@ class Funestra:
     def tick(self, *, viewport: tuple[int, int]) -> None:
         record = self._frame_record
         record.begin()
+        self._off_the_loop.deliver()
         self._hear_what_it_is_told()
         record.lap("the files it is told through")
         self._runs_here.tick()
@@ -370,12 +375,14 @@ class Funestra:
         if self._radio is not None:
             self._radio.close()
         self.playback.close()
+        self._off_the_loop.close()
 
     def _radio_beside(self, channels: Channels) -> Radio | None:
         if not self._setup.audible or channels.playlist is None:
             return None
         return Radio(self._engine.radio_station,
-                     dealt_in=RadioFile(radio_file_for(channels.playlist)))
+                     dealt_in=RadioFile(radio_file_for(channels.playlist)),
+                     behind=self._off_the_loop.do)
 
     def _tune_the_radio(self) -> None:
         if self._radio is None:

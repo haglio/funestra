@@ -6,6 +6,7 @@ import json
 import logging
 import os
 import queue
+import threading
 import time
 from dataclasses import replace
 from pathlib import Path
@@ -16,6 +17,7 @@ import numpy as np
 import pytest
 from app_support.osr2_slot import Osr2Slot
 from app_support.threading_utils import start_daemon_thread
+from funestra_fakes import WorkerTheTestRuns
 from host_controls_fakes import AHost, middle_of
 
 from funestra.flick_overlay import (
@@ -36,7 +38,7 @@ from funestra.hud_row import PARTS_Y
 from funestra.loop_dial import DIAL_SIZE
 from funestra.main_hud import ModeHud
 from funestra.modes import LengthMode, MainMode, Osr2State
-from funestra.osr2_visualizer import DriveHud, publish_drive, read_drive
+from funestra.osr2_visualizer import DriveHud, DrivePublisher, publish_drive, read_drive
 from funestra.outside_buttons import OutsideButtons
 from funestra.playhead import FIGURE_SPACE
 from funestra.playlist import PlaylistItem, read_playlist
@@ -883,6 +885,7 @@ def test_on_a_window_the_way_of_playing_is_mpv_opened_on_that_window(tmp_path):
                 playlist=read_playlist(channels.playlist)))
 
     mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True, audio=True)
+    funestra.close()
     assert funestra.playback.current_video == videos[0]
 
 
@@ -998,6 +1001,18 @@ class TestTheMainFunestra:
         funestra.tick(viewport=WINDOW)
 
         assert read_drive(tmp_path / "visualizer.txt").speed == 40
+
+    def test_a_drive_published_in_its_own_process_is_handed_on_without_the_file_being_opened(
+            self, tmp_path, monkeypatch):
+        funestra, _engine, _kino = _main(tmp_path, osr2_visualizer=tmp_path / "visualizer.txt")
+        _publish_main_hud(tmp_path, has_osr2=True)
+        DrivePublisher(tmp_path / "drive.txt").publish(DriveHud(speed=41), 0.0)
+        opened = _Opened(monkeypatch)
+
+        funestra.tick(viewport=WINDOW)
+
+        assert "drive.txt" not in opened.names
+        assert read_drive(tmp_path / "visualizer.txt").speed == 41
 
     def test_it_draws_the_main_hud_the_room_published(self, tmp_path):
         funestra, engine, _kino = _main(tmp_path)
@@ -1913,3 +1928,55 @@ class TestAPassWithNothingChanged:
             funestra.tick(viewport=WINDOW)
 
         assert engine.overlays_removed == []
+
+
+class TestWhatAFunestraHandsOffItsLoop:
+    def _handing_off(self, tmp_path):
+        worker = WorkerTheTestRuns()
+        channels = _channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
+                             commands="", hud=True)
+        _publish_hud(tmp_path)
+        engine = FakeEngine()
+        funestra = Funestra(engine, FunestraSetup(
+            channels=channels, playlist=read_playlist(channels.playlist), off_the_loop=worker))
+        return funestra, engine, worker
+
+    def test_a_window_of_its_own_gets_a_worker_of_its_own_and_closes_it(self, tmp_path):
+        channels = _channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
+        with patch("funestra.funestra.MpvEngine", return_value=FakeEngine()):
+            funestra = Funestra.on_window(4242, FunestraSetup(
+                channels=channels, playlist=read_playlist(channels.playlist)))
+
+        funestra.tick(viewport=WINDOW)
+        funestra.close()
+
+        assert "loads=1" in _status(tmp_path)
+        assert not [thread for thread in threading.enumerate()
+                    if thread.name == "funestra-off-the-loop"]
+
+    def test_its_status_is_written_by_the_worker(self, tmp_path):
+        funestra, _engine, worker = self._handing_off(tmp_path)
+
+        funestra.tick(viewport=WINDOW)
+
+        assert [name for name, _text in worker.published] == ["status.txt"]
+        assert not (tmp_path / "status.txt").exists()
+
+    def test_a_press_on_its_item_is_asked_of_the_host_by_the_worker(self, tmp_path):
+        funestra, engine, worker = self._handing_off(tmp_path)
+        funestra.tick(viewport=WINDOW)
+        left, top, hud = engine.overlays[HUD_OVERLAY_ID]
+
+        funestra.press(left + hud.shape[1] // 2, top + hud.shape[0] + 20, viewport=WINDOW)
+
+        assert worker.asked == [OMNIPAUSE_TOGGLE]
+        assert not (tmp_path / "dashboard_cmd.txt").exists()
+
+    def test_each_pass_takes_what_the_worker_has_done_and_closing_closes_it(self, tmp_path):
+        funestra, _engine, worker = self._handing_off(tmp_path)
+
+        funestra.tick(viewport=WINDOW)
+        funestra.tick(viewport=WINDOW)
+        funestra.close()
+
+        assert (worker.delivered, worker.closed) == (2, True)

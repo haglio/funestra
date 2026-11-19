@@ -199,3 +199,37 @@ class TestWhatEveryFunestraPublishes:
         status = parse_status({"video": " C:/vids/c.mp4 ", "playlist_length": "3", "state": "looping"})
 
         assert status == FunestraStatus(video="C:/vids/c.mp4")
+
+
+class TestAStatusThatSaysWhatTheLastOneSaid:
+    def test_is_not_written_again(self, tmp_path):
+        clock = {"t": 0.0}
+        session = StubSession()
+        written: list[str] = []
+        writer = StatusWriter(tmp_path / "status.txt", _fields, now_source=lambda: clock["t"],
+                              publish=lambda _path, text: written.append(text) or True)
+
+        for _ in range(5):
+            writer.write(session)
+            clock["t"] += 1.0
+
+        assert len(written) == 1
+
+    def test_that_could_not_be_written_is_tried_again(self, tmp_path):
+        clock = {"t": 0.0}
+        session = StubSession()
+        answers = [False, True]
+        tried: list[str] = []
+
+        def publish(_path, text):
+            tried.append(text)
+            return answers.pop(0)
+
+        writer = StatusWriter(tmp_path / "status.txt", _fields, now_source=lambda: clock["t"],
+                              publish=publish)
+
+        for _ in range(3):
+            writer.write(session)
+            clock["t"] += 1.0
+
+        assert len(tried) == 2

@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import json
 import time
+from collections.abc import Callable
+from functools import partial
 from pathlib import Path
 
 from app_support.file_channel import publish_whole
+
+from .off_the_loop import at_once
 
 
 def play_points_filename(who: str) -> str:
@@ -21,9 +25,11 @@ def _key(video: Path | str) -> str:
 
 
 class PlayPoints:
-    def __init__(self, path: Path | None, *, clock=time.monotonic) -> None:
+    def __init__(self, path: Path | None, *, clock=time.monotonic,
+                 behind: Callable[[Callable[[], None]], None] = at_once) -> None:
         self._path = path
         self._clock = clock
+        self._behind = behind
         self._points = self._read()
         self._watching = ""
         self._at_ms = 0.0
@@ -79,4 +85,8 @@ class PlayPoints:
 
     def _write(self) -> None:
         if self._path is not None:
-            publish_whole(self._path, json.dumps(self._points, indent=1) + "\n")
+            self._behind(partial(_publish, self._path, dict(self._points)))
+
+
+def _publish(path: Path, points: dict[str, int]) -> None:
+    publish_whole(path, json.dumps(points, indent=1) + "\n")
