@@ -134,11 +134,11 @@ def _videos(tmp_path: Path, *names: str) -> list[Path]:
 
 
 def _run_loop(tmp_path: Path, args, *, fake=None, passes: int = 1, claim_identity=None,
-              wear_button=lambda *_worn: None, **how):
+              wear_button=lambda *_worn: None, before_the_window=lambda: None, **how):
     fake = fake or _FakePygame()
     opens = _OpensAFunestra(_FakeFunestra(passes=passes))
     with patch("funestra.program.app.pygame", fake), \
-         patch("funestra.program.app.before_the_window_exists"), \
+         patch("funestra.program.app.before_the_window_exists", before_the_window), \
          patch("funestra.program.app.wear_the_sessions_taskbar_button", wear_button), \
          patch("funestra.program.app.Funestra", opens):
         code = _run(args, playlist=resolve_playlist(args), claim_identity=claim_identity, **how)
@@ -429,3 +429,14 @@ def test_a_funestra_still_waiting_for_its_list_ends_once_its_app_has_gone(tmp_pa
     code, opens, fake = _run_loop(tmp_path, args, host_is_running=lambda _pid: False)
 
     assert (code, opens.asked, fake.quit_called) == (0, None, True)
+
+
+def test_the_focusing_click_is_asked_for_before_the_window_exists(tmp_path):
+    order = []
+    fake = _FakePygame()
+    fake.init = lambda: order.append("window")
+
+    _run_loop(tmp_path, _loop_args(tmp_path, _videos(tmp_path, "v0")), fake=fake,
+              before_the_window=lambda: order.append("asked for the click"))
+
+    assert order == ["asked for the click", "window"]

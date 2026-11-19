@@ -49,6 +49,7 @@ class WindowVerbs:
         window = self._window()
         window.restore()
         window.show()
+        window.focus()
 
     def _hide(self) -> None:
         self._window().hide()
