@@ -105,6 +105,7 @@ class FlickOverlay:
         self._tiles_of: tuple[int, tuple[int, int]] | None = None
         self._tiles_up = 0
         self._loading: str | None = None
+        self._loading_at: tuple[int, int] | None = None
 
     def show(self, frame: FlickFrame, viewport: tuple[int, int]) -> None:
         if self._backdrop_at != viewport:
@@ -126,7 +127,7 @@ class FlickOverlay:
         self._tiles_of = tiles_of
 
     def _show_the_loading(self, loading: str | None, viewport: tuple[int, int]) -> None:
-        if loading == self._loading and not loading:
+        if loading == self._loading and (not loading or viewport == self._loading_at):
             return
         if not loading:
             self._engine.remove_overlay(LOADING_OVERLAY_ID)
@@ -134,7 +135,7 @@ class FlickOverlay:
             message = loading_message_bgra(loading)
             self._engine.overlay(LOADING_OVERLAY_ID, viewport[0] - message.shape[1] - _LOADING_INSET,
                                  _LOADING_INSET, message)
-        self._loading = loading
+        self._loading, self._loading_at = loading, viewport
 
     def hide(self) -> None:
         for ident in (BACKDROP_OVERLAY_ID, LOADING_OVERLAY_ID,
