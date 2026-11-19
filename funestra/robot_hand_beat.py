@@ -32,10 +32,24 @@ class BeatTuning:
     sync_strength: float
 
 
-def advance_beat(engine: BeatEngine, beat: Beat, tuning: BeatTuning, *, now: float) -> None:
+def _seconds_since_its_last_tick(engine: BeatEngine, now: float) -> float:
     dt = now - engine.last_tick
     engine.last_tick = now
-    dt = max(0.0, min(dt, _MAX_TICK_SECONDS))
+    return max(0.0, min(dt, _MAX_TICK_SECONDS))
+
+
+def _turn_the_phase(engine: BeatEngine, beat: Beat, tuning: BeatTuning, dt: float) -> None:
+    if beat.auto_active and engine.estimated_bpm and engine.estimated_bpm > 0 and not beat.paused:
+        loop_duration = (60.0 / engine.estimated_bpm) * tuning.beats_per_loop
+        engine.phase = (engine.phase + (dt / loop_duration)) % 1.0
+
+
+def advance_phase(engine: BeatEngine, beat: Beat, tuning: BeatTuning, *, now: float) -> None:
+    _turn_the_phase(engine, beat, tuning, _seconds_since_its_last_tick(engine, now))
+
+
+def advance_beat(engine: BeatEngine, beat: Beat, tuning: BeatTuning, *, now: float) -> None:
+    dt = _seconds_since_its_last_tick(engine, now)
 
     if beat.raw_bpm is not None:
         engine.target_bpm = float(beat.raw_bpm)
@@ -46,9 +60,7 @@ def advance_beat(engine: BeatEngine, beat: Beat, tuning: BeatTuning, *, now: flo
         alpha = max(0.0, min(1.0, tuning.bpm_smoothing))
         engine.estimated_bpm = engine.estimated_bpm + (engine.target_bpm - engine.estimated_bpm) * alpha
 
-    if beat.auto_active and engine.estimated_bpm and engine.estimated_bpm > 0 and not beat.paused:
-        loop_duration = (60.0 / engine.estimated_bpm) * tuning.beats_per_loop
-        engine.phase = (engine.phase + (dt / loop_duration)) % 1.0
+    _turn_the_phase(engine, beat, tuning, dt)
 
     if beat.sync_pulse_id != engine.seen_sync_pulse_id:
         engine.seen_sync_pulse_id = beat.sync_pulse_id

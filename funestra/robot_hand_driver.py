@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from typing import TYPE_CHECKING
 
 from .flick_flip import HALF_A_LOOP
@@ -35,27 +36,32 @@ class RobotHandTCodeDriver:
         self._rise_started: float | None = None
         self._let_go_position: int | None = None
         self._output_was_off = False
+        self._one_thread_at_a_time = threading.RLock()
 
     def take_over(self) -> None:
-        self.rest_at_floor()
-        if self._compute_position() > _RISE_SKIP_BELOW:
-            self._rise = 0.0
-            self._rise_started = None
-        else:
-            self._rise = 1.0
-            self._let_go_position = None
-        self._glide.begin()
+        with self._one_thread_at_a_time:
+            self.rest_at_floor()
+            if self._compute_position() > _RISE_SKIP_BELOW:
+                self._rise = 0.0
+                self._rise_started = None
+            else:
+                self._rise = 1.0
+                self._let_go_position = None
+            self._glide.begin()
 
     def hand_over(self) -> None:
-        self._let_go_position = self.current_position()
-        self.rest_at_floor()
+        with self._one_thread_at_a_time:
+            self._let_go_position = self.current_position()
+            self.rest_at_floor()
 
     def rest_at_floor(self) -> None:
-        self._motion_phase = 0.0
-        self._motion.rest_at_floor()
+        with self._one_thread_at_a_time:
+            self._motion_phase = 0.0
+            self._motion.rest_at_floor()
 
     def set_motion_phase(self, phase: float) -> None:
-        self._motion_phase = phase
+        with self._one_thread_at_a_time:
+            self._motion_phase = phase
 
     def _compute_position(self) -> int:
         return round(POSITION_MAX * self._motion.height(self._motion_phase) / 100)
@@ -72,34 +78,42 @@ class RobotHandTCodeDriver:
         return self._let_go_position
 
     def maybe_send(self, phase: float, now: float, *, output: bool = True) -> None:
-        if self._rise < 1.0:
-            if self._rise_started is None:
-                self._rise_started = now
-            self._rise = min(1.0, (now - self._rise_started) / (HANDOFF_RAMP_MS / 1000))
-            if self._rise >= 1.0:
-                self._let_go_position = None
-            self._last_phase = phase
-        else:
-            delta = phase - self._last_phase
-            if delta < -HALF_A_LOOP:
-                delta += 1.0
-            self._motion_phase += max(0.0, delta)
-            self._last_phase = phase
+        with self._one_thread_at_a_time:
+            self.follow(phase, now)
+            self.send(now, output=output, no_sooner_than=self._min_interval)
 
-        if not output:
-            self._output_was_off = True
-            return
-        if self._output_was_off:
-            self._output_was_off = False
-            self._glide.begin()
-        elapsed = now - self._last_send_time
-        if elapsed < self._min_interval:
-            return
-        interval_ms = max(1, min(9999, round(elapsed * 1000)))
-        position = round(self._compute_position() * self._rise)
-        self._sink.send(format_tcode_command(
-            "L0", position, self._glide.interval_ms(interval_ms, now)))
-        self._last_send_time = now
+    def follow(self, phase: float, now: float) -> None:
+        with self._one_thread_at_a_time:
+            if self._rise < 1.0:
+                if self._rise_started is None:
+                    self._rise_started = now
+                self._rise = min(1.0, (now - self._rise_started) / (HANDOFF_RAMP_MS / 1000))
+                if self._rise >= 1.0:
+                    self._let_go_position = None
+                self._last_phase = phase
+            else:
+                delta = phase - self._last_phase
+                if delta < -HALF_A_LOOP:
+                    delta += 1.0
+                self._motion_phase += max(0.0, delta)
+                self._last_phase = phase
+
+    def send(self, now: float, *, output: bool = True, no_sooner_than: float = 0.0) -> None:
+        with self._one_thread_at_a_time:
+            if not output:
+                self._output_was_off = True
+                return
+            if self._output_was_off:
+                self._output_was_off = False
+                self._glide.begin()
+            elapsed = now - self._last_send_time
+            if elapsed < no_sooner_than:
+                return
+            interval_ms = max(1, min(9999, round(elapsed * 1000)))
+            position = round(self._compute_position() * self._rise)
+            self._sink.send(format_tcode_command(
+                "L0", position, self._glide.interval_ms(interval_ms, now)))
+            self._last_send_time = now
 
     def want(self, wanted: bool) -> None:
         self._sink.want(wanted)

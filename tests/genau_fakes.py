@@ -84,9 +84,15 @@ class FakeTCodeSender:
         self.wanted = wanted
 
     def maybe_send(self, phase: float, now: float, *, output: bool = True) -> None:
-        if output:
-            self.sends.append((phase, now))
+        self.follow(phase, now)
+        self.send(now, output=output)
+
+    def follow(self, phase: float, now: float) -> None:
         self._motion_phase = phase
+
+    def send(self, now: float, *, output: bool = True) -> None:
+        if output:
+            self.sends.append((self._motion_phase, now))
 
     def take_over(self) -> None:
         self.take_overs += 1

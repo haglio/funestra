@@ -97,3 +97,44 @@ class TestWhereTheDeviceIs:
 
     def test_with_no_osr2_wired_standing_it_somewhere_is_nothing(self):
         HandsDevice(RobotHandState(), Flag(on=True)).stand_at(0.4)
+
+
+class TestSentBetweenPasses:
+    @staticmethod
+    def _device(*, playing: bool = True, heard: bool = True):
+        hand, sender = RobotHandState(playing=playing), FakeTCodeSender()
+        return HandsDevice(hand, Flag(on=heard), sender, sent_between_passes=True), hand, sender
+
+    def test_a_pass_of_the_window_follows_the_phase_and_sends_nothing(self):
+        device, _hand, sender = self._device()
+
+        for step in range(3):
+            device.drive(0.25 + 0.01 * step, 7.0 + 0.016 * step, the_hand_has_it=True)
+
+        assert (sender.wanted, sender.sends, sender.motion_phase) == (True, [], 0.27)
+
+    def test_the_send_between_passes_follows_the_phase_and_sends_it(self):
+        device, _hand, sender = self._device()
+
+        device.send(0.3, 7.01)
+
+        assert sender.sends == [(0.3, 7.01)]
+
+    def test_a_hand_switched_off_is_followed_unheard(self):
+        device, _hand, sender = self._device(heard=False)
+
+        device.send(0.3, 7.01)
+
+        assert (sender.sends, sender.motion_phase) == ([], 0.3)
+
+    def test_a_hand_paused_since_the_last_pass_is_sent_nothing(self):
+        device, hand, sender = self._device()
+        hand.playing = False
+
+        device.send(0.3, 7.01)
+
+        assert (sender.sends, sender.motion_phase) == ([], 0.0)
+
+    def test_with_no_osr2_wired_the_send_is_nothing(self):
+        HandsDevice(RobotHandState(playing=True), Flag(on=True),
+                    sent_between_passes=True).send(0.3, 7.01)

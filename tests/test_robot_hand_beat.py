@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from funestra.robot_hand_beat import Beat, BeatEngine, BeatTuning, advance_beat
+from funestra.robot_hand_beat import Beat, BeatEngine, BeatTuning, advance_beat, advance_phase
 
 
 class TestUpdateEngine:
@@ -103,3 +103,42 @@ class TestUpdateEngine:
         )
 
         assert engine.phase == pytest.approx(0.05)
+
+
+class TestAdvancingThePhaseBetweenPasses:
+    _PLAYING = Beat(robot_hand_active=True, auto_active=True, raw_bpm=130.0,
+                    paused=False, sync_pulse_id=0)
+    _TUNING = BeatTuning(4.0, 0.25, 0.35)
+
+    def test_the_phase_turns_by_the_time_since_the_last_tick(self):
+        engine = BeatEngine(last_tick=100.0, estimated_bpm=120.0, target_bpm=120.0, phase=0.1)
+
+        advance_phase(engine, self._PLAYING, self._TUNING, now=100.05)
+
+        assert engine.phase == pytest.approx(0.125)
+
+    def test_the_speed_is_left_alone_since_it_closes_on_its_target_once_a_pass_of_the_window(self):
+        engine = BeatEngine(last_tick=100.0, estimated_bpm=100.0, target_bpm=100.0)
+
+        advance_phase(engine, self._PLAYING, self._TUNING, now=100.05)
+
+        assert (engine.estimated_bpm, engine.target_bpm) == (100.0, 100.0)
+
+    def test_a_pass_that_follows_turns_the_phase_only_by_the_time_since(self):
+        engine = BeatEngine(last_tick=100.0, estimated_bpm=120.0, target_bpm=120.0, phase=0.1)
+        steady = Beat(robot_hand_active=True, auto_active=True, raw_bpm=120.0,
+                      paused=False, sync_pulse_id=0)
+
+        advance_phase(engine, steady, self._TUNING, now=100.03)
+        advance_beat(engine, steady, self._TUNING, now=100.05)
+
+        assert engine.phase == pytest.approx(0.125)
+
+    def test_a_paused_hand_s_phase_stands_still(self):
+        engine = BeatEngine(last_tick=100.0, estimated_bpm=120.0, target_bpm=120.0, phase=0.1)
+        paused = Beat(robot_hand_active=True, auto_active=False, raw_bpm=120.0,
+                      paused=True, sync_pulse_id=0)
+
+        advance_phase(engine, paused, self._TUNING, now=100.05)
+
+        assert engine.phase == 0.1

@@ -451,3 +451,35 @@ def test_the_robot_hand_wants_the_osr2_through_its_slot():
     sender.want(False)
 
     assert sink.wanted == [True, False]
+
+
+class TestSendingOnAClockOfItsOwn:
+    def test_following_the_phase_moves_the_position_and_sends_nothing(self):
+        sink = FakeTCodeSink()
+        sender = RobotHandTCodeDriver(sink, robot_hand=RobotHandState(playing=True, speed=50))
+        before = sender.current_position()
+
+        for step in range(1, 4):
+            sender.follow(0.1 * step, 1.0 + 0.016 * step)
+
+        assert sink.sent == []
+        assert sender.current_position() != before
+
+    def test_a_send_goes_out_every_time_it_is_asked_for_since_the_clock_that_asks_is_already_even(self):
+        sink = FakeTCodeSink()
+        sender = RobotHandTCodeDriver(sink, robot_hand=RobotHandState(playing=True, speed=50))
+
+        sender.send(1.0)
+        well_after_the_glide_onto_the_motion = 2.0
+        for beat in range(3):
+            sender.send(well_after_the_glide_onto_the_motion + beat / 30)
+
+        assert [command.rsplit("I", 1)[1] for command in sink.sent[2:]] == ["33", "33"]
+
+    def test_a_send_with_the_output_off_sends_nothing(self):
+        sink = FakeTCodeSink()
+        sender = RobotHandTCodeDriver(sink, robot_hand=RobotHandState(playing=True, speed=50))
+
+        sender.send(1.0, output=False)
+
+        assert sink.sent == []
