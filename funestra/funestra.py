@@ -254,11 +254,17 @@ class Funestra:
         if owed is not None:
             self._seek_along_the_track(owed)
 
+    def _seek_what_is_owed_before_the_video_plays_on(self) -> None:
+        owed, self._seek_owed = self._seek_owed, None
+        if owed is not None:
+            self._row.seek_along_the_track(owed)
+
     def _hold_for_a_scrub(self, held: bool) -> None:
         if held:
             self._paused_before_the_scrub = self.playback.is_paused
             self.playback.set_paused(True)
             return
+        self._seek_what_is_owed_before_the_video_plays_on()
         paused, self._paused_before_the_scrub = self._paused_before_the_scrub, None
         self.playback.set_paused(bool(paused))
 
