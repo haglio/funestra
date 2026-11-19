@@ -136,7 +136,8 @@ class Funestra:
         self._corners = None if self._hud is None or setup.hud_surface is not None else HudCorners(
             self._hud, engine, post=self._where_the_hud_asks(channels))
         self._pointer = Pointer(hud=self._hud, corners=self._corners,
-                                item=self._press_on_the_item(channels))
+                                item=self._press_on_the_item(channels),
+                                zoom=self._zoom_at, pan=engine.pan_by)
         self._runs_here = RunsHere(
             {name: make(self.playback) for name, make in (setup.users or {}).items()})
         self._controls = FunestraControls(
@@ -314,6 +315,15 @@ class Funestra:
 
     def right_press(self, x: int, y: int, *, viewport: tuple[int, int]) -> None:
         self._pointer.right_press(x, y)
+
+    def _zoom_at(self, x: int, y: int, steps: int) -> None:
+        self._engine.zoom_at(x, y, steps=steps)
+
+    def wheel_press(self, x: int, y: int, *, viewport: tuple[int, int]) -> None:
+        self._pointer.wheel_press(x, y)
+
+    def wheel_release(self) -> None:
+        self._pointer.wheel_release()
 
     def leave(self) -> None:
         self._pointer.leave()

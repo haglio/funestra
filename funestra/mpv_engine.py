@@ -22,6 +22,7 @@ from .libmpv_loader import add_libmpv_to_path, libmpv_dirs
 from .lost_gpu import LostGpu
 from .mpv_gate import CallGate, mpv_call
 from .output_colors import OutputColors
+from .wheel_zoom import panned_by, zoomed_at
 
 logger = logging.getLogger(__name__)
 
@@ -197,6 +198,8 @@ class _MpvControl:
         self._tiling = (1, "no")
         self._decoder: str | None = None
         self._decoder_said_for: str | None = None
+        self._zoomed: View | None = None
+        self._pace_s = 0.0
 
     def _adopt(self, handle) -> None:
         self._mpv = handle
@@ -344,6 +347,9 @@ class _MpvControl:
 
     def _begin_the_new_clip(self, path: str | None) -> None:
         self._on_the_clock = path
+        if self._zoomed is not None:
+            self._zoomed = None
+            self._ken_burns.set_pace(self._pace_s, self._now())
         self._ken_burns.new_image(self._now())
 
     @property
@@ -368,7 +374,9 @@ class _MpvControl:
         self._mpv.pause = paused
 
     def set_pace(self, seconds: float) -> None:
-        self._ken_burns.set_pace(seconds or 0.0, self._now())
+        self._pace_s = seconds or 0.0
+        if self._zoomed is None:
+            self._ken_burns.set_pace(self._pace_s, self._now())
 
     def set_points_of_interest(self, places: tuple) -> None:
         self._ken_burns.set_points_of_interest(places, self._now())
@@ -384,7 +392,7 @@ class _MpvControl:
         if self._image_track is None:
             return
         now = self._now()
-        view = self._ken_burns.view(now) if self._image_track else View()
+        view = self._zoomed or (self._ken_burns.view(now) if self._image_track else View())
         placed = view.placement()
         for name, value, was in zip(_PLACING, placed, self._placed, strict=True):
             if value != was:
@@ -402,6 +410,21 @@ class _MpvControl:
 
     def hold_image_for(self, seconds: float | None) -> None:
         self._ken_burns.hold_for(seconds)
+
+    def zoom_at(self, x: int, y: int, *, steps: int) -> None:
+        on_screen = self._on_screen()
+        self._ken_burns.set_pace(0.0, self._now())
+        self._zoomed = zoomed_at(on_screen, self._fit(), (x, y), steps)
+
+    def pan_by(self, dx: int, dy: int) -> None:
+        if self._zoomed is not None:
+            self._zoomed = panned_by(self._zoomed, self._fit(), (dx, dy))
+
+    def _on_screen(self) -> View:
+        if self._zoomed is not None:
+            return self._zoomed
+        zoom_log2, align_x, align_y = self._placed
+        return View(2.0 ** zoom_log2, align_x, align_y)
 
     def seek_image(self, ms: float) -> None:
         pace_s = self._ken_burns.pace_s

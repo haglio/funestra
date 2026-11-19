@@ -100,6 +100,8 @@ class FakeEngine(RefusesSeeks):
         self.stopped = False
         self.settled = 0
         self.points_told: list[tuple] = []
+        self.zooms: list[tuple[int, int, int]] = []
+        self.pans: list[tuple[int, int]] = []
 
     def frame_counts(self) -> tuple[int, int, int]:
         return (0, 0, 0)
@@ -168,6 +170,12 @@ class FakeEngine(RefusesSeeks):
 
     def hold_image_for(self, seconds: float | None) -> None:
         self.held_for = seconds or None
+
+    def zoom_at(self, x: int, y: int, *, steps: int) -> None:
+        self.zooms.append((x, y, steps))
+
+    def pan_by(self, dx: int, dy: int) -> None:
+        self.pans.append((dx, dy))
 
     def radio_station(self, videos: Sequence[Path]) -> FakeStation:
         self.stations.append(FakeStation(videos))
