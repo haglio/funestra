@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 import time
 from collections.abc import Callable
 
@@ -13,14 +14,18 @@ from .genau_files import GenauFiles
 from .genau_status import FlickOnScreen, StatusFile, build_status_text
 from .genau_visualizer import AutoMotion, GenauVisualizer
 from .hands_device import HandsDevice
-from .robot_hand_beat import Beat, BeatTuning, advance_beat
+from .robot_hand_beat import Beat, BeatTuning, advance_beat, advance_phase
+from .send_clock import SendClock
 from .tick_failures import TickFailures
+
+SEND_THREAD = "genau-osr2-send"
 
 
 class GenauRefreshController:
     def __init__(self, controls: GenauControls, flicks: FlicksOnScreen, *, broker: BrokerFeed,
                  files: GenauFiles, tuning: BeatTuning, tcode_sender=None,
-                 logger: logging.Logger, now_source: Callable[[], float] = time.monotonic):
+                 logger: logging.Logger, now_source: Callable[[], float] = time.monotonic,
+                 start_thread: Callable | None = None):
         if controls.robot_hand is None:
             raise ValueError("Genau runs with the hand's state and no hand-less mode")
         self.controls = controls
@@ -34,7 +39,10 @@ class GenauRefreshController:
         self.now_source = now_source
         self._up: tuple[object, float | None] = (None, None)
         self.motion = controls.hand_motion
-        self.device = HandsDevice(controls.robot_hand, controls.tcode_enabled, tcode_sender)
+        self._the_motion_s_turn = threading.RLock()
+        self._hand_driving: Beat | None = None
+        self.device = HandsDevice(controls.robot_hand, controls.tcode_enabled, tcode_sender,
+                                  sent_between_passes=start_thread is not None)
         self.under_the_device = FlickUnderTheDevice(controls, self.device)
         self.visualizer = GenauVisualizer(
             controls=controls,
@@ -42,6 +50,22 @@ class GenauRefreshController:
             tcode_sender=tcode_sender,
             drive_file=files.drive,
         )
+        if start_thread is not None:
+            stop = controls.stop_event
+            start_thread(
+                target=SendClock(
+                    self.send_between_passes, TickFailures(logger, "send"),
+                    stopped=(lambda: False) if stop is None else stop.is_set, clock=now_source).run,
+                name=SEND_THREAD)
+
+    def send_between_passes(self, now: float) -> None:
+        with self._the_motion_s_turn:
+            beat = self._hand_driving
+            if beat is None:
+                return
+            self.motion.tick(now, start_fraction=self.device.where_in_its_travel)
+            advance_phase(self.controls.engine, beat, self.tuning, now=now)
+            self.device.send(self.controls.engine.phase, now)
 
     def refresh(self) -> None:
         try:
@@ -62,9 +86,10 @@ class GenauRefreshController:
 
         self.flicks.heard(not self._over_a_video)
 
-        advance_beat(engine, beat, self.tuning, now=now)
-
-        self.device.drive(engine.phase, now, the_hand_has_it=beat.robot_hand_active)
+        with self._the_motion_s_turn:
+            advance_beat(engine, beat, self.tuning, now=now)
+            self.device.drive(engine.phase, now, the_hand_has_it=beat.robot_hand_active)
+            self._hand_driving = beat if beat.robot_hand_active else None
 
         if beat.robot_hand_active:
             self.visualizer.update(now)
@@ -80,8 +105,10 @@ class GenauRefreshController:
         self._publish_status(now)
 
     def _drain_commands(self) -> None:
-        for cmd in self.files.commands(self.logger):
-            apply_runtime_command(cmd, self.controls)
+        commands = self.files.commands(self.logger)
+        with self._the_motion_s_turn:
+            for cmd in commands:
+                apply_runtime_command(cmd, self.controls)
 
     def _who_is_driving(self, now: float) -> Beat:
         hand = self.controls.robot_hand
@@ -105,7 +132,8 @@ class GenauRefreshController:
         )
 
     def _tick_the_hand(self, now: float) -> None:
-        self.motion.tick(now, start_fraction=self.device.where_in_its_travel)
+        with self._the_motion_s_turn:
+            self.motion.tick(now, start_fraction=self.device.where_in_its_travel)
         advance = self.controls.flick_advance_state
         if advance is not None:
             self.flicks.advance(advance, now, playing=self.controls.robot_hand.playing)

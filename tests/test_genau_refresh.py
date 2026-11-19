@@ -19,7 +19,7 @@ from funestra.flick_flip import FlickFlip
 from funestra.flicks_on_screen import FlicksOnScreen
 from funestra.genau_controls import GenauControls
 from funestra.genau_files import GenauFiles
-from funestra.genau_refresh import GenauRefreshController
+from funestra.genau_refresh import SEND_THREAD, GenauRefreshController
 from funestra.genau_status import GENAU_STATUS_FILENAME
 from funestra.learned_model import LearnedModel, Phrase, classify
 from funestra.learned_motion import LearnedMotionState
@@ -74,7 +74,8 @@ def _taken(kind, choices):
 
 
 def _build_controller(*, broker: BrokerFeed | None = None,
-                      tcode_sender: FakeTCodeSender | None = None, now_source=None, **choices):
+                      tcode_sender: FakeTCodeSender | None = None, now_source=None,
+                      start_thread=None, **choices):
     screen = _taken(_OnScreen, choices)
     said = _taken(_Commands, choices)
     hands = _taken(_HandsOn, choices)
@@ -118,6 +119,7 @@ def _build_controller(*, broker: BrokerFeed | None = None,
         tcode_sender=tcode_sender,
         logger=logger,
         now_source=now_source or (lambda: 5.0),
+        start_thread=start_thread,
     )
     return {
         "controller": controller,
@@ -1109,3 +1111,102 @@ def test_the_status_says_when_the_flick_on_screen_went_up_so_a_late_reader_can_d
     clock[0] = 7.0
     built["controller"].refresh()
     assert "up_at=7.000\n" in status.read_text(encoding="utf-8")
+
+
+class _ThreadsStarted:
+    def __init__(self) -> None:
+        self.named: list[str] = []
+
+    def __call__(self, *, target, name: str) -> None:
+        self.named.append(name)
+
+
+def _sending_between_passes(clock: list[float], **choices):
+    hand = RobotHandState(playing=True, bpm=120.0)
+    tcode = FakeTCodeSender()
+    threads = _ThreadsStarted()
+    built = _build_controller(entry={"frames": [object() for _ in range(8)]}, robot_hand=hand,
+                              tcode_sender=tcode, now_source=lambda: clock[0],
+                              start_thread=threads, **choices)
+    return built["controller"], tcode, threads, hand
+
+
+def test_given_a_way_to_start_a_thread_the_osr2_s_positions_get_a_thread_of_their_own():
+    _controller, _tcode, threads, _hand = _sending_between_passes([5.0])
+
+    assert threads.named == [SEND_THREAD]
+
+
+def test_passes_of_the_window_then_send_no_position_since_a_late_pass_would_be_a_late_position():
+    clock = [5.0]
+    controller, tcode, _threads, _hand = _sending_between_passes(clock)
+
+    for _pass in range(4):
+        clock[0] += 0.016
+        controller.refresh()
+
+    assert tcode.sends == []
+    assert tcode.wanted is True
+
+
+def test_between_passes_the_motion_goes_on_and_each_beat_of_the_send_clock_sends_where_it_has_got_to():
+    clock = [5.0]
+    controller, tcode, _threads, _hand = _sending_between_passes(clock)
+    controller.refresh()
+
+    for beat in range(1, 4):
+        controller.send_between_passes(5.0 + beat / 30)
+
+    phases = [phase for phase, _now in tcode.sends]
+    assert [now for _phase, now in tcode.sends] == [5.0 + beat / 30 for beat in range(1, 4)]
+    assert phases == sorted(set(phases))
+
+
+def test_a_pass_after_the_send_clock_s_beats_does_not_count_their_time_twice():
+    clock = [5.0]
+    controller, _tcode, _threads, _hand = _sending_between_passes(clock)
+    controller.refresh()
+    alone = _sending_between_passes([5.0])[0]
+    alone.refresh()
+
+    controller.send_between_passes(5.02)
+    controller.send_between_passes(5.05)
+    clock[0] = 5.1
+    controller.refresh()
+    alone.now_source = lambda: 5.1
+    alone.refresh()
+
+    assert controller.controls.engine.phase == pytest.approx(alone.controls.engine.phase)
+
+
+def test_before_the_first_pass_and_while_the_osr2_runs_itself_the_send_clock_sends_nothing():
+    clock = [5.0]
+    controller, tcode, _threads, _hand = _sending_between_passes(clock)
+
+    controller.send_between_passes(5.01)
+    controller.broker.auto_active = True
+    controller.refresh()
+    controller.send_between_passes(5.03)
+
+    assert tcode.sends == []
+
+
+def test_a_hand_paused_since_the_last_pass_is_sent_nothing_between_passes():
+    clock = [5.0]
+    controller, tcode, _threads, hand = _sending_between_passes(clock)
+    controller.refresh()
+    hand.playing = False
+
+    controller.send_between_passes(5.03)
+
+    assert tcode.sends == []
+
+
+def test_given_no_way_to_start_a_thread_the_window_s_pass_sends_as_it_always_did():
+    tcode = FakeTCodeSender()
+    built = _build_controller(entry={"frames": [object() for _ in range(8)]},
+                              robot_hand=RobotHandState(playing=True, bpm=120.0), tcode_sender=tcode)
+
+    built["controller"].refresh()
+
+    assert len(tcode.sends) == 1

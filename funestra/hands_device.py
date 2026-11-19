@@ -6,10 +6,12 @@ from .robot_hand_driver import DeviceHandoff
 
 
 class HandsDevice:
-    def __init__(self, hand: RobotHandState, heard: Flag, tcode_sender=None) -> None:
+    def __init__(self, hand: RobotHandState, heard: Flag, tcode_sender=None, *,
+                 sent_between_passes: bool = False) -> None:
         self._hand = hand
         self._heard = heard
         self._sender = tcode_sender
+        self._sent_between_passes = sent_between_passes
         self._handoff = DeviceHandoff(playing=hand.playing, tcode_sender=tcode_sender)
 
     def drive(self, phase: float, now: float, *, the_hand_has_it: bool) -> None:
@@ -18,8 +20,17 @@ class HandsDevice:
             return
         moving = the_hand_has_it and self._hand.playing
         self._sender.want(moving and self._heard.on)
-        if moving:
+        if not moving:
+            return
+        if self._sent_between_passes:
+            self._sender.follow(phase, now)
+        else:
             self._sender.maybe_send(phase, now, output=self._heard.on)
+
+    def send(self, phase: float, now: float) -> None:
+        if self._sender is not None and self._hand.playing:
+            self._sender.follow(phase, now)
+            self._sender.send(now, output=self._heard.on)
 
     @property
     def height(self) -> float | None:
