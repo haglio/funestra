@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from collections import OrderedDict
-from collections.abc import Callable
+import threading
+from collections.abc import Callable, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,7 +18,8 @@ BACKDROP_OVERLAY_ID = 1
 FIRST_TILE_OVERLAY_ID = 2
 LOADING_OVERLAY_ID = 6
 
-SCALED_FRAMES_BYTES = 192 * 1024 * 1024
+SCALED_FRAMES_BYTES = 3 * 1024 * 1024 * 1024
+_SCALING_THREADS = 3
 
 _LOADING_PAD = MARGIN_STANDARD
 _LOADING_INSET = MARGIN_STANDARD
@@ -39,6 +41,7 @@ class FlickFrame:
     seek_time: Callable[[float], None] = _nothing
     seek_loop: Callable[[float], None] = _nothing
     flick: Path | None = None
+    frames: Sequence[np.ndarray] = ()
 
 
 def black_bgra(width: int, height: int) -> np.ndarray:
@@ -63,7 +66,7 @@ def tile_rects(frame_size: tuple[int, int], viewport: tuple[int, int]) -> list[t
 
 def scaled_bgra(frame: np.ndarray, size: tuple[int, int]) -> np.ndarray:
     image = Image.fromarray(frame, "RGB").resize(size, Image.Resampling.BILINEAR).convert("RGBA")
-    return np.ascontiguousarray(np.asarray(image)[:, :, [2, 1, 0, 3]], dtype=np.uint8)
+    return np.frombuffer(image.tobytes("raw", "BGRA"), dtype=np.uint8).reshape(size[1], size[0], 4)
 
 
 def loading_message_bgra(text: str) -> np.ndarray:
@@ -75,32 +78,85 @@ def loading_message_bgra(text: str) -> np.ndarray:
     return to_bgra(image)
 
 
-class _ScaledFrames:
-    def __init__(self, limit_bytes: int) -> None:
-        self._limit = limit_bytes
-        self._kept: OrderedDict[tuple[int, tuple[int, int]], tuple[np.ndarray, np.ndarray]] = OrderedDict()
-        self._bytes = 0
+class _ScalingThreads:
+    def __init__(self) -> None:
+        self._threads: ThreadPoolExecutor | None = None
 
-    def get(self, frame: np.ndarray, size: tuple[int, int]) -> np.ndarray:
-        key = (id(frame), size)
-        kept = self._kept.get(key)
-        if kept is not None:
-            self._kept.move_to_end(key)
-            return kept[1]
-        scaled = scaled_bgra(frame, size)
-        self._kept[key] = (frame, scaled)
-        self._bytes += scaled.nbytes
-        while self._bytes > self._limit and len(self._kept) > 1:
-            _key, (_frame, dropped) = self._kept.popitem(last=False)
-            self._bytes -= dropped.nbytes
+    def __call__(self, job: Callable[[], None]) -> None:
+        if self._threads is None:
+            self._threads = ThreadPoolExecutor(_SCALING_THREADS, thread_name_prefix="genau-scale")
+        self._threads.submit(job)
+
+
+@dataclass(frozen=True)
+class _Showing:
+    flick: Path | None
+    count: int
+    size: tuple[int, int]
+
+
+class _ScaledFrames:
+    def __init__(self, limit_bytes: int, off_the_window_s_thread: Callable[[Callable[[], None]], None]) -> None:
+        self._limit = limit_bytes
+        self._off_the_window_s_thread = off_the_window_s_thread
+        self._lock = threading.Lock()
+        self._showing: _Showing | None = None
+        self._kept: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+        self._asked_ahead = False
+
+    def __len__(self) -> int:
+        return len(self._kept)
+
+    def holds(self, frame: np.ndarray) -> bool:
+        return id(frame) in self._kept
+
+    def get(self, flick_frame: FlickFrame, size: tuple[int, int]) -> np.ndarray:
+        frame = flick_frame.frame
+        showing = _Showing(flick_frame.flick, flick_frame.count, size)
+        with self._lock:
+            if showing != self._showing:
+                self._showing, self._kept, self._asked_ahead = showing, {}, False
+            kept = self._kept.get(id(frame))
+        scaled = self._scale_and_keep(frame, showing) if kept is None else kept[1]
+        if flick_frame.frames and not self._asked_ahead:
+            self._asked_ahead = True
+            self._scale_ahead(flick_frame, showing, scaled.nbytes)
         return scaled
+
+    def _scale_and_keep(self, frame: np.ndarray, showing: _Showing) -> np.ndarray:
+        scaled = scaled_bgra(frame, showing.size)
+        with self._lock:
+            if showing == self._showing and self._has_room_for(scaled.nbytes, showing.count):
+                self._kept.setdefault(id(frame), (frame, scaled))
+        return scaled
+
+    def _has_room_for(self, frame_bytes: int, count: int) -> bool:
+        return max(count, len(self._kept) + 1) * frame_bytes <= self._limit
+
+    def _scale_ahead(self, flick_frame: FlickFrame, showing: _Showing, frame_bytes: int) -> None:
+        frames = flick_frame.frames
+        if len(frames) * frame_bytes > self._limit:
+            return
+        on_screen = next((index for index, frame in enumerate(frames) if frame is flick_frame.frame), 0)
+        for index in sorted(range(len(frames)), key=lambda index: abs(index - on_screen)):
+            if frames[index] is not flick_frame.frame:
+                self._off_the_window_s_thread(
+                    lambda frame=frames[index]: self._scale_unless_it_left(frame, showing))
+
+    def _scale_unless_it_left(self, frame: np.ndarray, showing: _Showing) -> None:
+        with self._lock:
+            if showing != self._showing or id(frame) in self._kept:
+                return
+        self._scale_and_keep(frame, showing)
 
 
 # mpv owns the window, so a flick's frames go up as mpv overlays.
 class FlickOverlay:
-    def __init__(self, engine, *, cache_bytes: int = SCALED_FRAMES_BYTES) -> None:
+    def __init__(self, engine, *, cache_bytes: int = SCALED_FRAMES_BYTES,
+                 off_the_window_s_thread: Callable[[Callable[[], None]], None] | None = None,
+                 ) -> None:
         self._engine = engine
-        self._scaled = _ScaledFrames(cache_bytes)
+        self._scaled = _ScaledFrames(cache_bytes, off_the_window_s_thread or _ScalingThreads())
         self._backdrop_at: tuple[int, int] | None = None
         self._tiles_of: tuple[int, tuple[int, int]] | None = None
         self._tiles_up = 0
@@ -111,16 +167,24 @@ class FlickOverlay:
         if self._backdrop_at != viewport:
             self._engine.overlay(BACKDROP_OVERLAY_ID, 0, 0, black_bgra(*viewport))
             self._backdrop_at = viewport
-        self._show_the_frame(frame.frame, viewport)
+        self._show_the_frame(frame, viewport)
         self._show_the_loading(frame.loading, viewport)
 
-    def _show_the_frame(self, frame: np.ndarray | None, viewport: tuple[int, int]) -> None:
+    @property
+    def scaled_frames_kept(self) -> int:
+        return len(self._scaled)
+
+    def holds_scaled(self, frame: np.ndarray) -> bool:
+        return self._scaled.holds(frame)
+
+    def _show_the_frame(self, flick_frame: FlickFrame, viewport: tuple[int, int]) -> None:
+        frame = flick_frame.frame
         tiles_of = None if frame is None else (id(frame), viewport)
         if tiles_of == self._tiles_of and frame is not None:
             return
         rects = [] if frame is None else tile_rects((frame.shape[1], frame.shape[0]), viewport)
         for index, (x, y, w, h) in enumerate(rects):
-            self._engine.overlay(FIRST_TILE_OVERLAY_ID + index, x, y, self._scaled.get(frame, (w, h)))
+            self._engine.overlay(FIRST_TILE_OVERLAY_ID + index, x, y, self._scaled.get(flick_frame, (w, h)))
         for index in range(len(rects), self._tiles_up):
             self._engine.remove_overlay(FIRST_TILE_OVERLAY_ID + index)
         self._tiles_up = len(rects)
