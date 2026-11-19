@@ -4,12 +4,12 @@ import os
 from pathlib import Path
 
 from funestra import playlist_follower
-from funestra.playlist import PlaylistItem
+from funestra.playlist import PlaylistItem, write_playlist
 from funestra.playlist_follower import PlaylistFollower
 
 
 def _write(playlist: Path, *names: str) -> None:
-    playlist.write_text("".join(f"{playlist.parent / name}\n" for name in names), encoding="utf-8")
+    write_playlist(playlist, [PlaylistItem(playlist.parent / name) for name in names])
 
 
 def _names(taken: list[list[PlaylistItem]]) -> list[list[str]]:
@@ -40,7 +40,8 @@ class TestAListWrittenUnderTheWindow:
 
         assert _names(taken) == [["a show.png"]]
 
-    def test_is_told_apart_from_the_one_before_it_by_what_it_says(self, tmp_path):
+    def test_is_told_apart_from_the_one_before_it_though_windows_stamped_both_with_one_time(
+            self, tmp_path):
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, "v0.mp4")
         first = playlist.stat()
@@ -49,7 +50,8 @@ class TestAListWrittenUnderTheWindow:
 
         _write(playlist, "v2.mp4")
         os.utime(playlist, ns=(first.st_atime_ns, first.st_mtime_ns))
-        assert playlist.stat().st_size == first.st_size
+        assert (playlist.stat().st_size, playlist.stat().st_mtime_ns) == (
+            first.st_size, first.st_mtime_ns)
         follower.tick()
 
         assert _names(taken) == [["v2.mp4"]]
@@ -124,17 +126,31 @@ class TestTheReloadVerb:
 
 
 class TestAListThatHasNotChanged:
-    def test_is_parsed_once_however_many_frames_follow_since_a_frame_comes_sixty_times_a_second(
+    def test_is_neither_opened_nor_parsed_again_however_many_frames_follow(
             self, tmp_path, monkeypatch):
         playlist = tmp_path / "landscape.tsv"
         _write(playlist, *(f"video {n}.mp4" for n in range(5)))
-        parsed: list[str] = []
-        real = playlist_follower.parse_playlist
-        monkeypatch.setattr(playlist_follower, "parse_playlist",
-                            lambda text: parsed.append(text) or real(text))
         follower = PlaylistFollower(playlist, take=lambda items: None)
+        opened: list[Path] = []
+        parsed: list[str] = []
+        monkeypatch.setattr(playlist_follower, "playlist_text", opened.append)
+        monkeypatch.setattr(playlist_follower, "parse_playlist", parsed.append)
 
         for _ in range(60):
             follower.tick()
 
-        assert len(parsed) == 1
+        assert (opened, parsed) == ([], [])
+
+    def test_a_list_taken_away_or_emptied_is_not_opened_either(self, tmp_path, monkeypatch):
+        playlist = tmp_path / "landscape.tsv"
+        _write(playlist, "its own clip.mp4")
+        follower = PlaylistFollower(playlist, take=lambda items: None)
+        opened: list[Path] = []
+        monkeypatch.setattr(playlist_follower, "playlist_text", opened.append)
+
+        playlist.write_text("", encoding="utf-8")
+        follower.tick()
+        playlist.unlink()
+        follower.tick()
+
+        assert opened == []
