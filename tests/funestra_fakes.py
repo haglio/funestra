@@ -72,3 +72,35 @@ def make_playback(tmp_path, *, entries=1, duration_ms=5_000.0, funscripts=None,
                                 for index, points in (points_of_interest or {}).items()},
             **playback),
     ), engine
+
+
+class WorkerTheTestRuns:
+    def __init__(self) -> None:
+        self.published: list[tuple[str, str]] = []
+        self.asked: list[str] = []
+        self.jobs: list[tuple] = []
+        self.delivered = 0
+        self.closed = False
+
+    def publish(self, path, text: str) -> bool:
+        self.published.append((path.name, text))
+        return True
+
+    def ask(self, _command_file, command: str) -> None:
+        self.asked.append(command)
+
+    def do(self, work, then=None) -> None:
+        self.jobs.append((work, then))
+
+    def deliver(self) -> None:
+        self.delivered += 1
+
+    def close(self) -> None:
+        self.closed = True
+
+    def run_the_jobs(self) -> None:
+        jobs, self.jobs = self.jobs, []
+        for work, then in jobs:
+            done = work()
+            if then is not None:
+                then(done)

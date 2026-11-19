@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import logging
 from collections.abc import Callable, Sequence
+from functools import partial
 from pathlib import Path
-from typing import Protocol
+from typing import NamedTuple, Protocol
 
 from app_support.file_channel import write_whole
 
+from .off_the_loop import at_once
 from .replaced_file import ReplacedFile
 
 logger = logging.getLogger(__name__)
@@ -67,13 +69,39 @@ class RadioFile:
         return read_radio(self._file.path) if self._file.holds_something else []
 
 
+class _Opened(NamedTuple):
+    stations: list[Station] | None
+    will_never_open: bool = False
+
+
+def _open_every_station(open_station: Callable[[list[Path]], Station | None],
+                        dealt: list[list[Path]]) -> _Opened:
+    opened: list[Station | None] = []
+    will_never_open = False
+    try:
+        opened.extend(open_station(videos) for videos in dealt)
+    except Exception:
+        logger.exception("A radio station would not open, so this radio stays off")
+        will_never_open = True
+        opened.append(None)
+    if None not in opened:
+        return _Opened(opened)
+    for station in opened:
+        if station is not None:
+            station.close()
+    return _Opened(None, will_never_open)
+
+
 class Radio:
     def __init__(self, open_station: Callable[[list[Path]], Station | None], *,
-                 dealt_in: RadioFile | None = None, together: bool = False) -> None:
+                 dealt_in: RadioFile | None = None, together: bool = False,
+                 behind: Callable = at_once) -> None:
         self._open_station = open_station
         self._dealt_in = dealt_in
         self._together = together
+        self._behind = behind
         self._dealt: list[list[Path]] = []
+        self._opening: list[list[Path]] | None = None
         self._stations: list[Station] = []
         self._tuned = -1
         self._on_an_image = False
@@ -85,7 +113,7 @@ class Radio:
 
     def close(self) -> None:
         for station in self._stations:
-            station.close()
+            self._behind(station.close)
         self._stations, self._dealt = [], []
 
     def tick(self, *, image: bool | None, level: int | None, paused: bool) -> None:
@@ -104,18 +132,20 @@ class Radio:
             station.tune(level if self._on_an_image and heard else None)
 
     def _open_what_was_dealt(self) -> None:
-        if self._stations or not self._dealt:
+        if self._stations or not self._dealt or self._opening is self._dealt:
             return
-        opened: list[Station | None] = []
-        try:
-            opened.extend(self._open_station(videos) for videos in self._dealt)
-        except Exception:
-            logger.exception("A radio station would not open, so this radio stays off")
+        dealt = self._opening = self._dealt
+        self._behind(partial(_open_every_station, self._open_station, dealt),
+                     partial(self._tune_in, dealt))
+
+    def _tune_in(self, dealt: list[list[Path]], opened: _Opened) -> None:
+        if self._opening is dealt:
+            self._opening = None
+        if dealt is not self._dealt:
+            for station in opened.stations or []:
+                self._behind(station.close)
+            return
+        if opened.will_never_open:
             self._dealt = []
-            opened.append(None)
-        if None in opened:
-            for station in opened:
-                if station is not None:
-                    station.close()
-            return
-        self._stations = opened
+        if opened.stations is not None:
+            self._stations = opened.stations

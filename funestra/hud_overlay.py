@@ -17,7 +17,7 @@ from .hud_row import RowHud, RowLayout, RowPress, ScrubberRowDraw, track_on_scre
 from .main_hud import ModeHud
 from .modes import MainMode, Osr2State
 from .name_copy import COPY_NAME, copy_while_the_funestra_plays_on
-from .osr2_visualizer import DriveHud, DrivePublisher, read_drive
+from .osr2_visualizer import DriveHud, DrivePublisher, published_here, read_drive
 from .replaced_file import ReplacedFile
 from .satellite_hud import (
     MARGIN,
@@ -82,9 +82,11 @@ _ON_NO_CONTROL = _Hover("", "", None, None)
 
 
 class PublishedHud:
-    def __init__(self, hud_file: Path, command_file: Path) -> None:
+    def __init__(self, hud_file: Path, command_file: Path,
+                 ask: Callable[[Path | None, str], None] = ask) -> None:
         self._hud_file = ReplacedFile(hud_file)
         self._command_file = Path(command_file)
+        self._ask = ask
         self._published = ""
 
     def next(self, shown: HudModel | None) -> tuple[HudModel | None, bool]:
@@ -103,12 +105,13 @@ class PublishedHud:
         return (parse_hud(text) if text else None), True
 
     def post(self, command: str) -> None:
-        ask(self._command_file, command)
+        self._ask(self._command_file, command)
 
 
 class ConsoleHud:
-    def __init__(self, console: Path, command_file: Path, top_block: Callable[[], ModeHud]) -> None:
-        self._published = PublishedHud(console, command_file)
+    def __init__(self, console: Path, command_file: Path, top_block: Callable[[], ModeHud],
+                 ask: Callable[[Path | None, str], None] = ask) -> None:
+        self._published = PublishedHud(console, command_file, ask)
         self._top_block = top_block
         self._console = _AT_REST
 
@@ -408,6 +411,10 @@ class HudOverlay:
             video_shows=facts is None or facts.main_mode is MainMode.KINO)
 
     def _read_the_drive_if_it_was_replaced(self) -> None:
+        here = published_here(self._drive_file.path)
+        if here is not None:
+            self._published_drive = here
+            return
         if not self._drive_file.replaced():
             return
         drive = read_drive(self._drive_file.path)

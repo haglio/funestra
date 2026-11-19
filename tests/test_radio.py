@@ -205,3 +205,70 @@ def test_the_stations_that_did_open_beside_one_that_would_not_are_let_go():
     ticked(radio, IMAGE)
 
     assert [station.closed for station in opened] == [True]
+
+
+class _Later:
+    def __init__(self) -> None:
+        self.jobs: list[tuple] = []
+
+    def __call__(self, work, then=None) -> None:
+        self.jobs.append((work, then))
+
+    def run(self) -> None:
+        jobs, self.jobs = self.jobs, []
+        for work, then in jobs:
+            done = work()
+            if then is not None:
+                then(done)
+
+
+def _a_radio_opened_later(*deal: str):
+    opened: list[FakeStation] = []
+
+    def open_station(videos):
+        opened.append(FakeStation(videos))
+        return opened[-1]
+
+    later = _Later()
+    radio = Radio(open_station, behind=later)
+    radio.take([[Path(name)] for name in deal])
+    return radio, later, opened
+
+
+def test_stations_are_opened_off_the_loop_and_tuned_in_once_they_are_handed_back():
+    radio, later, opened = _a_radio_opened_later("a.mp4", "b.mp4")
+
+    ticked(radio, IMAGE, IMAGE, IMAGE)
+    opened_on_the_loop, asked = len(opened), len(later.jobs)
+    later.run()
+    ticked(radio, IMAGE)
+
+    assert (opened_on_the_loop, asked) == (0, 1)
+    assert heard(opened) == [70, None]
+
+
+def test_stations_handed_back_after_others_were_dealt_are_let_go():
+    radio, later, opened = _a_radio_opened_later("a.mp4")
+    ticked(radio, IMAGE)
+
+    radio.take([[Path("b.mp4")]])
+    later.run()
+    ticked(radio, IMAGE)
+    later.run()
+    ticked(radio, IMAGE)
+
+    assert [(station.videos, station.closed) for station in opened] == [
+        ([Path("a.mp4")], True), ([Path("b.mp4")], False)]
+    assert heard(opened) == [None, 70]
+
+
+def test_a_radio_closed_lets_its_stations_go_off_the_loop():
+    radio, later, opened = _a_radio_opened_later("a.mp4")
+    ticked(radio, IMAGE)
+    later.run()
+
+    radio.close()
+    closed_on_the_loop = opened[0].closed
+    later.run()
+
+    assert (closed_on_the_loop, opened[0].closed) == (False, True)

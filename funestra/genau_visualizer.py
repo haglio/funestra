@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from pathlib import Path
 
+from .file_channel import publish_whole
 from .flick_flip import HALF_A_LOOP
 from .genau_controls import GenauControls
 from .osr2_visualizer import (
@@ -50,13 +52,15 @@ class GenauVisualizer:
         beats_per_loop: float,
         tcode_sender=None,
         drive_file: Path | None = None,
+        publish: Callable[[Path, str], bool] = publish_whole,
     ):
         self.robot_hand = controls.robot_hand
         self._motion = controls.hand_motion
         self.flick_advance = controls.flick_advance_state
         self.beats_per_loop = beats_per_loop
         self.tcode_sender = tcode_sender
-        self._drive_publisher = None if drive_file is None else DrivePublisher(drive_file)
+        self._drive_publisher = (None if drive_file is None
+                                 else DrivePublisher(drive_file, publish=publish))
         self.drive: DriveHud | None = None
         self._auto_turns = 0
         self._auto_phase: float | None = None

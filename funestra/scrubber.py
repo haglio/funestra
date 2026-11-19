@@ -117,6 +117,10 @@ class LoopThumbCapture:
             return "out"
         return None
 
+    @property
+    def bounds(self) -> tuple[int, int] | None:
+        return self._bounds
+
     def set(self, which: str, thumb) -> None:
         if which == "in":
             self.in_thumb = thumb

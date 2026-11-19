@@ -185,3 +185,20 @@ def test_without_a_file_the_points_last_the_session_and_no_longer(tmp_path):
 
     assert points.point_for(VIDEO) == 300_000
     assert list(tmp_path.iterdir()) == []
+
+
+def test_the_file_is_written_by_whoever_the_points_are_handed_since_five_thousand_take_a_while(
+        tmp_path):
+    file = tmp_path / play_points_filename("portrait")
+    handed: list = []
+    points = PlayPoints(file, clock=_Clock(), behind=handed.append)
+
+    _watch(points, VIDEO, 300_000)
+    points.leave()
+    written_by_the_points = file.exists()
+    _watch(points, OTHER, 9_000)
+    for write in handed:
+        write()
+
+    assert written_by_the_points is False
+    assert json.loads(file.read_text(encoding="utf-8")) == {str(VIDEO).lower(): 300_000}

@@ -72,14 +72,24 @@ class TestTheVisualizerGoesOutOnATimerSinceItsTraceScrollsWhileNothingElseChange
 
         assert drive.read_text(encoding="utf-8") == "stale"
 
-    def test_a_tick_far_enough_after_it_does(self, tmp_path):
+    def test_a_tick_far_enough_after_it_does_once_the_trace_has_scrolled(self, tmp_path):
+        drive, visualizer = self._published(tmp_path)
+        visualizer.update(1.0)
+        drive.write_text("stale", encoding="utf-8")
+        visualizer.tcode_sender.motion_phase = 0.25
+
+        visualizer.update(1.0 + JUST_OVER_THE_INTERVAL)
+
+        assert drive.read_text(encoding="utf-8") != "stale"
+
+    def test_a_readout_that_says_what_the_last_one_said_is_not_written_again(self, tmp_path):
         drive, visualizer = self._published(tmp_path)
         visualizer.update(1.0)
         drive.write_text("stale", encoding="utf-8")
 
         visualizer.update(1.0 + JUST_OVER_THE_INTERVAL)
 
-        assert drive.read_text(encoding="utf-8") != "stale"
+        assert drive.read_text(encoding="utf-8") == "stale"
 
     def test_a_build_with_nowhere_to_publish_says_nothing(self):
         _visualizer().update(1.0)

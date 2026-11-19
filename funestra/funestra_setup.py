@@ -5,6 +5,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, NamedTuple
 
 from .frame_record import DESKTOP_FRAME_MS
+from .off_the_loop import AtOnce, OffTheLoop
 from .play_points import PlayPoints
 from .playback import funscripts_of, points_of_interest_of
 from .playback_setup import PlaybackSetup
@@ -43,16 +44,17 @@ class FunestraSetup(NamedTuple):
     clock: Callable[[], float] = time.monotonic
     frame_ms: float = DESKTOP_FRAME_MS
     frame_clock: Callable[[], float] = time.perf_counter
+    off_the_loop: OffTheLoop = AtOnce()
 
     def playback_setup(self, start_paused: bool) -> PlaybackSetup:
         return PlaybackSetup(
             start_paused=start_paused, locked=self.locked,
-            play_points=PlayPoints(self.channels.play_points),
+            play_points=PlayPoints(self.channels.play_points, behind=self.off_the_loop.do),
             funscripts=funscripts_of(self.playlist),
             points_of_interest=points_of_interest_of(self.playlist), tcode=self.tcode)
 
     def volume_on(self, engine) -> AppVolume | VolumeControl:
         if self.sound_is_the_rooms:
             return AppVolume(engine, dashboard_cmd_file=self.channels.dashboard_cmd,
-                             live=self.audible)
+                             live=self.audible, ask=self.off_the_loop.ask)
         return VolumeControl(engine, live=self.audible, muted=self.muted)

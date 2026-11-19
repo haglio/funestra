@@ -86,19 +86,24 @@ class StatusWriter:
         *,
         min_interval: float = STATUS_INTERVAL_S,
         now_source=time.monotonic,
+        publish: Callable[[Path, str], bool] = publish_whole,
     ) -> None:
         self._path = path
         self._fields = fields
         self._min_interval = min_interval
         self._now = now_source
+        self._publish = publish
         self._last_write: float | None = None
+        self._published: str | None = None
 
     def write(self, session) -> bool:
         now = self._now()
         if self._last_write is not None and now - self._last_write < self._min_interval:
             return False
         text = "".join(f"{key}={value}\n" for key, value in self._fields(session).items())
-        if not publish_whole(self._path, text):
-            return False
+        if text != self._published:
+            if not self._publish(self._path, text):
+                return False
+            self._published = text
         self._last_write = now
         return True

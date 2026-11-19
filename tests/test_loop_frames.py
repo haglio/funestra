@@ -117,3 +117,50 @@ def test_a_frame_mpv_would_not_give_is_not_asked_for_on_every_pass(tmp_path):
 
     assert (asked_while_waiting, engine.screenshots) == (1, 2)
     assert IN_FRAME_OVERLAY_ID in engine.overlays
+
+
+class _Later:
+    def __init__(self) -> None:
+        self.jobs: list[tuple] = []
+
+    def __call__(self, work, then=None) -> None:
+        self.jobs.append((work, then))
+
+    def run(self) -> None:
+        jobs, self.jobs = self.jobs, []
+        for work, then in jobs:
+            then(work())
+
+
+def _frames_taken_later(tmp_path):
+    _taken_at_once, playback, engine, strip = _frames(tmp_path)
+    later = _Later()
+    return LoopFrames(engine, behind=later), later, playback, engine, strip
+
+
+def test_a_loops_frame_is_taken_off_the_loop_and_goes_up_once_it_is_handed_back(tmp_path):
+    frames, later, playback, engine, strip = _frames_taken_later(tmp_path)
+    playback.set_ab_loop(2_000, 4_000)
+
+    for _ in range(3):
+        frames.paint(playback, strip, TRACK, WIDTH)
+    taken_on_the_loop, asked = engine.screenshots, len(later.jobs)
+    later.run()
+    frames.paint(playback, strip, TRACK, WIDTH)
+
+    assert (taken_on_the_loop, asked) == (0, 1)
+    assert IN_FRAME_OVERLAY_ID in engine.overlays
+
+
+def test_a_frame_handed_back_after_its_loop_was_replaced_is_not_put_up_for_the_new_one(tmp_path):
+    frames, later, playback, engine, strip = _frames_taken_later(tmp_path)
+    playback.set_ab_loop(2_000, 4_000)
+    frames.paint(playback, strip, TRACK, WIDTH)
+
+    playback.set_ab_loop(6_000, 8_000)
+    frames.paint(playback, strip, TRACK, WIDTH)
+    later.run()
+    frames.paint(playback, strip, TRACK, WIDTH)
+
+    assert engine.overlays == {}
+    assert len(later.jobs) == 1
