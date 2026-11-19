@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import weakref
+from pathlib import Path
+
 import numpy as np
+import pytest
+from app_support.threading_utils import wait_until
 
 import funestra.flick_overlay as module
 from funestra.flick_overlay import (
@@ -97,32 +102,157 @@ def test_the_same_frame_in_the_same_window_is_not_put_up_twice():
     assert engine.put_up == [BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID]
 
 
-def test_a_frame_shown_before_at_this_size_is_scaled_once_since_scaling_costs_milliseconds_on_the_thread_that_drives_the_device(monkeypatch):
-    scaled: list[tuple[int, int]] = []
+@pytest.fixture
+def scaled(monkeypatch) -> list[int]:
+    made: list[int] = []
     real = module.scaled_bgra
     monkeypatch.setattr(module, "scaled_bgra",
-                        lambda frame, size: scaled.append(size) or real(frame, size))
+                        lambda frame, size: made.append(int(frame[0, 0, 0])) or real(frame, size))
+    return made
+
+
+_ALPHA = Path("alpha.mp4")
+_ONE_SCALED_FRAME = 64 * 32 * 4
+
+
+def _flick(length: int) -> list[np.ndarray]:
+    return [_frame(16, 8, rgb=(index, 0, 0)) for index in range(length)]
+
+
+def test_a_flick_played_round_and_back_scales_each_frame_once_since_scaling_costs_more_than_a_pass_on_the_thread_that_draws(scaled):
     overlay = FlickOverlay(FakeEngine())
-    first, second = _frame(16, 8), _frame(16, 8, rgb=(1, 2, 3))
+    frames = _flick(4)
 
-    for frame in (first, second, first):
-        overlay.show(FlickFrame(frame=frame), viewport=(64, 32))
+    for index in (0, 1, 2, 3, 2, 1, 0, 1, 2, 3):
+        overlay.show(FlickFrame(frame=frames[index], count=4, flick=_ALPHA), viewport=(64, 32))
 
-    assert len(scaled) == 2
+    assert scaled == [0, 1, 2, 3]
 
 
-def test_the_scaled_frames_kept_are_bounded_so_a_long_flick_cannot_eat_the_memory(monkeypatch):
-    scaled: list[tuple[int, int]] = []
-    real = module.scaled_bgra
-    monkeypatch.setattr(module, "scaled_bgra",
-                        lambda frame, size: scaled.append(size) or real(frame, size))
-    overlay = FlickOverlay(FakeEngine(), cache_bytes=64 * 32 * 4)
-    first, second = _frame(16, 8), _frame(16, 8, rgb=(1, 2, 3))
+def test_a_flick_too_long_for_the_room_keeps_none_of_its_scaled_frames_since_a_part_of_one_would_never_be_met_again_before_it_was_dropped(scaled):
+    overlay = FlickOverlay(FakeEngine(), cache_bytes=2 * _ONE_SCALED_FRAME)
+    frames = _flick(3)
 
-    for frame in (first, second, first):
-        overlay.show(FlickFrame(frame=frame), viewport=(64, 32))
+    for index in (0, 1, 2, 1, 0):
+        overlay.show(FlickFrame(frame=frames[index], count=3, flick=_ALPHA), viewport=(64, 32))
 
-    assert len(scaled) == 3
+    assert scaled == [0, 1, 2, 1, 0]
+    assert overlay.scaled_frames_kept == 0
+
+
+def test_frames_whose_flick_is_not_named_are_kept_only_while_there_is_room(scaled):
+    overlay = FlickOverlay(FakeEngine(), cache_bytes=2 * _ONE_SCALED_FRAME)
+    frames = _flick(3)
+
+    for index in (0, 1, 0, 2, 0, 2):
+        overlay.show(FlickFrame(frame=frames[index]), viewport=(64, 32))
+
+    assert scaled == [0, 1, 2, 2]
+
+
+def test_the_next_flick_coming_up_lets_go_of_the_last_one_s_frames():
+    overlay = FlickOverlay(FakeEngine())
+    frames = _flick(2)
+    for frame in frames:
+        overlay.show(FlickFrame(frame=frame, count=2, flick=_ALPHA), viewport=(64, 32))
+    last_flick_s_frame = weakref.ref(frames[0])
+    del frames, frame
+
+    overlay.show(FlickFrame(frame=_frame(16, 8), count=1, flick=Path("beta.mp4")), viewport=(64, 32))
+
+    assert last_flick_s_frame() is None
+    assert overlay.scaled_frames_kept == 1
+
+
+def test_a_window_of_another_size_lets_go_of_the_frames_scaled_for_the_old_one(scaled):
+    overlay = FlickOverlay(FakeEngine())
+    frames = _flick(2)
+    for frame in frames:
+        overlay.show(FlickFrame(frame=frame, count=2, flick=_ALPHA), viewport=(64, 32))
+
+    overlay.show(FlickFrame(frame=frames[0], count=2, flick=_ALPHA), viewport=(32, 16))
+
+    assert overlay.scaled_frames_kept == 1
+
+
+def test_a_flick_handed_over_whole_is_scaled_ahead_off_the_window_s_thread_so_no_frame_but_the_first_is_scaled_on_it(scaled):
+    ahead: list = []
+    overlay = FlickOverlay(FakeEngine(), off_the_window_s_thread=ahead.append)
+    frames = _flick(4)
+
+    def show(index: int) -> None:
+        overlay.show(FlickFrame(frame=frames[index], count=4, flick=_ALPHA, frames=frames),
+                     viewport=(64, 32))
+
+    show(3)
+    on_the_window_s_thread = list(scaled)
+    for job in ahead:
+        job()
+    for index in (2, 1, 0, 1, 2, 3):
+        show(index)
+
+    assert on_the_window_s_thread == [3]
+    assert scaled == [3, 2, 1, 0]
+
+
+def test_frames_are_scaled_ahead_nearest_the_one_on_screen_first_since_the_flick_is_scrubbed_from_there():
+    ahead: list = []
+    overlay = FlickOverlay(FakeEngine(), off_the_window_s_thread=ahead.append)
+    frames = _flick(5)
+
+    overlay.show(FlickFrame(frame=frames[2], count=5, flick=_ALPHA, frames=frames), viewport=(64, 32))
+    for job in ahead[:2]:
+        job()
+
+    assert overlay.scaled_frames_kept == 3
+    for index in (1, 3):
+        assert overlay.holds_scaled(frames[index])
+
+
+def test_a_flick_is_asked_to_be_scaled_ahead_once_and_not_on_every_pass():
+    ahead: list = []
+    overlay = FlickOverlay(FakeEngine(), off_the_window_s_thread=ahead.append)
+    frames = _flick(3)
+
+    for _pass in range(4):
+        overlay.show(FlickFrame(frame=frames[0], count=3, flick=_ALPHA, frames=frames), viewport=(64, 32))
+
+    assert len(ahead) == 2
+
+
+def test_scaling_ahead_for_a_flick_that_has_left_the_screen_does_nothing(scaled):
+    ahead: list = []
+    overlay = FlickOverlay(FakeEngine(), off_the_window_s_thread=ahead.append)
+    frames = _flick(3)
+    overlay.show(FlickFrame(frame=frames[0], count=3, flick=_ALPHA, frames=frames), viewport=(64, 32))
+
+    overlay.show(FlickFrame(frame=_frame(16, 8, rgb=(9, 0, 0)), count=1, flick=Path("beta.mp4")),
+                 viewport=(64, 32))
+    for job in ahead:
+        job()
+
+    assert scaled == [0, 9]
+    assert overlay.scaled_frames_kept == 1
+
+
+def test_a_flick_too_long_for_the_room_is_not_scaled_ahead():
+    ahead: list = []
+    overlay = FlickOverlay(FakeEngine(), cache_bytes=2 * _ONE_SCALED_FRAME,
+                           off_the_window_s_thread=ahead.append)
+    frames = _flick(3)
+
+    overlay.show(FlickFrame(frame=frames[0], count=3, flick=_ALPHA, frames=frames), viewport=(64, 32))
+
+    assert ahead == []
+
+
+def test_left_to_itself_it_scales_ahead_on_threads_of_its_own():
+    overlay = FlickOverlay(FakeEngine())
+    frames = _flick(3)
+
+    overlay.show(FlickFrame(frame=frames[0], count=3, flick=_ALPHA, frames=frames), viewport=(64, 32))
+
+    wait_until(lambda: overlay.scaled_frames_kept == 3)
 
 
 def test_nothing_decoded_yet_shows_the_backdrop_and_what_is_loading():
@@ -173,7 +303,7 @@ def test_a_loading_notice_follows_the_window_to_its_new_right_edge():
     engine = FakeEngine()
     overlay = FlickOverlay(engine)
     overlay.show(FlickFrame(frame=None, loading="Loading alpha.mp4"), viewport=(640, 480))
-    x_before, _y, message = engine.overlays[LOADING_OVERLAY_ID]
+    x_before = engine.overlays[LOADING_OVERLAY_ID][0]
 
     overlay.show(FlickFrame(frame=None, loading="Loading alpha.mp4"), viewport=(800, 480))
 
