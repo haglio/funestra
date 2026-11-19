@@ -780,6 +780,24 @@ def test_a_press_in_a_lower_corner_reaches_the_button_drawn_there(
     assert _commands(tmp_path) == ["portrait_next"]
 
 
+@pytest.mark.parametrize(("command", "verb"), [("portrait_next", "NEXT"), ("portrait_prev", "PREV")])
+def test_a_step_pressed_on_the_hud_steps_its_funestra_there_and_tells_fun_time_it_is_done(
+        tmp_path: Path, hud: Path, command, verb):
+    engine, stepped = FakeEngine(), []
+    _publish(hud, hud_corner="lower_right",
+             rows=[[{"command": command, "glyph": "N", "tooltip": "Step", "width": 18}]])
+    overlay = _overlay(tmp_path, hud, engine, clock=lambda: 12.5, step_here=stepped.append)
+    overlay.tick(viewport=(1200, 800))
+    (left, top, _bgra), = engine.overlays.values()
+    (bx, by, bw, bh), _button = next(
+        (rect, b) for rect, b in overlay.targets.buttons if b.command == command)
+
+    overlay.press(left + bx + bw // 2, top + by + bh // 2)
+
+    assert stepped == [f"{verb} 12.500"]
+    assert _commands(tmp_path) == [f"{command} !12.500"]
+
+
 def test_the_plus_names_itself_where_the_hud_floats_over_an_item_taking_the_tooltip_s_room_only_while_pointed_at_so_a_press_beside_it_still_reaches_the_video(
         tmp_path: Path, hud: Path):
     engine = FakeEngine()

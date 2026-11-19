@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .funestra_controls import SEEK_STEP_MS
-from .funestra_verbs import SEEK_BACK, SEEK_FWD
+from .funestra_verbs import NEXT, PREV, SEEK_BACK, SEEK_FWD
 from .hud_button import FIT_THE_WORD, Button
 from .hud_icons import (
     BACK_ICON,
@@ -66,17 +66,22 @@ def why_it_cannot_step(verb: str, status: FunestraStatus, noun: str) -> str | No
     return None
 
 
+def steps_of(funestra: str) -> dict[str, str]:
+    return {f"{funestra}_prev": PREV, f"{funestra}_next": NEXT}
+
+
 def transport(funestra: str, *, noun: str, longer_than_a_step: bool,
               image: bool = False, cannot_step: str = "") -> tuple[Button, ...]:
     cannot_step = cannot_step or (AN_IMAGE if image else "" if longer_than_a_step
                                   else too_short_to_step(noun))
     reason = f" ({cannot_step})" if cannot_step else ""
+    previous, following = steps_of(funestra)
     return (
-        previous_button(f"{funestra}_prev", noun=noun),
+        previous_button(previous, noun=noun),
         Button(f"{funestra}_nudge_prev", BACK_ICON, f"Back 10s{reason}", dim=bool(cannot_step)),
         Button(f"{funestra}_nudge_next", FORWARD_ICON, f"Forward 10s{reason}",
                dim=bool(cannot_step)),
-        next_button(f"{funestra}_next", noun=noun),
+        next_button(following, noun=noun),
     )
 
 

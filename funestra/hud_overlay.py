@@ -6,9 +6,10 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import NamedTuple
 
-from .dashboard import ask
+from .dashboard import already_done, ask
 from .host_controls import HostControls, HostControlsHud, HostControlsPress
 from .hud_button import Button
+from .hud_controls import steps_of
 from .hud_corners import HudPlace
 from .hud_kinds import HudFacts, HudKind, main_title
 from .hud_placement import HudCorner, HudEdge, PointerReading
@@ -143,8 +144,10 @@ class HudOverlay:
         host_controls: HostControls | None = None,
         clock=time.monotonic,
         clipboard: Callable[[str], None] = copy_while_the_funestra_plays_on,
+        step_here: Callable[[str], None] | None = None,
     ) -> None:
         self._source = source
+        self._step_here = step_here
         self._clipboard = clipboard
         self._drive_file = None if drive.file is None else Path(drive.file)
         self._drive_gate = drive.gate
@@ -407,4 +410,10 @@ class HudOverlay:
         return (self._model.item_name if self._model is not None else "") or self._video
 
     def _post(self, command: str) -> None:
-        self._source.post(command)
+        verb = steps_of(self._model.funestra).get(command) if self._model is not None else None
+        if verb is None or self._step_here is None:
+            self._source.post(command)
+            return
+        pressed_at = self._clock()
+        self._step_here(f"{verb} {pressed_at:.3f}")
+        self._source.post(already_done(command, pressed_at))
