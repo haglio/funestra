@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import threading
+from collections import OrderedDict
 from pathlib import Path
 from typing import Protocol
 
@@ -13,6 +15,7 @@ HALF_A_LOOP = 0.5
 
 GENAU_SECTION = "genau"
 FLIPPED = "flipped"
+_FLIPS_READ_AHEAD_KEPT = 8
 
 
 def _is_flipped(record: dict) -> bool:
@@ -48,12 +51,31 @@ class FlickFlip:
         self._elsewhere = kept_elsewhere or _KeptNowhereElse()
         self._flick: Path | None = None
         self.on = False
+        self._read_ahead: OrderedDict[Path, bool] = OrderedDict()
+        self._read_ahead_lock = threading.Lock()
+
+    def read_ahead(self, flick: Path) -> None:
+        flipped = self._recorded_as_flipped(flick)
+        with self._read_ahead_lock:
+            self._read_ahead[flick] = flipped
+            self._read_ahead.move_to_end(flick)
+            while len(self._read_ahead) > _FLIPS_READ_AHEAD_KEPT:
+                self._read_ahead.popitem(last=False)
+
+    @property
+    def flips_read_ahead(self) -> int:
+        return len(self._read_ahead)
 
     def follow(self, flick: Path | None) -> None:
         if flick == self._flick:
             return
         self._flick = flick
-        self.on = flick is not None and self._recorded_as_flipped(flick)
+        if flick is None:
+            self.on = False
+            return
+        with self._read_ahead_lock:
+            read_ahead = self._read_ahead.pop(flick, None)
+        self.on = self._recorded_as_flipped(flick) if read_ahead is None else read_ahead
 
     def applied_to(self, phase: float) -> float:
         return (phase + HALF_A_LOOP) % 1.0 if self.on else phase

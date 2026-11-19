@@ -253,3 +253,49 @@ def test_a_flick_the_other_keeper_does_not_keep_keeps_its_flip_in_its_own_record
 
     assert elsewhere.kept == []
     assert json.loads(_record(tmp_path).read_text(encoding="utf-8")) == {"genau": {"flipped": True}}
+
+
+class _CountsItsReads(_KeptElsewhere):
+    def __init__(self, keeps: Path, flipped: bool = False) -> None:
+        super().__init__(keeps, flipped)
+        self.reads = 0
+
+    def is_flipped(self, flick: Path) -> bool:
+        self.reads += 1
+        return self.flipped
+
+
+def test_a_flip_read_ahead_beside_the_decode_is_not_read_again_when_the_flick_comes_up(tmp_path):
+    flick = _flick(tmp_path)
+    elsewhere = _CountsItsReads(flick, flipped=True)
+    flip = FlickFlip(_metadata_root(tmp_path), kept_elsewhere=elsewhere)
+
+    flip.read_ahead(flick)
+    for _pass in range(3):
+        flip.follow(flick)
+
+    assert (flip.on, elsewhere.reads) == (True, 1)
+
+
+def test_a_flip_read_ahead_is_used_for_one_coming_up_since_the_flick_may_be_flipped_while_it_is_up(tmp_path):
+    flick = _flick(tmp_path)
+    elsewhere = _CountsItsReads(flick, flipped=False)
+    flip = FlickFlip(_metadata_root(tmp_path), kept_elsewhere=elsewhere)
+    flip.read_ahead(flick)
+    flip.follow(flick)
+
+    elsewhere.flipped = True
+    flip.follow(None)
+    flip.follow(flick)
+
+    assert (flip.on, elsewhere.reads) == (True, 2)
+
+
+def test_only_the_last_few_flips_read_ahead_are_kept_since_most_flicks_fetched_ahead_never_come_up(tmp_path):
+    elsewhere = _CountsItsReads(tmp_path / "none of them.mp4")
+    flip = FlickFlip(_metadata_root(tmp_path), kept_elsewhere=elsewhere)
+
+    for number in range(40):
+        flip.read_ahead(tmp_path / f"video {number}.mp4")
+
+    assert flip.flips_read_ahead <= 8

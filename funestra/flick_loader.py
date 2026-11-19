@@ -16,11 +16,16 @@ class FlickLoadParts(NamedTuple):
     on_active_flick_loaded: Any
 
 
+def _nothing_beside_the_frames(_path: Path) -> None:
+    pass
+
+
 class FlickLoadController:
     def __init__(self, parts: FlickLoadParts):
         (self.flick_store, self.load_state, self.prefetch_state,
          self.current_flick_path_getter, self.decode_flick, self.start_thread,
          self.logger, self.on_active_flick_loaded) = parts
+        self.read_beside_the_frames = _nothing_beside_the_frames
 
     @property
     def is_busy(self) -> bool:
@@ -103,12 +108,20 @@ class FlickLoadController:
         began_for_the_log_line_alone = time.monotonic()
         try:
             frames = self.decode_flick(path)
+            self._read_what_goes_beside_the_frames(path)
             elapsed = time.monotonic() - began_for_the_log_line_alone
             self.logger.info("Decoded %s: %d frames in %.2fs", path.name, len(frames), elapsed)
             state.record_success(path, frames, request_id)
         except Exception as exc:
             log_error(path, exc)
             state.record_error(path, str(exc), request_id)
+
+    def _read_what_goes_beside_the_frames(self, path: Path) -> None:
+        try:
+            self.read_beside_the_frames(path)
+        except Exception:
+            self.logger.warning("Could not read ahead what goes beside %s's frames", path.name,
+                                exc_info=True)
 
     def _loader_thread_fn(self, path: Path, request_id: int) -> None:
         self._decode_thread_fn(
