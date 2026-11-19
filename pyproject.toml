@@ -93,3 +93,8 @@ funestra = ["learned_motion.json.gz", "tiles.glsl"]
 # app_support.gates holds all three halves of it.
 addopts = "-p no:cacheprovider -p app_support.sanitize.pytest_plugin -p app_support.gates.pytest_plugin -p app_support.coverage_gate --cov --cov-report= --timeout=60 --timeout-method=thread"
 testpaths = ["tests"]
+
+# The names the screen capitalizes inside sentence-case text
+# (app_support.sentence_case).
+[tool.haglio.sentence-case]
+names = ["Funestra", "Funestras", "Main Funestra", "Genau", "Trash", "Robot Hand", "Fun Time"]
