@@ -142,16 +142,15 @@ class RowSection:
                                 track=layout.track)
         image.alpha_composite(_rgba(bar), (x, y))
         if row.volume is not None:
-            volume_control = _rgba(self._volume.bgra(row.volume))
-            image.alpha_composite(volume_control, _offset((x, y), volume_control_xy(
-                viewport_w=width, viewport_h=ROW_H, timeline_h=ROW_H)))
+            image.alpha_composite(self._volume.image(row.volume), _offset(
+                (x, y), volume_control_xy(viewport_w=width, viewport_h=ROW_H, timeline_h=ROW_H)))
         if layout.dial is not None:
             played, count = row.loop
-            dial = _rgba(self._dial.bgra(LoopDialPainter.hand(played / count)))
-            image.alpha_composite(dial, (x + layout.dial, y + PARTS_Y))
+            image.alpha_composite(self._dial.image(LoopDialPainter.hand(played / count)),
+                                  (x + layout.dial, y + PARTS_Y))
         if layout.time_text is not None:
-            time_text = _rgba(self._time_text.bgra(row.playhead))
-            image.alpha_composite(time_text, (x + layout.time_text[0], y + PARTS_Y))
+            image.alpha_composite(self._time_text.image(row.playhead),
+                                  (x + layout.time_text[0], y + PARTS_Y))
 
 
 def fitting(heatmap, track: tuple[int, int]):

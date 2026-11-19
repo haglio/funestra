@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from functools import cache
+from functools import cache, lru_cache
 
 from PIL import Image, ImageDraw
 from shared_ui.palette import TEXT_PRIMARY
@@ -79,7 +79,12 @@ def _font():
 
 
 def time_text_width(hud: PlayheadHud) -> int:
-    return text_width(_font(), hud.widest)
+    return _width_of(hud.widest)
+
+
+@lru_cache(maxsize=256)
+def _width_of(text: str) -> int:
+    return text_width(_font(), text)
 
 
 class PlayheadHudPainter(KeptBitmap):

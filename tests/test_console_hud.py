@@ -5,6 +5,7 @@ from pathlib import Path
 from host_controls_fakes import BAR, AHost, middle_of
 from shared_ui.palette import BG_BUTTON
 
+from funestra import hud_overlay
 from funestra.hud_kinds import HudFacts, HudKind
 from funestra.hud_overlay import (
     HUD_OVERLAY_ID,
@@ -114,6 +115,34 @@ class TestWhatTheTitleSays:
         overlay.tick(viewport=WINDOW)
 
         assert engine.overlays[HUD_OVERLAY_ID][2] is first
+
+
+def test_the_title_is_composed_once_while_neither_fun_time_nor_the_top_block_says_anything_new(
+        tmp_path, monkeypatch):
+    composed: list[ModeHud] = []
+    real = hud_overlay.main_title
+    monkeypatch.setattr(hud_overlay, "main_title",
+                        lambda facts, block: composed.append(block) or real(facts, block))
+    _console(tmp_path / "console.json")
+    overlay, _engine = _overlay(tmp_path, top_block=lambda: ModeHud(video="Jane Doe - scene one"))
+
+    for _ in range(5):
+        overlay.tick(viewport=(1280, 720))
+
+    assert len(composed) == 1
+
+
+def test_a_new_word_from_the_top_block_is_drawn(tmp_path):
+    blocks = [ModeHud(video="Jane Doe - scene one"), ModeHud(video="Jane Doe - scene two")]
+    _console(tmp_path / "console.json")
+    overlay, engine = _overlay(tmp_path, top_block=lambda: blocks[0])
+    overlay.tick(viewport=(1280, 720))
+    sent = len(engine.overlays_sent)
+
+    blocks.pop(0)
+    overlay.tick(viewport=(1280, 720))
+
+    assert len(engine.overlays_sent) == sent + 1
 
 
 def test_a_press_on_a_button_asks_fun_time_for_its_verb(tmp_path):

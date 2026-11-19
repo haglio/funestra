@@ -114,14 +114,19 @@ class ConsoleHud:
         self._published = PublishedHud(console, command_file, ask)
         self._top_block = top_block
         self._console = _AT_REST
+        self._built_from: tuple[HudModel, ModeHud] | None = None
+        self._built: HudModel | None = None
 
     def next(self, shown: HudModel | None) -> tuple[HudModel | None, bool]:
         console, _changed = self._published.next(self._console)
         self._console = console or self._console
         block = self._top_block()
-        model = replace(self._console, item_name=block.video,
-                        title=main_title(self._console.facts or HudFacts(), block))
-        return model, model != shown
+        if self._built_from is None or self._console is not self._built_from[0] or (
+                block != self._built_from[1]):
+            self._built_from = (self._console, block)
+            self._built = replace(self._console, item_name=block.video,
+                                  title=main_title(self._console.facts or HudFacts(), block))
+        return self._built, self._built is not shown and self._built != shown
 
     def post(self, command: str) -> None:
         self._published.post(command)
@@ -216,9 +221,10 @@ class HudOverlay:
              scrubber_row: ScrubberRowDraw | None = None, flash: str = "",
              playing: PlayingFacts | None = None) -> None:
         row, heatmap = (None, None) if scrubber_row is None else scrubber_row
+        the_row_moved = row != self._scrubber_row or heatmap is not self._heatmap
         redraw = (playing != self._playing or video != self._video or playback_speed != self._playback_speed
                   or viewport != self._viewport or flash != self._flash
-                  or row != self._scrubber_row or heatmap is not self._heatmap)
+                  or (the_row_moved and not self.minimized))
         self._video = video
         self._playing = playing
         self._playback_speed = playback_speed
