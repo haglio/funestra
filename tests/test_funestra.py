@@ -22,6 +22,7 @@ from funestra.flick_overlay import (
 )
 from funestra.funestra import Channels, Funestra, User, osr2_line
 from funestra.funestra_setup import FunestraSetup
+from funestra.funestra_verbs import LOCK_PRESSED
 from funestra.hud_button import Button
 from funestra.hud_corners import CORNER_PLUS_OVERLAY_ID
 from funestra.hud_kinds import HudFacts, HudKind
@@ -631,6 +632,22 @@ class TestANextPressedOnItsHud:
         assert engine.opened[-1] == videos[1]
         told, pressed_at = _asked(tmp_path)
         assert (told, pressed_at[0]) == ("portrait_next", "!")
+
+
+class TestALockKeyPressedForIt:
+    def test_lights_its_hud_s_lock_before_the_session_has_locked(self, tmp_path):
+        funestra, _engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
+                                      hud=True, commands="")
+        (tmp_path / "portrait_hud.json").write_text(hud_text(HudModel(
+            funestra="portrait", kind=HudKind.SATELLITE,
+            facts=HudFacts(funestra="portrait", locked=False))), encoding="utf-8")
+        funestra.tick(viewport=WINDOW)
+
+        funestra.apply(LOCK_PRESSED)
+        funestra.tick(viewport=WINDOW)
+
+        lock = next(b for _rect, b in funestra.hud.targets.buttons if b.command == "portrait_lock")
+        assert lock.lit
 
 
 class TestACornerTheHudIsNotIn:

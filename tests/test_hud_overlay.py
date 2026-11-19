@@ -14,6 +14,7 @@ from funestra.hud_corners import HudPlace
 from funestra.hud_kinds import HudFacts, HudKind
 from funestra.hud_minimize import collapsed_hud
 from funestra.hud_overlay import (
+    LOCK_LIGHT_WAITS_S,
     DrawnOn,
     DriveFeed,
     HudOverlay,
@@ -1069,3 +1070,66 @@ class TestWhatTheButtonsGrayOnIsTheFunestrasOwn:
         shown = self._shown(None)
 
         assert shown["portrait_funscript_jump"].dim
+
+
+class TestALockPressedLightsAtOnce:
+    @staticmethod
+    def _hud(clock):
+        host = {"locked": False}
+        posted: list[str] = []
+
+        def model() -> HudModel:
+            return HudModel(funestra="portrait", kind=HudKind.SATELLITE,
+                            facts=HudFacts(funestra="portrait", locked=host["locked"]))
+
+        engine = FakeEngine()
+        overlay = HudOverlay(source=WindowsOwnHud(model, posted.append),
+                             drawn_on=DrawnOn(engine), clock=clock)
+        overlay.tick()
+        return overlay, host, posted, engine
+
+    @staticmethod
+    def _lit(overlay: HudOverlay) -> bool:
+        overlay.tick()
+        return next(b for _rect, b in overlay.targets.buttons if b.command == "portrait_lock").lit
+
+    @staticmethod
+    def _press_the_lock(overlay: HudOverlay, engine: FakeEngine) -> None:
+        (x, y, w, h), _button = next((rect, b) for rect, b in overlay.targets.buttons
+                                     if b.command == "portrait_lock")
+        (left, top, _bgra), = engine.overlays.values()
+        overlay.press(left + x + w // 2, top + y + h // 2)
+
+    def test_a_click_on_the_lock_lights_it_before_the_host_has_locked_and_still_asks_the_host(self):
+        overlay, _host, posted, engine = self._hud(lambda: 0.0)
+
+        self._press_the_lock(overlay, engine)
+
+        assert self._lit(overlay)
+        assert posted == ["portrait_lock"]
+
+    def test_the_lock_key_lights_it_the_same_way(self):
+        overlay, _host, _posted, _engine = self._hud(lambda: 0.0)
+
+        overlay.lock_pressed()
+
+        assert self._lit(overlay)
+
+    def test_once_the_host_has_locked_the_light_is_the_hosts_again(self):
+        overlay, host, _posted, _engine = self._hud(lambda: 0.0)
+        overlay.lock_pressed()
+        host["locked"] = True
+        self._lit(overlay)
+
+        host["locked"] = False
+
+        assert not self._lit(overlay)
+
+    def test_a_lock_the_host_never_takes_goes_dark_again(self):
+        now = [0.0]
+        overlay, _host, _posted, _engine = self._hud(lambda: now[0])
+        overlay.lock_pressed()
+
+        now[0] = LOCK_LIGHT_WAITS_S + 0.1
+
+        assert not self._lit(overlay)

@@ -119,6 +119,8 @@ class ConsoleHud:
         self._published.post(command)
 
 
+LOCK_LIGHT_WAITS_S = 10.0
+
 _AT_REST = HudModel(funestra="main", kind=HudKind.MAIN, facts=HudFacts(locked=True))
 
 
@@ -164,6 +166,7 @@ class HudOverlay:
         self._renderer: HudRenderer | None = None
         self._clicks: HudClicks | None = None
         self._model: HudModel | None = None
+        self._lock_light: tuple[bool, float] | None = None
         self._video = ""
         self._playing: PlayingFacts | None = None
         self._flash = ""
@@ -228,6 +231,9 @@ class HudOverlay:
                 self._clicks.active_filter = model.filter_query
             self._model = model
             redraw = True
+        if self._lock_light is not None and self._host_caught_up_with_the_lock():
+            self._lock_light = None
+            redraw = True
         drive = self._motion()
         if drive is not None:
             self._visualizer.publish(drive, self._clock())
@@ -237,6 +243,21 @@ class HudOverlay:
             command = self._clicks.due(now=self._clock())
             if command:
                 self._post(command)
+
+    def lock_pressed(self) -> None:
+        if self._model is None or self._model.facts is None:
+            return
+        self._lock_light = (not self._lock_shown(), self._clock())
+        self._draw()
+
+    def _lock_shown(self) -> bool:
+        return self._model.facts.locked if self._lock_light is None else self._lock_light[0]
+
+    def _host_caught_up_with_the_lock(self) -> bool:
+        light, since = self._lock_light
+        facts = None if self._model is None else self._model.facts
+        return (facts is None or facts.locked == light
+                or self._clock() - since > LOCK_LIGHT_WAITS_S)
 
     def press(self, x: int, y: int) -> bool:
         if self._clicks is None or not self.covers(x, y):
@@ -386,6 +407,8 @@ class HudOverlay:
         model = replace(self._model, playback_speed=self._playback_speed, hud_corner=corner)
         if self._playing is not None and model.facts is not None:
             model = replace(model, facts=replace(model.facts, **self._playing._asdict()))
+        if self._lock_light is not None and model.facts is not None:
+            model = replace(model, facts=replace(model.facts, locked=self._lock_light[0]))
         self._draw_owed = True
         rendered = self._renderer.render(
             model, scrubber_row=self._scrubber_row, heatmap=self._heatmap,
@@ -410,6 +433,8 @@ class HudOverlay:
         return (self._model.item_name if self._model is not None else "") or self._video
 
     def _post(self, command: str) -> None:
+        if self._model is not None and command == f"{self._model.funestra}_lock":
+            self.lock_pressed()
         verb = steps_of(self._model.funestra).get(command) if self._model is not None else None
         if verb is None or self._step_here is None:
             self._source.post(command)
