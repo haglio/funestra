@@ -22,7 +22,7 @@ from .libmpv_loader import add_libmpv_to_path, libmpv_dirs
 from .lost_gpu import LostGpu
 from .mpv_gate import CallGate, mpv_call
 from .output_colors import OutputColors
-from .wheel_zoom import panned_by, zoomed_at
+from .wheel_zoom import WheelZoom
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +198,7 @@ class _MpvControl:
         self._tiling = (1, "no")
         self._decoder: str | None = None
         self._decoder_said_for: str | None = None
-        self._zoomed: View | None = None
+        self._zoomed: WheelZoom | None = None
         self._zoomed_on: str | None = None
 
     def _adopt(self, handle) -> None:
@@ -389,7 +389,9 @@ class _MpvControl:
         if self._image_track is None:
             return
         now = self._now()
-        view = self._zoomed or (self._ken_burns.view(now) if self._image_track else View())
+        view = self._under_the_wheel(now)
+        if self._zoomed is not None:
+            view = self._zoomed.over(view, self._fit())
         placed = view.placement()
         for name, value, was in zip(_PLACING, placed, self._placed, strict=True):
             if value != was:
@@ -409,18 +411,18 @@ class _MpvControl:
         self._ken_burns.hold_for(seconds)
 
     def zoom_at(self, x: int, y: int, *, steps: int) -> None:
-        self._zoomed = zoomed_at(self._on_screen(), self._fit(), (x, y), steps)
+        zoomed = self._zoomed or WheelZoom()
+        self._zoomed = zoomed.zoomed_at(self._under_the_wheel(self._now()), self._fit(), (x, y),
+                                        steps)
         self._zoomed_on = self._on_the_clock
 
     def pan_by(self, dx: int, dy: int) -> None:
         if self._zoomed is not None:
-            self._zoomed = panned_by(self._zoomed, self._fit(), (dx, dy))
+            self._zoomed = self._zoomed.panned_by(self._under_the_wheel(self._now()), self._fit(),
+                                                  (dx, dy))
 
-    def _on_screen(self) -> View:
-        if self._zoomed is not None:
-            return self._zoomed
-        zoom_log2, align_x, align_y = self._placed
-        return View(2.0 ** zoom_log2, align_x, align_y)
+    def _under_the_wheel(self, now: float) -> View:
+        return self._ken_burns.view(now) if self._image_track else View()
 
     def seek_image(self, ms: float) -> None:
         pace_s = self._ken_burns.pace_s
