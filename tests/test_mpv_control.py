@@ -1524,3 +1524,32 @@ def test_a_file_as_long_as_the_one_before_it_still_gets_its_length_since_mpv_rep
     mpv.send(FILE_LOADED)
 
     assert control.duration_ms == 5_000.0
+
+
+class CountsLoopSets(FakeMpv):
+    def __setattr__(self, name: str, value) -> None:
+        if name.startswith("ab_loop"):
+            self.calls.append(("set", name, value))
+        super().__setattr__(name, value)
+
+
+def test_with_no_loop_set_clearing_it_tells_mpv_nothing_since_every_file_opened_clears_it():
+    mpv = CountsLoopSets()
+    control = Control(mpv)
+
+    for _ in range(3):
+        control.clear_ab_loop()
+
+    assert mpv.calls == []
+
+
+def test_a_loop_that_was_set_is_cleared_once():
+    mpv = CountsLoopSets()
+    control = Control(mpv)
+    control.set_ab_loop(2_000.0, 4_000.0)
+    mpv.calls.clear()
+
+    control.clear_ab_loop()
+    control.clear_ab_loop()
+
+    assert mpv.calls == [("set", "ab_loop_a", "no"), ("set", "ab_loop_b", "no")]

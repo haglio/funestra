@@ -51,7 +51,8 @@ class FunestraSetup(NamedTuple):
             start_paused=start_paused, locked=self.locked,
             play_points=PlayPoints(self.channels.play_points, behind=self.off_the_loop.do),
             funscripts=funscripts_of(self.playlist),
-            points_of_interest=points_of_interest_of(self.playlist), tcode=self.tcode)
+            points_of_interest=points_of_interest_of(self.playlist), tcode=self.tcode,
+            behind=self.off_the_loop.do)
 
     def volume_on(self, engine) -> AppVolume | VolumeControl:
         if self.sound_is_the_rooms:

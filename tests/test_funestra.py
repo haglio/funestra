@@ -565,6 +565,22 @@ class TestAPress:
         assert len(engine.seeks) == 1
         assert abs(engine.seeks[0] - engine.duration_ms / 2) <= engine.duration_ms / (x1 - x0)
 
+    def test_dragged_along_the_track_faster_than_the_loop_turns_seeks_once_a_pass(self, tmp_path):
+        funestra, engine = _wearing_a_hud(tmp_path)
+        x0, x1 = funestra.hud.row.track
+        x, y = _on_the_row(funestra, engine, along=x0 + 10)
+        funestra.press(x, y, viewport=WINDOW)
+
+        for moved in range(1, 9):
+            funestra.motion(x + 10 * moved, y, held=True, viewport=WINDOW)
+        sought_before_the_pass = len(engine.seeks)
+        funestra.tick(viewport=WINDOW)
+        funestra.tick(viewport=WINDOW)
+
+        assert (sought_before_the_pass, len(engine.seeks)) == (1, 2)
+        assert engine.seeks[1] == pytest.approx(
+            engine.duration_ms * (10 + 80) / (x1 - x0), abs=engine.duration_ms / (x1 - x0))
+
     def test_held_on_the_track_holds_the_clip_still_until_let_go(self, tmp_path):
         funestra, engine = _wearing_a_hud(tmp_path)
 

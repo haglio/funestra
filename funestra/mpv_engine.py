@@ -208,6 +208,7 @@ class _MpvControl:
         self._duration_s = 0.0
         self._playlist_pos: int | None = None
         self._idle = False
+        self._ab_loop_is_set = False
 
     def _adopt(self, handle) -> None:
         self._mpv = handle
@@ -526,11 +527,15 @@ class _MpvControl:
     def set_ab_loop(self, in_ms: float, out_ms: float) -> None:
         self._mpv.ab_loop_a = in_ms / 1000.0
         self._mpv.ab_loop_b = out_ms / 1000.0
+        self._ab_loop_is_set = True
 
     @mpv_call()
     def clear_ab_loop(self) -> None:
+        if not self._ab_loop_is_set:
+            return
         self._mpv.ab_loop_a = "no"
         self._mpv.ab_loop_b = "no"
+        self._ab_loop_is_set = False
 
     @mpv_call()
     def screenshot_bgra(self, height: int = 64):

@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 from PIL import Image
 
+from funestra import hud_row
 from funestra.hud_row import (
     DIAL,
     FLICK_TRACK_W,
@@ -384,3 +385,19 @@ class TestAFlicksDial:
         assert press.drag_to(10 + cx, 40 + cy + 8, layout=layout, duration_ms=10_000.0) is True
 
         assert turns == [pytest.approx(0.25, abs=0.03), pytest.approx(0.5, abs=0.03)]
+
+
+def test_a_heatmaps_colors_are_made_into_an_array_once_for_all_the_draws_of_it(monkeypatch):
+    made: list[int] = []
+    real = hud_row.colors_as_an_array
+    monkeypatch.setattr(hud_row, "colors_as_an_array",
+                        lambda heatmap: made.append(len(heatmap)) or real(heatmap))
+    section = RowSection()
+    row = RowHud(position_ms=1_000, duration_ms=10_000)
+    layout = row_layout(row, rect=(0, 0, 400, ROW_H))
+    heatmap = [(200, 40, 40)] * (layout.track[1] - layout.track[0])
+
+    for _ in range(5):
+        section.draw(Image.new("RGBA", (400, ROW_H)), layout, row, heatmap=heatmap)
+
+    assert made == [len(heatmap)]
