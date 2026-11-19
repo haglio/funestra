@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 
 from funestra import flick_decode
-from funestra.flick_decode import load_flick_frames
+from funestra.flick_decode import flick_frames_as_decoded, load_flick_frames
 
 WIDTH, HEIGHT = 4, 2
 
@@ -27,8 +27,9 @@ def ffmpeg(monkeypatch):
     def install(raw: bytes, **kwargs):
         monkeypatch.setattr(flick_decode.subprocess, "check_output",
                             lambda *_args, **_kw: f"{WIDTH}x{HEIGHT}\n")
-        monkeypatch.setattr(flick_decode.subprocess, "Popen",
-                            lambda *_args, **_kw: _FakeFfmpeg(raw, **kwargs))
+        fake = _FakeFfmpeg(raw, **kwargs)
+        monkeypatch.setattr(flick_decode.subprocess, "Popen", lambda *_args, **_kw: fake)
+        return fake
     return install
 
 
@@ -44,6 +45,17 @@ def test_every_frame_of_the_flick_comes_back_as_an_image_of_its_size_the_whole_f
     assert [frame.shape for frame in frames] == [(HEIGHT, WIDTH, 3)] * 3
     assert [int(frame[0, 0, 0]) for frame in frames] == [10, 20, 30]
     assert all(isinstance(frame, np.ndarray) for frame in frames)
+
+
+def test_the_first_frame_is_handed_over_before_the_rest_of_the_flick_has_been_read(ffmpeg):
+    pipe = ffmpeg(_frame_bytes(10) + _frame_bytes(20) + _frame_bytes(30)).stdout
+    two_frames = len(_frame_bytes(0)) * 2
+
+    frames = flick_frames_as_decoded(Path("scene one.mp4"))
+    first = next(frames)
+
+    assert int(first[0, 0, 0]) == 10
+    assert len(pipe.getvalue()) - pipe.tell() == two_frames
 
 
 def test_a_torn_last_frame_is_left_off(ffmpeg):

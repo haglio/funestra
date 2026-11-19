@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import subprocess
+from collections.abc import Iterator
 from pathlib import Path
 
 import numpy as np
@@ -26,6 +27,10 @@ def _ffprobe_size(path: Path) -> tuple[int, int]:
 
 
 def load_flick_frames(path: Path, _frame_cache_dir: Path | None = None) -> list[np.ndarray]:
+    return list(flick_frames_as_decoded(path))
+
+
+def flick_frames_as_decoded(path: Path) -> Iterator[np.ndarray]:
     width, height = _ffprobe_size(path)
     frame_size = width * height * 3
 
@@ -49,18 +54,15 @@ def load_flick_frames(path: Path, _frame_cache_dir: Path | None = None) -> list[
     ]
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **hidden_subprocess_kwargs())
-    frames: list[np.ndarray] = []
+    decoded = 0
 
     try:
         while True:
             buf = proc.stdout.read(frame_size) if proc.stdout else b""
-            if not buf:
-                break
             if len(buf) != frame_size:
                 break
-            frames.append(
-                np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3)).copy()
-            )
+            decoded += 1
+            yield np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3)).copy()
     finally:
         if proc.stdout:
             proc.stdout.close()
@@ -69,7 +71,5 @@ def load_flick_frames(path: Path, _frame_cache_dir: Path | None = None) -> list[
         if rc != 0:
             raise RuntimeError(stderr.strip() or f"ffmpeg failed for {path}")
 
-    if not frames:
+    if not decoded:
         raise RuntimeError(f"No frames decoded from: {path}")
-
-    return frames
