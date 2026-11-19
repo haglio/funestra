@@ -60,10 +60,13 @@ def build_status_text(
     )
 
 
-def write_status_file(path: Path, text: str) -> bool:
-    try:
-        if path.read_text(encoding="utf-8") == text:
+class StatusFile:
+    def __init__(self, path: Path) -> None:
+        self._path = path
+        self._written: str | None = None
+
+    def write(self, text: str) -> bool:
+        if text == self._written or not publish_whole(self._path, text):
             return False
-    except (OSError, ValueError):
-        pass
-    return publish_whole(path, text)
+        self._written = text
+        return True
