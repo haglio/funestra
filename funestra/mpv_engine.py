@@ -133,6 +133,10 @@ def tiles_across(source: tuple[int, int], viewport: tuple[int, int]) -> int:
 # A property read can wait on mpv's core lock for hundreds of milliseconds while a file opens.
 CLOSE_DRAIN_TIMEOUT_S = 10.0
 
+# mpv_event_id in mpv's client.h.
+_MPV_EVENT_START_FILE = 6
+_MPV_EVENT_FILE_LOADED = 8
+
 
 _APTTYPEQUALIFIER_IMPLICIT_MTA = 1
 
@@ -200,6 +204,10 @@ class _MpvControl:
         self._decoder_said_for: str | None = None
         self._zoomed: WheelZoom | None = None
         self._zoomed_on: str | None = None
+        self._position_s = 0.0
+        self._duration_s = 0.0
+        self._playlist_pos: int | None = None
+        self._idle = False
 
     def _adopt(self, handle) -> None:
         self._mpv = handle
@@ -212,6 +220,15 @@ class _MpvControl:
         handle.observe_property("video-out-params", self._note_video_dims)
         handle.observe_property("hwdec-current", self._note_decoder)
         handle.observe_property("video-dec-params", self._note_source_dims)
+        # Watched for the same reason, and because a Funestra asks for these several times a pass.
+        # mpv tells a watcher of a change only when the value it then reads differs from the last
+        # one it told, so a file as long as the one before it changes nothing: the length is read
+        # once, on mpv's own thread, when mpv says the file has loaded.
+        handle.observe_property("time-pos", self._note_position)
+        handle.observe_property("duration", self._note_duration)
+        handle.observe_property("playlist-pos", self._note_playlist_pos)
+        handle.observe_property("idle-active", self._note_idle)
+        handle.register_event_callback(self._note_a_file_starting_or_loaded)
 
     def _note_frame_rate(self, _name: str, value) -> None:
         self._frame_rate = value or 0.0
@@ -221,6 +238,38 @@ class _MpvControl:
 
     def _note_file(self, _name: str, path) -> None:
         self._path = path
+
+    def _note_position(self, _name: str, value) -> None:
+        self._position_s = value or 0.0
+
+    def _note_duration(self, _name: str, value) -> None:
+        self._duration_s = value or 0.0
+
+    def _note_playlist_pos(self, _name: str, value) -> None:
+        self._playlist_pos = value
+
+    def _note_idle(self, _name: str, value) -> None:
+        self._idle = bool(value)
+
+    def _note_a_file_starting_or_loaded(self, event) -> None:
+        kind = event.event_id.value
+        if kind == _MPV_EVENT_START_FILE:
+            self._between_files()
+        elif kind == _MPV_EVENT_FILE_LOADED:
+            self._read_the_length_of_the_file_just_loaded()
+
+    def _between_files(self) -> None:
+        self._position_s = self._duration_s = 0.0
+
+    @mpv_call()
+    def _read_the_length_of_the_file_just_loaded(self) -> None:
+        self._duration_s = self._mpv.duration or 0.0
+
+    def _the_playlist_was_cleared(self) -> None:
+        # The entry playing is first in a cleared playlist; mpv says so only a moment later, and
+        # a roll read twice in that moment would be followed twice.
+        if self._playlist_pos:
+            self._playlist_pos = 0
 
     def _note_video_dims(self, _name: str, value) -> None:
         if isinstance(value, dict):
@@ -301,12 +350,15 @@ class _MpvControl:
         self._begin_the_new_clip(str(path))
         self._mpv.play(str(path))
         self._mpv.playlist_clear()
+        self._between_files()
+        self._the_playlist_was_cleared()
 
     @mpv_call()
     def swap_image(self, path: Path) -> None:
         self._on_the_clock = str(path)
         self._mpv.play(str(path))
         self._mpv.playlist_clear()
+        self._the_playlist_was_cleared()
         if self._staged is not None:
             self._mpv.loadfile(self._staged, "append")
 
@@ -323,6 +375,7 @@ class _MpvControl:
         if str(path) == self._staged:
             return
         self._mpv.playlist_clear()
+        self._the_playlist_was_cleared()
         self._mpv.loadfile(str(path), "append")
         self._staged = str(path)
 
@@ -330,12 +383,11 @@ class _MpvControl:
     def clear_next(self) -> None:
         self._staged = None
         self._mpv.playlist_clear()
+        self._the_playlist_was_cleared()
 
     @property
-    @mpv_call(False)
     def advanced_to_next(self) -> bool:
-        pos = self._mpv.playlist_pos
-        return pos is not None and pos >= 1
+        return self._playlist_pos is not None and self._playlist_pos >= 1
 
     @mpv_call()
     def settle_on_the_next(self) -> None:
@@ -343,6 +395,7 @@ class _MpvControl:
         # clearing drops it and the current one plays on.
         rolled_onto, self._staged = self._staged, None
         self._mpv.playlist_clear()
+        self._the_playlist_was_cleared()
         self._begin_the_new_clip(rolled_onto)
 
     def _begin_the_new_clip(self, path: str | None) -> None:
@@ -352,20 +405,17 @@ class _MpvControl:
         self._ken_burns.new_image(self._now())
 
     @property
-    @mpv_call(False)
     def idle(self) -> bool:
         # mpv raises nothing for a file it cannot demux; it ends up with nothing playing.
-        return bool(self._mpv.idle_active)
+        return self._idle
 
     @property
-    @mpv_call(0.0)
     def position_ms(self) -> float:
-        return (self._mpv.time_pos or 0.0) * 1000.0
+        return self._position_s * 1000.0
 
     @property
-    @mpv_call(0.0)
     def duration_ms(self) -> float:
-        return (self._mpv.duration or 0.0) * 1000.0
+        return self._duration_s * 1000.0
 
     @mpv_call()
     def set_paused(self, paused: bool) -> None:
@@ -468,7 +518,9 @@ class _MpvControl:
 
     @mpv_call()
     def seek_ms(self, ms: float) -> None:
-        self._mpv.command("seek", max(0.0, ms) / 1000.0, "absolute", "exact")
+        seconds = max(0.0, ms) / 1000.0
+        self._mpv.command("seek", seconds, "absolute", "exact")
+        self._position_s = seconds
 
     @mpv_call()
     def set_ab_loop(self, in_ms: float, out_ms: float) -> None:
