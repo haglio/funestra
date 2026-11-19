@@ -126,6 +126,7 @@ class RowSection:
         self._volume = VolumeHudPainter()
         self._time_text = PlayheadHudPainter()
         self._dial = LoopDialPainter()
+        self._heatmap: tuple[object, np.ndarray | None] = (None, None)
 
     @staticmethod
     def least_width(row: RowHud) -> int:
@@ -138,7 +139,7 @@ class RowSection:
              *, heatmap: np.ndarray | None = None) -> None:
         x, y, width, _height = layout.rect
         marks = TrackMarks(row.position_ms, row.duration_ms, row.loop_bounds, row.record_in_ms)
-        bar = progress_bar_bgra(marks, width, heatmap=fitting(heatmap, layout.track),
+        bar = progress_bar_bgra(marks, width, heatmap=self._as_an_array(heatmap, layout.track),
                                 track=layout.track)
         image.alpha_composite(_rgba(bar), (x, y))
         if row.volume is not None:
@@ -151,6 +152,18 @@ class RowSection:
         if layout.time_text is not None:
             image.alpha_composite(self._time_text.image(row.playhead),
                                   (x + layout.time_text[0], y + PARTS_Y))
+
+
+    def _as_an_array(self, heatmap, track: tuple[int, int]) -> np.ndarray | None:
+        if fitting(heatmap, track) is None:
+            return None
+        if self._heatmap[0] is not heatmap:
+            self._heatmap = (heatmap, colors_as_an_array(heatmap))
+        return self._heatmap[1]
+
+
+def colors_as_an_array(heatmap) -> np.ndarray:
+    return np.asarray(heatmap, dtype=np.uint8)
 
 
 def fitting(heatmap, track: tuple[int, int]):

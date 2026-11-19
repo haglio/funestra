@@ -41,6 +41,7 @@ class Playback:
         self._speed = NORMAL_RATE
         self._loads = 0
         self._clock = setup.clock
+        self._behind = setup.behind
         self._rolled_at: float | None = None
         self._asked_load = self._asked_step = 0
         self._play_points = setup.play_points or PlayPoints(None)
@@ -113,7 +114,7 @@ class Playback:
             return script
         laid_out, seam = script, duration
         for video in self._lineup.coming_up(_CLIPS_LAID_AHEAD):
-            coming = self._rides.funscript(video)
+            coming = self._rides.funscript_once_read(video, self._behind)
             if coming is None or not coming.actions:
                 break
             laid_out = laid_out.followed_by(coming, seam, horizon_ms=LOOK_AHEAD_MS)
@@ -367,7 +368,7 @@ class Playback:
         points_of_interest: Mapping[Path, tuple] | None = None,
     ) -> None:
         self._lineup.start_over_with(playlist)
-        self._rides = RidesAlong(funscripts, points_of_interest)
+        self._rides = RidesAlong(funscripts, points_of_interest, read_before=self._rides)
         self.load(0)
 
     def replace_playlist(
@@ -375,7 +376,7 @@ class Playback:
         points_of_interest: Mapping[Path, tuple] | None = None,
     ) -> None:
         stands_on_what_is_on_screen = self._lineup.take(playlist)
-        self._rides = RidesAlong(funscripts, points_of_interest)
+        self._rides = RidesAlong(funscripts, points_of_interest, read_before=self._rides)
         if stands_on_what_is_on_screen:
             self._stage_next()
         else:

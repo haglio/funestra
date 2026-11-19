@@ -120,6 +120,8 @@ class Funestra:
         self._off_the_loop = setup.off_the_loop
         self._stop = threading.Event()
         self._paused_before_the_scrub: bool | None = None
+        self._sought_this_pass = False
+        self._seek_owed: float | None = None
         self._paused_flag = None if channels.paused is None else PausedFlag(channels.paused)
         self._playback = Playback(
             [item.path for item in setup.playlist], engine=engine,
@@ -240,7 +242,17 @@ class Funestra:
         if frame is not None:
             frame.seek_time(ms)
             return
+        if self._sought_this_pass:
+            self._seek_owed = ms
+            return
+        self._sought_this_pass = True
         self._row.seek_along_the_track(ms)
+
+    def _seek_where_the_scrubber_was_last_dragged(self) -> None:
+        self._sought_this_pass = False
+        owed, self._seek_owed = self._seek_owed, None
+        if owed is not None:
+            self._seek_along_the_track(owed)
 
     def _hold_for_a_scrub(self, held: bool) -> None:
         if held:
@@ -337,6 +349,7 @@ class Funestra:
         record = self._frame_record
         record.begin()
         self._off_the_loop.deliver()
+        self._seek_where_the_scrubber_was_last_dragged()
         self._hear_what_it_is_told()
         record.lap("the files it is told through")
         self._runs_here.tick()
