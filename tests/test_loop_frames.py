@@ -4,7 +4,12 @@ import numpy as np
 from funestra_fakes import make_playback
 
 from funestra.items_row import ItemsRow
-from funestra.loop_frames import IN_FRAME_OVERLAY_ID, OUT_FRAME_OVERLAY_ID, LoopFrames
+from funestra.loop_frames import (
+    IN_FRAME_OVERLAY_ID,
+    OUT_FRAME_OVERLAY_ID,
+    PASSES_BEFORE_ASKING_AGAIN,
+    LoopFrames,
+)
 from funestra.volume import VolumeHud
 
 TRACK = (20, 220, 400)
@@ -71,3 +76,44 @@ def test_with_no_track_drawn_there_is_nowhere_to_hang_them(tmp_path):
     frames.paint(playback, strip, None, WIDTH)
 
     assert engine.overlays == {}
+
+
+def test_frames_already_up_where_they_belong_are_not_sent_to_mpv_again(tmp_path):
+    frames, playback, engine, strip = _frames(tmp_path)
+    playback.set_ab_loop(2_000, 4_000)
+    engine.position_ms = 3_900.0
+    frames.paint(playback, strip, TRACK, WIDTH)
+    frames.paint(playback, strip, TRACK, WIDTH)
+    sent = list(engine.overlays_sent)
+
+    for _ in range(5):
+        frames.paint(playback, strip, TRACK, WIDTH)
+
+    assert (sent, engine.overlays_sent[len(sent):]) == (
+        [IN_FRAME_OVERLAY_ID, OUT_FRAME_OVERLAY_ID], [])
+
+
+def test_frames_taken_down_go_up_again_when_the_loop_is_drawn_again(tmp_path):
+    frames, playback, engine, strip = _frames(tmp_path)
+    playback.set_ab_loop(2_000, 4_000)
+    frames.paint(playback, strip, TRACK, WIDTH)
+
+    frames.paint(playback, strip, None, WIDTH)
+    frames.paint(playback, strip, TRACK, WIDTH)
+
+    assert IN_FRAME_OVERLAY_ID in engine.overlays
+
+
+def test_a_frame_mpv_would_not_give_is_not_asked_for_on_every_pass(tmp_path):
+    frames, playback, engine, strip = _frames(tmp_path)
+    engine.screenshot = None
+    playback.set_ab_loop(2_000, 4_000)
+
+    for _ in range(PASSES_BEFORE_ASKING_AGAIN + 1):
+        frames.paint(playback, strip, TRACK, WIDTH)
+    asked_while_waiting = engine.screenshots
+    engine.screenshot = np.zeros((36, 64, 4), dtype=np.uint8)
+    frames.paint(playback, strip, TRACK, WIDTH)
+
+    assert (asked_while_waiting, engine.screenshots) == (1, 2)
+    assert IN_FRAME_OVERLAY_ID in engine.overlays

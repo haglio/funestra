@@ -78,6 +78,8 @@ class FakeEngine(RefusesSeeks):
         self.loop_file = False
         self.closed = False
         self.overlays: dict[int, tuple[int, int, object]] = {}
+        self.overlays_sent: list[int] = []
+        self.overlays_removed: list[int] = []
         self.volume = 100
         self.muted = True
         self.seeks: list[float] = []
@@ -209,9 +211,11 @@ class FakeEngine(RefusesSeeks):
         return self.screenshot
 
     def overlay(self, ident: int, x: int, y: int, bgra) -> None:
+        self.overlays_sent.append(ident)
         self.overlays[ident] = (x, y, bgra)
 
     def remove_overlay(self, ident: int) -> None:
+        self.overlays_removed.append(ident)
         self.overlays.pop(ident, None)
 
     def run_out(self) -> None:
