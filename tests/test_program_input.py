@@ -74,10 +74,10 @@ class TestTheMouse:
 
         assert funestra.calls == [("right_press", 120, 480, WINDOW)]
 
-    def test_the_other_buttons_do_nothing_at_all(self):
+    def test_the_button_presses_a_wheel_notch_also_sends_do_nothing_beside_the_wheel_event(self):
         window_input, funestra = _input()
 
-        for button in (2, 4, 5):
+        for button in (4, 5):
             _deal(window_input,
                   SimpleNamespace(type=pygame.MOUSEBUTTONDOWN, button=button, pos=(1, 2)),
                   SimpleNamespace(type=pygame.MOUSEBUTTONUP, button=button))
@@ -150,6 +150,18 @@ class TestTheWheel:
         _deal(window_input, SimpleNamespace(type=pygame.MOUSEWHEEL, y=-2))
 
         assert funestra.calls == [("wheel", 40, 50, -2, WINDOW)]
+
+    def test_the_wheel_button_going_down_and_up_reaches_the_funestra(self):
+        funestra = SpyFunestra()
+        funestra.wheel_press = lambda x, y, *, viewport: funestra.calls.append(
+            ("wheel_press", x, y, viewport))
+        funestra.wheel_release = lambda: funestra.calls.append(("wheel_release",))
+
+        _deal(Input(funestra),
+              SimpleNamespace(type=pygame.MOUSEBUTTONDOWN, button=2, pos=(30, 40)),
+              SimpleNamespace(type=pygame.MOUSEBUTTONUP, button=2))
+
+        assert funestra.calls == [("wheel_press", 30, 40, WINDOW), ("wheel_release",)]
 
 
 class TestTheKeyboardOfAnAppThatAsksForIt:
