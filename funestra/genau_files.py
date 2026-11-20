@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .file_channel import consume_command_file
 from .genau_status import GENAU_STATUS_FILENAME
-from .written_file import PausedFlag
+from .paused_flag import PausedFlag
 
 
 @dataclass(frozen=True)

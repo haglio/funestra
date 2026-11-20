@@ -7,9 +7,9 @@ from pathlib import Path
 from typing import NamedTuple, Protocol
 
 from app_support.file_channel import write_whole
+from app_support.written_file import WrittenFile
 
 from .off_the_loop import at_once
-from .written_file import WrittenFile
 
 logger = logging.getLogger(__name__)
 

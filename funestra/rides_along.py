@@ -8,11 +8,12 @@ from functools import partial
 from pathlib import Path
 from typing import NamedTuple
 
+from app_support.written_file import stamped_too_lately_to_tell
+
 from .funscript import Funscript
 from .funscript import load as load_funscript
 from .off_the_loop import at_once
 from .playlist import PlaylistItem
-from .written_file import stamped_too_lately_to_tell
 
 _SCRIPTS_HELD = 8
 

@@ -3,8 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from pathlib import Path
 
+from app_support.written_file import WrittenFile
+
 from .playlist import PlaylistItem, parse_playlist, playlist_text
-from .written_file import WrittenFile
 
 
 class PlaylistFollower:

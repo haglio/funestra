@@ -4,10 +4,11 @@ import os
 from pathlib import Path
 
 import pytest
-from app_support.file_channel import publish_whole, write_flag
+from app_support.file_channel import write_flag
+from app_support.written_file import STAMPED_TOO_LATELY_TO_TELL_NS
 
-from funestra import written_file
-from funestra.written_file import STAMPED_TOO_LATELY_TO_TELL_NS, PausedFlag, WrittenFile
+from funestra import paused_flag
+from funestra.paused_flag import PausedFlag
 
 
 class LongAfterTheFileWasStamped:
@@ -23,66 +24,11 @@ class JustAfterTheFileWasStamped(LongAfterTheFileWasStamped):
         return self._path.stat().st_mtime_ns + STAMPED_TOO_LATELY_TO_TELL_NS // 2
 
 
-def _a_file_long_written(tmp_path: Path) -> WrittenFile:
-    path = tmp_path / "hud.json"
-    return WrittenFile(path, now_ns=LongAfterTheFileWasStamped(path))
-
-
-def test_a_file_reads_as_perhaps_written_until_it_has_been_read(tmp_path):
-    file = _a_file_long_written(tmp_path)
-    publish_whole(file.path, "one")
-
-    assert file.may_have_been_written()
-    assert file.may_have_been_written()
-    file.was_read()
-
-    assert not file.may_have_been_written()
-
-
-def test_a_second_write_is_told_from_the_first_though_windows_stamped_both_with_one_time(tmp_path):
-    file = _a_file_long_written(tmp_path)
-    publish_whole(file.path, "one")
-    first = file.path.stat()
-    file.may_have_been_written()
-    file.was_read()
-
-    publish_whole(file.path, "two")
-    os.utime(file.path, ns=(first.st_atime_ns, first.st_mtime_ns))
-
-    assert file.may_have_been_written()
-
-
-def test_a_file_stamped_too_lately_to_tell_two_writes_apart_goes_on_reading_as_perhaps_written(
-        tmp_path):
-    path = tmp_path / "hud.json"
-    file = WrittenFile(path, now_ns=JustAfterTheFileWasStamped(path))
-    path.write_text("one", encoding="utf-8")
-
-    file.may_have_been_written()
-    file.was_read()
-
-    assert file.may_have_been_written()
-
-
-def test_a_file_taken_away_reads_as_perhaps_written_once_and_holds_nothing(tmp_path):
-    file = _a_file_long_written(tmp_path)
-    publish_whole(file.path, "one")
-    file.may_have_been_written()
-    file.was_read()
-
-    file.path.unlink()
-
-    assert file.may_have_been_written()
-    assert not file.holds_something
-    file.was_read()
-    assert not file.may_have_been_written()
-
-
 class _CountedReads:
     def __init__(self, monkeypatch) -> None:
         self.paths: list[Path] = []
-        real = written_file.read_whole
-        monkeypatch.setattr(written_file, "read_whole",
+        real = paused_flag.read_whole
+        monkeypatch.setattr(paused_flag, "read_whole",
                             lambda path: self.paths.append(path) or real(path))
 
 
@@ -136,14 +82,14 @@ def test_a_paused_flag_that_could_not_be_opened_keeps_its_answer_and_is_read_aga
     write_flag(tmp_path / "paused.txt", True)
     flag.read()
     write_flag(tmp_path / "paused.txt", False)
-    real = written_file.read_whole
+    real = paused_flag.read_whole
 
     def held(_path):
         raise PermissionError("held by its writer")
 
-    monkeypatch.setattr(written_file, "read_whole", held)
+    monkeypatch.setattr(paused_flag, "read_whole", held)
     while_held = flag.read()
-    monkeypatch.setattr(written_file, "read_whole", real)
+    monkeypatch.setattr(paused_flag, "read_whole", real)
 
     assert (while_held, flag.read()) == (True, False)
 

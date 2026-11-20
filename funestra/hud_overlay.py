@@ -6,6 +6,8 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import NamedTuple
 
+from app_support.written_file import WrittenFile
+
 from .dashboard import already_done, ask
 from .host_controls import HostControls, HostControlsHud, HostControlsPress
 from .hud_button import Button
@@ -30,7 +32,6 @@ from .satellite_hud import (
 )
 from .satellite_hud_clicks import HudClicks, button_tooltip
 from .satellite_hud_paint import DrawnWith, HudRenderer
-from .written_file import WrittenFile
 
 HUD_OVERLAY_ID = 10
 
