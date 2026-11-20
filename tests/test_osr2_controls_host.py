@@ -29,6 +29,11 @@ class _Painter:
     def leave(self) -> None:
         self.calls.append(("leave",))
 
+    SHOWN = ("a button", ("its tooltip", (3, 4)))
+
+    def what_the_pointer_shows(self) -> object:
+        return self.SHOWN
+
     def rgba(self, hud: MainHud) -> tuple[bytes, tuple[int, int]]:
         self.calls.append(("rgba", hud))
         return b"\x00" * 16, (2, 2)
@@ -96,6 +101,11 @@ class TestLettingGo:
         host.leave()
 
         assert painter.calls == [("leave",)]
+
+    def test_what_the_pointer_shows_is_what_the_painter_says_it_shows(self):
+        host, _posted = _host(_Painter())
+
+        assert host.what_the_pointer_shows() == _Painter.SHOWN
 
 
 class TestTheDrawing:

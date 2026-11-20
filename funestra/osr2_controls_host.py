@@ -23,6 +23,9 @@ class Osr2ControlsHost:
         if self._painter.holding:
             self._ask(self._painter.drag_to(*at))
 
+    def what_the_pointer_shows(self) -> object:
+        return self._painter.what_the_pointer_shows()
+
     def release(self) -> None:
         self._painter.release()
 
