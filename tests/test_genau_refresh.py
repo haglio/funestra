@@ -553,6 +553,68 @@ def test_the_flick_is_heard_only_while_it_has_the_main_screen(hud_on, heard):
     assert built["notifier"].visible_updates[-1] is heard
 
 
+def test_no_flick_is_adopted_drawn_or_fetched_while_a_video_has_the_main_screen():
+    built = _build_controller(
+        entry={"frames": [object() for _ in range(8)]}, hud=Flag(on=True), pending_flick_name="next")
+
+    built["controller"].refresh()
+
+    assert (built["loader"].loaded_adopt_calls, built["loader"].prefetch_adopt_calls,
+            built["renderer"].display_calls, built["selection"].prefetch_calls,
+            built["loading_texts"]) == (0, 0, [], 0, [])
+
+
+def test_the_flick_waits_where_it_was_while_a_video_has_the_main_screen_and_takes_up_its_time_from_there():
+    hud = Flag(on=False)
+    built = _build_controller(
+        entry={"frames": [object() for _ in range(8)]}, hud=hud, tcode_sender=FakeTCodeSender(),
+        robot_hand=RobotHandState(playing=True, bpm=120.0),
+        flick_advance=FlickAdvanceState(locked=False, interval=10))
+    clock = [5.0]
+    built["controller"].now_source = lambda: clock[0]
+
+    def run_for(seconds: float) -> list[int]:
+        for _ in range(round(seconds / 0.1)):
+            clock[0] += 0.1
+            built["controller"].refresh()
+        return list(built["selection"].step_calls)
+
+    run_for(6.0)
+    hud.on = True
+    behind_the_video = run_for(30.0)
+    hud.on = False
+
+    assert (behind_the_video, run_for(3.0), run_for(2.0)) == ([], [], [1])
+
+
+def test_the_hand_goes_on_driving_the_device_while_a_video_has_the_main_screen():
+    tcode = FakeTCodeSender()
+    built = _build_controller(
+        entry={"frames": [object() for _ in range(8)]}, hud=Flag(on=True), tcode_sender=tcode,
+        robot_hand=RobotHandState(playing=True, bpm=120.0))
+    clock = [5.0]
+    built["controller"].now_source = lambda: clock[0]
+
+    for _ in range(5):
+        clock[0] += 0.1
+        built["controller"].refresh()
+
+    phases = [phase for phase, _at in tcode.sends]
+    assert len(phases) == 5
+    assert len(set(phases)) == 5
+
+
+def test_the_flick_is_drawn_on_the_first_turn_after_it_takes_the_main_screen_back():
+    hud = Flag(on=True)
+    built = _build_controller(entry={"frames": [object() for _ in range(8)]}, hud=hud)
+    built["controller"].refresh()
+
+    hud.on = False
+    built["controller"].refresh()
+
+    assert len(built["renderer"].display_calls) == 1
+
+
 def test_the_flick_is_heard_again_once_it_takes_the_main_screen_back():
     hud = Flag(on=True)
     built = _build_controller(
