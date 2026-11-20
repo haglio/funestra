@@ -83,8 +83,9 @@ class GenauRefreshController:
     def _refresh_once(self) -> None:
         now = self.now_source()
         engine = self.controls.engine
-        self.flicks.adopt_whatever_finished_decoding()
-        self.controls.flick_flip.follow(self.flicks.path)
+        if not self._over_a_video:
+            self.flicks.adopt_whatever_finished_decoding()
+            self.controls.flick_flip.follow(self.flicks.path)
         self._drain_commands()
 
         beat = self._who_is_driving(now)
@@ -103,10 +104,10 @@ class GenauRefreshController:
                 phase=engine.phase, bpm=engine.estimated_bpm or 0.0))
 
         self.under_the_device.follow_the_room_hold(now)
-        self._show_the_frame(beat, now)
-
-        self.flicks.say_what_is_loading()
-        self.flicks.fetch_the_ones_nearby()
+        if not self._over_a_video:
+            self._show_the_frame(beat, now)
+            self.flicks.say_what_is_loading()
+            self.flicks.fetch_the_ones_nearby()
         self._publish_status(now)
 
     def _drain_commands(self) -> None:
@@ -140,7 +141,7 @@ class GenauRefreshController:
         with self._the_motion_s_turn:
             self.motion.tick(now, start_fraction=self.device.where_in_its_travel)
         advance = self.controls.flick_advance_state
-        if advance is not None:
+        if advance is not None and not self._over_a_video:
             self.flicks.advance(advance, now, playing=self.controls.robot_hand.playing)
 
     def _show_the_frame(self, beat: Beat, now: float) -> None:
