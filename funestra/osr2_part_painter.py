@@ -9,13 +9,12 @@ from shared_ui.palette import BG_PRIMARY
 from shared_ui.spacing import MARGIN_STANDARD
 
 from .hud import Hud
-from .main_hud_painter import MainHud, Osr2PartDrawing, PressableHud, Slot, hud_fonts
+from .main_hud_painter import MainHud, Osr2PartDrawing, PressableHud, Slot
 
 
 class Osr2PartPainter(PressableHud):
     def __init__(self, *, clock: Callable[[], float] = time.monotonic) -> None:
         super().__init__(clock=clock)
-        self._fonts = hud_fonts()
         self._part = Osr2PartDrawing(self._fonts)
 
     def bgra(self, hud: MainHud, *, hover: tuple[int, int] | None = None) -> np.ndarray:
@@ -31,5 +30,4 @@ class Osr2PartPainter(PressableHud):
         drawn = Hud(width, height, ground=hud.ground or BG_PRIMARY)
         self.buttons, self.tracks = self._part.draw(
             drawn, block, MARGIN_STANDARD, Slot(hud.main_hud_model.hud_corner, 0), hover)
-        self._tooltip(drawn, hover, self._fonts.tiny)
         return drawn.image

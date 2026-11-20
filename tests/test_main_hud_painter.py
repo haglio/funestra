@@ -432,6 +432,64 @@ class TestThePointer:
         assert (moved == _rgb(Osr2PartPainter().bgra(self._hud(HudCorner.UPPER_RIGHT)))).all()
 
 
+    def test_the_part_looks_the_same_wherever_the_pointer_goes_as_when_drawn_afresh(self):
+        moving = Osr2PartPainter()
+        moving.rgba(self._hud())
+        left, top = hud_xy()
+        width, height = moving.rgba(self._hud())[1]
+
+        for y in range(0, height, 7):
+            for x in range(0, width, 11):
+                moving.motion(left + x, top + y)
+                afresh = Osr2PartPainter()
+                afresh.rgba(self._hud())
+
+                assert moving.rgba(self._hud()) == afresh.rgba(self._hud(), hover=moving.hover_at(
+                    left + x, top + y)), (x, y)
+
+    def test_moving_across_one_button_draws_only_its_tooltip_again(self):
+        painter = _CountingPaints()
+        painter.rgba(self._hud())
+        x, y, _w, h = _rect_of(painter, "main_next")
+        left, top = hud_xy()
+
+        drawn = []
+        for step in range(3):
+            painter.motion(left + x + 2 + step, top + y + h // 2)
+            drawn.append(painter.rgba(self._hud())[0])
+
+        assert painter.paints == 2
+        assert len(set(drawn)) == 3
+
+    def test_the_pointer_says_what_it_shows_only_where_the_part_would_look_different(self):
+        painter = Osr2PartPainter()
+        painter.rgba(self._hud())
+        x, y, _w, h = _rect_of(painter, "main_next")
+        left, top = hud_xy()
+
+        painter.motion(-5, -5)
+        nowhere = painter.what_the_pointer_shows()
+        painter.motion(-9, -9)
+        still_nowhere = painter.what_the_pointer_shows()
+        painter.motion(left + x + 2, top + y + h // 2)
+        on_the_button = painter.what_the_pointer_shows()
+        painter.motion(left + x + 3, top + y + h // 2)
+        further_along_it = painter.what_the_pointer_shows()
+
+        assert nowhere == still_nowhere
+        assert len({nowhere, on_the_button, further_along_it}) == 3
+
+
+class _CountingPaints(Osr2PartPainter):
+    def __init__(self) -> None:
+        super().__init__()
+        self.paints = 0
+
+    def _paint(self, hud, hover):
+        self.paints += 1
+        return super()._paint(hud, hover)
+
+
 class TestDrags:
     @staticmethod
     def _painted(osr2: Osr2State = Osr2State.ROBOT_HAND) -> Osr2PartPainter:

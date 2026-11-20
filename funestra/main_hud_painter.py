@@ -5,7 +5,7 @@ from dataclasses import dataclass, field, replace
 from typing import NamedTuple
 
 import numpy as np
-from PIL import Image, ImageFont
+from PIL import Image, ImageDraw, ImageFont
 from shared_ui.spacing import BUTTON_GAP, GAP_SMALL, MARGIN_STANDARD
 from shared_ui.type_scale import SIZE_BODY, SIZE_TINY
 
@@ -186,6 +186,9 @@ class PressableHud:
         self._visualizer = VisualizerResolver(clock=clock)
         self._painted: tuple = (None,)
         self._heatmap = None
+        self._fonts = hud_fonts()
+        self._base: Image.Image | None = None
+        self._tip: tuple[str, tuple[int, int]] | None = None
         self._image: Image.Image | None = None
         self._bgra: np.ndarray | None = None
         self.buttons: list[tuple[Rect, Button]] = []
@@ -206,17 +209,39 @@ class PressableHud:
         return self._image.tobytes(), self._image.size
 
     # Pillow is nowhere near cheap enough to repaint this sixty times a second, so the bitmap is
-    # kept until the HUD's contents change.
+    # kept until the HUD's contents or the button under the pointer change.
     def _ensure(self, hud: MainHud, hover: tuple[int, int] | None, contents: tuple,
                 heatmap) -> bool:
         hud = self._resolve(hud)
         hover = hover if hover is not None else self._pointer.on(hud.main_hud_model)
-        painted = (hud, hover, *contents)
-        if painted == self._painted and heatmap is self._heatmap and self._image is not None:
+        repainted = (hud, self._button_under(hover), *contents) != self._painted             or heatmap is not self._heatmap or self._base is None
+        if repainted:
+            self._base = self._paint(hud, hover, *contents)
+            self._painted, self._heatmap = (hud, self._button_under(hover), *contents), heatmap
+        tip = self._tip_at(hover)
+        if not repainted and tip == self._tip:
             return False
-        self._painted, self._heatmap = painted, heatmap
-        self._image = self._paint(hud, hover, *contents)
+        self._tip = tip
+        self._image = self._base if tip is None else self._with_the_tooltip(*tip)
         return True
+
+    def what_the_pointer_shows(self) -> object:
+        at = self._pointer.reading
+        return self._button_under(at), self._tip_at(at)
+
+    def _button_under(self, at: tuple[int, int] | None) -> Rect | None:
+        if at is None:
+            return None
+        return next((rect for rect, _button in self.buttons if contains(rect, *at)), None)
+
+    def _tip_at(self, at: tuple[int, int] | None) -> tuple[str, tuple[int, int]] | None:
+        tip = tooltip_at(self.buttons, *at) if at is not None else ""
+        return (tip, at) if tip else None
+
+    def _with_the_tooltip(self, tip: str, at: tuple[int, int]) -> Image.Image:
+        tipped = self._base.copy()
+        draw_tooltip(ImageDraw.Draw(tipped), self._fonts.tiny, tip, at, tipped.size)
+        return tipped
 
     def _resolve(self, hud: MainHud) -> MainHud:
         model = hud.main_hud_model
@@ -273,8 +298,3 @@ class PressableHud:
         left, top = self._origin
         return mx - left, my - top
 
-    def _tooltip(self, hud: Hud, hover: tuple[int, int] | None, tiny: ImageFont.FreeTypeFont) -> None:
-        if hover is not None:
-            tip = tooltip_at(self.buttons, *hover)
-            if tip:
-                draw_tooltip(hud.draw, tiny, tip, hover, hud.image.size)
