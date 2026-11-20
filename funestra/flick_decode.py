@@ -25,15 +25,29 @@ def _ffprobe_size(path: Path) -> tuple[int, int]:
     return int(width), int(height)
 
 
-def _read_whole(stream, frame: np.ndarray) -> bool:
-    into = memoryview(frame).cast("B")
+FRAMES_PER_READ = 16
+
+
+def _fill(stream, block: np.ndarray) -> int:
+    into = memoryview(block).cast("B")
     filled = 0
     while filled < len(into):
         read = stream.readinto(into[filled:])
         if not read:
-            return False
+            break
         filled += read
-    return True
+    return filled
+
+
+def _read_frames(stream, width: int, height: int) -> list[np.ndarray]:
+    frames: list[np.ndarray] = []
+    while True:
+        block = np.empty((FRAMES_PER_READ, height, width, 3), dtype=np.uint8)
+        whole_frames = _fill(stream, block) // block[0].nbytes
+        if whole_frames < FRAMES_PER_READ:
+            frames.extend(frame.copy() for frame in block[:whole_frames])
+            return frames
+        frames.extend(block)
 
 
 def load_flick_frames(path: Path, _frame_cache_dir: Path | None = None) -> list[np.ndarray]:
@@ -57,7 +71,6 @@ def load_flick_frames(path: Path, _frame_cache_dir: Path | None = None) -> list[
     ]
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **hidden_subprocess_kwargs())
-    frames: list[np.ndarray] = []
 
     try:
         width, height = _ffprobe_size(path)
@@ -69,11 +82,7 @@ def load_flick_frames(path: Path, _frame_cache_dir: Path | None = None) -> list[
         raise
 
     try:
-        while True:
-            frame = np.empty((height, width, 3), dtype=np.uint8)
-            if not _read_whole(proc.stdout, frame):
-                break
-            frames.append(frame)
+        frames = _read_frames(proc.stdout, width, height)
     finally:
         if proc.stdout:
             proc.stdout.close()

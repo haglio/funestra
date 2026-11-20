@@ -13,8 +13,16 @@ WIDTH, HEIGHT = 4, 2
 
 
 class _ReadOnlyIntoTheImage(io.BytesIO):
+    def __init__(self, raw: bytes):
+        super().__init__(raw)
+        self.reads = 0
+
     def read(self, *_args):
         raise AssertionError("a frame read as bytes is a second copy of it to make and throw away")
+
+    def readinto(self, into) -> int:
+        self.reads += 1
+        return super().readinto(into)
 
 
 class _FakeFfmpeg:
@@ -118,3 +126,23 @@ def test_each_frame_is_an_image_of_its_own_that_can_be_drawn_on(ffmpeg):
     first[0, 0, 0] = 99
 
     assert (int(first[0, 0, 0]), int(second[0, 0, 0])) == (99, 20)
+
+
+def test_frames_are_read_a_block_at_a_time_since_each_read_waits_its_turn_behind_the_window_drawing_genau(ffmpeg, monkeypatch):
+    monkeypatch.setattr(flick_decode, "FRAMES_PER_READ", 4)
+    started = ffmpeg(b"".join(_frame_bytes(value) for value in range(8)))
+
+    frames = load_flick_frames(Path("scene one.mp4"))
+
+    assert [int(frame[0, 0, 0]) for frame in frames] == list(range(8))
+    assert started[0].stdout.reads == 3
+
+
+def test_the_last_frames_hold_no_memory_for_frames_the_flick_does_not_have(ffmpeg, monkeypatch):
+    monkeypatch.setattr(flick_decode, "FRAMES_PER_READ", 4)
+    ffmpeg(b"".join(_frame_bytes(value) for value in range(5)))
+
+    last = load_flick_frames(Path("scene one.mp4"))[-1]
+
+    assert int(last[0, 0, 0]) == 4
+    assert (last.base if last.base is not None else last).nbytes == last.nbytes
