@@ -141,7 +141,8 @@ class Funestra:
             self._hud, engine, post=self._where_the_hud_asks(channels))
         self._pointer = Pointer(hud=self._hud, corners=self._corners,
                                 item=self._press_on_the_item(channels),
-                                item_again=partial(ask, channels.dashboard_cmd, PRESSED_AGAIN),
+                                item_again=partial(self._off_the_loop.ask,
+                                                   channels.dashboard_cmd, PRESSED_AGAIN),
                                 zoom=self._zoom_at, pan=engine.pan_by)
         self._runs_here = RunsHere(
             {name: make(self.playback) for name, make in (setup.users or {}).items()})
