@@ -390,23 +390,17 @@ def test_a_hud_there_is_no_memory_to_paint_keeps_the_last_one_until_there_is(
     assert engine.overlays[overlay.overlay_id][2] is not drawn
 
 
-def test_a_single_click_posts_the_switch_once_its_window_lapses(tmp_path: Path, hud: Path):
-    now = [0.0]
-    engine = FakeEngine()
-    overlay = _overlay(tmp_path, hud, engine, clock=lambda: now[0])
+def test_a_single_click_posts_the_switch_at_once(tmp_path: Path, hud: Path):
+    overlay = _overlay(tmp_path, hud, FakeEngine())
     overlay.tick()
     corner_rect = overlay.targets.click[0][0]
 
     overlay.press(corner_rect[0] + MARGIN + 2, corner_rect[1] + MARGIN + 2)
-    overlay.tick()
-    assert _commands(tmp_path) == []
 
-    now[0] = 1.0
-    overlay.tick()
     assert _commands(tmp_path) == ["portrait_play_video|C:/v/cur.mp4"]
 
 
-def test_a_double_click_locks_instead_of_switching(tmp_path: Path, hud: Path):
+def test_the_second_click_of_a_double_click_adds_the_lock(tmp_path: Path, hud: Path):
     now = [0.0]
     engine = FakeEngine()
     overlay = _overlay(tmp_path, hud, engine, clock=lambda: now[0])
@@ -419,7 +413,8 @@ def test_a_double_click_locks_instead_of_switching(tmp_path: Path, hud: Path):
     now[0] = 2.0
     overlay.tick()
 
-    assert _commands(tmp_path) == ["portrait_lock_video|C:/v/s1.mp4"]
+    assert _commands(tmp_path) == [
+        "portrait_play_video|C:/v/s1.mp4", "portrait_lock_video|C:/v/s1.mp4"]
 
 
 def test_a_loop_button_click_posts_at_once(tmp_path: Path, hud: Path):

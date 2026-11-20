@@ -53,8 +53,8 @@ class HudClicks(TrackGrip):
         super().__init__()
         self._funestra = funestra
         self._double_click_s = double_click_s
-        self._pending_path = ""
-        self._pending_at = 0.0
+        self._played_path = ""
+        self._played_at = 0.0
         self.active_loop = ""
         self.active_filter = ""
 
@@ -68,12 +68,12 @@ class HudClicks(TrackGrip):
         path = hit_test_targets(targets.click, px, py)
         if not path:
             return ""
-        if path == self._pending_path and now - self._pending_at <= self._double_click_s:
-            self._pending_path = ""
+        if path == self._played_path and now - self._played_at <= self._double_click_s:
+            self._played_path = ""
             return f"{self._funestra}_lock_video|{path}"
-        self._pending_path = path
-        self._pending_at = now
-        return ""
+        self._played_path = path
+        self._played_at = now
+        return f"{self._funestra}_play_video|{path}"
 
     @staticmethod
     def _press_a_button(targets: HudTargets, px: int, py: int) -> str | None:
@@ -107,12 +107,6 @@ class HudClicks(TrackGrip):
         if not query:
             return f"{self._funestra}_no_filter"
         return f"filter_{self._funestra}_{query.replace(' ', '_')}"
-
-    def due(self, *, now: float) -> str:
-        if not self._pending_path or now - self._pending_at <= self._double_click_s:
-            return ""
-        path, self._pending_path = self._pending_path, ""
-        return f"{self._funestra}_play_video|{path}"
 
     def _toggle_loop(self, kind: str) -> str:
         if self.active_loop == kind:

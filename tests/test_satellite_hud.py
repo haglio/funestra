@@ -510,27 +510,40 @@ def _targets(**overrides) -> HudTargets:
     return HudTargets(**base)
 
 
-def test_single_click_switches_and_double_click_locks():
+def test_the_first_click_plays_at_once_and_the_second_adds_the_lock():
     clicks = HudClicks("landscape")
     targets = _targets(click=[((0, 0, 30, 30), "C:/v/pick.mp4")])
 
-    assert clicks.press(targets, 10, 10, now=0.0) == ""
-    assert clicks.due(now=0.1) == ""
-    assert clicks.due(now=1.0) == "landscape_play_video|C:/v/pick.mp4"
-    assert clicks.due(now=2.0) == ""
-
-    assert clicks.press(targets, 10, 10, now=10.0) == ""
+    assert clicks.press(targets, 10, 10, now=10.0) == "landscape_play_video|C:/v/pick.mp4"
     assert clicks.press(targets, 10, 10, now=10.2) == "landscape_lock_video|C:/v/pick.mp4"
-    assert clicks.due(now=11.0) == ""
 
 
-def test_a_second_click_past_the_window_is_another_single_click():
+def test_a_second_click_past_the_window_plays_again():
     clicks = HudClicks("landscape")
     targets = _targets(click=[((0, 0, 30, 30), "C:/v/pick.mp4")])
 
-    assert clicks.press(targets, 10, 10, now=0.0) == ""
-    assert clicks.press(targets, 10, 10, now=DOUBLE_CLICK_S * 4) == ""
-    assert clicks.due(now=DOUBLE_CLICK_S * 8) == "landscape_play_video|C:/v/pick.mp4"
+    assert clicks.press(targets, 10, 10, now=0.0) == "landscape_play_video|C:/v/pick.mp4"
+    assert clicks.press(
+        targets, 10, 10, now=DOUBLE_CLICK_S * 4) == "landscape_play_video|C:/v/pick.mp4"
+
+
+def test_a_third_click_after_a_lock_plays_rather_than_locking_again():
+    clicks = HudClicks("landscape")
+    targets = _targets(click=[((0, 0, 30, 30), "C:/v/pick.mp4")])
+
+    clicks.press(targets, 10, 10, now=0.0)
+    clicks.press(targets, 10, 10, now=0.1)
+
+    assert clicks.press(targets, 10, 10, now=0.2) == "landscape_play_video|C:/v/pick.mp4"
+
+
+def test_a_click_on_another_cell_inside_the_window_plays_that_cell():
+    clicks = HudClicks("landscape")
+    targets = _targets(click=[((0, 0, 30, 30), "C:/v/pick.mp4"), ((40, 0, 30, 30), "C:/v/other.mp4")])
+
+    clicks.press(targets, 10, 10, now=0.0)
+
+    assert clicks.press(targets, 50, 10, now=0.1) == "landscape_play_video|C:/v/other.mp4"
 
 
 def test_clicking_a_declared_button_posts_what_it_declares():
@@ -550,17 +563,9 @@ def test_a_dimmed_button_posts_nothing_but_the_press_stays_on_the_hud():
     assert HudClicks("portrait").press(targets, 5, 5, now=0.0) == ""
 
 
-def test_a_side_control_posts_at_once_rather_than_waiting_out_a_double_click():
-    clicks = HudClicks("portrait")
-
-    assert clicks.press(_targets(buttons=_squares(0, 0, bar())), 5, 5, now=0.0) == "portrait_prev"
-    assert clicks.due(now=5.0) == ""
-
-
 def test_clicking_empty_space_posts_nothing():
     clicks = HudClicks("portrait")
     assert clicks.press(_targets(), 200, 200, now=0.0) == ""
-    assert clicks.due(now=5.0) == ""
 
 
 def test_loop_buttons_toggle_and_are_mutually_exclusive():
