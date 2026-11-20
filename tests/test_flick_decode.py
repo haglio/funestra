@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import io
+import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -48,12 +50,12 @@ def ffmpeg(monkeypatch):
             started.append("ffprobe")
             return size()
 
-        def decode(*_args, **_kw):
+        def decode(_cmd):
             started.append(_FakeFfmpeg(raw, **kwargs))
-            return started[-1]
+            return started[-1], started[-1].stdout
 
         monkeypatch.setattr(flick_decode.subprocess, "check_output", probe)
-        monkeypatch.setattr(flick_decode.subprocess, "Popen", decode)
+        monkeypatch.setattr(flick_decode, "_start_ffmpeg", decode)
         return started
     return install
 
@@ -146,3 +148,57 @@ def test_the_last_frames_hold_no_memory_for_frames_the_flick_does_not_have(ffmpe
 
     assert int(last[0, 0, 0]) == 4
     assert (last.base if last.base is not None else last).nbytes == last.nbytes
+
+
+def test_ffmpeg_can_write_far_ahead_of_genau_so_a_read_waiting_its_turn_comes_back_with_many_frames():
+    reader, writer = flick_decode._pipe_far_ahead()
+    try:
+        assert os.write(writer, bytes(flick_decode.PIPE_AHEAD_BYTES)) == flick_decode.PIPE_AHEAD_BYTES
+    finally:
+        reader.close()
+        os.close(writer)
+
+
+def test_ffmpeg_writes_its_frames_into_the_pipe_that_runs_far_ahead_and_genau_reads_them_to_the_end(monkeypatch):
+    def ffmpeg_writing(cmd, *, stdout, stderr, **_kw):
+        os.write(stdout, _frame_bytes(10))
+        return SimpleNamespace(cmd=cmd, stderr=stderr)
+
+    monkeypatch.setattr(flick_decode.subprocess, "Popen", ffmpeg_writing)
+
+    proc, frames_stream = flick_decode._start_ffmpeg(["ffmpeg"])
+    try:
+        assert frames_stream.readall() == _frame_bytes(10)
+        assert proc.stderr == flick_decode.subprocess.PIPE
+    finally:
+        frames_stream.close()
+
+
+def test_an_ffmpeg_that_cannot_start_leaves_no_pipe_open(monkeypatch):
+    pipes = []
+
+    def remembered_pipe():
+        pipes.append(real_pipe())
+        return pipes[-1]
+
+    def no_ffmpeg(*_args, **_kw):
+        raise FileNotFoundError("ffmpeg is not installed")
+
+    real_pipe = flick_decode._pipe_far_ahead
+    monkeypatch.setattr(flick_decode, "_pipe_far_ahead", remembered_pipe)
+    monkeypatch.setattr(flick_decode.subprocess, "Popen", no_ffmpeg)
+
+    with pytest.raises(FileNotFoundError):
+        flick_decode._start_ffmpeg(["ffmpeg"])
+
+    reader, writer = pipes[0]
+    assert reader.closed
+    with pytest.raises(OSError, match="Bad file descriptor"):
+        os.close(writer)
+
+
+def test_a_pipe_windows_will_not_make_is_refused_out_loud():
+    refusing = SimpleNamespace(CreatePipe=lambda *_args: 0)
+
+    with pytest.raises(OSError, match="WinError"):
+        flick_decode._pipe_far_ahead(refusing)
