@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+import ctypes
+import ctypes.wintypes
+import io
+import msvcrt
+import os
 import subprocess
 from pathlib import Path
 
@@ -50,6 +55,30 @@ def _read_frames(stream, width: int, height: int) -> list[np.ndarray]:
         frames.extend(block)
 
 
+PIPE_AHEAD_BYTES = 64 * 1024 * 1024
+
+
+def _pipe_far_ahead(kernel32=None):
+    read_handle, write_handle = ctypes.wintypes.HANDLE(), ctypes.wintypes.HANDLE()
+    kernel32 = kernel32 or ctypes.WinDLL("kernel32", use_last_error=True)
+    if not kernel32.CreatePipe(ctypes.byref(read_handle), ctypes.byref(write_handle), None, PIPE_AHEAD_BYTES):
+        raise ctypes.WinError(ctypes.get_last_error())
+    reader = io.FileIO(msvcrt.open_osfhandle(read_handle.value, os.O_RDONLY), "rb")
+    return reader, msvcrt.open_osfhandle(write_handle.value, 0)
+
+
+def _start_ffmpeg(cmd: list[str]):
+    frames_stream, ffmpeg_writes_into = _pipe_far_ahead()
+    try:
+        proc = subprocess.Popen(cmd, stdout=ffmpeg_writes_into, stderr=subprocess.PIPE, **hidden_subprocess_kwargs())
+    except BaseException:
+        frames_stream.close()
+        raise
+    finally:
+        os.close(ffmpeg_writes_into)
+    return proc, frames_stream
+
+
 def load_flick_frames(path: Path, _frame_cache_dir: Path | None = None) -> list[np.ndarray]:
     cmd = [
         "ffmpeg",
@@ -70,22 +99,21 @@ def load_flick_frames(path: Path, _frame_cache_dir: Path | None = None) -> list[
         "pipe:1",
     ]
 
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **hidden_subprocess_kwargs())
+    proc, frames_stream = _start_ffmpeg(cmd)
 
     try:
         width, height = _ffprobe_size(path)
     except BaseException:
         proc.kill()
-        proc.stdout.close()
+        frames_stream.close()
         proc.stderr.close()
         proc.wait()
         raise
 
     try:
-        frames = _read_frames(proc.stdout, width, height)
+        frames = _read_frames(frames_stream, width, height)
     finally:
-        if proc.stdout:
-            proc.stdout.close()
+        frames_stream.close()
         stderr = proc.stderr.read().decode("utf-8", errors="replace") if proc.stderr else ""
         rc = proc.wait()
         if rc != 0:
