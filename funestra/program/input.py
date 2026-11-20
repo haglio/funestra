@@ -38,8 +38,12 @@ class Input:
                 self._press(ev.pos, viewport)
             elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 3:
                 self._funestra.right_press(*ev.pos, viewport=viewport)
+            elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 2:
+                self._funestra.wheel_press(*ev.pos, viewport=viewport)
             elif ev.type == pygame.MOUSEBUTTONUP and ev.button == 1:
                 self._funestra.release()
+            elif ev.type == pygame.MOUSEBUTTONUP and ev.button == 2:
+                self._funestra.wheel_release()
             elif ev.type == pygame.MOUSEMOTION:
                 self._funestra.motion(*ev.pos, held=bool(ev.buttons[0]), viewport=viewport)
             elif ev.type == pygame.MOUSEWHEEL:
