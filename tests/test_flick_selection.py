@@ -15,6 +15,10 @@ class FakeLoader:
         self.is_busy = is_busy
         self.load_requests: list[Path] = []
         self.prefetch_requests: list[Path] = []
+        self.failed_to_decode: set[Path] = set()
+
+    def wants_reading_ahead(self, path: Path) -> bool:
+        return not self.flick_store.holds(path) and path not in self.failed_to_decode
 
     def frames_ready(self, path: Path) -> bool:
         if path in self.flick_store.flick_cache:
@@ -193,6 +197,19 @@ def test_request_nearby_prefetch_uses_first_uncached_neighbor():
         "c.mp4",
     )
     flick_store.flick_cache[Path("b.mp4")] = {"frames": ["f0"]}
+
+    controller.request_nearby_prefetch()
+
+    assert loader.prefetch_requests == [Path("c.mp4")]
+
+
+def test_a_neighbor_that_failed_to_decode_is_passed_over_for_the_next_one():
+    controller, _flick_store, loader, _renderer, _notifier = _build_controller(
+        "a.mp4",
+        "b.mp4",
+        "c.mp4",
+    )
+    loader.failed_to_decode.add(Path("b.mp4"))
 
     controller.request_nearby_prefetch()
 

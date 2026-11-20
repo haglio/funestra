@@ -119,7 +119,7 @@ class FlickSelectionController:
             return
 
         for candidate in self.sequence.nearby_candidates():
-            if not self.flick_store.holds(candidate):
+            if self.loader.wants_reading_ahead(candidate):
                 self.loader.request_prefetch(candidate)
                 return
 

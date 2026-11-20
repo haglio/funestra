@@ -26,6 +26,7 @@ class FlickLoadController:
          self.current_flick_path_getter, self.decode_flick, self.start_thread,
          self.logger, self.on_active_flick_loaded) = parts
         self.read_beside_the_frames = _nothing_beside_the_frames
+        self._failed_to_decode: set[Path] = set()
 
     @property
     def is_busy(self) -> bool:
@@ -41,6 +42,7 @@ class FlickLoadController:
         return False
 
     def request_flick_load(self, path: Path) -> None:
+        self._failed_to_decode.discard(path)
         if self.frames_ready(path) or self._already_decoding(path):
             return
 
@@ -52,8 +54,11 @@ class FlickLoadController:
             name="genau-loader",
         )
 
+    def wants_reading_ahead(self, path: Path) -> bool:
+        return not self.flick_store.holds(path) and path not in self._failed_to_decode
+
     def request_prefetch(self, path: Path) -> None:
-        if self.flick_store.holds(path) or self.is_busy:
+        if not self.wants_reading_ahead(path) or self.is_busy:
             return
 
         self.logger.info("Prefetching %s", path.name)
@@ -82,6 +87,7 @@ class FlickLoadController:
 
         path, frames, err = result
         if err:
+            self._failed_to_decode.add(path)
             return
 
         self.logger.info("Prefetch ready: %s (%d frames)", path.name, len(frames) if frames else 0)

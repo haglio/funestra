@@ -197,3 +197,30 @@ def test_a_read_beside_the_frames_that_fails_is_warned_of_and_the_frames_still_a
 
     assert (load_state.loaded_frames, load_state.load_error) == (["f0", "f1"], None)
     logger.warning.assert_called_once()
+
+
+def test_a_flick_whose_read_ahead_failed_is_not_read_ahead_again():
+    path = Path("demo.mp4")
+    controller, _flick_store, _load_state, prefetch_state, starter, _logger, _active_loaded = _make_loader()
+    controller.request_prefetch(path)
+    prefetch_state.record_error(path, "moov atom not found", 1)
+    controller.adopt_prefetch_if_ready()
+
+    controller.request_prefetch(path)
+
+    assert len(starter.calls) == 1
+
+
+def test_a_flick_whose_read_ahead_failed_is_read_ahead_again_once_it_has_been_asked_for_again():
+    path = Path("demo.mp4")
+    controller, _flick_store, load_state, prefetch_state, starter, _logger, _active_loaded = _make_loader()
+    controller.request_prefetch(path)
+    prefetch_state.record_error(path, "moov atom not found", 1)
+    controller.adopt_prefetch_if_ready()
+    controller.request_flick_load(path)
+    load_state.record_error(path, "moov atom not found", 1)
+    controller.adopt_loaded_flick_if_ready()
+
+    controller.request_prefetch(path)
+
+    assert [call[2] for call in starter.calls] == ["genau-prefetch", "genau-loader", "genau-prefetch"]
