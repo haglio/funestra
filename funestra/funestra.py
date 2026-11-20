@@ -151,6 +151,7 @@ class Funestra:
             reload_playlist=None if self._follower is None else self._follower.read_now,
             volume=self._volume, show=self._runs_here.show,
             funscript_jumps=FunscriptJumps(self.playback, MessageWriter(channels.notice)))
+        self._item_said: tuple | None = None
         self._status = (
             StatusWriter(channels.status, lambda _playback: self.status_fields(),
                          publish=self._off_the_loop.publish)
@@ -165,6 +166,18 @@ class Funestra:
     @property
     def playback(self) -> Playback:
         return self._playback
+
+    def _write_the_status(self) -> None:
+        if self._status is None:
+            return
+        item = self._what_the_status_says_at_once()
+        if self._status.write(self.playback, at_once=item != self._item_said):
+            self._item_said = item
+
+    def _what_the_status_says_at_once(self) -> tuple:
+        playback = self.playback
+        return (playback.loads, playback.current_video, playback.portrait,
+                playback.has_funscript, playback.funscript_resting)
 
     def status_fields(self) -> dict[str, str]:
         return {
@@ -368,8 +381,7 @@ class Funestra:
         record.lap("what runs here")
         self.playback.advance()
         record.lap("playback")
-        if self._status is not None:
-            self._status.write(self.playback)
+        self._write_the_status()
         record.lap("the status file")
         if self._setup.tiles:
             self._engine.tile_to_fill(*viewport)

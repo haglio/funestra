@@ -382,6 +382,33 @@ def test_commands_drain_and_act_before_the_frame_is_published(tmp_path):
     assert f"video={videos[1]}" in _status(tmp_path)
 
 
+def test_a_new_video_is_in_the_status_file_on_the_pass_it_loads_however_soon(tmp_path):
+    videos = _videos(tmp_path, "v0", "v1")
+    channels = _channels(tmp_path, [str(video) for video in videos], commands="")
+    funestra = Funestra(FakeEngine(), FunestraSetup(
+        channels=channels, playlist=read_playlist(channels.playlist), clock=lambda: 100.0))
+    funestra.tick(viewport=WINDOW)
+    (tmp_path / "cmd.txt").write_text("NEXT\n", encoding="utf-8")
+
+    funestra.tick(viewport=WINDOW)
+
+    assert f"video={videos[1]}" in _status(tmp_path)
+
+
+def test_a_status_with_no_new_video_still_waits_out_its_interval(tmp_path):
+    videos = _videos(tmp_path, "v0", "v1")
+    channels = _channels(tmp_path, [str(video) for video in videos], commands="")
+    funestra = Funestra(FakeEngine(), FunestraSetup(
+        channels=channels, playlist=read_playlist(channels.playlist), clock=lambda: 100.0))
+    funestra.tick(viewport=WINDOW)
+    written = (tmp_path / "status.txt").stat().st_mtime_ns
+    (tmp_path / "cmd.txt").write_text("TOGGLE_LOCK\n", encoding="utf-8")
+
+    funestra.tick(viewport=WINDOW)
+
+    assert (tmp_path / "status.txt").stat().st_mtime_ns == written
+
+
 def test_a_list_written_under_the_window_is_taken_with_no_verb_sent(tmp_path):
     videos = _videos(tmp_path, "v0", "v1", "v2")
     funestra, _engine = _funestra(tmp_path, [str(videos[0])], commands="")
