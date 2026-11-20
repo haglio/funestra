@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from app_support.osr2_hold import HOLD_DELAY_S, HOLD_MOVE_MS, PARK, RETRACT
+from app_support.osr2_hold import HOLD_MOVE_MS, HOLD_WAIT_S, PARK, RETRACT
 from funestra_fakes import holds_of_the_lock
 from genau_fakes import FakeLoader, FakeNotifier, FakeRenderer, FakeSelection, FakeTCodeSender
 
@@ -695,7 +695,7 @@ def _heights(*heights: float):
 
 class TestTheRoomHoldingTheDevice:
     ASKED = 5.1
-    WAITS = HOLD_DELAY_S
+    WAITS = HOLD_WAIT_S[PARK]
     GLIDES = HOLD_MOVE_MS[PARK] / 1000
     RETRACT_GLIDES = HOLD_MOVE_MS[RETRACT] / 1000
     SETTLED = ASKED + WAITS + GLIDES
@@ -732,10 +732,10 @@ class TestTheRoomHoldingTheDevice:
         tick, _hand, _tcode = self._room(position=5000)
 
         shown = [tick(5.0), tick(self.ASKED, "PAUSE", "RETRACT"),
-                 tick(self.ASKED + self.WAITS - 0.1),
-                 tick(self.ASKED + self.WAITS + self.RETRACT_GLIDES / 2), tick(self.SETTLED)]
+                 tick(self.ASKED + self.RETRACT_GLIDES / 2),
+                 tick(self.ASKED + self.RETRACT_GLIDES), tick(self.SETTLED)]
 
-        assert shown == _heights(0.5, 0.5, 0.5, 0.75, 1.0)
+        assert shown == _heights(0.5, 0.5, 0.75, 1.0, 1.0)
 
     def test_a_hold_the_hand_plays_on_under_unheard_keeps_the_frame_with_the_device(self):
         tick, hand, tcode = self._room(position=5000)
@@ -783,11 +783,10 @@ class TestTheRoomHoldingTheDevice:
         tick(self.SETTLED)
         moved = self.SETTLED + 1.0
 
-        shown = [tick(moved, "PAUSE", "RETRACT"), tick(moved + self.WAITS - 0.1),
-                 tick(moved + self.WAITS + self.RETRACT_GLIDES / 2),
-                 tick(moved + self.WAITS + self.RETRACT_GLIDES)]
+        shown = [tick(moved, "PAUSE", "RETRACT"), tick(moved + self.RETRACT_GLIDES / 2),
+                 tick(moved + self.RETRACT_GLIDES)]
 
-        assert shown == _heights(0.0, 0.0, 0.5, 1.0)
+        assert shown == _heights(0.0, 0.5, 1.0)
 
     def test_a_park_asked_again_on_the_way_home_keeps_its_own_schedule(self):
         tick, _hand, _tcode = self._room(position=5000)

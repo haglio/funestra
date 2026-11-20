@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from app_support.osr2_hold import HOLD_DELAY_S, HOLD_MOVE_MS, PARK
+from app_support.osr2_hold import HOLD_MOVE_MS, HOLD_WAIT_S, PARK
 from genau_fakes import FakeTCodeSender
 
 from funestra.flag import Flag
@@ -54,7 +54,7 @@ class TestThePointOfTheLoopOnScreen:
 
 class TestTheRoomHoldingTheDevice:
     ASKED = 5.1
-    SETTLED = ASKED + HOLD_DELAY_S + HOLD_MOVE_MS[PARK] / 1000
+    SETTLED = ASKED + HOLD_WAIT_S[PARK] + HOLD_MOVE_MS[PARK] / 1000
 
     def _shown(self, under, now: float) -> float:
         under.follow_the_room_hold(now)
