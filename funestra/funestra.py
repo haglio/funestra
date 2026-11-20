@@ -42,6 +42,7 @@ from .mpv_engine import MpvEngine
 from .off_the_loop import BehindTheLoop
 from .osr2_visualizer import DrivePublisher
 from .outside_buttons import OutsideButtons
+from .paused_flag import PausedFlag
 from .playback import Playback
 from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
@@ -56,7 +57,6 @@ from .tcode import UdpTCodeSink
 from .tcode_driver import FunscriptTCodeDriver
 from .volume import VolumeHud
 from .volume_control import told_to_the_host
-from .written_file import PausedFlag
 
 logger = logging.getLogger(__name__)
 
