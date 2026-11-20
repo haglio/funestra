@@ -68,6 +68,20 @@ class TestStatusWriter:
         assert not writer.write(session)
         assert "position_ms=12345" in status_path.read_text(encoding="utf-8")
 
+    def test_a_write_asked_for_at_once_does_not_wait_out_the_interval(self, tmp_path):
+        status_path = tmp_path / "status.txt"
+        clock = {"t": 0.0}
+        writer = StatusWriter(
+            status_path, _fields, min_interval=0.2, now_source=lambda: clock["t"],
+        )
+        session = StubSession()
+        writer.write(session)
+        session.position_ms = 12400.0
+        clock["t"] = 0.05
+
+        assert writer.write(session, at_once=True)
+        assert "position_ms=12400" in status_path.read_text(encoding="utf-8")
+
     def test_a_writer_left_at_its_default_writes_once_a_status_interval(self, tmp_path):
         status_path = tmp_path / "status.txt"
         clock = {"t": 0.0}

@@ -96,9 +96,10 @@ class StatusWriter:
         self._last_write: float | None = None
         self._published: str | None = None
 
-    def write(self, session) -> bool:
+    def write(self, session, *, at_once: bool = False) -> bool:
         now = self._now()
-        if self._last_write is not None and now - self._last_write < self._min_interval:
+        if (not at_once and self._last_write is not None
+                and now - self._last_write < self._min_interval):
             return False
         text = "".join(f"{key}={value}\n" for key, value in self._fields(session).items())
         if text != self._published:
