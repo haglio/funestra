@@ -253,10 +253,6 @@ class HudOverlay:
             self._visualizer.publish(drive, self._clock())
         if redraw or self._draw_owed:
             self._draw()
-        if self._clicks is not None:
-            command = self._clicks.due(now=self._clock())
-            if command:
-                self._post(command)
 
     def lock_pressed(self) -> None:
         if self._model is None or self._model.facts is None:
