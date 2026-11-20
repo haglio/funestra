@@ -8,9 +8,11 @@ WINDOW_SHOW = "WINDOW_SHOW"
 WINDOW_HIDE = "WINDOW_HIDE"
 WINDOW_MINIMIZE = "WINDOW_MINIMIZE"
 WINDOW_FRONT = "WINDOW_FRONT"
+WINDOW_ON_TOP = "WINDOW_ON_TOP"
+WINDOW_NOT_ON_TOP = "WINDOW_NOT_ON_TOP"
 WINDOW_PLACE = "WINDOW_PLACE"
 
-_HWND_TOP = 0
+HWND_TOP, HWND_TOPMOST, HWND_NOTOPMOST = 0, -1, -2
 _SWP_NOSIZE, _SWP_NOMOVE, _SWP_NOACTIVATE = 0x0001, 0x0002, 0x0010
 
 
@@ -18,23 +20,28 @@ def window_place(x: int, y: int, width: int, height: int) -> str:
     return f"{WINDOW_PLACE} {x} {y} {width} {height}"
 
 
-def lift_without_the_keyboard(pygame) -> None:
+def stack_without_the_keyboard(pygame, after: int) -> None:
     hwnd = pygame.display.get_wm_info()["window"]
     ctypes.WinDLL("user32").SetWindowPos(
-        hwnd, _HWND_TOP, 0, 0, 0, 0, _SWP_NOSIZE | _SWP_NOMOVE | _SWP_NOACTIVATE)
+        ctypes.c_void_p(hwnd), ctypes.c_void_p(after),
+        0, 0, 0, 0, _SWP_NOSIZE | _SWP_NOMOVE | _SWP_NOACTIVATE)
 
 
 class WindowVerbs:
-    def __init__(self, pygame, *, lift: Callable[[object], None] | None = None) -> None:
+    def __init__(self, pygame, *, stack: Callable[[object, int], None] | None = None) -> None:
         self._pygame = pygame
-        self._lift = lift if lift is not None else (lambda _window: lift_without_the_keyboard(pygame))
+        self._stack = stack if stack is not None else (
+            lambda _window, after: stack_without_the_keyboard(pygame, after))
 
     def __call__(self, command: str) -> bool:
         verb, *values = command.split()
         if verb == WINDOW_PLACE:
             return self._place(values)
         answer = {WINDOW_SHOW: self._show, WINDOW_HIDE: self._hide,
-                  WINDOW_MINIMIZE: self._minimize, WINDOW_FRONT: self._front}.get(verb)
+                  WINDOW_MINIMIZE: self._minimize,
+                  WINDOW_FRONT: lambda: self._stack(self._window(), HWND_TOP),
+                  WINDOW_ON_TOP: lambda: self._stack(self._window(), HWND_TOPMOST),
+                  WINDOW_NOT_ON_TOP: lambda: self._stack(self._window(), HWND_NOTOPMOST)}.get(verb)
         if answer is None or values:
             return False
         answer()
@@ -56,9 +63,6 @@ class WindowVerbs:
 
     def _minimize(self) -> None:
         self._window().minimize()
-
-    def _front(self) -> None:
-        self._lift(self._window())
 
     def _place(self, values: list[str]) -> bool:
         try:
