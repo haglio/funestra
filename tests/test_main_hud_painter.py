@@ -801,7 +801,7 @@ class TestHolds:
 
     def test_a_held_visualizer_holds_still_with_the_device_on(self):
         for control in (OSR2_PARKED, OSR2_RETRACTED):
-            painter = Osr2PartPainter()
+            painter = Osr2PartPainter(clock=lambda: 10.0)
             main_hud_model = MainHudModel(main_mode=MainMode.GENAU, osr2=Osr2State.ROBOT_HAND,
                                    osr2_control=control)
             first = painter.bgra(MainHud(main_hud_model=main_hud_model, drive=_drive(0.0))).copy()
@@ -882,11 +882,12 @@ class TestTheDotIsWhereTheDeviceIs:
         assert 0 < at(1.6) < 6_000
         assert at(2.0) == 0
 
-    def test_retracted_it_slides_to_the_top(self):
+    def test_retracted_it_slides_to_the_top_at_once_with_no_wait_as_the_broker_writes_it(self):
         at = self._held_from(OSR2_RETRACTED)
 
         assert at(0.0) == 6_000
-        assert at(1.6) == POSITION_MAX
+        assert 6_000 < at(0.25) < POSITION_MAX
+        assert at(0.5) == POSITION_MAX
 
     def test_in_a_paused_room_it_goes_home_the_way_a_park_takes_it(self):
         at = self._held_from(OSR2_DRIVING)

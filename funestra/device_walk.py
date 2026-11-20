@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app_support.osr2_hold import HOLD_DELAY_S, HOLD_MOVE_MS
+from app_support.osr2_hold import HOLD_MOVE_MS, HOLD_WAIT_S
 
 from .tcode import HANDOFF_MS
 
@@ -25,7 +25,7 @@ class Walk:
 
 
 def the_broker_holding(start: float, asked_at: float, hold: str) -> Walk:
-    return Walk(start, asked_at, HOLD_DELAY_S, HOLD_MOVE_MS[hold] / 1000)
+    return Walk(start, asked_at, HOLD_WAIT_S[hold], HOLD_MOVE_MS[hold] / 1000)
 
 
 def the_hand_taking_back(start: float, taken_at: float) -> Walk:
