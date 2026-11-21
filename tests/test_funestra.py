@@ -45,7 +45,7 @@ from funestra.playhead import FIGURE_SPACE
 from funestra.playlist import PlaylistItem, read_playlist, write_playlist
 from funestra.pointer import OMNIPAUSE_TOGGLE, PRESSED_AGAIN
 from funestra.radio import radio_file_for, write_radio
-from funestra.runs_here import _Nobody
+from funestra.runs_here import AddsNothing
 from funestra.satellite_hud import MARGIN, HudModel, hud_text
 from funestra.scrubber_bar import SCRUBBER_HEIGHT
 from funestra.session_quit import SESSION_QUIT
@@ -1197,7 +1197,7 @@ class TestTheMainFunestra:
 
 class TestWhatRunsOnTheFunestra:
     def test_what_runs_on_it_can_be_told_from_what_cannot(self):
-        assert isinstance(_Nobody(), User)
+        assert isinstance(AddsNothing(), User)
         assert not isinstance(object(), User)
 
     def test_it_is_handed_the_playback_it_runs_on(self, tmp_path):
