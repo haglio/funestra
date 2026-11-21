@@ -193,11 +193,11 @@ class TestTheSpecialCollections:
         assert actions.index("main_enhanced") == last_length + 1
         assert actions.index("main_favorites") < actions.index("main_funestra_compilation")
 
-    def test_favorites_wears_the_green_star_and_lights_while_it_is_on(self):
+    def test_favorites_wears_the_star_with_the_filter_s_funnel_and_lights_green_while_it_is_on(self):
         for mode in MainMode:
             off = _button(_main_facts(main_mode=mode), "main_favorites")
             on = _button(_main_facts(main_mode=mode, favorites=True), "main_favorites")
-            assert shared_icon_name(off.icon) == "star"
+            assert shared_icon_name(off.icon) == "favorite_filter"
             assert (off.lit, on.lit, on.favorite) == (False, True, True), mode
 
     def test_enhanceds_lights_in_the_enhanced_color_while_it_is_on(self):
