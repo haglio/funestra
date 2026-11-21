@@ -140,6 +140,11 @@ _MPV_EVENT_FILE_LOADED = 8
 
 _APTTYPEQUALIFIER_IMPLICIT_MTA = 1
 
+
+def _said_if_refused(error, _result) -> None:
+    if error:
+        logger.warning("mpv refused a command it was asked to run when free: %s", error)
+
 _Corners = ctypes.wintypes.LONG * 4
 
 
@@ -349,23 +354,31 @@ class _MpvControl:
     def showing_video(self) -> bool:
         return self._image_track is False
 
+    # A command mpv is told to run at once waits for its core, which a file being opened holds for
+    # tens of milliseconds; one it is asked to run when free returns at once, and mpv runs what it
+    # is asked in the order it was asked.
+    def _ask(self, *command: str, **named: str) -> None:
+        self._mpv.command_async(*command, callback=_said_if_refused, **named)
+
+    def _clear_the_playlist(self) -> None:
+        self._ask("playlist-clear")
+        self._the_playlist_was_cleared()
+
     @mpv_call()
     def load(self, path: Path) -> None:
         self._staged = None
         self._begin_the_new_clip(str(path))
-        self._mpv.play(str(path))
-        self._mpv.playlist_clear()
+        self._ask("loadfile", url=str(path))
+        self._clear_the_playlist()
         self._between_files()
-        self._the_playlist_was_cleared()
 
     @mpv_call()
     def swap_image(self, path: Path) -> None:
         self._on_the_clock = str(path)
-        self._mpv.play(str(path))
-        self._mpv.playlist_clear()
-        self._the_playlist_was_cleared()
+        self._ask("loadfile", url=str(path))
+        self._clear_the_playlist()
         if self._staged is not None:
-            self._mpv.loadfile(self._staged, "append")
+            self._ask("loadfile", url=self._staged, flags="append")
 
     # mpv's playlist-clear resolves "current" itself; removing by an index read earlier
     # can take the playing entry out from under it.
@@ -379,16 +392,14 @@ class _MpvControl:
     def stage_next(self, path: Path) -> None:
         if str(path) == self._staged:
             return
-        self._mpv.playlist_clear()
-        self._the_playlist_was_cleared()
-        self._mpv.loadfile(str(path), "append")
+        self._clear_the_playlist()
+        self._ask("loadfile", url=str(path), flags="append")
         self._staged = str(path)
 
     @mpv_call()
     def clear_next(self) -> None:
         self._staged = None
-        self._mpv.playlist_clear()
-        self._the_playlist_was_cleared()
+        self._clear_the_playlist()
 
     @property
     def advanced_to_next(self) -> bool:
@@ -399,8 +410,7 @@ class _MpvControl:
         # mpv leaves the spent entry first in its playlist after rolling onto the next one;
         # clearing drops it and the current one plays on.
         rolled_onto, self._staged = self._staged, None
-        self._mpv.playlist_clear()
-        self._the_playlist_was_cleared()
+        self._clear_the_playlist()
         self._begin_the_new_clip(rolled_onto)
 
     def _begin_the_new_clip(self, path: str | None) -> None:
@@ -425,7 +435,7 @@ class _MpvControl:
     @mpv_call()
     def set_paused(self, paused: bool) -> None:
         self._ken_burns.set_paused(paused, self._now())
-        self._mpv.pause = paused
+        self._ask("set", "pause", "yes" if paused else "no")
 
     def set_pace(self, seconds: float) -> None:
         self._ken_burns.set_pace(seconds or 0.0, self._now())
