@@ -14,6 +14,7 @@ from funestra_fakes import holds_of_the_lock
 
 from funestra import broker_feed
 from funestra.broker_feed import (
+    BeatSender,
     BrokerFeed,
     BrokerSnapshot,
     UdpListener,
@@ -284,3 +285,49 @@ def _is_a_nap(call: ast.Call) -> bool:
     if called == "sleep":
         return True
     return called == "wait" and bool(call.args or [k for k in call.keywords if k.arg == "timeout"])
+
+
+class _HeardOnTheWire:
+    def __init__(self) -> None:
+        self.sent: list[tuple[bytes, tuple[str, int]]] = []
+        self.closed = False
+
+    def sendto(self, data: bytes, address: tuple[str, int]) -> None:
+        self.sent.append((data, address))
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class TestTheBeatAnAppSends:
+    @staticmethod
+    def _heard(say) -> tuple[BrokerSnapshot, set]:
+        wire = _HeardOnTheWire()
+        say(BeatSender(5011, sock=wire))
+        feed = BrokerFeed()
+        for data, _address in wire.sent:
+            apply_udp_line(feed, data.decode("utf-8"), logging.getLogger("test.beat"))
+        return snapshot(feed), {address for _data, address in wire.sent}
+
+    def test_driving_hands_genau_the_beat_at_the_tempo_and_on_the_pulse_it_is_told(self):
+        def say(sender: BeatSender) -> None:
+            sender.drive(True)
+            sender.bpm(121.5)
+            sender.sync()
+
+        assert self._heard(say) == (BrokerSnapshot(auto_active=True, raw_bpm=121.5,
+                                                   sync_pulse_id=1), {("127.0.0.1", 5011)})
+
+    def test_no_longer_driving_takes_the_beat_back(self):
+        def say(sender: BeatSender) -> None:
+            sender.drive(True)
+            sender.drive(False)
+
+        assert self._heard(say)[0].auto_active is False
+
+    def test_closing_it_closes_its_socket(self):
+        wire = _HeardOnTheWire()
+
+        BeatSender(5011, sock=wire).close()
+
+        assert wire.closed
