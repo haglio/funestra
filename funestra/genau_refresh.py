@@ -23,6 +23,25 @@ from .tick_failures import TickFailures
 SEND_THREAD = "genau-osr2-send"
 
 
+def _what_is_read_beside_the_frames(controls: GenauControls) -> Callable[[Path], None]:
+    def read(flick: Path) -> None:
+        controls.flick_flip.read_ahead(flick)
+        controls.flick_frame_rates.read_ahead(flick)
+    return read
+
+
+class FlickOnItsOwn:
+    def __init__(self) -> None:
+        self._flick: Path | None = None
+        self._since = 0.0
+
+    def frame_at(self, flick: Path | None, now: float, frame_count: int,
+                 frames_per_second: float) -> int:
+        if flick != self._flick:
+            self._flick, self._since = flick, now
+        return int((now - self._since) * frames_per_second) % frame_count
+
+
 class GenauRefreshController:
     def __init__(self, controls: GenauControls, flicks: FlicksOnScreen, *, broker: BrokerFeed,
                  files: GenauFiles, tuning: BeatTuning, tcode_sender=None,
@@ -33,7 +52,7 @@ class GenauRefreshController:
             raise ValueError("Genau runs with the hand's state and no hand-less mode")
         self.controls = controls
         self.flicks = flicks
-        flicks.read_on_the_decode_thread(controls.flick_flip.read_ahead)
+        flicks.read_on_the_decode_thread(_what_is_read_beside_the_frames(controls))
         self.broker = broker
         self.files = files
         self._status = StatusFile(files.status_file)
@@ -42,6 +61,7 @@ class GenauRefreshController:
         self.failures = TickFailures(logger)
         self.now_source = now_source
         self._up: tuple[object, float | None] = (None, None)
+        self._on_its_own = FlickOnItsOwn()
         self.motion = controls.hand_motion
         self._the_motion_s_turn = threading.RLock()
         self._hand_driving: Beat | None = None
@@ -144,11 +164,20 @@ class GenauRefreshController:
             self.motion.tick(now, start_fraction=self.device.where_in_its_travel)
         advance = self.controls.flick_advance_state
         if advance is not None and not self._over_a_video:
-            self.flicks.advance(advance, now, playing=self.controls.robot_hand.playing)
+            self.flicks.advance(advance, now, playing=self._the_flick_plays)
+
+    @property
+    def _the_flick_plays(self) -> bool:
+        return self.controls.robot_hand.playing or self.controls.plays_without_the_osr2.on
 
     def _show_the_frame(self, beat: Beat, now: float) -> None:
         frame_count = self.flicks.frame_count
         if not frame_count:
+            return
+        if self.controls.plays_without_the_osr2.on:
+            path = self.flicks.path
+            self.flicks.show_frame(self._on_its_own.frame_at(
+                path, now, frame_count, self.controls.flick_frame_rates.of(path)))
             return
         phase = self.controls.engine.phase
         if beat.robot_hand_active:

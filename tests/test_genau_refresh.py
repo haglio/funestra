@@ -16,8 +16,9 @@ from funestra.file_channel import append_command
 from funestra.flag import Flag
 from funestra.flick_advance import FlickAdvanceState
 from funestra.flick_flip import FlickFlip
+from funestra.flick_frame_rates import FlickFrameRates
 from funestra.flicks_on_screen import FlicksOnScreen
-from funestra.genau_controls import GenauControls
+from funestra.genau_controls import PLAY_WITHOUT_THE_OSR2, GenauControls
 from funestra.genau_files import GenauFiles
 from funestra.genau_refresh import SEND_THREAD, GenauRefreshController
 from funestra.genau_status import GENAU_STATUS_FILENAME
@@ -59,6 +60,7 @@ class _HandsOn:
     flick_advance: FlickAdvanceState | None = None
     hud: Flag | None = None
     flick_flip: FlickFlip | None = None
+    frame_rates: FlickFrameRates | None = None
 
 
 @dataclass(frozen=True)
@@ -109,6 +111,8 @@ def _build_controller(*, broker: BrokerFeed | None = None,
         hud=hands.hud,
         set_volume=lambda _level, _muted: None,
         flick_flip=hands.flick_flip if hands.flick_flip is not None else FlickFlip(),
+        flick_frame_rates=(hands.frame_rates if hands.frame_rates is not None
+                           else FlickFrameRates(read=lambda _flick: 30.0)),
     )
     controller = GenauRefreshController(
         controls,
@@ -465,6 +469,52 @@ def test_a_locked_genau_stays_on_its_flick():
 
 def test_the_flick_is_held_while_the_room_is_paused():
     assert _run_flick_advance(playing=False, seconds=60.0) == []
+
+
+def _play_without_the_osr2(*, seconds: float, frames: int = 8, frames_per_second: float = 4.0,
+                           locked: bool = True):
+    rates = FlickFrameRates(read=lambda _flick: frames_per_second)
+    rates.read_ahead(Path("demo.mp4"))
+    tcode = FakeTCodeSender()
+    tcode._position = 5000
+    built = _build_controller(
+        entry={"frames": [object() for _ in range(frames)]},
+        robot_hand=RobotHandState(playing=False, bpm=120.0), tcode_sender=tcode,
+        flick_advance=FlickAdvanceState(locked=locked, interval=10), frame_rates=rates,
+        command=f"{PLAY_WITHOUT_THE_OSR2} 1")
+    for step in range(round(seconds / 0.05) + 1):
+        built["controller"].now_source = lambda t=step * 0.05: 5.0 + t
+        built["controller"].refresh()
+    return built
+
+
+def _frames_in_turn(display_calls: list[int]) -> list[int]:
+    return [index for at, index in enumerate(display_calls)
+            if at == 0 or display_calls[at - 1] != index]
+
+
+def test_playing_without_the_osr2_the_flick_loops_at_its_own_frame_rate():
+    built = _play_without_the_osr2(seconds=2.3)
+
+    assert _frames_in_turn(built["renderer"].display_calls) == [0, 1, 2, 3, 4, 5, 6, 7, 0, 1]
+
+
+def test_playing_without_the_osr2_moves_on_to_the_next_flick_every_interval():
+    built = _play_without_the_osr2(seconds=15.0, locked=False)
+
+    assert built["selection"].step_calls == [1]
+
+
+def test_playing_without_the_osr2_ends_when_genau_is_told_the_osr2_is_back():
+    built = _play_without_the_osr2(seconds=0.5)
+    built["say"](f"{PLAY_WITHOUT_THE_OSR2} 0")
+    shown = len(built["renderer"].display_calls)
+
+    for step in range(1, 20):
+        built["controller"].now_source = lambda t=step * 0.05: 5.6 + t
+        built["controller"].refresh()
+
+    assert len(built["renderer"].display_calls) == shown
 
 
 def test_broker_auto_uses_broker_bpm_for_phase():
@@ -1279,11 +1329,16 @@ def test_given_no_way_to_start_a_thread_the_window_s_pass_sends_as_it_always_did
     assert len(tcode.sends) == 1
 
 
-def test_a_flick_s_flip_is_read_beside_its_decode_and_not_on_the_window_s_pass_when_it_comes_up():
+def test_a_flicks_flip_and_frame_rate_are_read_beside_its_decode_and_not_on_the_window_s_pass():
     flip = FlickFlip()
-    built = _build_controller(entry={"frames": [object() for _ in range(8)]}, flick_flip=flip)
+    rates = FlickFrameRates(read=lambda _flick: 24.0)
+    built = _build_controller(entry={"frames": [object() for _ in range(8)]}, flick_flip=flip,
+                              frame_rates=rates)
 
-    assert built["loader"].read_beside_the_frames == flip.read_ahead
+    built["loader"].read_beside_the_frames(Path("one.mp4"))
+
+    assert flip.flips_read_ahead == 1
+    assert rates.of(Path("one.mp4")) == 24.0
 
 
 def test_the_status_says_whether_the_whole_flick_named_is_read_so_a_reader_can_wait_for_it(tmp_path):

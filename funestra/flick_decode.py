@@ -12,7 +12,7 @@ import numpy as np
 from app_support.subprocess_utils import hidden_subprocess_kwargs
 
 
-def _ffprobe_size(path: Path) -> tuple[int, int]:
+def _ffprobe_video_stream(path: Path, entries: str) -> str:
     cmd = [
         "ffprobe",
         "-v",
@@ -20,14 +20,22 @@ def _ffprobe_size(path: Path) -> tuple[int, int]:
         "-select_streams",
         "v:0",
         "-show_entries",
-        "stream=width,height",
+        f"stream={entries}",
         "-of",
         "csv=p=0:s=x",
         str(path),
     ]
-    out = subprocess.check_output(cmd, text=True, **hidden_subprocess_kwargs()).strip()
-    width, height = out.split("x", 1)
+    return subprocess.check_output(cmd, text=True, **hidden_subprocess_kwargs()).strip()
+
+
+def _ffprobe_size(path: Path) -> tuple[int, int]:
+    width, height = _ffprobe_video_stream(path, "width,height").split("x", 1)
     return int(width), int(height)
+
+
+def read_frames_per_second(path: Path) -> float:
+    frames, _, seconds = _ffprobe_video_stream(path, "avg_frame_rate").partition("/")
+    return float(frames) / float(seconds or 1)
 
 
 FRAMES_PER_READ = 16
