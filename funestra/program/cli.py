@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ..channel_manifest import EVERY_CHANNEL, add_channel_arguments
 from ..playlist import PlaylistItem, read_playlist
+from .genau_here import add_genau_arguments
 from .placement import add_placement_arguments
 
 
@@ -14,6 +15,7 @@ def build_parser(channels: Sequence[str] = EVERY_CHANNEL) -> argparse.ArgumentPa
         description="A Funestra: a window that plays what an app hands it")
     add_channel_arguments(parser, channels)
     add_placement_arguments(parser)
+    add_genau_arguments(parser)
     parser.add_argument("--no-audio", action="store_true", default=False,
                         help="Never play audio, and leave the volume control a read-only "
                              "indicator; without it a Funestra still opens muted, but "

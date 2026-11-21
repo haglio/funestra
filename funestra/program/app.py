@@ -20,6 +20,7 @@ from ..funestra_verbs import QUIT
 from ..playlist import PlaylistItem, read_playlist
 from .asks import tell_the_app_a_key, tell_the_app_it_came_forward
 from .cli import build_parser, resolve_playlist
+from .genau_here import genau_from_args, kino_and_genau
 from .input import Input
 from .placement import WindowPlacement
 from .window import (
@@ -126,6 +127,7 @@ def _run(args, playlist: list[PlaylistItem], *, channels: Sequence[str] = EVERY_
         channels=files, playlist=playlist,
         audible=not (silent or args.no_audio), tiles=placement.tiles,
         window_verbs=WindowVerbs(pygame),
+        users=kino_and_genau(genau_from_args(args), notice=files.notice),
     ))
     window_input = Input(
         funestra,
