@@ -77,14 +77,14 @@ def _open_window(placement: WindowPlacement, claim_identity, *, hidden: bool = F
     return hwnd
 
 
-def _the_list_once_it_is_written(channels: Channels,
-                                 still_wanted: Callable[[], bool]) -> list[PlaylistItem]:
+def _a_list_once_one_is_written(channels: Channels, still_wanted: Callable[[], bool],
+                                flicks: Path | None) -> list[PlaylistItem] | None:
     while True:
         pygame.event.get()
         if QUIT in _lines_of(channels.command) or not still_wanted():
-            return []
+            return None
         playlist = read_playlist(channels.playlist)
-        if playlist:
+        if playlist or (flicks is not None and read_playlist(flicks)):
             return playlist
         time.sleep(_LOOK_FOR_A_LIST_EVERY_S)
 
@@ -116,10 +116,12 @@ def _run(args, playlist: list[PlaylistItem], *, channels: Sequence[str] = EVERY_
          host_is_running: Callable[[int], bool] = is_running) -> int:
     placement = WindowPlacement.from_args(args)
     files = Channels(**channels_from_args(args, channels))
+    genau = genau_from_args(args)
     window = _open_window(placement, claim_identity, hidden=args.hidden)
-    playlist = playlist or _the_list_once_it_is_written(
-        files, lambda: args.ends_with is None or host_is_running(args.ends_with))
-    if not playlist:
+    playlist = playlist or _a_list_once_one_is_written(
+        files, lambda: args.ends_with is None or host_is_running(args.ends_with),
+        None if genau is None else genau.flicks)
+    if playlist is None:
         pygame.quit()
         return 0
     logger.info("Funestra playing %d item(s)", len(playlist))
@@ -127,7 +129,7 @@ def _run(args, playlist: list[PlaylistItem], *, channels: Sequence[str] = EVERY_
         channels=files, playlist=playlist,
         audible=not (silent or args.no_audio), tiles=placement.tiles,
         window_verbs=WindowVerbs(pygame),
-        users=kino_and_genau(genau_from_args(args), notice=files.notice),
+        users=kino_and_genau(genau, notice=files.notice),
     ))
     window_input = Input(
         funestra,
