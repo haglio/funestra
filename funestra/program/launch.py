@@ -5,7 +5,7 @@ from pathlib import Path
 
 from ..channel_manifest import channel_argv
 from ..funestra import Channels
-from .genau_here import GenauLaunch, genau_argv
+from .genau_launch import GenauLaunch, genau_argv
 from .placement import WindowPlacement
 
 PROGRAM_MODULE = "funestra.program"

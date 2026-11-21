@@ -13,14 +13,14 @@ from app_support.processes import is_running
 from app_support.win32 import set_app_user_model_id
 
 from ..channel_manifest import EVERY_CHANNEL, channel_flag, channels_from_args
-from ..funestra import Channels, Funestra
+from ..funestra import Channels, Funestra, Users
 from ..funestra_priority import ahead_on_the_processor
 from ..funestra_setup import FunestraSetup
 from ..funestra_verbs import QUIT
 from ..playlist import PlaylistItem, read_playlist
 from .asks import tell_the_app_a_key, tell_the_app_it_came_forward
 from .cli import build_parser, resolve_playlist
-from .genau_here import genau_from_args, kino_and_genau
+from .genau_launch import GenauLaunch, genau_from_args
 from .input import Input
 from .placement import WindowPlacement
 from .window import (
@@ -111,6 +111,14 @@ class _EndsWithItsApp:
             self._funestra.apply(QUIT)
 
 
+def _kino_and_genau(launch: GenauLaunch | None, notice: Path | None) -> Users | None:
+    if launch is None:
+        return None
+    from .genau_here import kino_and_genau  # noqa: PLC0415
+
+    return kino_and_genau(launch, notice=notice)
+
+
 def _run(args, playlist: list[PlaylistItem], *, channels: Sequence[str] = EVERY_CHANNEL,
          silent: bool = False, claim_identity=set_app_user_model_id,
          host_is_running: Callable[[int], bool] = is_running) -> int:
@@ -129,7 +137,7 @@ def _run(args, playlist: list[PlaylistItem], *, channels: Sequence[str] = EVERY_
         channels=files, playlist=playlist,
         audible=not (silent or args.no_audio), tiles=placement.tiles,
         window_verbs=WindowVerbs(pygame),
-        users=kino_and_genau(genau, notice=files.notice),
+        users=_kino_and_genau(genau, files.notice),
     ))
     window_input = Input(
         funestra,

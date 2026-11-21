@@ -4,7 +4,7 @@ from pathlib import Path
 
 from funestra.funestra import Channels
 from funestra.program.cli import build_parser
-from funestra.program.genau_here import GenauLaunch, genau_from_args
+from funestra.program.genau_launch import GenauLaunch, genau_from_args
 from funestra.program.launch import PROGRAM_MODULE, Asked, launch_command
 from funestra.program.placement import WindowPlacement
 

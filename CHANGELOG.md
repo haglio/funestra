@@ -97,7 +97,7 @@ from each to the verb it sends, `GENAU_VALUED`, `ABOUT_GENAUS_FLICK`), which
 
 ## 2026-11-20 — funestra's own program runs Kino and Genau, on flicks an app lists
 
-Launched with a `program.genau_here.GenauLaunch` (`launch_command(..., genau=)`:
+Launched with a `program.genau_launch.GenauLaunch` (`launch_command(..., genau=)`:
 Genau's command, paused, status and drive files, the flicks file, the beat port,
 as `--genau-*` flags), `python -m funestra.program` runs Kino, the list it
 always played (`runs_here.AddsNothing`, `_Nobody` until now), and Genau beside

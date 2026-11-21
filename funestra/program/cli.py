@@ -6,7 +6,7 @@ from pathlib import Path
 
 from ..channel_manifest import EVERY_CHANNEL, add_channel_arguments
 from ..playlist import PlaylistItem, read_playlist
-from .genau_here import add_genau_arguments
+from .genau_launch import add_genau_arguments
 from .placement import add_placement_arguments
 
 
