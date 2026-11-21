@@ -199,14 +199,18 @@ NOT_IN_GENAU = "not in Genau"
 
 
 def _funscript_jump(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
+    return (replace(_funscript_jump_for(facts, shows), group_break=True),)
+
+
+def _funscript_jump_for(facts: HudFacts, shows: Shows) -> Button:
     if shows is Shows.GENAU:
         jump = funscript_jump_button("genau_funscript_jump", noun=facts.flick_one,
                                      has_osr2=True, has_funscript=True)
-        return (replace(jump, dim=True, tooltip=f"{jump.tooltip} ({NOT_IN_GENAU})"),)
+        return replace(jump, dim=True, tooltip=f"{jump.tooltip} ({NOT_IN_GENAU})")
     command = ("main_funestra_funscript_jump" if shows is Shows.KINO
                else f"{facts.funestra}_funscript_jump")
-    return (funscript_jump_button(command, noun=_noun(facts, shows), has_osr2=facts.has_osr2,
-                                  has_funscript=facts.has_funscript),)
+    return funscript_jump_button(command, noun=_noun(facts, shows), has_osr2=facts.has_osr2,
+                                 has_funscript=facts.has_funscript)
 
 
 def _lock(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
@@ -221,14 +225,15 @@ def _lock(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
 
 
 def _slide_trash(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
-    return (_unless_a_favorite(trash_button(facts.funestra), facts, shows),)
+    return (_opening_the_lock_s_group(trash_button(facts.funestra), facts, shows),)
 
 
 def _video_trash(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
-    return (_unless_a_favorite(trash_button("main"), facts, shows),)
+    return (_opening_the_lock_s_group(trash_button("main"), facts, shows),)
 
 
-def _unless_a_favorite(trash: Button, facts: HudFacts, shows: Shows) -> Button:
+def _opening_the_lock_s_group(trash: Button, facts: HudFacts, shows: Shows) -> Button:
+    trash = replace(trash, group_break=True)
     if not facts.favorite:
         return trash
     return replace(trash, icon=UNFAVORITE_ICON, danger=False,
@@ -254,7 +259,7 @@ def _flip(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
 
 
 def _flick_trash(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
-    return (_unless_a_favorite(trash_button_under("genau_trash_flick", "Send to Trash — move it out"),
+    return (_opening_the_lock_s_group(trash_button_under("genau_trash_flick", "Send to Trash — move it out"),
                                facts, shows),)
 
 
@@ -351,11 +356,11 @@ class Row(IntEnum):
 
 TRANSPORT_CONTROLS: tuple[HudControl, ...] = (
     HudControl("transport", EVERY_SHOW, _transport, Row.TOP),
+    HudControl("trash", _SLIDES, _slide_trash, Row.TOP),
+    HudControl("video_trash", _KINO, _video_trash, Row.TOP),
+    HudControl("trash_flick", _GENAU, _flick_trash, Row.TOP),
+    HudControl("lock", EVERY_SHOW, _lock, Row.TOP),
     HudControl("funscript_jump", EVERY_SHOW, _funscript_jump, Row.TOP),
-    HudControl("trash", _SLIDES, _slide_trash),
-    HudControl("video_trash", _KINO, _video_trash),
-    HudControl("trash_flick", _GENAU, _flick_trash),
-    HudControl("lock", EVERY_SHOW, _lock),
     HudControl("reset", EVERY_SHOW, _reset),
     HudControl("browse_order", EVERY_SHOW, _browse_order),
     HudControl("inclusions", _KINO | _GENAU, _inclusion_buttons),
