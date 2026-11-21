@@ -8,6 +8,12 @@ from pathlib import Path
 from .off_the_loop import at_once
 from .play_points import PlayPoints
 
+Lap = Callable[[str], None]
+
+
+def unlapped(_step: str) -> None:
+    pass
+
 
 @dataclass(frozen=True)
 class PlaybackSetup:
@@ -19,6 +25,7 @@ class PlaybackSetup:
     tcode: object = None
     clock: Callable[[], float] = time.monotonic
     behind: Callable = at_once
+    lap: Lap = unlapped
 
 
 PLAIN_PLAYBACK = PlaybackSetup()

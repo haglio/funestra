@@ -9,6 +9,20 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-20 — A late pass names the call inside playback that was slow
+
+The late-frame record's steps "playback" and "the files it is told through"
+are split, so a "Late pass" line names the call that took the time. Readers of
+the old names: "playback" is now the steps whose names begin "playback " (an
+owed seek, noting where it is, clearing the spent item, staging the next item,
+opening the item, telling it to play or pause, telling the item's places,
+laying out the funscript, driving the device); "the files it is told through"
+is now "what came back from behind the loop", "the scrubber's owed seek",
+"told by the paused flag", "reading the command file", "doing what the command
+file said" and "told by the playlist file". A Next's calls are named under the
+"playback " steps they make inside "doing what the command file said".
+`PlaybackSetup.lap` is how a Funestra hands its record to its `Playback`.
+
 ## 2026-11-19 — A Funestra's loop does only what changed, and writes down its late passes
 
 Work on the section "Every Funestra's own loop" of the smoothness audit of
