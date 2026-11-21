@@ -83,7 +83,9 @@ class GenauRefreshController:
     def _refresh_once(self) -> None:
         now = self.now_source()
         engine = self.controls.engine
-        if not self._over_a_video:
+        if self._over_a_video:
+            self.flicks.adopt_the_flick_asked_for()
+        else:
             self.flicks.adopt_whatever_finished_decoding()
             self.controls.flick_flip.follow(self.flicks.path)
         self._drain_commands()
