@@ -553,15 +553,23 @@ def test_the_flick_is_heard_only_while_it_has_the_main_screen(hud_on, heard):
     assert built["notifier"].visible_updates[-1] is heard
 
 
-def test_no_flick_is_adopted_drawn_or_fetched_while_a_video_has_the_main_screen():
+def test_no_flick_read_ahead_is_adopted_drawn_or_fetched_while_a_video_has_the_main_screen():
     built = _build_controller(
         entry={"frames": [object() for _ in range(8)]}, hud=Flag(on=True), pending_flick_name="next")
 
     built["controller"].refresh()
 
-    assert (built["loader"].loaded_adopt_calls, built["loader"].prefetch_adopt_calls,
+    assert (built["loader"].prefetch_adopt_calls, built["selection"].adopt_calls,
             built["renderer"].display_calls, built["selection"].prefetch_calls,
             built["loading_texts"]) == (0, 0, [], 0, [])
+
+
+def test_the_flick_asked_for_is_taken_up_behind_a_video_once_decoded_so_genau_can_come_up_on_it_whole():
+    built = _build_controller(entry=None, hud=Flag(on=True))
+
+    built["controller"].refresh()
+
+    assert built["loader"].loaded_adopt_calls == 1
 
 
 def test_the_flick_waits_where_it_was_while_a_video_has_the_main_screen_and_takes_up_its_time_from_there():

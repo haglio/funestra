@@ -20,8 +20,11 @@ class FlicksOnScreen:
     def read_on_the_decode_thread(self, read: Callable[[Path], None]) -> None:
         self.loader.read_beside_the_frames = read
 
-    def adopt_whatever_finished_decoding(self) -> None:
+    def adopt_the_flick_asked_for(self) -> None:
         self.loader.adopt_loaded_flick_if_ready()
+
+    def adopt_whatever_finished_decoding(self) -> None:
+        self.adopt_the_flick_asked_for()
         self.loader.adopt_prefetch_if_ready()
         self.selection.adopt_pending_flick()
 
