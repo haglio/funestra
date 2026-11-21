@@ -114,6 +114,13 @@ and with `HudFacts.main_mode` Genau wears the Main Funestra's Genau rows less
 the OSR2 button, the crown and the browse button; `title_choices(SLIDESHOW)`
 counts Genau's titles.
 
+Launched with Genau the program opens on whichever of its playlist and Genau's
+flicks is written first; a `Lineup` may start empty and a `Playback` on it
+(`has_nothing_to_play`) plays nothing until a playlist is taken, under
+`flick_overlay.NOTHING_UP`. Flips of listed flicks come from the app:
+`flick_list.write_flicks(file, flicks, flipped=...)` writes the list and
+`flips_file_for(file)` beside it.
+
 ## 2026-11-20 — Genau's user lives here, and asks a source for its flicks
 
 Moved in from Fun Time, so any app's Funestra can run Genau: `genau.Genau` (the
