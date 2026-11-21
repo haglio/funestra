@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 
 from .audio_outputs import Output, pick_output
-from .frame_record import NO_COUNTS, MpvCounts
+from .frame_record import MpvCounts
 from .ken_burns import Fit, KenBurns, Moves, View
 from .libmpv_loader import add_libmpv_to_path, libmpv_dirs
 from .lost_gpu import LostGpu
@@ -133,6 +133,8 @@ def tiles_across(source: tuple[int, int], viewport: tuple[int, int]) -> int:
 # A property read can wait on mpv's core lock for hundreds of milliseconds while a file opens.
 CLOSE_DRAIN_TIMEOUT_S = 10.0
 
+_FRAME_COUNTERS = ("frame-drop-count", "decoder-frame-drop-count", "vo-delayed-frame-count")
+
 # mpv_event_id in mpv's client.h.
 _MPV_EVENT_START_FILE = 6
 _MPV_EVENT_FILE_LOADED = 8
@@ -215,6 +217,7 @@ class _MpvControl:
         self._playlist_pos: int | None = None
         self._idle = False
         self._ab_loop_is_set = False
+        self._counted = dict.fromkeys(_FRAME_COUNTERS, 0)
 
     def _adopt(self, handle) -> None:
         self._mpv = handle
@@ -235,6 +238,8 @@ class _MpvControl:
         handle.observe_property("duration", self._note_duration)
         handle.observe_property("playlist-pos", self._note_playlist_pos)
         handle.observe_property("idle-active", self._note_idle)
+        for counter in _FRAME_COUNTERS:
+            handle.observe_property(counter, self._note_a_count)
         handle.register_event_callback(self._note_a_file_starting_or_loaded)
 
     def _note_frame_rate(self, _name: str, value) -> None:
@@ -257,6 +262,9 @@ class _MpvControl:
 
     def _note_idle(self, _name: str, value) -> None:
         self._idle = bool(value)
+
+    def _note_a_count(self, name: str, value) -> None:
+        self._counted[name] = int(value or 0)
 
     def _note_a_file_starting_or_loaded(self, event) -> None:
         kind = event.event_id.value
@@ -581,11 +589,9 @@ class _MpvControl:
         self._mpv.overlay_remove(ident)
         self._overlays.pop(ident, None)
 
-    @mpv_call(NO_COUNTS)
     def frame_counts(self) -> MpvCounts:
-        mpv = self._mpv
-        return (int(mpv.frame_drop_count or 0), int(mpv.decoder_frame_drop_count or 0),
-                int(mpv.vo_delayed_frame_count or 0))
+        dropped, decoder_dropped, delayed = (self._counted[counter] for counter in _FRAME_COUNTERS)
+        return dropped, decoder_dropped, delayed
 
     def close(self) -> None:
         # Destroying mpv under a call still inside it is an access violation; a leaked handle at exit is not.
