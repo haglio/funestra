@@ -13,7 +13,17 @@ from app_support.flick_folder import (
 )
 from app_support.trash_names import spot_in_trash
 
+from .inclusion_pair import including_no_other
+
 SUPPORTED_VIDEO_EXTS = {".mp4", ".mkv", ".mov", ".avi", ".webm", ".m4v"}
+
+
+def _flicks() -> str:
+    return haglio_settings.value("genau_flick_words", "many")
+
+
+def no_other_flicks() -> str:
+    return including_no_other(_flicks())
 
 
 def _modified_at(entry: os.DirEntry) -> float:
@@ -43,7 +53,7 @@ def scan_flicks(
     entries = [entry for folder in folders
                for entry in sorted(_videos_under(folder), key=lambda entry: Path(entry.path))]
     if not entries:
-        raise RuntimeError(f"No video {haglio_settings.value('genau_flick_words', 'many')} found in: "
+        raise RuntimeError(f"No video {_flicks()} found in: "
                            f"{', '.join(str(f) for f in folders)}")
     if recent:
         entries.sort(key=_modified_at, reverse=True)
