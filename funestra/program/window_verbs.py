@@ -7,12 +7,11 @@ from collections.abc import Callable
 WINDOW_SHOW = "WINDOW_SHOW"
 WINDOW_HIDE = "WINDOW_HIDE"
 WINDOW_MINIMIZE = "WINDOW_MINIMIZE"
-WINDOW_FRONT = "WINDOW_FRONT"
 WINDOW_ON_TOP = "WINDOW_ON_TOP"
 WINDOW_NOT_ON_TOP = "WINDOW_NOT_ON_TOP"
 WINDOW_PLACE = "WINDOW_PLACE"
 
-HWND_TOP, HWND_TOPMOST, HWND_NOTOPMOST = 0, -1, -2
+HWND_TOPMOST, HWND_NOTOPMOST = -1, -2
 _SWP_NOSIZE, _SWP_NOMOVE, _SWP_NOACTIVATE = 0x0001, 0x0002, 0x0010
 
 
@@ -39,7 +38,6 @@ class WindowVerbs:
             return self._place(values)
         answer = {WINDOW_SHOW: self._show, WINDOW_HIDE: self._hide,
                   WINDOW_MINIMIZE: self._minimize,
-                  WINDOW_FRONT: lambda: self._stack(self._window(), HWND_TOP),
                   WINDOW_ON_TOP: lambda: self._stack(self._window(), HWND_TOPMOST),
                   WINDOW_NOT_ON_TOP: lambda: self._stack(self._window(), HWND_NOTOPMOST)}.get(verb)
         if answer is None or values:

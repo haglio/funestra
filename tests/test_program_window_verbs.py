@@ -4,9 +4,7 @@ from types import SimpleNamespace
 
 from funestra.program.window_verbs import (
     HWND_NOTOPMOST,
-    HWND_TOP,
     HWND_TOPMOST,
-    WINDOW_FRONT,
     WINDOW_HIDE,
     WINDOW_MINIMIZE,
     WINDOW_NOT_ON_TOP,
@@ -65,14 +63,6 @@ def test_place_moves_the_window_and_gives_it_its_size():
 
     assert verbs(window_place(-1440, 0, 1440, 2560)) is True
     assert (window.position, window.size) == ((-1440, 0), (1440, 2560))
-
-
-def test_front_lifts_the_window_over_the_others_without_taking_the_keyboard():
-    stacked = []
-    verbs, window = _verbs(stacked)
-
-    assert verbs(WINDOW_FRONT) is True
-    assert stacked == [(window, HWND_TOP)]
 
 
 def test_on_top_keeps_the_window_over_every_other_programs_until_it_is_told_otherwise():
