@@ -25,7 +25,6 @@ from funestra.mpv_engine import (
 
 
 class FakeMpv:
-    frame_drop_count = decoder_frame_drop_count = vo_delayed_frame_count = 0
 
     def __init__(self, *, pos: int = 0, count: int = 2) -> None:
         self.observers: dict[str, object] = {}
@@ -412,11 +411,9 @@ class BlockingMpv(FakeMpv):
         self.release = threading.Event()
         self.terminated = 0
 
-    @property
-    def frame_drop_count(self):
+    def screenshot_raw(self):
         self.entered.set()
         self.release.wait(10.0)
-        return 1
 
     def terminate(self) -> None:
         self.terminated += 1
@@ -426,7 +423,7 @@ class BlockingMpv(FakeMpv):
 def test_close_waits_for_a_read_that_is_still_inside_mpv():
     mpv = BlockingMpv()
     control = Control(mpv)
-    reading = threading.Thread(target=control.frame_counts)
+    reading = threading.Thread(target=control.screenshot_bgra)
     reading.start()
     assert mpv.entered.wait(5.0)
 
@@ -446,7 +443,7 @@ def test_the_frame_rate_is_answered_while_a_read_is_stuck_inside_mpv():
     mpv = BlockingMpv()
     control = Control(mpv)
     mpv.report("container-fps", 25.0)
-    reading = threading.Thread(target=control.frame_counts)
+    reading = threading.Thread(target=control.screenshot_bgra)
     reading.start()
     assert mpv.entered.wait(5.0)
 
@@ -1367,11 +1364,15 @@ def test_a_windowed_engine_frames_its_close_ups_for_the_window_it_draws_into(mon
     assert engine._fit().viewport == _client_size(desktop)
 
 
-def test_the_frame_counts_are_mpvs_own_counters_of_dropped_and_delayed_frames():
+def test_the_frame_counts_are_what_mpv_last_told_of_its_dropped_and_delayed_frames_never_a_read():
     mpv = FakeMpv()
-    mpv.frame_drop_count, mpv.decoder_frame_drop_count, mpv.vo_delayed_frame_count = 4, None, 2
+    control = Control(mpv)
 
-    assert Control(mpv).frame_counts() == (4, 0, 2)
+    mpv.report("frame-drop-count", 4)
+    mpv.report("decoder-frame-drop-count", None)
+    mpv.report("vo-delayed-frame-count", 2)
+
+    assert control.frame_counts() == (4, 0, 2)
 
 
 def _decoder_lines(caplog) -> list[tuple[str, str]]:
