@@ -198,6 +198,7 @@ class Funestra:
             **status_fields(self.playback, self._drive_gate.handoff_touch(),
                             read_at=self._setup.clock()),
             **volume_fields(self._volume.hud),
+            **({} if self._setup.window is None else {"window": str(self._setup.window)}),
             **self._runs_here.status_fields()}
 
     @property
@@ -308,7 +309,8 @@ class Funestra:
     def on_window(cls, wid: int, setup: FunestraSetup) -> Funestra:
         return cls(
             MpvEngine(wid, muted=setup.muted, loop_file=False, prefetch=True, audio=setup.audible),
-            setup._replace(tcode=osr2_line(setup.channels), off_the_loop=BehindTheLoop()))
+            setup._replace(tcode=osr2_line(setup.channels), off_the_loop=BehindTheLoop(),
+                           window=int(wid)))
 
     def _where_the_hud_asks(self, channels: Channels) -> Callable[[str], None]:
         if channels.dashboard_cmd is not None:

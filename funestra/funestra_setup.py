@@ -45,6 +45,7 @@ class FunestraSetup(NamedTuple):
     frame_ms: float = DESKTOP_FRAME_MS
     frame_clock: Callable[[], float] = time.perf_counter
     off_the_loop: OffTheLoop = AtOnce()
+    window: int | None = None
 
     def playback_setup(self, start_paused: bool, lap: Lap) -> PlaybackSetup:
         return PlaybackSetup(
