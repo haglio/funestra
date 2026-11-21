@@ -5,7 +5,7 @@ from collections.abc import Callable, Mapping
 from pathlib import Path
 
 from .flick_overlay import FlickFrame
-from .genau import Genau, Narrow, Opening
+from .genau import Genau, Narrow, Opening, a_step_shown_genau_takes
 from .main_hud import ModeHud
 from .playlist import read_playlist
 from .runs_here import AddsNothing
@@ -62,7 +62,8 @@ class GenauOnAList:
 
     def apply_command(self, command: str) -> bool:
         if self._genau is _NO_FLICKS_YET:
-            return self._flicks.apply_command(command, lambda _says: self._start_once_listed())
+            return (a_step_shown_genau_takes(command, showing=self._showing)
+                    or self._flicks.apply_command(command, lambda _says: self._start_once_listed()))
         return self._genau.apply_command(command)
 
     def tick(self) -> None:

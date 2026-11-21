@@ -68,8 +68,8 @@ class GenauOutputs:
 STANDARD_SEAMS = EngineSeams(log=logger, off_the_loop=BehindTheLoop)
 
 
-def _a_step(command: str) -> bool:
-    return command.split(None, 1)[0].upper() in (NEXT, PREV) if command.strip() else False
+def a_step_shown_genau_takes(command: str, *, showing: bool) -> bool:
+    return showing and bool(command.strip()) and command.split(None, 1)[0].upper() in (NEXT, PREV)
 
 
 class Genau:
@@ -121,7 +121,7 @@ class Genau:
         return self._loading
 
     def apply_command(self, command: str) -> bool:
-        if self._showing and _a_step(command):
+        if a_step_shown_genau_takes(command, showing=self._showing):
             apply_runtime_command(command, self._engine.controls)
             return True
         return self._source.apply_command(command, self._narrow)
