@@ -96,6 +96,8 @@ class Playback:
 
     @property
     def current_funscript(self) -> Funscript | None:
+        if self.has_nothing_to_play:
+            return None
         return self._rides.funscript(self.showing, self.current_video)
 
     @property
@@ -174,6 +176,8 @@ class Playback:
 
     @property
     def name_on_screen(self) -> str:
+        if self.has_nothing_to_play:
+            return ""
         name = self.current_video.stem
         if not self._switching_versions and self.showing == self.current_video:
             return name
@@ -314,6 +318,8 @@ class Playback:
             self._stage_next()
 
     def advance(self) -> None:
+        if self.has_nothing_to_play:
+            return
         lap = self._lap
         self._owed_seek.pay(self._engine, self._seek_now)
         lap("playback paying an owed seek")
@@ -398,7 +404,14 @@ class Playback:
         self.replace_playlist([item.path for item in items], funscripts_of(items),
                               points_of_interest_of(items))
 
+    @property
+    def has_nothing_to_play(self) -> bool:
+        return not self._lineup
+
     def load(self, index: int) -> None:
+        if self.has_nothing_to_play:
+            self._engine.stop()
+            return
         self._play_points.leave()
         self._switching_versions = False
         self._lineup.stand_at(index)

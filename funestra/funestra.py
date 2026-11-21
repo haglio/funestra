@@ -13,7 +13,7 @@ from app_support.osr2_slot import Osr2Sender
 from .control_registry import look_up
 from .drive_gate import DriveGate
 from .file_channel import consume_command_file
-from .flick_overlay import FlickFrame, FlickOverlay
+from .flick_overlay import NOTHING_UP, FlickFrame, FlickOverlay
 from .frame_record import NO_COUNTS, FrameRecord
 from .funestra_controls import VERBS, FunestraControls
 from .funestra_setup import FunestraSetup
@@ -182,7 +182,7 @@ class Funestra:
         return self._playback
 
     def _write_the_status(self) -> None:
-        if self._status is None:
+        if self._status is None or self.playback.has_nothing_to_play:
             return
         item = self._what_the_status_says_at_once()
         if self._status.write(self.playback, at_once=item != self._item_said):
@@ -491,7 +491,8 @@ class Funestra:
 
     def _paint(self, viewport: tuple[int, int]) -> None:
         lap = self._frame_record.lap
-        frame = self._front.own_frame()
+        frame = self._front.own_frame() or (
+            NOTHING_UP if self.playback.has_nothing_to_play else None)
         if frame is None:
             self._users_frames.hide()
             lap("Genau's frame over the item")

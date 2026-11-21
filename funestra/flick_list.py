@@ -4,7 +4,7 @@ import random
 from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from pathlib import Path
 
-from .flick_overlay import FlickFrame
+from .flick_overlay import NOTHING_UP, FlickFrame
 from .genau import Genau, Narrow, Opening, a_step_shown_genau_takes
 from .main_hud import ModeHud
 from .playlist import PlaylistItem, read_playlist, write_playlist
@@ -73,7 +73,7 @@ class FlickList:
 
 class _NoFlicksYet(AddsNothing):
     def own_frame(self) -> FlickFrame:
-        return FlickFrame(frame=None)
+        return NOTHING_UP
 
 
 _NO_FLICKS_YET = _NoFlicksYet()

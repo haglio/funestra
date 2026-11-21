@@ -11,9 +11,16 @@ TWO_UPSCALED = Path("two upscaled.mp4")
 A_FRAME = Path("frame.png")
 
 
-def test_a_lineup_of_nothing_is_refused():
-    with pytest.raises(ValueError, match="empty"):
-        Lineup([])
+def test_a_lineup_of_nothing_has_nothing_in_it():
+    assert len(Lineup([])) == 0
+
+
+def test_a_lineup_of_nothing_takes_the_first_list_it_is_handed_from_its_start():
+    lineup = Lineup([])
+
+    assert lineup.take([TWO, THREE]) is False
+
+    assert (lineup.videos, lineup.index, lineup.showing) == ([TWO, THREE], 0, TWO)
 
 
 class TestWhatIsUp:
