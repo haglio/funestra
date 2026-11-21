@@ -1025,11 +1025,11 @@ def test_in_genau_each_button_of_a_slideshow_on_its_own_posts_genau_s_verb_or_it
 
     assert [[button.command for button in row if button.command] for row in rows] == [
         ["main_kino_activate", "genau_activate", "genau_prev_flick", "genau_nudge_prev",
-         "genau_nudge_next", "genau_next_flick", "genau_funscript_jump", "portrait_minimize"],
-        ["genau_trash_flick", "portrait_lock", "genau_reset", "portrait_shuffle",
-         "portrait_latest", "portrait_orientation_landscape", "portrait_orientation_portrait",
-         "portrait_projection_none", "portrait_projection_both", "portrait_enhanced",
-         "portrait_favorites", "genau_flip_ends"],
+         "genau_nudge_next", "genau_next_flick", "genau_trash_flick", "portrait_lock",
+         "genau_funscript_jump", "portrait_minimize"],
+        ["genau_reset", "portrait_shuffle", "portrait_latest", "portrait_orientation_landscape",
+         "portrait_orientation_portrait", "portrait_projection_none", "portrait_projection_both",
+         "portrait_enhanced", "portrait_favorites", "genau_flip_ends"],
         ["portrait_speed_down", "portrait_speed_up", "genau_flick_seconds_down",
          "genau_flick_seconds_up"],
     ]
