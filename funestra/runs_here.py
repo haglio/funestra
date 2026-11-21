@@ -53,7 +53,8 @@ class RunsHere:
     def __init__(self, users: Mapping[str, User] | None) -> None:
         self._users: dict[str, User] = dict(users) if users else {NOBODY: _Nobody()}
         self._showing = next(iter(self._users))
-        self.front.set_showing(True)
+        for name, user in self._users.items():
+            user.set_showing(name == self._showing)
 
     def __getitem__(self, name: str) -> User:
         return self._users[name]

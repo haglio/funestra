@@ -1308,7 +1308,7 @@ class TestWhoHasTheWindow:
 
         assert funestra.showing == "genau"
         assert kino.showing == [True, False]
-        assert funestra.runs_here["genau"].showing == [True]
+        assert funestra.runs_here["genau"].showing == [False, True]
 
     def test_show_naming_nobody_on_this_window_is_refused_and_named_on_the_log(self, tmp_path, caplog):
         funestra, _engine, _kino = _main(tmp_path, commands="SHOW slideshow\n", genau=True)
