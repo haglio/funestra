@@ -33,6 +33,7 @@ class Seam:
         self.paused = Flag(on=bool(start.get("paused", False)))
         self.hud = Flag(on=bool(start.get("hud", False)))
         self.tcode_enabled = Flag(on=bool(start.get("tcode_enabled", True)))
+        self.plays_without_the_osr2 = Flag(on=bool(start.get("plays_without_the_osr2", False)))
         self.direct = RobotHandState(
             playing=bool(start.get("playing", False)),
             speed=start.get("speed", 50),
@@ -73,6 +74,7 @@ class Seam:
                 stop_event=self.stop_event,
                 hud=self.hud,
                 tcode_enabled=self.tcode_enabled,
+                plays_without_the_osr2=self.plays_without_the_osr2,
                 set_volume=lambda level, muted: self.volumes.append((level, muted)),
                 reorder_flicks=self.reorders.append,
                 keep_shapes=lambda plays_vr, plays_flat: self.kept_shapes.append(
@@ -119,6 +121,7 @@ class Seam:
             "max_intensity": self.direct.max_intensity,
             "hud": self.hud.on,
             "tcode_enabled": self.tcode_enabled.on,
+            "plays_without_the_osr2": self.plays_without_the_osr2.on,
             "stopping": self.stop_event.is_set(),
         }
 
@@ -183,6 +186,8 @@ SEAM = [
                                  "center": 27, "intended_center": 27}),
     ("SET_TCODE_ENABLED 0", {}, {"tcode_enabled": False}),
     ("SET_TCODE_ENABLED 1", {"tcode_enabled": False}, {"tcode_enabled": True}),
+    ("PLAY_WITHOUT_THE_OSR2 1", {}, {"plays_without_the_osr2": True}),
+    ("PLAY_WITHOUT_THE_OSR2 0", {"plays_without_the_osr2": True}, {"plays_without_the_osr2": False}),
 ]
 
 

@@ -202,3 +202,22 @@ def test_a_pipe_windows_will_not_make_is_refused_out_loud():
 
     with pytest.raises(OSError, match="WinError"):
         flick_decode._pipe_far_ahead(refusing)
+
+
+@pytest.mark.parametrize(("said", "frames_per_second"), [
+    ("30000/1001\n", 30000 / 1001),
+    ("24/1\n", 24.0),
+    ("25\n", 25.0),
+])
+def test_a_flick_s_frame_rate_is_read_from_its_video_stream(monkeypatch, said, frames_per_second):
+    asked: list[list[str]] = []
+
+    def probe(cmd, **_kw):
+        asked.append(cmd)
+        return said
+
+    monkeypatch.setattr(flick_decode.subprocess, "check_output", probe)
+
+    assert flick_decode.read_frames_per_second(Path("scene one.mp4")) == pytest.approx(
+        frames_per_second)
+    assert "stream=avg_frame_rate" in asked[0]

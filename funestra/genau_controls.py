@@ -15,6 +15,7 @@ from .flick_advance import (
     set_interval,
 )
 from .flick_flip import FlickFlip
+from .flick_frame_rates import FlickFrameRates
 from .funestra_verbs import (
     LOCK_OFF,
     LOCK_ON,
@@ -73,6 +74,8 @@ class GenauControls:
     keep_shapes: Callable[[bool, bool], None] | None = None
     play_file: Callable[[Path], None] | None = None
     flick_flip: FlickFlip = field(default_factory=FlickFlip)
+    flick_frame_rates: FlickFrameRates = field(default_factory=FlickFrameRates)
+    plays_without_the_osr2: Flag = field(default_factory=Flag)
     app_hold: RoomHold = field(default_factory=RoomHold)
 
     @property
@@ -85,6 +88,7 @@ Act = Callable[[GenauControls, str], bool]
 FLICK_SECONDS = "FLICK_SECONDS"
 PAUSE = "PAUSE"
 RESUME = "RESUME"
+PLAY_WITHOUT_THE_OSR2 = "PLAY_WITHOUT_THE_OSR2"
 
 
 def _stepper(step: int) -> Act:
@@ -244,6 +248,11 @@ def _tcode_enabled(controls: GenauControls, value: str) -> bool:
     return True
 
 
+def _plays_without_the_osr2(controls: GenauControls, value: str) -> bool:
+    controls.plays_without_the_osr2.on = value.strip() != "0"
+    return True
+
+
 def _flag_set(name: str, value: bool) -> Act:
     def act(controls: GenauControls, _value: str) -> bool:
         getattr(controls, name).on = value
@@ -377,6 +386,10 @@ CONTROLS: tuple[Control, ...] = (
     Control(
         name="tcode",
         verbs=(Verb(SET_TCODE_ENABLED, _tcode_enabled, takes_a_value=True),),
+    ),
+    Control(
+        name="without_the_osr2",
+        verbs=(Verb(PLAY_WITHOUT_THE_OSR2, _plays_without_the_osr2, takes_a_value=True),),
     ),
     Control(
         name="hud",

@@ -49,6 +49,9 @@ class FlicksOnScreen:
     def has_a_frame_up(self) -> bool:
         return self.renderer.current_frame_index is not None
 
+    def show_frame(self, index: int) -> None:
+        self.renderer.show_frame_at(index)
+
     def show_the_frame_at(self, phase: float) -> None:
         self.renderer.show_frame_at(display_index_for_phase(phase, self.frame_count))
 
