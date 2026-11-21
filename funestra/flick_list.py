@@ -8,6 +8,7 @@ from .flick_overlay import FlickFrame
 from .genau import Genau, Narrow, Opening
 from .main_hud import ModeHud
 from .playlist import read_playlist
+from .runs_here import AddsNothing
 
 RELOAD_FLICKS = "RELOAD_FLICKS"
 
@@ -43,24 +44,9 @@ class FlickList:
         return True
 
 
-class _NoFlicksYet:
-    def tick(self) -> None:
-        pass
-
-    def status_fields(self) -> Mapping[str, str]:
-        return {}
-
-    def top_block(self) -> ModeHud:
-        return ModeHud()
-
-    def set_showing(self, showing: bool) -> None:
-        pass
-
+class _NoFlicksYet(AddsNothing):
     def own_frame(self) -> FlickFrame:
         return FlickFrame(frame=None)
-
-    def close(self) -> None:
-        pass
 
 
 _NO_FLICKS_YET = _NoFlicksYet()

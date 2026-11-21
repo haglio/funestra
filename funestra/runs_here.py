@@ -23,7 +23,7 @@ class User(Protocol):
     def close(self) -> None: ...
 
 
-class _Nobody:
+class AddsNothing:
     def apply_command(self, command: str) -> bool:
         return False
 
@@ -51,7 +51,7 @@ NOBODY = ""
 
 class RunsHere:
     def __init__(self, users: Mapping[str, User] | None) -> None:
-        self._users: dict[str, User] = dict(users) if users else {NOBODY: _Nobody()}
+        self._users: dict[str, User] = dict(users) if users else {NOBODY: AddsNothing()}
         self._showing = next(iter(self._users))
         for name, user in self._users.items():
             user.set_showing(name == self._showing)
