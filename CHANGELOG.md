@@ -86,6 +86,34 @@ is now "what came back from behind the loop", "the scrubber's owed seek",
 file said" and "told by the playlist file". A Next's calls are named under the
 "playback " steps they make inside "doing what the command file said".
 `PlaybackSetup.lap` is how a Funestra hands its record to its `Playback`.
+## 2026-11-20 — funestra's own program runs Kino and Genau, on flicks an app lists
+
+Launched with a `program.genau_here.GenauLaunch` (`launch_command(..., genau=)`:
+Genau's command, paused, status and drive files, the flicks file, the beat port,
+as `--genau-*` flags), `python -m funestra.program` runs Kino, the list it
+always played (`runs_here.AddsNothing`, `_Nobody` until now), and Genau beside
+it, switched by `SHOW kino` / `SHOW genau`. Without one it is as before.
+
+New: `flick_list.FlickList`, a flick source read from a file in the playlist
+format, narrowed to the file as rewritten by `RELOAD_FLICKS [words]`;
+`flick_list.GenauOnAList`, which starts Genau once that list names a flick;
+`broker_feed.BeatSender` (`drive`, `bpm`, `sync`), the beat Genau follows, said
+by an app; `tcode.SendsNowhere` and `genau_notifier.TellsNobody`;
+`channel_manifest.ChannelManifest`, the four channel functions now its methods
+for `Channels`; `inclusion_pair.orientation_pair` and `projection_pair`
+(`ORIENTATION` and `PROJECTION` are the Main Funestra's); and
+`genau.a_step_shown_genau_takes`.
+
+A `FlickSource`'s trash is now one optional `genau_engine.FlickTrash`
+(`folder_for`, `went`) in place of `trash_folder_for` and `went`, and its
+`up_next` may be `None`; `GenauHost` takes `trash` in place of `condemned_to`
+and `tell_where_it_went`.
+
+The HUD of a slideshow not hosted leads with the Kino and Genau mode selectors,
+and with `HudFacts.main_mode` Genau wears the Main Funestra's Genau rows less
+the OSR2 button, the crown and the browse button; `title_choices(SLIDESHOW)`
+counts Genau's titles.
+
 ## 2026-11-20 — Genau's user lives here, and asks a source for its flicks
 
 Moved in from Fun Time, so any app's Funestra can run Genau: `genau.Genau` (the
