@@ -26,3 +26,14 @@ class GenauNotifier:
 
     def close(self) -> None:
         self.sock.close()
+
+
+class TellsNobody:
+    def notify_flick(self, path: Path) -> None:
+        pass
+
+    def notify_visible(self, is_visible: bool) -> None:
+        pass
+
+    def close(self) -> None:
+        pass

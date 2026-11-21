@@ -15,6 +15,7 @@ from funestra.channel_manifest import channel_flag, channels_from_args
 from funestra.funestra import Channels
 from funestra.funestra_setup import FunestraSetup
 from funestra.funestra_verbs import QUIT
+from funestra.modes import MainMode
 from funestra.program.app import _run
 from funestra.program.cli import build_parser, resolve_playlist
 from funestra.program.window_verbs import WindowVerbs
@@ -174,6 +175,18 @@ def test_the_funestra_is_opened_on_the_window_with_what_the_launch_hands_it(tmp_
         tiles=False,
         window_verbs=None,
     )
+
+
+def test_launched_with_genaus_files_it_opens_with_kino_first_and_genau_beside_it(tmp_path):
+    args = _loop_args(tmp_path, _videos(tmp_path, "v0"), genau_command_file=str(tmp_path / "g.txt"),
+                      genau_paused_file=str(tmp_path / "gp.txt"),
+                      genau_status_file=str(tmp_path / "gs.txt"),
+                      genau_drive_file=str(tmp_path / "gd.txt"),
+                      genau_flicks_file=str(tmp_path / "flicks.tsv"), genau_beat_port="50601")
+
+    _code, opens, _fake = _run_loop(tmp_path, args)
+
+    assert list(opens.asked[1].users) == [MainMode.KINO, MainMode.GENAU]
 
 
 def test_no_audio_opens_a_silent_one(tmp_path):

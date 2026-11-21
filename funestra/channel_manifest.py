@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .funestra import Channels
 
-_TYPES = {"Path | None": Path, "str | None": str, "int | None": int}
+_TYPES = {"Path": Path, "Path | None": Path, "str | None": str, "int": int, "int | None": int}
 
 
 class ChannelManifest:

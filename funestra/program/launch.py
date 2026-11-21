@@ -5,6 +5,7 @@ from pathlib import Path
 
 from ..channel_manifest import channel_argv
 from ..funestra import Channels
+from .genau_here import GenauLaunch, genau_argv
 from .placement import WindowPlacement
 
 PROGRAM_MODULE = "funestra.program"
@@ -29,6 +30,7 @@ NOTHING_ELSE = Asked()
 
 
 def launch_command(python_exe: Path | str, channels: Channels, placement: WindowPlacement,
-                   asked: Asked = NOTHING_ELSE, *, module: str = PROGRAM_MODULE) -> list[str]:
+                   asked: Asked = NOTHING_ELSE, *, module: str = PROGRAM_MODULE,
+                   genau: GenauLaunch | None = None) -> list[str]:
     return [str(python_exe), "-m", module, *placement.to_argv(), *channel_argv(channels),
-            *asked.to_argv()]
+            *asked.to_argv(), *genau_argv(genau)]

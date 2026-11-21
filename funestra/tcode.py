@@ -49,6 +49,17 @@ class TCodeSink(Protocol):
     def close(self) -> None: ...
 
 
+class SendsNowhere:
+    def want(self, wanted: bool) -> None:
+        pass
+
+    def send(self, command: str) -> None:
+        pass
+
+    def close(self) -> None:
+        pass
+
+
 class UdpTCodeSink:
     def __init__(
         self, host: str = "127.0.0.1", port: int = ports.TCODE_UDP, *, sock=None,

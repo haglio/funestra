@@ -4,6 +4,7 @@ from pathlib import Path
 
 from funestra.funestra import Channels
 from funestra.program.cli import build_parser
+from funestra.program.genau_here import GenauLaunch, genau_from_args
 from funestra.program.launch import PROGRAM_MODULE, Asked, launch_command
 from funestra.program.placement import WindowPlacement
 
@@ -40,3 +41,22 @@ def test_what_else_the_app_asks_of_the_program_rides_on_the_command():
     args = build_parser().parse_args(launch_command(_PYTHON, _CHANNELS, _PLACEMENT, asked)[3:])
 
     assert (args.hidden, args.keys, args.ends_with, args.no_audio) == (True, True, 4321, True)
+
+
+_GENAU = GenauLaunch(command=Path("state/genau_cmd.txt"), paused=Path("state/genau_paused.txt"),
+                     status=Path("state/genau_status.txt"), drive=Path("state/genau_drive.txt"),
+                     flicks=Path("state/genau_flicks.tsv"), beat_port=50601)
+
+
+def test_genaus_files_and_beat_port_ride_on_the_command_and_are_read_back():
+    args = build_parser().parse_args(
+        launch_command(_PYTHON, _CHANNELS, _PLACEMENT, genau=_GENAU)[3:])
+
+    assert genau_from_args(args) == _GENAU
+    assert (args.command, args.status) == (_CHANNELS.command, _CHANNELS.status)
+
+
+def test_a_command_built_without_genau_carries_none():
+    args = build_parser().parse_args(launch_command(_PYTHON, _CHANNELS, _PLACEMENT)[3:])
+
+    assert genau_from_args(args) is None
