@@ -1303,7 +1303,7 @@ def test_each_video_opened_says_once_which_decoder_mpv_chose(caplog):
     ]
 
 
-@pytest.mark.parametrize("decoder", ["d3d11va-copy", "nvdec-copy", "no", "", None])
+@pytest.mark.parametrize("decoder", ["d3d11va-copy", "nvdec-copy", "no"])
 def test_a_video_decoded_on_the_processor_or_copied_back_is_warned_of(caplog, decoder):
     caplog.set_level(logging.INFO, logger="funestra.mpv_engine")
     mpv = FakeMpv()
@@ -1315,6 +1315,32 @@ def test_a_video_decoded_on_the_processor_or_copied_back_is_warned_of(caplog, de
     assert level == "WARNING"
     assert line.startswith("mpv decodes this 1080x1920 video ")
     assert ("copies each frame back from the graphics card" in line) == str(decoder).endswith("-copy")
+
+
+@pytest.mark.parametrize("unknown", ["", None])
+def test_a_decoder_mpv_has_not_yet_named_is_said_once_mpv_names_it(caplog, unknown):
+    caplog.set_level(logging.INFO, logger="funestra.mpv_engine")
+    mpv = FakeMpv()
+    Control(mpv)
+
+    _open_a_video(mpv, "made-up-one.mp4", unknown)
+    said_before_mpv_named_it = _decoder_lines(caplog)
+    mpv.report("hwdec-current", "d3d11va")
+
+    assert said_before_mpv_named_it == []
+    assert _decoder_lines(caplog) == [("INFO", "mpv decodes this 1080x1920 video with d3d11va")]
+
+
+def test_a_decoder_named_after_the_next_file_opened_is_not_said_of_the_one_before(caplog):
+    caplog.set_level(logging.INFO, logger="funestra.mpv_engine")
+    mpv = FakeMpv()
+    Control(mpv)
+
+    _open_a_video(mpv, "made-up-one.mp4", None)
+    mpv.report("path", "made-up-two.mp4")
+    mpv.report("hwdec-current", "no")
+
+    assert _decoder_lines(caplog) == []
 
 
 def test_an_image_says_nothing_of_a_decoder(caplog):

@@ -199,6 +199,7 @@ class _MpvControl:
         self._staged: str | None = None
         self._video_dims = (0, 0)
         self._source_dims = (0, 0)
+        self._source_dims_of: str | None = None
         self._tiling = (1, "no")
         self._decoder: str | None = None
         self._decoder_said_for: str | None = None
@@ -280,18 +281,21 @@ class _MpvControl:
 
     def _note_decoder(self, _name: str, value) -> None:
         self._decoder = value
+        self._say_the_decoder_once_a_file()
 
     def _note_source_dims(self, _name: str, value) -> None:
         if isinstance(value, dict) and value.get("dw") and value.get("dh"):
             self._source_dims = (int(value["dw"]), int(value["dh"]))
+            self._source_dims_of = self._path
             self._say_the_decoder_once_a_file()
 
     def _say_the_decoder_once_a_file(self) -> None:
-        if self._image_track or self._decoder_said_for == self._path:
+        if (not self._decoder or self._image_track or self._source_dims_of != self._path
+                or self._decoder_said_for == self._path):
             return
         self._decoder_said_for = self._path
         width, height = self._source_dims
-        decoder = self._decoder or "no"
+        decoder = self._decoder
         if decoder == "no":
             logger.warning("mpv decodes this %dx%d video on the processor, with no help from "
                            "the graphics card", width, height)
