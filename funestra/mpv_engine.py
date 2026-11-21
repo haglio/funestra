@@ -119,7 +119,7 @@ def _shared_options(*, muted: bool, loop_file: bool, prefetch: bool, audio: bool
 TILES_SHADER = Path(__file__).with_name("tiles.glsl")
 
 # mpv's video/out/aspect.c places an overhanging image from -1 (flush with one edge) to +1.
-_PLACING = ("video_zoom", "video_align_x", "video_align_y")
+_PLACING = ("video-zoom", "video-align-x", "video-align-y")
 
 
 def tiles_across(source: tuple[int, int], viewport: tuple[int, int]) -> int:
@@ -321,11 +321,11 @@ class _MpvControl:
         if tiling == self._tiling:
             return
         if tiles > 1:
-            self._mpv.command("change-list", "glsl-shaders", "set", str(TILES_SHADER))
-            self._mpv.command("change-list", "glsl-shader-opts", "set", f"tiles={tiles}")
+            self._ask("change-list", "glsl-shaders", "set", str(TILES_SHADER))
+            self._ask("change-list", "glsl-shader-opts", "set", f"tiles={tiles}")
         else:
-            self._mpv.command("change-list", "glsl-shaders", "clr", "")
-        self._mpv.video_aspect_override = tiling[1]
+            self._ask("change-list", "glsl-shaders", "clr", "")
+        self._ask("set", "video-aspect-override", tiling[1])
         self._tiling = tiling
 
     def _tiled_aspect(self, tiles: int) -> str:
@@ -460,7 +460,7 @@ class _MpvControl:
         placed = view.placement()
         for name, value, was in zip(_PLACING, placed, self._placed, strict=True):
             if value != was:
-                setattr(self._mpv, name, value)
+                self._ask("set", name, repr(value))
         self._placed = placed
         holds_for_ms = self._ken_burns.holds_for_s * 1000.0
         self._image_time = (min(self._ken_burns.progress(now) * self._ken_burns.pace_s * 1000.0,
