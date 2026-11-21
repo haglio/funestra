@@ -16,6 +16,7 @@ from funestra.funestra import Channels
 from funestra.funestra_setup import FunestraSetup
 from funestra.funestra_verbs import QUIT
 from funestra.modes import MainMode
+from funestra.playlist import PlaylistItem, write_playlist
 from funestra.program.app import _run
 from funestra.program.cli import build_parser, resolve_playlist
 from funestra.program.window_verbs import WindowVerbs
@@ -304,6 +305,49 @@ def test_a_funestra_launched_on_an_empty_list_opens_and_plays_the_list_once_it_i
 
     assert code == 0
     assert [item.path for item in opens.asked[1].playlist] == [video]
+
+
+def _genau_args(tmp_path: Path) -> dict[str, str]:
+    return {f"genau_{name}_file": str(tmp_path / f"genau_{name}.txt")
+            for name in ("command", "paused", "status", "drive", "flicks")} | {
+        "genau_beat_port": "50601"}
+
+
+def test_a_funestra_launched_with_genau_on_no_list_opens_once_the_app_writes_its_flicks(tmp_path):
+    args = _loop_args(tmp_path, [], **_genau_args(tmp_path))
+    fake = _FakePygame()
+    looked = []
+
+    def the_app_writes_the_flicks_after_a_while():
+        looked.append("looked")
+        if len(looked) == 3:
+            write_playlist(tmp_path / "genau_flicks.txt",
+                           [PlaylistItem(Path("C:/example/flicks/alpha.mp4"))])
+        return []
+
+    fake.event.get = the_app_writes_the_flicks_after_a_while
+
+    with patch("funestra.program.app.time.sleep"):
+        code, opens, _fake = _run_loop(tmp_path, args, fake=fake)
+
+    assert (code, opens.asked[1].playlist) == (0, [])
+
+
+def test_a_funestra_launched_with_genau_still_opens_on_its_list_when_that_comes_first(tmp_path):
+    args = _loop_args(tmp_path, _videos(tmp_path, "v0"), **_genau_args(tmp_path))
+
+    _code, opens, _fake = _run_loop(tmp_path, args)
+
+    assert [item.path.name for item in opens.asked[1].playlist] == ["v0.mp4"]
+
+
+def test_a_funestra_launched_with_genau_waiting_on_both_lists_ends_when_told_to_quit(tmp_path):
+    args = _loop_args(tmp_path, [], **_genau_args(tmp_path))
+    (tmp_path / "cmd.txt").write_text(f"{QUIT}\n", encoding="utf-8")
+
+    code, opens, fake = _run_loop(tmp_path, args)
+
+    assert (code, opens.asked, fake.quit_called) == (0, None, True)
 
 
 def test_a_funestra_still_waiting_for_its_list_ends_when_told_to_quit(tmp_path):
