@@ -172,7 +172,8 @@ class GenauRefreshController:
             flick_advance=self.controls.flick_advance_state,
             on_screen=FlickOnScreen(
                 self.flicks.path, self.controls.flick_flip.on, self.flicks.portrait,
-                self._went_up_at(now)),
+                self._went_up_at(now), whole=bool(self.flicks.frame_count),
+                unreadable=self.flicks.unreadable),
         ))
 
     def seek_the_time_on_screen(self, seconds: float) -> None:
