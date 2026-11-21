@@ -4,7 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
-from funestra.flick_list import RELOAD_FLICKS, FlickList, GenauOnAList
+from funestra.flick_list import RELOAD_FLICKS, FlickList, GenauOnAList, write_flicks
 from funestra.genau import Genau, GenauOutputs, Opening
 from funestra.genau_engine import EngineSeams, GenauChannels
 from funestra.genau_settings import GenauSettings
@@ -163,3 +163,39 @@ class TestGenauOnAList:
 
     def test_hidden_with_no_flicks_yet_a_step_is_left_to_what_shows(self, tmp_path):
         assert Room(tmp_path).genau().apply_command("NEXT") is False
+
+
+class TestFlips:
+    def test_the_app_marks_the_flicks_it_keeps_flipped_as_it_writes_the_list(self, tmp_path):
+        flicks = FlickList(tmp_path / "flicks.tsv")
+        write_flicks(tmp_path / "flicks.tsv", [ALPHA, BETA], flipped={BETA})
+
+        listed = flicks.listed(recent=True, shuffled=False)
+
+        assert listed == [ALPHA, BETA]
+        assert [flicks.flips.is_flipped(flick) for flick in listed] == [False, True]
+
+    def test_every_flick_on_the_list_has_its_flip_kept_by_the_app(self, tmp_path):
+        assert FlickList(tmp_path / "flicks.tsv").flips.keeps(GAMMA)
+
+    def test_a_flip_genau_makes_is_remembered_until_the_app_writes_the_list_again(self, tmp_path):
+        flicks = FlickList(tmp_path / "flicks.tsv")
+        write_flicks(tmp_path / "flicks.tsv", [ALPHA])
+        flicks.listed(recent=True, shuffled=False)
+
+        flicks.flips.keep(ALPHA, True)
+        remembered = flicks.flips.is_flipped(ALPHA)
+        write_flicks(tmp_path / "flicks.tsv", [ALPHA])
+        flicks.listed(recent=True, shuffled=False)
+
+        assert (remembered, flicks.flips.is_flipped(ALPHA)) == (True, False)
+
+    def test_genau_shows_a_flick_the_app_wrote_as_flipped_flipped(self, tmp_path):
+        room = Room(tmp_path)
+        write_flicks(room.file, [ALPHA], flipped={ALPHA})
+        genau = room.genau()
+        genau.set_showing(True)
+
+        genau.tick()
+
+        assert "flipped=1" in room.channels.status.read_text(encoding="utf-8").splitlines()
