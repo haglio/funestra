@@ -143,6 +143,10 @@ _MPV_EVENT_FILE_LOADED = 8
 _APTTYPEQUALIFIER_IMPLICIT_MTA = 1
 
 
+def _opening_at(start_ms: float | None) -> dict[str, str]:
+    return {} if not start_ms else {"options": f"start={start_ms / 1000.0!r}"}
+
+
 def _said_if_refused(error, _result) -> None:
     if error:
         logger.warning("mpv refused a command it was asked to run when free: %s", error)
@@ -204,6 +208,7 @@ class _MpvControl:
         self._image_time = (0.0, 0.0)
         self._audio_device: str | None = None
         self._staged: str | None = None
+        self._staged_at: float | None = None
         self._video_dims = (0, 0)
         self._source_dims = (0, 0)
         self._source_dims_of: str | None = None
@@ -373,10 +378,10 @@ class _MpvControl:
         self._the_playlist_was_cleared()
 
     @mpv_call()
-    def load(self, path: Path) -> None:
+    def load(self, path: Path, start_ms: float | None = None) -> None:
         self._staged = None
         self._begin_the_new_clip(str(path))
-        self._ask("loadfile", url=str(path))
+        self._ask("loadfile", url=str(path), **_opening_at(start_ms))
         self._clear_the_playlist()
         self._between_files()
 
@@ -386,7 +391,7 @@ class _MpvControl:
         self._ask("loadfile", url=str(path))
         self._clear_the_playlist()
         if self._staged is not None:
-            self._ask("loadfile", url=self._staged, flags="append")
+            self._ask("loadfile", url=self._staged, flags="append", **_opening_at(self._staged_at))
 
     # mpv's playlist-clear resolves "current" itself; removing by an index read earlier
     # can take the playing entry out from under it.
@@ -397,12 +402,12 @@ class _MpvControl:
         self._mpv.command("stop")
 
     @mpv_call()
-    def stage_next(self, path: Path) -> None:
-        if str(path) == self._staged:
+    def stage_next(self, path: Path, start_ms: float | None = None) -> None:
+        if (str(path), start_ms) == (self._staged, self._staged_at):
             return
         self._clear_the_playlist()
-        self._ask("loadfile", url=str(path), flags="append")
-        self._staged = str(path)
+        self._ask("loadfile", url=str(path), flags="append", **_opening_at(start_ms))
+        self._staged, self._staged_at = str(path), start_ms
 
     @mpv_call()
     def clear_next(self) -> None:

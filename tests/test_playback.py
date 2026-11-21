@@ -8,7 +8,6 @@ from funestra_fakes import make_playback as _make_playback
 from funestra.play_points import PlayPoints
 from funestra.playback_rate import MAX_RATE, MIN_RATE
 from funestra.playlist import PlaylistItem
-from funestra.seeking import GIVE_UP_AFTER
 
 
 class TestLoadAndPlay:
@@ -846,7 +845,8 @@ def _watch_to(playback, engine, position_ms):
 
 
 class TestWhereAClipWasLeft:
-    def test_a_clip_left_in_the_middle_opens_there_again(self, tmp_path):
+    def test_a_clip_left_in_the_middle_opens_there_again_with_no_seek_after_it_opens(
+            self, tmp_path):
         file = tmp_path / "points.json"
         playback, engine = _make_playback(tmp_path, entries=2, play_points=PlayPoints(file))
         _watch_to(playback, engine, 2_000)
@@ -855,33 +855,7 @@ class TestWhereAClipWasLeft:
         playback.step(-1)
         playback.advance()
 
-        assert engine.seeks[-1] == 2_000
-
-    def test_a_spot_mpv_will_not_take_yet_is_asked_for_again(self, tmp_path):
-        file = tmp_path / "points.json"
-        playback, engine = _make_playback(tmp_path, entries=2, play_points=PlayPoints(file))
-        _watch_to(playback, engine, 2_000)
-        playback.step(1)
-        playback.step(-1)
-        engine.refuse_seeks(1)
-
-        playback.advance()
-        playback.advance()
-
-        assert engine.seeks[-1] == 2_000
-
-    def test_a_spot_mpv_never_takes_is_let_go_of(self, tmp_path):
-        file = tmp_path / "points.json"
-        playback, engine = _make_playback(tmp_path, entries=2, play_points=PlayPoints(file))
-        _watch_to(playback, engine, 2_000)
-        playback.step(1)
-        playback.step(-1)
-        engine.refuse_seeks(10 * GIVE_UP_AFTER)
-
-        for _ in range(2 * GIVE_UP_AFTER):
-            playback.advance()
-
-        assert engine.refused == GIVE_UP_AFTER
+        assert (engine.position_ms, engine.seeks) == (2_000, [])
 
     def test_leaving_a_clip_writes_down_the_very_spot(self, tmp_path):
         file = tmp_path / "points.json"
@@ -904,7 +878,8 @@ class TestWhereAClipWasLeft:
 
         assert PlayPoints(file).point_for(tmp_path / "v0.mp4") == 0
 
-    def test_a_clip_rolled_onto_is_opened_where_it_was_left(self, tmp_path):
+    def test_a_clip_rolled_onto_is_opened_where_it_was_left_with_no_seek_after_it_opens(
+            self, tmp_path):
         file = tmp_path / "points.json"
         playback, engine = _make_playback(tmp_path, entries=2, play_points=PlayPoints(file))
         playback.step(1)
@@ -915,7 +890,17 @@ class TestWhereAClipWasLeft:
         playback.advance()
         playback.advance()
 
-        assert engine.seeks[-1] == 2_000
+        assert (engine.position_ms, engine.seeks) == (2_000, [])
+
+    def test_a_lone_clip_rolling_onto_itself_starts_again_from_its_beginning(self, tmp_path):
+        file = tmp_path / "points.json"
+        playback, engine = _make_playback(tmp_path, entries=1, play_points=PlayPoints(file))
+        _watch_to(playback, engine, 2_000)
+
+        engine.run_out()
+        playback.advance()
+
+        assert (engine.position_ms, engine.seeks) == (0.0, [])
 
     def test_closing_the_engine_writes_down_the_very_spot(self, tmp_path):
         file = tmp_path / "points.json"

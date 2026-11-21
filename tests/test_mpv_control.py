@@ -39,6 +39,7 @@ class FakeMpv:
         self.audio_device_list: list[dict] = []
         self.audio_device = "auto"
         self.waited_on: list[str] = []
+        self.places: list[tuple[str, str]] = []
         self._asked_without_waiting = False
         self.__dict__.update(dict.fromkeys(PLACING, 0.0))
 
@@ -83,6 +84,8 @@ class FakeMpv:
 
     def command_async(self, name: str, *args: str, callback=None, **named: str) -> None:
         self._asked_without_waiting = True
+        if name == "loadfile" and "options" in named:
+            self.places.append((named["url"], named["options"]))
         try:
             if name == "playlist-clear":
                 self.playlist_clear()
@@ -384,6 +387,29 @@ def test_a_command_mpv_refuses_after_it_was_asked_is_written_down(caplog):
     assert [record.getMessage() for record in caplog.records] == [
         "mpv refused a command it was asked to run when free: "
         "('Error running mpv command', -12)"]
+
+
+def test_a_clip_opened_or_staged_at_a_place_is_handed_its_place_with_the_file():
+    mpv = FakeMpv(pos=0, count=1)
+    control = Control(mpv)
+
+    control.load(Path("made-up-one.mp4"), start_ms=2_500)
+    control.stage_next(Path("made-up-two.mp4"), start_ms=1_000)
+    control.stage_next(Path("made-up-two.mp4"), start_ms=1_000)
+    control.swap_image(Path("made-up-frame.png"))
+
+    assert mpv.places == [("made-up-one.mp4", "start=2.5"), ("made-up-two.mp4", "start=1.0"),
+                          ("made-up-two.mp4", "start=1.0")]
+
+
+def test_the_clip_staged_again_at_another_place_is_staged_again():
+    mpv = FakeMpv(pos=0, count=1)
+    control = Control(mpv)
+    control.stage_next(Path("made-up-two.mp4"))
+
+    control.stage_next(Path("made-up-two.mp4"), start_ms=1_000)
+
+    assert mpv.places == [("made-up-two.mp4", "start=1.0")]
 
 
 def test_clearing_the_staged_entry_keeps_the_clip_on_screen():

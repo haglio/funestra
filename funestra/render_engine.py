@@ -62,10 +62,10 @@ class MpvRenderEngine(_MpvControl):
         if heard is not None:
             heard(self._path)
 
-    def load(self, path: Path) -> None:
+    def load(self, path: Path, start_ms: float | None = None) -> None:
         # mpv may hand over one last frame of the old file after the switch was asked for.
         self._drawn_file.asked_for(str(path))
-        super().load(path)
+        super().load(path, start_ms)
 
     def wake_on_updates(self, wake: Callable[[], None]) -> None:
         self._render_context.update_cb = wake

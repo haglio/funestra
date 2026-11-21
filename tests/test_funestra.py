@@ -1944,17 +1944,17 @@ class _SlowAt(FakeEngine):
         self._taking_its_time("settle_on_the_next")
         super().settle_on_the_next()
 
-    def stage_next(self, path: Path) -> None:
+    def stage_next(self, path: Path, start_ms: float | None = None) -> None:
         self._taking_its_time("stage_next")
-        super().stage_next(path)
+        super().stage_next(path, start_ms)
 
     def seek_ms(self, ms: float) -> None:
         self._taking_its_time("seek_ms")
         super().seek_ms(ms)
 
-    def load(self, path: Path) -> None:
+    def load(self, path: Path, start_ms: float | None = None) -> None:
         self._taking_its_time("load")
-        super().load(path)
+        super().load(path, start_ms)
 
 
 def _late_lines(caplog) -> list[str]:

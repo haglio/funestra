@@ -104,6 +104,7 @@ class FakeEngine(RefusesSeeks):
         self.points_told: list[tuple] = []
         self.zooms: list[tuple[int, int, int]] = []
         self.pans: list[tuple[int, int]] = []
+        self.staged_at: float | None = None
 
     def frame_counts(self) -> tuple[int, int, int]:
         return (0, 0, 0)
@@ -114,12 +115,13 @@ class FakeEngine(RefusesSeeks):
     def set_points_of_interest(self, points: tuple) -> None:
         self.points_told.append(points)
 
-    def load(self, path: Path) -> None:
+    def load(self, path: Path, start_ms: float | None = None) -> None:
         self.opened.append(path)
         self.opened_at_pace.append(self.pace_s)
         self.playlist = [path]
         self.playlist_pos = 0
-        self.position_ms = 0.0
+        self.position_ms = start_ms or 0.0
+        self.staged_at = None
         self.idle = False
         self.stopped = False
 
@@ -132,9 +134,10 @@ class FakeEngine(RefusesSeeks):
         self.swapped.append(path)
         self.playlist[self.playlist_pos] = path
 
-    def stage_next(self, path: Path) -> None:
+    def stage_next(self, path: Path, start_ms: float | None = None) -> None:
         self._keep_only_what_is_on_screen()
         self.playlist.append(path)
+        self.staged_at = start_ms
 
     def clear_next(self) -> None:
         self._keep_only_what_is_on_screen()
@@ -221,6 +224,7 @@ class FakeEngine(RefusesSeeks):
     def run_out(self) -> None:
         if len(self.playlist) > self.playlist_pos + 1:
             self.playlist_pos += 1
+            self.position_ms, self.staged_at = self.staged_at or 0.0, None
 
     @property
     def staged_next(self) -> Path | None:
