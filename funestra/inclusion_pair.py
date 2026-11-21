@@ -84,25 +84,11 @@ def answer_to_a_narrowing(says: str, *, nothing_left: bool, things: str) -> Narr
     return Narrowed(says)
 
 
-PROJECTION = InclusionPair(
-    Kind("2D", shared_icon("flat_2d"), "2D {things}"),
-    Kind("VR", shared_icon("vr_hemisphere"), "VR {things}"),
-    {(True, True): "main_projection_both", (True, False): "main_projection_flat",
-     (False, True): "main_projection_vr", (False, False): "main_projection_none"},
-)
-
 LENGTH = InclusionPair(
     Kind("Clips", shared_icon("clips"), "clips"),
     Kind("Full", shared_icon("full"), "full videos"),
     {(True, True): "main_funestra_length_mixed", (True, False): "main_funestra_length_clips",
      (False, True): "main_funestra_length_full", (False, False): "main_funestra_length_none"},
-)
-
-ORIENTATION = InclusionPair(
-    Kind("Portrait", shared_icon(PORTRAIT), "portrait {things}"),
-    Kind("Landscape", shared_icon(LANDSCAPE), "landscape {things}"),
-    {(True, True): "main_orientation_both", (True, False): "main_orientation_portrait",
-     (False, True): "main_orientation_landscape", (False, False): "main_orientation_none"},
 )
 
 _LENGTHS: dict[Included, LengthMode] = {
@@ -130,4 +116,20 @@ def _pair(shape: str, name: str, first: Kind, second: Kind,
 def media_pair(shape: str) -> InclusionPair:
     return _pair(shape, "media", Kind("Images", shared_icon("photo"), "images"),
                  Kind("Videos", shared_icon("play"), "videos"), ("images", "videos"))
+
+
+def projection_pair(funestra: str) -> InclusionPair:
+    return _pair(funestra, "projection", Kind("2D", shared_icon("flat_2d"), "2D {things}"),
+                 Kind("VR", shared_icon("vr_hemisphere"), "VR {things}"), ("flat", "vr"))
+
+
+def orientation_pair(funestra: str) -> InclusionPair:
+    return _pair(funestra, "orientation",
+                 Kind("Portrait", shared_icon(PORTRAIT), "portrait {things}"),
+                 Kind("Landscape", shared_icon(LANDSCAPE), "landscape {things}"),
+                 ("portrait", "landscape"))
+
+
+PROJECTION = projection_pair("main")
+ORIENTATION = orientation_pair("main")
 

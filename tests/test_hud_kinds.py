@@ -980,11 +980,64 @@ def test_reset_is_faded_with_nothing_to_put_back():
     assert not _by_name(nothing_to_reset=False)["reset"].dim
 
 
-def test_a_slideshow_on_its_own_puts_the_transport_and_minimize_on_a_top_row_of_their_own():
+def test_a_slideshow_on_its_own_puts_the_modes_the_transport_and_minimize_on_a_top_row_of_their_own():
     top, second = hud_rows(HudKind.SLIDESHOW, HudFacts(funestra="portrait", crowned=True, latest=False))
 
-    assert _names(top) == [*SLIDESHOW_THE_ROW[:7], "minimize"]
+    assert _names(top) == ["main_kino_activate", "genau_activate", *SLIDESHOW_THE_ROW[:7],
+                           "minimize"]
     assert _names(second) == SLIDESHOW_THE_ROW[7:]
+
+
+def test_a_slideshow_on_its_own_leads_with_kino_and_genau_as_the_main_hud_does_kino_lit():
+    top = hud_rows(HudKind.SLIDESHOW, HudFacts(funestra="portrait"))[0]
+    main_top = hud_rows(HudKind.MAIN, HudFacts(funestra="main"))[0]
+
+    assert top[:2] == main_top[:2]
+    assert [button.lit for button in top[:2]] == [True, False]
+    assert top[2].group_break
+
+
+_GENAU_FACTS = {"main_mode": MainMode.GENAU, "flick_one": "pip", "flick_many": "pips",
+                "latest": False, "locked": True, "pace_s": 8, "plays_vr": False,
+                "plays_flat": True, "favorite": True}
+_NEVER_ON_ITS_OWN = frozenset({"main_take_osr2", "main_crown", "browse_library"})
+
+
+def _as_its_own(command: str, shape: str) -> str:
+    for main in ("main_funestra_", "main_"):
+        if command.startswith(main) and command != "main_kino_activate":
+            return f"{shape}_{command.removeprefix(main)}"
+    return command
+
+
+def test_in_genau_a_slideshow_on_its_own_wears_the_main_hud_s_genau_controls_as_its_own():
+    rows = hud_rows(HudKind.SLIDESHOW, HudFacts(funestra="portrait", **_GENAU_FACTS))
+    main = hud_rows(HudKind.MAIN, HudFacts(funestra="main", **_GENAU_FACTS))
+
+    assert rows == tuple(
+        tuple(replace(button, command=_as_its_own(button.command, "portrait")) for button in row
+              if button.command not in _NEVER_ON_ITS_OWN)
+        for row in main)
+
+
+def test_in_genau_each_button_of_a_slideshow_on_its_own_posts_genau_s_verb_or_its_shape_s():
+    rows = hud_rows(HudKind.SLIDESHOW, HudFacts(funestra="portrait", **_GENAU_FACTS))
+
+    assert [[button.command for button in row if button.command] for row in rows] == [
+        ["main_kino_activate", "genau_activate", "genau_prev_flick", "genau_nudge_prev",
+         "genau_nudge_next", "genau_next_flick", "genau_funscript_jump", "portrait_minimize"],
+        ["genau_trash_flick", "portrait_lock", "genau_reset", "portrait_shuffle",
+         "portrait_latest", "portrait_orientation_landscape", "portrait_orientation_portrait",
+         "portrait_projection_none", "portrait_projection_both", "portrait_enhanced",
+         "portrait_favorites", "genau_flip_ends"],
+        ["portrait_speed_down", "portrait_speed_up", "genau_flick_seconds_down",
+         "genau_flick_seconds_up"],
+    ]
+
+
+def test_a_hosted_slideshow_told_genau_is_still_the_slideshow():
+    assert hud_rows(HudKind.SLIDESHOW, HudFacts(funestra="portrait", hosted=True, latest=False,
+                                                main_mode=MainMode.GENAU)) == _slideshow_rows()
 
 
 def test_a_slideshow_on_its_own_in_the_headset_has_no_minimize():
@@ -1155,6 +1208,7 @@ def test_every_title_a_kind_of_hud_can_show_is_among_its_choices_but_the_unbound
                                 plays_portrait=False), ModeHud())
 
     assert shown in title_choices(HudKind.MAIN)
+    assert shown in title_choices(HudKind.SLIDESHOW)
     assert slideshow_title(HudFacts(locked=True, latest=False, media=(True, False)),
                            loop="action") in title_choices(HudKind.SATELLITE)
 
