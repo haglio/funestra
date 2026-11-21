@@ -9,17 +9,19 @@ from funestra.flick_overlay import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID
 from funestra.funestra import Channels, Funestra
 from funestra.funestra_setup import FunestraSetup
 from funestra.genau_engine import EngineSeams
+from funestra.hud_kinds import HudFacts, HudKind
 from funestra.modes import MainMode
 from funestra.off_the_loop import AtOnce
 from funestra.playlist import PlaylistItem, write_playlist
 from funestra.program.genau_here import GenauLaunch, kino_and_genau
+from funestra.satellite_hud import HudModel, hud_text
 from funestra.testing import FakeEngine, every_thread_now_but_the_ones_that_run_for_good
 
 VIEWPORT = (320, 240)
 
 
 class Standalone:
-    def __init__(self, tmp_path: Path) -> None:
+    def __init__(self, tmp_path: Path, *, hud: bool = False) -> None:
         self.command = tmp_path / "cmd.txt"
         self.flicks = tmp_path / "genau_flicks.tsv"
         self.slides = [tmp_path / f"slide {index}.mp4" for index in range(3)]
@@ -29,12 +31,21 @@ class Standalone:
             status=tmp_path / "genau_status.txt", drive=tmp_path / "genau_drive.txt",
             flicks=self.flicks, beat_port=50601)
         self.funestra = Funestra(self.engine, FunestraSetup(
-            channels=Channels(command=self.command),
+            channels=Channels(command=self.command, **self._huds(tmp_path) if hud else {}),
             playlist=[PlaylistItem(slide) for slide in self.slides],
             users=kino_and_genau(launch, notice=None, seams=EngineSeams(
                 decode=lambda _path: [np.zeros((8, 16, 3), dtype=np.uint8)] * 4,
                 start_thread=every_thread_now_but_the_ones_that_run_for_good,
                 off_the_loop=AtOnce))))
+
+    @staticmethod
+    def _huds(tmp_path: Path) -> dict[str, Path]:
+        hud = tmp_path / "hud.json"
+        hud.write_text(hud_text(HudModel(funestra="portrait", kind=HudKind.SLIDESHOW,
+                                         facts=HudFacts(funestra="portrait",
+                                                        main_mode=MainMode.GENAU))),
+                       encoding="utf-8")
+        return {"hud": hud, "dashboard_cmd": tmp_path / "asks.txt"}
 
     def send(self, *lines: str) -> None:
         self.command.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
@@ -108,3 +119,22 @@ def test_genau_shown_with_no_flicks_puts_up_its_first_once_the_app_writes_them(t
     standalone.send(RELOAD_FLICKS)
 
     assert standalone.genaus_frame_is_up
+
+
+def test_with_genau_shown_the_huds_row_runs_through_genaus_flick(tmp_path):
+    standalone = Standalone(tmp_path, hud=True)
+    standalone.write_flicks("alpha")
+
+    standalone.send(RELOAD_FLICKS, "SHOW genau")
+
+    assert standalone.funestra.hud.scrubber_row.loop[1] == 4
+
+
+def test_back_in_kino_the_huds_row_runs_through_the_item_again(tmp_path):
+    standalone = Standalone(tmp_path, hud=True)
+    standalone.write_flicks("alpha")
+    standalone.send(RELOAD_FLICKS, "SHOW genau")
+
+    standalone.send("SHOW kino")
+
+    assert standalone.funestra.hud.scrubber_row == standalone.funestra.scrubber_row()
