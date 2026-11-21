@@ -343,7 +343,7 @@ class Playback:
         lap("playback clearing the spent item")
         self._stage_next()
         lap("playback staging the next item")
-        self._owed_seek.owe(self._play_points.point_for(self.current_video) or None)
+        self._owed_seek.owe(None)
         self._tell_the_places()
         lap("playback telling the item's places")
         return True
@@ -407,13 +407,13 @@ class Playback:
         logger.info("Loading: %s", video.name)
         self.clear_ab_loop()
         lap = self._lap
-        self._engine.load(video)
+        self._engine.load(video, start_ms=self._place_to_open(self.current_video))
         lap("playback opening the item")
         self._engine.set_paused(self._paused)
         lap("playback telling it to play or pause")
         self._stage_next()
         lap("playback staging the next item")
-        self._owed_seek.owe(self._play_points.point_for(self.current_video) or None)
+        self._owed_seek.owe(None)
         self._device.start_an_item()
         self._tell_the_places()
         lap("playback telling the item's places")
@@ -421,7 +421,13 @@ class Playback:
     def _stage_next(self) -> None:
         if self._holds:
             return
-        self._engine.stage_next(self._lineup.what_the_roll_puts_up)
+        listed = self._lineup.listed_after_the_roll
+        self._engine.stage_next(
+            self._lineup.what_the_roll_puts_up,
+            start_ms=None if listed == self.current_video else self._place_to_open(listed))
+
+    def _place_to_open(self, video: Path) -> int | None:
+        return self._play_points.point_for(video) or None
 
     def close(self) -> None:
         self._play_points.leave()

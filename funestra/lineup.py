@@ -72,6 +72,10 @@ class Lineup:
         return len(self._videos) == 1
 
     @property
+    def listed_after_the_roll(self) -> Path:
+        return self._videos[(self._index + 1) % len(self._videos)]
+
+    @property
     def what_the_roll_puts_up(self) -> Path:
         return self.on_screen if self.rolls_onto_itself else self._file_at(self._index + 1)
 
