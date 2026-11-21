@@ -14,7 +14,8 @@ from funestra.hud_kinds import HudFacts, HudKind
 from funestra.modes import MainMode
 from funestra.off_the_loop import AtOnce
 from funestra.playlist import PlaylistItem, read_playlist, write_playlist
-from funestra.program.genau_here import GenauLaunch, kino_and_genau
+from funestra.program.genau_here import kino_and_genau
+from funestra.program.genau_launch import GenauLaunch
 from funestra.satellite_hud import HudModel, hud_text
 from funestra.testing import FakeEngine, every_thread_now_but_the_ones_that_run_for_good
 
