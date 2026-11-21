@@ -86,6 +86,15 @@ is now "what came back from behind the loop", "the scrubber's owed seek",
 file said" and "told by the playlist file". A Next's calls are named under the
 "playback " steps they make inside "doing what the command file said".
 `PlaybackSetup.lap` is how a Funestra hands its record to its `Playback`.
+## 2026-11-21 — Genau's flick buttons and its status are read here, by every app
+
+New: `genau_buttons` (the HUD commands of Genau's flick buttons, `GENAU_VERBS`
+from each to the verb it sends, `GENAU_VALUED`, `ABOUT_GENAUS_FLICK`), which
+`hud_kinds` draws with and Fun Time and Origenerator answer through;
+`genau_controls.FLICK_SECONDS_DOWN`, `FLICK_SECONDS_UP` and `FLIP_ENDS`; and
+`genau_status.GenauStatus` with `genau_status_from(values)`, reading back what
+`build_status_text` writes (Fun Time's `funestra_status` had the only reader).
+
 ## 2026-11-20 — funestra's own program runs Kino and Genau, on flicks an app lists
 
 Launched with a `program.genau_here.GenauLaunch` (`launch_command(..., genau=)`:
