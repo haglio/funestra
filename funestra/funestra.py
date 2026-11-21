@@ -44,6 +44,7 @@ from .osr2_visualizer import DrivePublisher
 from .outside_buttons import OutsideButtons
 from .paused_flag import PausedFlag
 from .playback import Playback
+from .playback_setup import Lap
 from .playlist import PlaylistItem
 from .playlist_follower import PlaylistFollower
 from .pointer import OMNIPAUSE_TOGGLE, PRESSED_AGAIN, Pointer
@@ -123,10 +124,14 @@ class Funestra:
         self._sought_this_pass = False
         self._seek_owed: float | None = None
         self._paused_flag = None if channels.paused is None else PausedFlag(channels.paused)
+        self._frame_record = FrameRecord(
+            setup.frame_ms, clock=setup.frame_clock,
+            mpv_counts=getattr(engine, "frame_counts", lambda: NO_COUNTS))
         self._playback = Playback(
             [item.path for item in setup.playlist], engine=engine,
             setup=setup.playback_setup(
-                start_paused=self._paused_flag is not None and self._paused_flag.read()))
+                start_paused=self._paused_flag is not None and self._paused_flag.read(),
+                lap=self._frame_record.lap))
         self._follower = (None if channels.playlist is None
                           else PlaylistFollower(channels.playlist, take=self.take_the_list))
         self._drive_gate = DriveGate(self.playback)
@@ -159,9 +164,6 @@ class Funestra:
         )
         self._loop_frames = LoopFrames(engine, behind=self._off_the_loop.do)
         self._short_of_memory = False
-        self._frame_record = FrameRecord(
-            setup.frame_ms, clock=setup.frame_clock,
-            mpv_counts=getattr(engine, "frame_counts", lambda: NO_COUNTS))
 
     @property
     def playback(self) -> Playback:
@@ -374,13 +376,13 @@ class Funestra:
         record = self._frame_record
         record.begin()
         self._off_the_loop.deliver()
+        record.lap("what came back from behind the loop")
         self._seek_where_the_scrubber_was_last_dragged()
-        self._hear_what_it_is_told()
-        record.lap("the files it is told through")
+        record.lap("the scrubber's owed seek")
+        self._hear_what_it_is_told(record.lap)
         self._runs_here.tick()
         record.lap("what runs here")
         self.playback.advance()
-        record.lap("playback")
         self._write_the_status()
         record.lap("the status file")
         if self._setup.tiles:
@@ -393,7 +395,7 @@ class Funestra:
         record.lap("the HUD and what is drawn over the item")
         record.end()
 
-    def _hear_what_it_is_told(self) -> None:
+    def _hear_what_it_is_told(self, lap: Lap) -> None:
         channels = self._channels
         if self._paused_flag is not None:
             paused = self._paused_flag.read()
@@ -401,11 +403,16 @@ class Funestra:
                 self.playback.set_paused(paused)
             else:
                 self._paused_before_the_scrub = paused
-        if channels.command is not None:
-            for command in consume_command_file(channels.command, logger=logger, uppercase=False):
-                self.apply(command)
+        lap("told by the paused flag")
+        commands = ([] if channels.command is None
+                    else consume_command_file(channels.command, logger=logger, uppercase=False))
+        lap("reading the command file")
+        for command in commands:
+            self.apply(command)
+        lap("doing what the command file said")
         if self._follower is not None:
             self._follower.tick()
+        lap("told by the playlist file")
 
     def close(self) -> None:
         self._runs_here.close()

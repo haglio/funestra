@@ -1931,6 +1931,102 @@ def test_a_pass_that_runs_past_the_hosts_budget_is_written_down_with_its_slowest
         "(12.0 ms); 1 late pass(es) since the last line"]
 
 
+class _SlowAt(FakeEngine):
+    def __init__(self, clock: _Clock, took_s: float, *slow: str) -> None:
+        super().__init__()
+        self._clock, self._took_s, self._slow = clock, took_s, slow
+
+    def _taking_its_time(self, call: str) -> None:
+        if call in self._slow:
+            self._clock.now += self._took_s
+
+    def settle_on_the_next(self) -> None:
+        self._taking_its_time("settle_on_the_next")
+        super().settle_on_the_next()
+
+    def stage_next(self, path: Path) -> None:
+        self._taking_its_time("stage_next")
+        super().stage_next(path)
+
+    def seek_ms(self, ms: float) -> None:
+        self._taking_its_time("seek_ms")
+        super().seek_ms(ms)
+
+    def load(self, path: Path) -> None:
+        self._taking_its_time("load")
+        super().load(path)
+
+
+def _late_lines(caplog) -> list[str]:
+    return [record.getMessage() for record in caplog.records
+            if record.name == "funestra.frame_record" and record.getMessage().startswith("Late")]
+
+
+def _late_on(tmp_path, caplog, *slow: str) -> tuple[Funestra, _SlowAt, _Clock]:
+    caplog.set_level(logging.INFO, logger="funestra.frame_record")
+    clock = _Clock()
+    channels = _channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1", "v2")],
+                         commands="")
+    engine = _SlowAt(clock, 0.040, *slow)
+    funestra = Funestra(engine, FunestraSetup(
+        channels=channels, playlist=read_playlist(channels.playlist), frame_clock=clock))
+    return funestra, engine, clock
+
+
+class TestTheStepOfALatePass:
+    @pytest.mark.parametrize(("slow", "step"), [
+        ("settle_on_the_next", "playback clearing the spent item"),
+        ("stage_next", "playback staging the next item"),
+    ])
+    def test_a_roll_onto_the_next_item_names_the_call_that_was_slow(
+            self, tmp_path, caplog, slow, step):
+        funestra, engine, clock = _late_on(tmp_path, caplog, slow)
+        funestra.tick(viewport=WINDOW)
+        clock.now += 2.0
+        caplog.clear()
+
+        engine.run_out()
+        funestra.tick(viewport=WINDOW)
+
+        assert _late_lines(caplog) == [
+            f"Late pass: 40.0 ms of a 16.7 ms budget, longest step {step} (40.0 ms); "
+            "1 late pass(es) since the last line"]
+
+    @pytest.mark.parametrize(("slow", "step"), [
+        ("load", "playback opening the item"),
+        ("stage_next", "playback staging the next item"),
+    ])
+    def test_a_next_from_the_command_file_names_the_call_that_was_slow(
+            self, tmp_path, caplog, slow, step):
+        funestra, _engine, clock = _late_on(tmp_path, caplog, slow)
+        funestra.tick(viewport=WINDOW)
+        clock.now += 2.0
+        caplog.clear()
+
+        (tmp_path / "cmd.txt").write_text("NEXT\n", encoding="utf-8")
+        funestra.tick(viewport=WINDOW)
+
+        assert _late_lines(caplog) == [
+            f"Late pass: 40.0 ms of a 16.7 ms budget, longest step {step} (40.0 ms); "
+            "1 late pass(es) since the last line"]
+
+    def test_a_seek_owed_until_the_item_has_a_length_is_named_when_it_is_paid(
+            self, tmp_path, caplog):
+        funestra, engine, clock = _late_on(tmp_path, caplog, "seek_ms")
+        engine.duration_ms = 0.0
+        funestra.playback.seek_to(1_000.0)
+        funestra.tick(viewport=WINDOW)
+        clock.now += 2.0
+        caplog.clear()
+
+        engine.duration_ms = 5_000.0
+        funestra.tick(viewport=WINDOW)
+
+        assert _late_lines(caplog) == [
+            "Late pass: 40.0 ms of a 16.7 ms budget, longest step playback paying an owed seek "
+            "(40.0 ms); 1 late pass(es) since the last line"]
+
+
 class TestZoomingTheItem:
     def test_the_wheel_beside_the_hud_zooms_the_item_at_the_pointer(self, tmp_path):
         funestra, engine = _wearing_a_hud(tmp_path)

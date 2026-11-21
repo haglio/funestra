@@ -42,6 +42,7 @@ class Playback:
         self._loads = 0
         self._clock = setup.clock
         self._behind = setup.behind
+        self._lap = setup.lap
         self._rolled_at: float | None = None
         self._asked_load = self._asked_step = 0
         self._play_points = setup.play_points or PlayPoints(None)
@@ -313,18 +314,25 @@ class Playback:
             self._stage_next()
 
     def advance(self) -> None:
+        lap = self._lap
         self._owed_seek.pay(self._engine, self._seek_now)
+        lap("playback paying an owed seek")
         position_ms = self._engine.position_ms
         self._play_points.observe(self.current_video, position_ms, self._engine.duration_ms)
+        lap("playback noting where it is")
         if self._paused:
             return
         rolled = self.follow_a_roll()
-        self._device.follow(position_ms, self.funscript_as_played, speed=self._speed,
+        script = self.funscript_as_played
+        lap("playback laying out the funscript")
+        self._device.follow(position_ms, script, speed=self._speed,
                             rolled=rolled, over_an_image=self._engine.showing_image)
+        lap("playback driving the device")
 
     def follow_a_roll(self) -> bool:
         if not self._engine.advanced_to_next:
             return False
+        lap = self._lap
         self._play_points.ended()
         self._lineup.roll()
         self._rolled_at = self._clock()
@@ -332,9 +340,12 @@ class Playback:
         self._ab_loop = None
         self._loads += 1
         self._engine.settle_on_the_next()
+        lap("playback clearing the spent item")
         self._stage_next()
+        lap("playback staging the next item")
         self._owed_seek.owe(self._play_points.point_for(self.current_video) or None)
         self._tell_the_places()
+        lap("playback telling the item's places")
         return True
 
     def discard(self, video: Path | None = None) -> None:
@@ -395,12 +406,17 @@ class Playback:
         video = self.showing
         logger.info("Loading: %s", video.name)
         self.clear_ab_loop()
+        lap = self._lap
         self._engine.load(video)
+        lap("playback opening the item")
         self._engine.set_paused(self._paused)
+        lap("playback telling it to play or pause")
         self._stage_next()
+        lap("playback staging the next item")
         self._owed_seek.owe(self._play_points.point_for(self.current_video) or None)
         self._device.start_an_item()
         self._tell_the_places()
+        lap("playback telling the item's places")
 
     def _stage_next(self) -> None:
         if self._holds:
