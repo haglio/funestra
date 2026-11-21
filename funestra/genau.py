@@ -11,7 +11,14 @@ from .flick_folder import no_other_flicks
 from .flick_overlay import FlickFrame
 from .funestra_verbs import NEXT, PREV
 from .genau_controls import apply_runtime_command
-from .genau_engine import EngineSeams, FlickLibrary, GenauChannels, GenauHost, build_genau_engine
+from .genau_engine import (
+    EngineSeams,
+    FlickLibrary,
+    FlickTrash,
+    GenauChannels,
+    GenauHost,
+    build_genau_engine,
+)
 from .genau_settings import GenauSettings
 from .main_hud import ModeHud
 from .messages import MessageWriter
@@ -31,22 +38,22 @@ class Opening:
     none_kept: bool = False
 
 
+class UpNext(Protocol):
+    def __call__(self, *, recent: bool, showing: bool) -> list[Path]: ...
+
+
 class FlickSource(Protocol):
     metadata_root: Path | None
     flips: FlipsKeptElsewhere | None
     keep_shapes: Callable[[bool, bool], None] | None
+    trash: FlickTrash | None
+    up_next: UpNext | None
 
     def opening(self, *, recent: bool, shuffled: bool) -> Opening: ...
 
     def listed(self, *, recent: bool, shuffled: bool) -> list[Path]: ...
 
     def name_of(self, flick: Path) -> str: ...
-
-    def trash_folder_for(self, flick: Path) -> Path: ...
-
-    def went(self, flick: Path, landed: Path) -> None: ...
-
-    def up_next(self, *, recent: bool, showing: bool) -> list[Path]: ...
 
     def apply_command(self, command: str, narrow: Narrow) -> bool: ...
 
@@ -100,9 +107,8 @@ class Genau:
                 narrow=None if source.keep_shapes is None else self._kept_to_shapes,
                 say_no_other_flicks=self._say_no_other_flicks,
                 say=self._say,
-                condemned_to=source.trash_folder_for,
+                trash=source.trash,
                 set_volume=self._the_apps_level_is_the_funestras,
-                tell_where_it_went=source.went,
             ),
             seams,
         )
@@ -153,6 +159,8 @@ class Genau:
         self._notifier.close()
 
     def _put_up_what_arrived(self) -> None:
+        if self._source.up_next is None:
+            return
         for flick in self._source.up_next(recent=self._recent, showing=self._showing):
             self._engine.play_next(flick)
 

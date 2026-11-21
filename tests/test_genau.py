@@ -33,15 +33,27 @@ from funestra.testing import (
 KEEP_ONLY = "KEEP_ONLY"
 
 
+class FolderTrash:
+    def __init__(self, folder: Path) -> None:
+        self.folder = folder
+        self.went_to: list[tuple[Path, Path]] = []
+
+    def folder_for(self, _flick: Path) -> Path:
+        return self.folder
+
+    def went(self, flick: Path, landed: Path) -> None:
+        self.went_to.append((flick, landed))
+
+
 class ListedFlicks:
     metadata_root = None
     flips = None
     keep_shapes = None
 
     def __init__(self, folder: Path, trash: Path) -> None:
-        self.folder, self.trash = folder, trash
+        self.folder = folder
+        self.trash: FolderTrash | None = FolderTrash(trash)
         self.kept: str | None = None
-        self.went_to: list[tuple[Path, Path]] = []
         self.arriving: list[Path] = []
         self.asked_for_arrivals: list[tuple[bool, bool]] = []
 
@@ -56,12 +68,6 @@ class ListedFlicks:
 
     def name_of(self, flick: Path) -> str:
         return flick.stem.title()
-
-    def trash_folder_for(self, flick: Path) -> Path:
-        return self.trash
-
-    def went(self, flick: Path, landed: Path) -> None:
-        self.went_to.append((flick, landed))
 
     def up_next(self, *, recent: bool, showing: bool) -> list[Path]:
         self.asked_for_arrivals.append((recent, showing))
@@ -141,6 +147,8 @@ class WorldSetup:
     start_flick: str | None = None
     latest: bool = False
     shapes: bool = False
+    has_trash: bool = True
+    has_arrivals: bool = True
     sleeps_on_its_own_clock: bool = False
     start_thread: Callable = every_thread_now_but_the_ones_that_run_for_good
     off_the_loop: Callable = AtOnce
@@ -158,6 +166,10 @@ class World:
         self.trash = tmp_path / "trash"
         self.source = (ShapedFlicks if setup.shapes else ListedFlicks)(self.folder, self.trash)
         self.source.kept = setup.kept
+        if not setup.has_trash:
+            self.source.trash = None
+        if not setup.has_arrivals:
+            self.source.up_next = None
         state = tmp_path / "state"
         state.mkdir()
         self.channels = GenauChannels(
@@ -348,7 +360,7 @@ class TestTrash:
 
         world.send("TRASH")
 
-        assert world.source.went_to == [(world.folder / "alpha one.mp4",
+        assert world.source.trash.went_to == [(world.folder / "alpha one.mp4",
                                          world.trash / "alpha one.mp4")]
 
     def test_trash_tells_its_source_of_a_flick_still_being_read_once_it_is_let_go(self, tmp_path):
@@ -357,12 +369,12 @@ class TestTrash:
 
         with (world.folder / "alpha one.mp4").open("rb"):
             world.send("TRASH")
-            told_while_open = list(world.source.went_to)
+            told_while_open = list(world.source.trash.went_to)
         for thread in condemning.threads:
             thread.join()
 
         assert told_while_open == []
-        assert len(world.source.went_to) == 1
+        assert len(world.source.trash.went_to) == 1
 
     def test_trash_gives_up_on_a_flick_that_stays_open_and_says_so(self, tmp_path, caplog):
         condemning = _CondemningInTheBackground()
@@ -378,7 +390,26 @@ class TestTrash:
         assert f"alpha one.mp4 was still open after {genau_engine.CONDEMN_PATIENCE_S:g}s" in caplog.text
 
 
+    def test_from_a_source_with_no_trash_the_flick_stays_where_it_is(self, tmp_path):
+        world = World(tmp_path, WorldSetup(has_trash=False))
+
+        world.send("TRASH")
+
+        assert (world.folder / "alpha one.mp4").is_file()
+        assert world.genau.top_block() == ModeHud(video="Alpha One")
+
+
 class TestWhatItsSourcePutsUpNext:
+    def test_from_a_source_where_nothing_arrives_it_steps_through_what_the_source_lists(
+            self, tmp_path):
+        world = World(tmp_path, WorldSetup(has_arrivals=False))
+        world.genau.set_showing(True)
+
+        world.tick()
+        world.send("NEXT")
+
+        assert world.genau.top_block().video == "Beta Two"
+
     def test_it_comes_up_after_the_flick_on_screen(self, tmp_path):
         world = World(tmp_path)
         world.genau.set_showing(True)

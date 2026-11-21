@@ -6,6 +6,7 @@ import time
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Protocol
 
 from app_support.threading_utils import start_daemon_thread
 
@@ -101,6 +102,12 @@ class FlickLibrary:
     flips: FlipsKeptElsewhere | None = None
 
 
+class FlickTrash(Protocol):
+    def folder_for(self, flick: Path) -> Path: ...
+
+    def went(self, flick: Path, landed: Path) -> None: ...
+
+
 @dataclass(frozen=True)
 class GenauHost:
     notifier: object
@@ -108,12 +115,11 @@ class GenauHost:
     blit_frame: Callable[[object, Path | None], None]
     set_loading_text: Callable[[str | None], None]
     rescan: Rescan
-    condemned_to: Callable[[Path], Path]
+    trash: FlickTrash | None = None
     narrow: Narrow | None = None
     say_no_other_flicks: Callable[[], None] = lambda: None
     say: Callable[[str], None] = lambda _words: None
     set_volume: Callable[[int, bool], None] | None = None
-    tell_where_it_went: Callable[[Path, Path], None] = lambda _flick, _landed: None
 
 
 @dataclass(frozen=True)
@@ -160,8 +166,7 @@ def build_genau_engine(
         renderer=renderer,
         notifier=host.notifier,
         condemn_flick=lambda flick: _condemn(
-            _Condemning(flick, host.condemned_to(flick), host.tell_where_it_went, log,
-                        clock=clock, sleep=seams.sleep), start_thread),
+            _Condemning(flick, host.trash, log, clock=clock, sleep=seams.sleep), start_thread),
         clock=clock,
     ))
     robot_hand = RobotHandState(playing=False, speed=50, bpm=bpm_for_speed(50))
@@ -178,7 +183,7 @@ def build_genau_engine(
         engine=BeatEngine(last_tick=clock()),
         paused=Flag(),
         step_flick=selection.step,
-        condemn_flick=selection.condemn,
+        condemn_flick=None if host.trash is None else selection.condemn,
         robot_hand=robot_hand,
         learned_motion_state=learned,
         flick_advance_state=FlickAdvanceState(),
@@ -251,8 +256,7 @@ def _narrow(selection: FlickSelectionController, scan: Callable[[], list[Path]],
 @dataclass(frozen=True)
 class _Condemning:
     flick: Path
-    trash_dir: Path
-    tell_where_it_went: Callable[[Path, Path], None]
+    trash: FlickTrash
     log: logging.Logger
     clock: Callable[[], float]
     sleep: Callable[[float], None]
@@ -276,7 +280,8 @@ def _condemn_once_let_go(condemning: _Condemning) -> None:
 
 
 def _still_open_after_trying(condemning: _Condemning) -> bool:
-    flick, trash_dir, log = condemning.flick, condemning.trash_dir, condemning.log
+    flick, log = condemning.flick, condemning.log
+    trash_dir = condemning.trash.folder_for(flick)
     try:
         landed = move_to_trash(flick, trash_dir)
     except PermissionError:
@@ -288,5 +293,5 @@ def _still_open_after_trying(condemning: _Condemning) -> bool:
         log.info("%s was already gone; nothing to condemn", flick.name)
     else:
         log.info("Condemned %s to %s", flick.name, trash_dir)
-        condemning.tell_where_it_went(flick, landed)
+        condemning.trash.went(flick, landed)
     return False
