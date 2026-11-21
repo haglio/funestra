@@ -154,3 +154,12 @@ class TestGenauOnAList:
         genau.tick()
 
         assert (room.started, genau.top_block()) == (1, ModeHud(video="gamma"))
+
+    def test_shown_with_no_flicks_yet_a_step_is_its_own_so_nothing_behind_it_moves(self, tmp_path):
+        genau = Room(tmp_path).genau()
+        genau.set_showing(True)
+
+        assert genau.apply_command("NEXT") is True
+
+    def test_hidden_with_no_flicks_yet_a_step_is_left_to_what_shows(self, tmp_path):
+        assert Room(tmp_path).genau().apply_command("NEXT") is False
