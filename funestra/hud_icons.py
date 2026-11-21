@@ -24,8 +24,8 @@ def app_mark_letter(icon: str) -> str:
 
 
 BROKER_ICON = app_icon("B")
-FAVORITES_ICON = shared_icon("star")
-ENHANCED_ICON = shared_icon("plus")
+FAVORITES_ICON = shared_icon("favorite_filter")
+ENHANCED_ICON = shared_icon("enhance_filter")
 
 MINIMIZE_ICON = shared_icon("minus")
 MINIMIZE_FUNESTRA_ICON = shared_icon("screen_arrow_down")

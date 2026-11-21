@@ -175,7 +175,11 @@ class TestTheSwitchesAndTheThingsDone:
         assert trash == replace(trash_button("portrait"), command="made_up_trash",
                                 tooltip="Send to Trash — move it out")
 
-    def test_favorites_is_the_green_star_switch(self):
+    def test_each_filter_wears_its_collection_s_own_mark_with_the_filter_s_funnel(self):
+        assert (shared_icon_name(FAVORITES_ICON), shared_icon_name(ENHANCED_ICON)) == (
+            "favorite_filter", "enhance_filter")
+
+    def test_favorites_is_the_green_switch(self):
         favorites = favorites_button("portrait", things="items", lit=True)
 
         assert (favorites.command, favorites.icon) == ("portrait_favorites", FAVORITES_ICON)

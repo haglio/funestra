@@ -168,6 +168,15 @@ def _row_holding(kind: HudKind, facts: HudFacts, command: str) -> tuple[Button, 
     return next(row for row in hud_rows(kind, facts) if any(b.command == command for b in row))
 
 
+def _groups(row: tuple[Button, ...]) -> list[list[str]]:
+    groups: list[list[str]] = []
+    for button in row:
+        if button.group_break or not groups:
+            groups.append([])
+        groups[-1].append(button.command)
+    return groups
+
+
 class TestTheSpecialCollections:
     def test_every_hud_carries_enhanceds_and_then_favorites_as_one_group(self):
         for kind, facts in _EVERY_KIND_OF_HUD:
@@ -193,11 +202,11 @@ class TestTheSpecialCollections:
         assert actions.index("main_enhanced") == last_length + 1
         assert actions.index("main_favorites") < actions.index("main_funestra_compilation")
 
-    def test_favorites_wears_the_green_star_and_lights_while_it_is_on(self):
+    def test_favorites_wears_the_star_with_the_filter_s_funnel_and_lights_green_while_it_is_on(self):
         for mode in MainMode:
             off = _button(_main_facts(main_mode=mode), "main_favorites")
             on = _button(_main_facts(main_mode=mode, favorites=True), "main_favorites")
-            assert shared_icon_name(off.icon) == "star"
+            assert shared_icon_name(off.icon) == "favorite_filter"
             assert (off.lit, on.lit, on.favorite) == (False, True, True), mode
 
     def test_enhanceds_lights_in_the_enhanced_color_while_it_is_on(self):
@@ -253,7 +262,7 @@ class TestReset:
         by_action = _placed(_main_facts(main_mode=MainMode.KINO))
         lock, reset = by_action["main_lock"], by_action["main_reset"]
 
-        assert reset[0] - (lock[0] + lock[2]) == GROUP_GAP
+        assert reset[1] != lock[1]
 
 
 class TestBrowseOrder:
@@ -470,15 +479,18 @@ class TestLock:
         assert loose.tooltip.startswith("Unlocked")
         assert "hold this video" in loose.tooltip
 
-    def test_it_stands_apart_from_everything_but_the_trash(self):
-        by_action = _placed(_main_facts(main_mode=MainMode.KINO))
-        step, skip = by_action["main_next"], by_action["main_funestra_funscript_jump"]
-        trash, lock, reset = by_action["main_trash"], by_action["main_lock"], by_action["main_reset"]
+    def test_it_stands_with_the_trash_between_the_steps_and_the_funscript_jump(self):
+        for kind, facts in _EVERY_KIND_OF_HUD:
+            groups = _groups(_row_holding(kind, facts, f"{facts.funestra}_lock"))
+            at = next(index for index, group in enumerate(groups)
+                      if f"{facts.funestra}_lock" in group)
 
-        assert skip[0] - (step[0] + step[2]) == GAP
-        assert lock[1] != skip[1]
-        assert lock[0] - (trash[0] + trash[2]) == GAP
-        assert reset[0] - (lock[0] + lock[2]) == GROUP_GAP
+            assert groups[at][1] == f"{facts.funestra}_lock", (kind, facts)
+            assert groups[at][0].endswith(("_trash", "_trash_flick")), (kind, facts)
+            assert len(groups[at]) == 2, (kind, facts)
+            assert groups[at - 1][-1].endswith(("_next", "_next_flick")), (kind, facts)
+            assert groups[at + 1] == [next(c for c in _commands(sum(hud_rows(kind, facts), ()))
+                                           if c.endswith("funscript_jump"))], (kind, facts)
 
     def test_every_mode_offers_exactly_one_padlock_lit_while_whatever_shows_is_held(self):
         for mode in MainMode:
@@ -549,12 +561,13 @@ class TestSkipAhead:
         return [button.command for button in next(
             row for row in main_hud_rows(facts) if any(b.command == "main_prev" for b in row))]
 
-    def test_skip_ahead_follows_previous_and_next_as_on_every_satellite(self):
+    def test_skip_ahead_follows_previous_and_next_past_the_trash_and_lock_as_on_every_satellite(self):
         row = self._transport_row(_main_facts(main_mode=MainMode.KINO))
 
         start = row.index("main_prev")
-        assert row[start:start + 5] == ["main_prev", "main_nudge_prev", "main_nudge_next",
-                                        "main_next", "main_funestra_funscript_jump"]
+        assert row[start:start + 7] == ["main_prev", "main_nudge_prev", "main_nudge_next",
+                                        "main_next", "main_trash", "main_lock",
+                                        "main_funestra_funscript_jump"]
 
     @pytest.mark.parametrize("has_osr2", [True, False])
     def test_skip_ahead_is_there_whether_or_not_the_main_funestra_has_the_osr2(self, has_osr2):
@@ -697,10 +710,10 @@ class TestLayout:
 
         assert video == ["main_kino_activate", "genau_activate", "main_take_osr2",
                          "main_prev", "main_nudge_prev", "main_nudge_next", "main_next",
-                         "main_funestra_funscript_jump",
+                         "main_trash", "main_lock", "main_funestra_funscript_jump",
                          "main_funestra_record_tap", "genaumacher_save"]
         assert genau == ["main_kino_activate", "genau_activate", "main_take_osr2",
-                         "genau_prev_flick", "genau_next_flick"]
+                         "genau_prev_flick", "genau_next_flick", "genau_trash_flick", "main_lock"]
 
     def test_minimize_this_funestra_wears_a_screen_with_an_arrow_not_the_huds_own_minus(self):
         button = _button(_main_facts(main_mode=MainMode.GENAU), "main_minimize")
@@ -817,7 +830,7 @@ def test_only_the_portrait_funestra_wears_a_crown():
 
 
 SLIDESHOW_THE_ROW = [
-    "prev", "nudge_prev", "nudge_next", "next", "funscript_jump", "trash", "lock",
+    "prev", "nudge_prev", "nudge_next", "next", "trash", "lock", "funscript_jump",
     "reset", "shuffle", "latest", "media_videos", "media_images", "enhanced", "favorites",
     "cycle_version"]
 
@@ -856,7 +869,7 @@ def test_every_button_posts_that_sides_own_verb_and_names_itself():
 
 def test_the_band_breaks_into_groups_where_the_controls_stop_being_about_one_thing():
     assert [name for name, button in zip(_names(_button_row()), _button_row(), strict=True) if button.group_break] == [
-        "prev", "trash", "reset", "shuffle", "media_videos", "enhanced", "cycle_version"]
+        "prev", "trash", "funscript_jump", "reset", "shuffle", "media_videos", "enhanced", "cycle_version"]
 
 
 def test_the_switches_light_and_the_things_done_never_do():
@@ -970,8 +983,8 @@ def test_reset_is_faded_with_nothing_to_put_back():
 def test_a_slideshow_on_its_own_puts_the_transport_and_minimize_on_a_top_row_of_their_own():
     top, second = hud_rows(HudKind.SLIDESHOW, HudFacts(funestra="portrait", crowned=True, latest=False))
 
-    assert _names(top) == ["prev", "nudge_prev", "nudge_next", "next", "funscript_jump", "minimize"]
-    assert _names(second) == SLIDESHOW_THE_ROW[5:]
+    assert _names(top) == [*SLIDESHOW_THE_ROW[:7], "minimize"]
+    assert _names(second) == SLIDESHOW_THE_ROW[7:]
 
 
 def test_a_slideshow_on_its_own_in_the_headset_has_no_minimize():
@@ -1036,7 +1049,7 @@ def test_the_main_funestras_top_row_holds_the_modes_the_osr2_button_and_the_tran
     assert _commands(top) == [
         "main_kino_activate", "genau_activate", "main_take_osr2",
         "main_prev", "main_nudge_prev", "main_nudge_next", "main_next",
-        "main_funestra_funscript_jump", "main_minimize", "main_crown",
+        "main_trash", "main_lock", "main_funestra_funscript_jump", "main_minimize", "main_crown",
         "main_funestra_record_tap", "genaumacher_save"]
 
 
@@ -1048,6 +1061,7 @@ def test_genau_shows_kinos_skip_buttons_and_funscript_jump_dimmed_in_their_place
 
     for kinos, genaus in (("main_prev", "genau_prev_flick"), ("main_nudge_prev", "genau_nudge_prev"),
                           ("main_nudge_next", "genau_nudge_next"), ("main_next", "genau_next_flick"),
+                          ("main_trash", "genau_trash_flick"), ("main_lock", "main_lock"),
                           ("main_funestra_funscript_jump", "genau_funscript_jump")):
         assert genau[genaus][0] == kino[kinos][0], genaus
     for dimmed in ("genau_nudge_prev", "genau_nudge_next", "genau_funscript_jump"):
@@ -1061,7 +1075,8 @@ def test_a_satellites_top_row_starts_with_the_osr2_button_then_the_transport():
 
     assert _commands(top) == [
         "portrait_take_osr2", "portrait_prev", "portrait_nudge_prev", "portrait_nudge_next",
-        "portrait_next", "portrait_funscript_jump", "portrait_minimize", "portrait_crown"]
+        "portrait_next", "portrait_trash", "portrait_lock", "portrait_funscript_jump",
+        "portrait_minimize", "portrait_crown"]
     assert top[0].lit
 
 
@@ -1070,16 +1085,6 @@ def test_in_the_headset_the_top_row_ends_after_skip_ahead():
 
     assert _commands(top)[-1] == "landscape_funscript_jump"
 
-
-
-def test_trash_sits_right_before_the_lock_and_reset_right_after_it():
-    for kind, facts in ((HudKind.SATELLITE, HudFacts(funestra="portrait")),
-                        (HudKind.SLIDESHOW, HudFacts(funestra="portrait")),
-                        (HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU))):
-        commands = [command for row in hud_rows(kind, facts) for command in _commands(row)]
-        lock = next(index for index, command in enumerate(commands) if command.endswith("_lock"))
-        assert "trash" in commands[lock - 1], (kind, commands)
-        assert commands[lock + 1].endswith("_reset"), (kind, commands)
 
 
 def test_every_row_label_is_only_as_wide_as_its_words():
@@ -1186,15 +1191,6 @@ def test_compilation_full_scene_and_versions_close_kinos_row_as_one_group():
     assert [b.group_break for b in last_three] == [True, False, False]
 
 
-def test_trash_and_the_lock_touch_with_no_gap_between_them():
-    for kind, facts in ((HudKind.SATELLITE, HudFacts(funestra="portrait")),
-                        (HudKind.MAIN, _main_facts(main_mode=MainMode.GENAU))):
-        row = hud_rows(kind, facts)[1]
-        lock = next(index for index, b in enumerate(row) if b.command.endswith("_lock"))
-        assert "trash" in row[lock - 1].command
-        assert not row[lock].group_break, kind
-
-
 def _trash_of(kind: HudKind, facts: HudFacts) -> Button:
     return next(b for row in hud_rows(kind, facts) for b in row if "trash" in b.command)
 
@@ -1234,8 +1230,7 @@ def test_every_button_kino_and_genau_share_sits_in_the_same_place_in_both():
                 for short in (b.command.removeprefix("main_").removeprefix("genau_"),)}
 
     kino, genau = placed(MainMode.KINO), placed(MainMode.GENAU)
-    kino["trash_flick"] = kino.pop("trash")
-    shared = {"trash_flick", "lock", "reset", "shuffle", "latest",
+    shared = {"reset", "shuffle", "latest",
               "orientation_portrait", "orientation_landscape", "projection_vr", "projection_flat"}
 
     assert {name: kino[name][0] for name in shared} == {name: genau[name][0] for name in shared}
