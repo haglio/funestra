@@ -50,6 +50,9 @@ _RIDDEN_OUT_BY_MPV = frozenset({
     "hardware, temporary CPU spikes, broken drivers, and broken files. Audio",
     "position will not match to the video (see A-V status field).",
     "Consider trying `--profile=fast` and/or `--hwdec=auto` as they may help.",
+    "Failed to begin frame: 0x8000000a",
+    "hardware accelerator failed to decode picture",
+    "Error while decoding frame (hardware decoding)!",
 })
 
 
@@ -57,7 +60,8 @@ def _log_mpv(level: str, prefix: str, text: str) -> None:
     said = text.strip()
     if not said:
         return
-    at =logging.INFO if said in _RIDDEN_OUT_BY_MPV else _MPV_LEVELS.get(level, logging.WARNING)
+    ridden_out = said in _RIDDEN_OUT_BY_MPV or said.partition(": ")[2] in _RIDDEN_OUT_BY_MPV
+    at = logging.INFO if ridden_out else _MPV_LEVELS.get(level, logging.WARNING)
     logger.log(at, "mpv %s: %s", prefix, said)
 
 
