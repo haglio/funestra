@@ -6,11 +6,12 @@ from pathlib import Path
 from app_support.state_files import GENAU_STATUS
 
 from .file_channel import publish_whole
-from .flick_advance import FlickAdvanceState
+from .flick_advance import DEFAULT_INTERVAL_S, FlickAdvanceState
 from .learned_motion import LearnedMotionState
 from .robot_hand import RobotHandState, control_limits
 
 GENAU_STATUS_FILENAME = GENAU_STATUS
+GENAU_OPENS_LOCKED = FlickAdvanceState().locked
 
 
 def _flag_or_unknown(flag: bool | None) -> str:
@@ -74,3 +75,50 @@ class StatusFile:
             return False
         self._written = text
         return True
+
+
+@dataclass(frozen=True)
+class GenauStatus:
+    learned_active: bool = False
+    robot_hand_off: bool = False
+    locked: bool = GENAU_OPENS_LOCKED
+    shape: str = "sine"
+    flick: str = ""
+    flipped: bool = False
+    portrait: bool | None = None
+    up_at: float | None = None
+    interval: int = DEFAULT_INTERVAL_S
+
+
+def _on(values: dict[str, str], key: str, *, at_rest: bool = False) -> bool:
+    return values.get(key, "1" if at_rest else "0").strip() not in ("0", "false", "")
+
+
+def _on_or_unknown(values: dict[str, str], key: str) -> bool | None:
+    return {"1": True, "0": False}.get(values.get(key, "").strip())
+
+
+def _seconds_or_none(values: dict[str, str], key: str) -> float | None:
+    try:
+        return float(values.get(key, ""))
+    except ValueError:
+        return None
+
+
+def _whole_seconds(values: dict[str, str], key: str, at_rest: int) -> int:
+    said = values.get(key, "").strip()
+    return int(said) if said.isdigit() else at_rest
+
+
+def genau_status_from(values: dict[str, str]) -> GenauStatus:
+    return GenauStatus(
+        learned_active=_on(values, "learned"),
+        robot_hand_off=_on(values, "robot_hand_off"),
+        locked=_on(values, "locked", at_rest=GENAU_OPENS_LOCKED),
+        shape=values.get("shape", "sine").strip(),
+        flick=values.get("flick", "").strip(),
+        flipped=_on(values, "flipped"),
+        portrait=_on_or_unknown(values, "portrait"),
+        up_at=_seconds_or_none(values, "up_at"),
+        interval=_whole_seconds(values, "interval", DEFAULT_INTERVAL_S),
+    )

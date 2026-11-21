@@ -215,3 +215,30 @@ def test_a_status_the_disk_refused_is_written_again_at_the_next_tick(tmp_path: P
 
     assert [status.write(text), status.write(text), status.write(text)] == [False, True, False]
     assert published == [text, text]
+
+
+def _read_back(text: str) -> genau_status.GenauStatus:
+    return genau_status.genau_status_from(
+        dict(line.split("=", 1) for line in text.splitlines() if "=" in line))
+
+
+def test_what_genau_writes_reads_back_as_the_flick_on_screen_its_lock_flip_and_seconds():
+    advance = FlickAdvanceState(locked=False, interval=12)
+    on_screen = FlickOnScreen(path=Path("C:/made/up/one.mp4"), flipped=True, portrait=True,
+                              up_at=3.5)
+
+    heard = _read_back(build_status_text(RobotHandState(off=True), flick_advance=advance,
+                                         learned=LearnedMotionState(active=True),
+                                         on_screen=on_screen))
+
+    assert (heard.learned_active, heard.robot_hand_off) == (True, True)
+    assert (heard.flick, heard.locked, heard.flipped, heard.interval, heard.portrait,
+            heard.up_at) == (str(Path("C:/made/up/one.mp4")), False, True, 12, True, 3.5)
+
+
+def test_nothing_written_yet_reads_as_genau_as_it_opens():
+    heard = genau_status.genau_status_from({})
+
+    assert heard == genau_status.GenauStatus()
+    assert (heard.locked, heard.flick, heard.interval) == (
+        True, "", FlickAdvanceState().interval)
