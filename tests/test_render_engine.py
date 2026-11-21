@@ -34,10 +34,7 @@ class FakeHandle:
         for callback in self.event_callbacks:
             callback(event)
 
-    def play(self, _path) -> None:
-        pass
-
-    def playlist_clear(self) -> None:
+    def command_async(self, *_command, callback=None, **_named) -> None:
         pass
 
 

@@ -39,6 +39,8 @@ class FakeMpv:
         self.calls: list[tuple] = []
         self.audio_device_list: list[dict] = []
         self.audio_device = "auto"
+        self.waited_on: list[str] = []
+        self._asked_without_waiting = False
         self.__dict__.update(dict.fromkeys(PLACING, 0.0))
 
     @property
@@ -80,7 +82,28 @@ class FakeMpv:
         if name in self.observers:
             self.observers[name](name, value)
 
+    def command_async(self, name: str, *args: str, callback=None, **named: str) -> None:
+        self._asked_without_waiting = True
+        try:
+            if name == "playlist-clear":
+                self.playlist_clear()
+            elif name == "loadfile" and named.get("flags", "replace") == "replace":
+                self.play(named["url"])
+            elif name == "loadfile":
+                self.loadfile(named["url"], named["flags"])
+            elif name == "set":
+                setattr(self, args[0].replace("-", "_"), {"yes": True, "no": False}.get(args[1], args[1]))
+            else:
+                self.command(name, *args)
+        finally:
+            self._asked_without_waiting = False
+
+    def _waits(self, what: str) -> None:
+        if not self._asked_without_waiting:
+            self.waited_on.append(what)
+
     def playlist_clear(self) -> None:
+        self._waits("playlist-clear")
         self.calls.append(("clear",))
         if self._playlist_pos >= 0:
             self.playlist_pos, self.playlist_count = 0, 1
@@ -89,11 +112,13 @@ class FakeMpv:
         self.calls.append(("remove", index))
 
     def loadfile(self, path: str, mode: str) -> None:
+        self._waits("loadfile")
         self.calls.append(("loadfile", path, mode))
         if mode == "append":
             self.playlist_count += 1
 
     def play(self, path: str) -> None:
+        self._waits("loadfile")
         self.calls.append(("play", path))
         self.playlist_pos, self.playlist_count = 0, 1
 
@@ -106,6 +131,8 @@ class FakeMpv:
         return not 0 <= self._playlist_pos < self.playlist_count - 1
 
     def __setattr__(self, name: str, value) -> None:
+        if name == "pause":
+            self._waits("pause")
         if name in PLACING:
             self.calls.append(("set", name, value))
         super().__setattr__(name, value)
@@ -312,6 +339,40 @@ def test_muting_leaves_the_volume_where_it_was():
     Control(mpv).set_muted(True)
 
     assert (mpv.mute, mpv.volume) == (True, 70)
+
+
+def test_a_roll_onto_the_next_clip_and_the_staging_after_it_never_wait_on_mpv():
+    mpv = FakeMpv(pos=0, count=1)
+    control = Control(mpv)
+    control.stage_next(Path("made-up-two.mp4"))
+    mpv.playlist_pos = 1
+
+    control.settle_on_the_next()
+    control.stage_next(Path("made-up-three.mp4"))
+
+    assert mpv.waited_on == []
+
+
+def test_a_next_opens_its_clip_plays_it_and_stages_the_one_after_without_waiting_on_mpv():
+    mpv = FakeMpv(pos=0, count=1)
+    control = Control(mpv)
+
+    control.load(Path("made-up-one.mp4"))
+    control.set_paused(False)
+    control.stage_next(Path("made-up-two.mp4"))
+    control.clear_next()
+
+    assert mpv.waited_on == []
+
+
+def test_a_command_mpv_refuses_after_it_was_asked_is_written_down(caplog):
+    caplog.set_level(logging.WARNING, logger="funestra.mpv_engine")
+
+    mpv_engine._said_if_refused(SystemError("Error running mpv command", -12), None)
+
+    assert [record.getMessage() for record in caplog.records] == [
+        "mpv refused a command it was asked to run when free: "
+        "('Error running mpv command', -12)"]
 
 
 def test_clearing_the_staged_entry_keeps_the_clip_on_screen():
