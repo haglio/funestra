@@ -874,13 +874,12 @@ class TestTheDotIsWhereTheDeviceIs:
             return self._dot(painter, self._hud(held, osr2=osr2, paused=paused))
         return at
 
-    def test_parked_it_waits_out_the_broker_then_sets_down_at_the_bottom_over_a_second(self):
+    def test_parked_it_sets_down_at_the_bottom_at_once_over_a_second_as_the_broker_writes_it(self):
         at = self._held_from(OSR2_PARKED)
 
         assert at(0.0) == 6_000
-        assert at(0.9) == 6_000
-        assert 0 < at(1.6) < 6_000
-        assert at(2.0) == 0
+        assert 0 < at(0.5) < 6_000
+        assert at(1.0) == 0
 
     def test_retracted_it_slides_to_the_top_at_once_with_no_wait_as_the_broker_writes_it(self):
         at = self._held_from(OSR2_RETRACTED)
@@ -893,9 +892,8 @@ class TestTheDotIsWhereTheDeviceIs:
         at = self._held_from(OSR2_DRIVING)
 
         assert at(0.0, paused=True) == 6_000
-        assert at(0.9, paused=True) == 6_000
-        assert 0 < at(1.6, paused=True) < 6_000
-        assert at(2.0, paused=True) == 0
+        assert 0 < at(0.5, paused=True) < 6_000
+        assert at(1.0, paused=True) == 0
 
     def test_played_again_it_slides_from_home_back_into_the_motion(self):
         at = self._held_from(OSR2_DRIVING)
