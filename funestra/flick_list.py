@@ -1,21 +1,46 @@
 from __future__ import annotations
 
 import random
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from pathlib import Path
 
 from .flick_overlay import FlickFrame
 from .genau import Genau, Narrow, Opening, a_step_shown_genau_takes
 from .main_hud import ModeHud
-from .playlist import read_playlist
+from .playlist import PlaylistItem, read_playlist, write_playlist
 from .runs_here import AddsNothing
 
 RELOAD_FLICKS = "RELOAD_FLICKS"
 
 
+def flips_file_for(flicks: Path) -> Path:
+    return flicks.with_name(f"{flicks.stem}.flipped{flicks.suffix}")
+
+
+def write_flicks(file: Path, flicks: Sequence[Path], *, flipped: Collection[Path] = ()) -> None:
+    write_playlist(flips_file_for(file), [PlaylistItem(flick) for flick in flicks if flick in flipped])
+    write_playlist(file, [PlaylistItem(flick) for flick in flicks])
+
+
+class _FlipsOnTheList:
+    def __init__(self) -> None:
+        self._flipped: frozenset[Path] = frozenset()
+
+    def take(self, flipped: Iterable[Path]) -> None:
+        self._flipped = frozenset(flipped)
+
+    def keeps(self, _flick: Path) -> bool:
+        return True
+
+    def is_flipped(self, flick: Path) -> bool:
+        return flick in self._flipped
+
+    def keep(self, flick: Path, flipped: bool) -> None:
+        self._flipped = self._flipped | {flick} if flipped else self._flipped - {flick}
+
+
 class FlickList:
     metadata_root = None
-    flips = None
     keep_shapes = None
     trash = None
     up_next = None
@@ -23,11 +48,13 @@ class FlickList:
     def __init__(self, file: Path, *, shuffle: Callable[[list[Path]], None] = random.shuffle) -> None:
         self._file = Path(file)
         self._shuffle = shuffle
+        self.flips = _FlipsOnTheList()
 
     def opening(self, *, recent: bool, shuffled: bool) -> Opening:
         return Opening(self.listed(recent=recent, shuffled=shuffled))
 
     def listed(self, *, recent: bool, shuffled: bool) -> list[Path]:
+        self.flips.take(item.path for item in read_playlist(flips_file_for(self._file)))
         flicks = [item.path for item in read_playlist(self._file)]
         if shuffled and not recent:
             self._shuffle(flicks)
