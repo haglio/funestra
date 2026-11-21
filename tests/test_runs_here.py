@@ -39,10 +39,10 @@ def _two():
     return RunsHere({"kino": kino, "genau": genau}), kino, genau
 
 
-def test_the_first_one_named_has_the_window_and_is_told_so():
+def test_the_first_one_named_has_the_window_and_every_other_is_told_it_has_not():
     runs, kino, genau = _two()
 
-    assert (runs.showing, runs.front, kino.showing, genau.showing) == ("kino", kino, [True], [])
+    assert (runs.showing, runs.front, kino.showing, genau.showing) == ("kino", kino, [True], [False])
 
 
 def test_showing_another_tells_the_one_leaving_and_the_one_arriving():
@@ -51,7 +51,7 @@ def test_showing_another_tells_the_one_leaving_and_the_one_arriving():
     assert runs.show("genau") is True
 
     assert (runs.showing, runs.front, kino.showing, genau.showing) == (
-        "genau", genau, [True, False], [True])
+        "genau", genau, [True, False], [False, True])
 
 
 def test_showing_the_one_already_up_tells_nobody_again():
