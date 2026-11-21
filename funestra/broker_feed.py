@@ -5,6 +5,10 @@ import socket
 import threading
 from dataclasses import dataclass, field
 
+AUTO = "AUTO"
+BPM = "BPM"
+SYNC = "SYNC"
+
 
 @dataclass
 class BrokerFeed:
@@ -30,6 +34,27 @@ def snapshot(feed: BrokerFeed) -> BrokerSnapshot:
         )
 
 
+class BeatSender:
+    def __init__(self, port: int, *, host: str = "127.0.0.1", sock=None) -> None:
+        self._address = (host, port)
+        self._sock = sock if sock is not None else socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    def drive(self, on: bool) -> None:
+        self._say(f"{AUTO} {int(on)}")
+
+    def bpm(self, bpm: float) -> None:
+        self._say(f"{BPM} {bpm:g}")
+
+    def sync(self) -> None:
+        self._say(SYNC)
+
+    def close(self) -> None:
+        self._sock.close()
+
+    def _say(self, line: str) -> None:
+        self._sock.sendto(line.encode("utf-8"), self._address)
+
+
 _BIND_RETRY_DELAYS = (0.5, 1.0, 2.0)
 
 _READ_TIMEOUT_S = 0.2
@@ -41,15 +66,15 @@ def apply_udp_line(feed: BrokerFeed, line: str, logger: logging.Logger) -> None:
     arg = said[1].strip() if len(said) > 1 else ""
 
     with feed.lock:
-        if verb == "AUTO":
+        if verb == AUTO:
             feed.auto_active = arg == "1"
             logger.info("Received AUTO %s", 1 if feed.auto_active else 0)
-        elif verb == "BPM":
+        elif verb == BPM:
             try:
                 feed.raw_bpm = float(arg)
             except ValueError:
                 logger.warning("Invalid BPM payload: %s", line)
-        elif verb == "SYNC":
+        elif verb == SYNC:
             feed.sync_pulse_id += 1
 
 
