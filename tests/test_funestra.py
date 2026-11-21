@@ -971,6 +971,23 @@ def test_on_a_window_the_way_of_playing_is_mpv_opened_on_that_window(tmp_path):
     assert funestra.playback.current_video == videos[0]
 
 
+def test_on_a_window_its_status_names_that_window_so_an_app_can_stack_beside_it(tmp_path):
+    channels = _channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
+
+    with patch("funestra.funestra.MpvEngine", return_value=FakeEngine()):
+        funestra = Funestra.on_window(4242, FunestraSetup(
+            channels=channels, playlist=read_playlist(channels.playlist)))
+    funestra.close()
+
+    assert funestra.status_fields()["window"] == "4242"
+
+
+def test_a_funestra_drawn_in_its_hosts_window_names_no_window_of_its_own(tmp_path):
+    funestra, _engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
+
+    assert "window" not in funestra.status_fields()
+
+
 def _main_hud_channels(tmp_path: Path, lines: list[str], *, commands: str = "") -> Channels:
     channels = _channels(tmp_path, lines, commands=commands, in_a_session=True)
     return replace(channels, console=tmp_path / "main_hud.json", drive=tmp_path / "drive.txt")
