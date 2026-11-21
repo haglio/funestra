@@ -8,11 +8,12 @@ from funestra.flick_list import RELOAD_FLICKS
 from funestra.flick_overlay import BACKDROP_OVERLAY_ID, FIRST_TILE_OVERLAY_ID
 from funestra.funestra import Channels, Funestra
 from funestra.funestra_setup import FunestraSetup
+from funestra.funestra_verbs import RELOAD_PLAYLIST
 from funestra.genau_engine import EngineSeams
 from funestra.hud_kinds import HudFacts, HudKind
 from funestra.modes import MainMode
 from funestra.off_the_loop import AtOnce
-from funestra.playlist import PlaylistItem, write_playlist
+from funestra.playlist import PlaylistItem, read_playlist, write_playlist
 from funestra.program.genau_here import GenauLaunch, kino_and_genau
 from funestra.satellite_hud import HudModel, hud_text
 from funestra.testing import FakeEngine, every_thread_now_but_the_ones_that_run_for_good
@@ -21,18 +22,22 @@ VIEWPORT = (320, 240)
 
 
 class Standalone:
-    def __init__(self, tmp_path: Path, *, hud: bool = False) -> None:
+    def __init__(self, tmp_path: Path, *, hud: bool = False, playing: int = 3) -> None:
         self.command = tmp_path / "cmd.txt"
+        self.playlist = tmp_path / "playlist.tsv"
+        self.status = tmp_path / "status.txt"
         self.flicks = tmp_path / "genau_flicks.tsv"
         self.slides = [tmp_path / f"slide {index}.mp4" for index in range(3)]
+        write_playlist(self.playlist, [PlaylistItem(slide) for slide in self.slides[:playing]])
         self.engine = FakeEngine()
         launch = GenauLaunch(
             command=tmp_path / "genau_cmd.txt", paused=tmp_path / "genau_paused.txt",
             status=tmp_path / "genau_status.txt", drive=tmp_path / "genau_drive.txt",
             flicks=self.flicks, beat_port=50601)
         self.funestra = Funestra(self.engine, FunestraSetup(
-            channels=Channels(command=self.command, **self._huds(tmp_path) if hud else {}),
-            playlist=[PlaylistItem(slide) for slide in self.slides],
+            channels=Channels(command=self.command, playlist=self.playlist, status=self.status,
+                              **self._huds(tmp_path) if hud else {}),
+            playlist=read_playlist(self.playlist),
             users=kino_and_genau(launch, notice=None, seams=EngineSeams(
                 decode=lambda _path: [np.zeros((8, 16, 3), dtype=np.uint8)] * 4,
                 start_thread=every_thread_now_but_the_ones_that_run_for_good,
@@ -138,3 +143,39 @@ def test_back_in_kino_the_huds_row_runs_through_the_item_again(tmp_path):
     standalone.send("SHOW kino")
 
     assert standalone.funestra.hud.scrubber_row == standalone.funestra.scrubber_row()
+
+
+class TestStartedOnNoPlaylist:
+    def test_kino_plays_nothing_and_covers_the_window_in_black(self, tmp_path):
+        standalone = Standalone(tmp_path, hud=True, playing=0)
+
+        standalone.send("NEXT", "PREV")
+
+        assert standalone.engine.opened == []
+        assert BACKDROP_OVERLAY_ID in standalone.engine.overlays
+
+    def test_it_says_nothing_of_an_item_while_it_has_none(self, tmp_path):
+        standalone = Standalone(tmp_path, playing=0)
+
+        standalone.send("NEXT")
+
+        assert not standalone.status.exists()
+
+    def test_kino_plays_the_list_once_the_app_writes_it_and_reloads(self, tmp_path):
+        standalone = Standalone(tmp_path, hud=True, playing=0)
+        standalone.send("NEXT")
+
+        write_playlist(standalone.playlist, [PlaylistItem(slide) for slide in standalone.slides])
+        standalone.send(RELOAD_PLAYLIST)
+
+        assert standalone.engine.opened == [standalone.slides[0]]
+        assert BACKDROP_OVERLAY_ID not in standalone.engine.overlays
+        assert standalone.status.exists()
+
+    def test_genau_plays_its_flicks_over_it(self, tmp_path):
+        standalone = Standalone(tmp_path, hud=True, playing=0)
+        standalone.write_flicks("alpha")
+
+        standalone.send(RELOAD_FLICKS, "SHOW genau")
+
+        assert standalone.genaus_frame_is_up

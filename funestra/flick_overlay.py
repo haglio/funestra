@@ -44,6 +44,9 @@ class FlickFrame:
     frames: Sequence[np.ndarray] = ()
 
 
+NOTHING_UP = FlickFrame(frame=None)
+
+
 def black_bgra(width: int, height: int) -> np.ndarray:
     frame = np.zeros((max(1, height), max(1, width), 4), dtype=np.uint8)
     frame[:, :, 3] = 255

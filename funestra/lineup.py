@@ -14,7 +14,7 @@ def _listed(videos: Sequence[Path]) -> list[Path]:
 
 class Lineup:
     def __init__(self, videos: Sequence[Path]) -> None:
-        self._videos = _listed(videos)
+        self._videos = list(videos)
         self._index = 0
         self._versions: dict[Path, Path] = {}
         self._frame: Path | None = None
@@ -126,6 +126,9 @@ class Lineup:
         self._versions = {}
 
     def take(self, videos: Sequence[Path]) -> bool:
+        if not self._videos:
+            self.start_over_with(videos)
+            return False
         current = self.current
         chosen = self._versions.get(current)
         self._videos = _listed(videos)
