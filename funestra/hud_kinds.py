@@ -44,6 +44,8 @@ from .inclusion_pair import (
     InclusionPair,
     lengths_included,
     media_pair,
+    orientation_pair,
+    projection_pair,
 )
 from .loop_cycle import ACTION, OFF, SEED
 from .main_hud import VALUE_W, ModeHud
@@ -171,10 +173,16 @@ MODE_BUTTONS = (
 )
 
 
+def _on_its_own(kind: HudKind, facts: HudFacts) -> bool:
+    return kind is HudKind.SLIDESHOW and not facts.hosted
+
+
 def shows_on(kind: HudKind, facts: HudFacts) -> Shows:
-    if kind is not HudKind.MAIN:
-        return Shows.SLIDES
-    return Shows.KINO if facts.main_mode is MainMode.KINO else Shows.GENAU
+    if kind is HudKind.MAIN:
+        return Shows.KINO if facts.main_mode is MainMode.KINO else Shows.GENAU
+    if _on_its_own(kind, facts) and facts.main_mode is MainMode.GENAU:
+        return Shows.GENAU
+    return Shows.SLIDES
 
 
 def _prefix(facts: HudFacts, _shows: Shows) -> str:
@@ -301,9 +309,9 @@ def _inclusions(facts: HudFacts, shows: Shows) -> tuple[tuple[InclusionPair, Inc
 def _inclusion_buttons(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     things = "videos" if shows is Shows.KINO else facts.flick_many
     offered = facts.plays_vr is not None and facts.plays_flat is not None
-    shown = [(ORIENTATION, (facts.plays_portrait, facts.plays_landscape), True),
-             (PROJECTION, (bool(facts.plays_flat), bool(facts.plays_vr)) if offered else BOTH,
-              offered)]
+    shown = [(orientation_pair(facts.funestra), (facts.plays_portrait, facts.plays_landscape), True),
+             (projection_pair(facts.funestra),
+              (bool(facts.plays_flat), bool(facts.plays_vr)) if offered else BOTH, offered)]
     if shows is Shows.KINO:
         shown.append((LENGTH, lengths_included(facts.length_mode), True))
     return tuple(
@@ -450,11 +458,12 @@ def clip_seconds_row(shape: str, seconds: int) -> tuple[Button, ...]:
     )
 
 
-def _pace_row(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
+def _pace_row(kind: HudKind, facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
+    speed = playback_speed_buttons("main_funestra" if kind is HudKind.MAIN else facts.funestra)
     if shows is Shows.KINO:
-        return playback_speed_buttons("main_funestra")
+        return speed
     if shows is Shows.GENAU:
-        return _one_group_each(playback_speed_buttons("main_funestra"), _flick_seconds_row(facts))
+        return _one_group_each(speed, _flick_seconds_row(facts))
     return () if facts.clip_seconds is None else clip_seconds_row(facts.funestra, facts.clip_seconds)
 
 
@@ -476,11 +485,12 @@ def hud_rows(kind: HudKind, facts: HudFacts,
         rows = (_one_group_each(_controls_on(Row.TOP, facts, shows, controls), second),)
     elif kind is HudKind.SLIDESHOW:
         minimize = () if facts.in_vr else (minimize_funestra_button(facts.funestra),)
-        rows = (_one_group_each(_controls_on(Row.TOP, facts, shows, controls), minimize),
+        rows = (_one_group_each(_modes(facts), _controls_on(Row.TOP, facts, shows, controls),
+                                minimize),
                 _one_group_each(second))
     else:
         rows = (_top_row(kind, facts, shows, controls), _one_group_each(second))
-    return tuple(row for row in (*rows, _pace_row(facts, shows)) if row)
+    return tuple(row for row in (*rows, _pace_row(kind, facts, shows)) if row)
 
 
 def take_osr2_command(funestra: str) -> str:
@@ -525,21 +535,31 @@ _ONE_OR_BOTH: tuple[Included, ...] = (BOTH, (True, False), (False, True))
 _LONGEST_PACE = 99
 
 
-def title_choices(kind: HudKind) -> tuple[str, ...]:
-    if kind is HudKind.MAIN:
-        return tuple(sorted({
-            main_title(HudFacts(main_mode=mode, locked=locked, latest=latest, pace_s=_LONGEST_PACE,
-                                favorites=favorites, enhanced=enhanced,
-                                plays_flat=projection[0], plays_vr=projection[1],
-                                length_mode=length, plays_portrait=orientation[0],
-                                plays_landscape=orientation[1]), ModeHud())
-            for mode, locked, latest, favorites, enhanced, projection, length, orientation in product(
-                MainMode, (True, False), (True, False, None), (True, False), (True, False),
-                _ONE_OR_BOTH, (LengthMode.MIXED, LengthMode.FULL, LengthMode.CLIPS),
-                _ONE_OR_BOTH)}))
-    return tuple(sorted({
+def _main_titles(modes) -> set[str]:
+    return {
+        main_title(HudFacts(main_mode=mode, locked=locked, latest=latest, pace_s=_LONGEST_PACE,
+                            favorites=favorites, enhanced=enhanced,
+                            plays_flat=projection[0], plays_vr=projection[1],
+                            length_mode=length, plays_portrait=orientation[0],
+                            plays_landscape=orientation[1]), ModeHud())
+        for mode, locked, latest, favorites, enhanced, projection, length, orientation in product(
+            modes, (True, False), (True, False, None), (True, False), (True, False),
+            _ONE_OR_BOTH, (LengthMode.MIXED, LengthMode.FULL, LengthMode.CLIPS),
+            _ONE_OR_BOTH)}
+
+
+def _slideshow_titles() -> set[str]:
+    return {
         slideshow_title(HudFacts(locked=locked, latest=latest, favorites=favorites, media=media,
                                  enhanced=enhanced), loop=loop)
         for loop, locked, latest, favorites, media, enhanced in product(
             (OFF, SEED, ACTION), (True, False), (True, False), (True, False), _ONE_OR_BOTH,
-            (True, False))}))
+            (True, False))}
+
+
+def title_choices(kind: HudKind) -> tuple[str, ...]:
+    if kind is HudKind.MAIN:
+        return tuple(sorted(_main_titles(MainMode)))
+    if kind is HudKind.SLIDESHOW:
+        return tuple(sorted(_slideshow_titles() | _main_titles((MainMode.GENAU,))))
+    return tuple(sorted(_slideshow_titles()))
