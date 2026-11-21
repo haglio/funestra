@@ -92,7 +92,7 @@ class FakeMpv:
             elif name == "loadfile":
                 self.loadfile(named["url"], named["flags"])
             elif name == "set":
-                setattr(self, args[0].replace("-", "_"), {"yes": True, "no": False}.get(args[1], args[1]))
+                setattr(self, args[0].replace("-", "_"), _as_mpv_reads(*args))
             else:
                 self.command(name, *args)
         finally:
@@ -123,6 +123,7 @@ class FakeMpv:
         self.playlist_pos, self.playlist_count = 0, 1
 
     def command(self, name: str, *args) -> None:
+        self._waits(name)
         if name == "playlist-next" and self._nothing_after_the_entry_playing():
             raise SystemError("Error running mpv command", -12)
         self.calls.append(("command", name, *args))
@@ -131,14 +132,25 @@ class FakeMpv:
         return not 0 <= self._playlist_pos < self.playlist_count - 1
 
     def __setattr__(self, name: str, value) -> None:
-        if name == "pause":
-            self._waits("pause")
+        if name in WRITTEN:
+            self._waits(name)
         if name in PLACING:
             self.calls.append(("set", name, value))
         super().__setattr__(name, value)
 
 
 PLACING = {"video_zoom", "video_align_x", "video_align_y"}
+WRITTEN = {"pause", "video_aspect_override", *PLACING}
+FLAGS = {"pause"}
+
+
+def _as_mpv_reads(name: str, said: str):
+    if name in FLAGS:
+        return said == "yes"
+    try:
+        return float(said)
+    except ValueError:
+        return said
 
 
 CREEP = zoom_in(0.0, 0.0)
@@ -609,6 +621,19 @@ def test_an_image_is_drawn_closer_as_its_hold_runs_out():
     control.now = 102.0
     control.push_still()
 
+    assert mpv.video_zoom == pytest.approx(math.log2(CREEP.at(0.5).zoom))
+
+
+def test_an_image_s_move_is_drawn_without_waiting_on_mpv():
+    mpv = FakeMpv()
+    control = Control(mpv, now=100.0)
+    control.set_pace(4.0)
+    show_an_image(control, mpv)
+
+    control.now = 102.0
+    control.push_still()
+
+    assert mpv.waited_on == []
     assert mpv.video_zoom == pytest.approx(math.log2(CREEP.at(0.5).zoom))
 
 
@@ -1210,6 +1235,18 @@ def test_tiling_a_portrait_item_across_a_wide_window_widens_its_shape_by_the_cou
         ("command", "change-list", "glsl-shader-opts", "set", "tiles=3"),
     ]
     assert mpv.video_aspect_override == "27:16"
+
+
+def test_tiling_an_item_and_untiling_the_next_never_wait_on_mpv():
+    mpv = FakeMpv()
+    control = Control(mpv)
+    mpv.report("video-dec-params", PORTRAIT_SOURCE)
+    control.tile_to_fill(*WIDE_WINDOW)
+
+    mpv.report("video-dec-params", {"w": 1920, "h": 1080, "dw": 1920, "dh": 1080})
+    control.tile_to_fill(*WIDE_WINDOW)
+
+    assert (mpv.waited_on, mpv.video_aspect_override) == ([], "no")
 
 
 def test_a_frame_that_changes_nothing_asks_mpv_for_nothing():
