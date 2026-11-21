@@ -13,6 +13,7 @@ from funestra.flick_folder import (
     _modified_at,
     flat_flicks_in,
     move_to_trash,
+    no_other_flicks,
     scan_flicks,
     trash_folder_beside,
     trash_folder_for,
@@ -75,6 +76,10 @@ class TestScanFlicks:
         (tmp_path / "readme.txt").touch()
         with pytest.raises(RuntimeError, match="No video pips found"):
             scan_flicks(tmp_path)
+
+    def test_a_narrowing_that_leaves_none_says_so_in_the_rooms_own_word(self,
+                                                                      the_rooms_word_is_pips):
+        assert no_other_flicks() == "Including no other pips"
 
     def test_extension_matching_is_case_insensitive(self, tmp_path: Path):
         (tmp_path / "flick.MP4").touch()
