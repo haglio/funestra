@@ -747,6 +747,22 @@ def test_mpv_s_note_that_audio_and_video_drifted_apart_is_news_since_it_pulls_th
     assert {r.levelno for r in caplog.records} == {logging.INFO}
 
 
+def test_a_frame_the_busy_card_could_not_decode_in_time_is_news_since_mpv_drops_it_and_decodes_the_next(caplog):
+    with caplog.at_level(1, logger=mpv_engine.logger.name):
+        mpv_engine._log_mpv("error", "ffmpeg/video", "h264: Failed to begin frame: 0x8000000a\n")
+        mpv_engine._log_mpv("error", "ffmpeg/video", "hevc: hardware accelerator failed to decode picture\n")
+        mpv_engine._log_mpv("warn", "vd", "Error while decoding frame (hardware decoding)!\n")
+
+    assert {r.levelno for r in caplog.records} == {logging.INFO}
+
+
+def test_the_card_refusing_a_frame_for_any_other_reason_stays_an_error(caplog):
+    with caplog.at_level(1, logger=mpv_engine.logger.name):
+        mpv_engine._log_mpv("error", "ffmpeg/video", "h264: Failed to begin frame: 0x80070057\n")
+
+    assert [r.levelno for r in caplog.records] == [logging.ERROR]
+
+
 def test_a_blank_line_from_mpv_writes_nothing(caplog):
     with caplog.at_level(1, logger=mpv_engine.logger.name):
         mpv_engine._log_mpv("warn", "cplayer", "\n")
