@@ -86,6 +86,9 @@ class GenauControls:
 Act = Callable[[GenauControls, str], bool]
 
 FLICK_SECONDS = "FLICK_SECONDS"
+FLICK_SECONDS_DOWN = "FLICK_SECONDS_DOWN"
+FLICK_SECONDS_UP = "FLICK_SECONDS_UP"
+FLIP_ENDS = "FLIP_ENDS"
 PAUSE = "PAUSE"
 RESUME = "RESUME"
 PLAY_WITHOUT_THE_OSR2 = "PLAY_WITHOUT_THE_OSR2"
@@ -335,8 +338,8 @@ CONTROLS: tuple[Control, ...] = (
         name="flick_seconds",
         needs=("flick_advance_state",),
         verbs=(
-            Verb("FLICK_SECONDS_DOWN", _interval_step(-1)),
-            Verb("FLICK_SECONDS_UP", _interval_step(1)),
+            Verb(FLICK_SECONDS_DOWN, _interval_step(-1)),
+            Verb(FLICK_SECONDS_UP, _interval_step(1)),
             Verb(FLICK_SECONDS, _interval_named, takes_a_value=True),
         ),
     ),
@@ -362,7 +365,7 @@ CONTROLS: tuple[Control, ...] = (
     ),
     Control(
         name="flip_ends",
-        verbs=(Verb("FLIP_ENDS", _flip_ends),),
+        verbs=(Verb(FLIP_ENDS, _flip_ends),),
     ),
     Control(
         name="browse_order",

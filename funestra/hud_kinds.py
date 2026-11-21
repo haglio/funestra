@@ -7,6 +7,14 @@ from itertools import product
 
 from shared_ui.spacing import BUTTON_WORD_W
 
+from .genau_buttons import (
+    FLICK_SECONDS_LESS,
+    FLICK_SECONDS_MORE,
+    FLIP_THE_FLICK,
+    NEXT_FLICK,
+    PREV_FLICK,
+    TRASH_FLICK,
+)
 from .hud_button import FIT_THE_WORD, Button
 from .hud_controls import (
     RESET_PUTS_BACK_THE_SPEED,
@@ -197,8 +205,8 @@ def _transport(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
     if shows is Shows.GENAU:
         previous, back, forward, following = transport(
             "genau", noun=facts.flick_one, longer_than_a_step=False, cannot_step=NOT_IN_GENAU)
-        return (replace(previous, command="genau_prev_flick"), back, forward,
-                replace(following, command="genau_next_flick"))
+        return (replace(previous, command=PREV_FLICK), back, forward,
+                replace(following, command=NEXT_FLICK))
     return transport(facts.funestra, noun=_noun(facts, shows),
                      longer_than_a_step=facts.longer_than_a_step, image=facts.image)
 
@@ -260,14 +268,14 @@ def _special_collections(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
 
 def _flip(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
     one = facts.flick_one
-    return (Button("genau_flip_ends", FLIP_ENDS_ICON,
+    return (Button(FLIP_THE_FLICK, FLIP_ENDS_ICON,
                    f"Flipped — this {one} stays that way; press to put it back" if facts.flipped
                    else f"Flip this {one}, for one running opposite the OSR2 — it stays flipped",
                    lit=facts.flipped, group_break=True),)
 
 
 def _flick_trash(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
-    return (_opening_the_lock_s_group(trash_button_under("genau_trash_flick", "Send to Trash — move it out"),
+    return (_opening_the_lock_s_group(trash_button_under(TRASH_FLICK, "Send to Trash — move it out"),
                                facts, shows),)
 
 
@@ -442,9 +450,9 @@ def _modes(facts: HudFacts) -> tuple[Button, ...]:
 def _flick_seconds_row(facts: HudFacts) -> tuple[Button, ...]:
     return (
         Button("", f"{facts.flick_one.capitalize()} seconds", "", width=FIT_THE_WORD),
-        Button("genau_flick_seconds_down", LESS_ICON, "Move on sooner"),
+        Button(FLICK_SECONDS_LESS, LESS_ICON, "Move on sooner"),
         Button("", "", "", width=VALUE_W, host_value=ADVANCE_INTERVAL),
-        Button("genau_flick_seconds_up", MORE_ICON, f"Leave each {facts.flick_one} longer"),
+        Button(FLICK_SECONDS_MORE, MORE_ICON, f"Leave each {facts.flick_one} longer"),
     )
 
 
