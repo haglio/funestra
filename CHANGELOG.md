@@ -86,6 +86,22 @@ is now "what came back from behind the loop", "the scrubber's owed seek",
 file said" and "told by the playlist file". A Next's calls are named under the
 "playback " steps they make inside "doing what the command file said".
 `PlaybackSetup.lap` is how a Funestra hands its record to its `Playback`.
+## 2026-11-20 — Genau's user lives here, and asks a source for its flicks
+
+Moved in from Fun Time, so any app's Funestra can run Genau: `genau.Genau` (the
+user a Funestra runs), `genau_engine.build_genau_engine` with its `GenauChannels`,
+`FlickLibrary`, `GenauHost` and `EngineSeams`, and `genau_settings.GenauSettings`.
+What Genau plays is no longer its own: it asks a `genau.FlickSource` for the
+list (`opening`, `listed`), a flick's name, where a trashed flick goes and what
+follows (`trash_folder_for`, `went`), what to put up next (`up_next`), whether it
+keeps shapes (`keep_shapes`), where flips are kept (`metadata_root`, `flips`),
+and whether a verb on the Funestra's channel is the source's own
+(`apply_command`, handed a `Narrow` to call with the words to say).
+
+New: `EngineSeams.sleep`, which the wait for a trashed flick to be let go sleeps
+through and times on `EngineSeams.clock`; `flick_folder.no_other_flicks()`; and
+Genau's test doubles in `testing` (`FakeSink`, `FakeNotifier`, `ThreadsAsked`,
+`HeldDecodes`, `every_thread_now_but_the_ones_that_run_for_good`).
 
 ## 2026-11-19 — A Funestra's loop does only what changed, and writes down its late passes
 
