@@ -8,6 +8,10 @@ class FakeLoader:
         self.load_state = type("LoadState", (), {"loading": loading})()
         self.loaded_adopt_calls = 0
         self.prefetch_adopt_calls = 0
+        self.undecodable: set[Path] = set()
+
+    def could_not_decode(self, path: Path) -> bool:
+        return path in self.undecodable
 
     def adopt_loaded_flick_if_ready(self) -> None:
         self.loaded_adopt_calls += 1

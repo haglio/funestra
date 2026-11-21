@@ -1279,3 +1279,28 @@ def test_a_flick_s_flip_is_read_beside_its_decode_and_not_on_the_window_s_pass_w
     built = _build_controller(entry={"frames": [object() for _ in range(8)]}, flick_flip=flip)
 
     assert built["loader"].read_beside_the_frames == flip.read_ahead
+
+
+def test_the_status_says_whether_the_whole_flick_named_is_read_so_a_reader_can_wait_for_it(tmp_path):
+    status = tmp_path / "genau_status.txt"
+    built = _build_controller(status_file=status, entry=None)
+
+    built["controller"].refresh()
+    assert "whole=0\n" in status.read_text(encoding="utf-8")
+
+    built["renderer"]._entry = {"frames": [object() for _ in range(8)]}
+    built["controller"].refresh()
+    assert "whole=1\n" in status.read_text(encoding="utf-8")
+
+
+def test_the_status_says_when_the_flick_named_could_not_be_read_so_a_reader_stops_waiting_for_it(
+        tmp_path):
+    status = tmp_path / "genau_status.txt"
+    built = _build_controller(status_file=status, path="broken.mp4", entry=None)
+
+    built["controller"].refresh()
+    assert "unreadable=0\n" in status.read_text(encoding="utf-8")
+
+    built["loader"].undecodable.add(Path("broken.mp4"))
+    built["controller"].refresh()
+    assert "unreadable=1\n" in status.read_text(encoding="utf-8")

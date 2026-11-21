@@ -30,6 +30,10 @@ class FlicksOnScreen:
         return self.renderer.current_flick_path
 
     @property
+    def unreadable(self) -> bool:
+        return self.path is not None and self.loader.could_not_decode(self.path)
+
+    @property
     def portrait(self) -> bool | None:
         return self.renderer.portrait
 

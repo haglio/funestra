@@ -23,6 +23,8 @@ class FlickOnScreen:
     flipped: bool = False
     portrait: bool | None = None
     up_at: float | None = None
+    whole: bool = False
+    unreadable: bool = False
 
 
 def _up_at(on_screen: FlickOnScreen) -> str:
@@ -45,6 +47,8 @@ def build_status_text(
         f"locked={'1' if advance.locked else '0'}\n"
         f"flick={on_screen.path if on_screen.path is not None else ''}\n"
         f"up_at={_up_at(on_screen)}\n"
+        f"whole={'1' if on_screen.whole else '0'}\n"
+        f"unreadable={'1' if on_screen.unreadable else '0'}\n"
         f"flipped={'1' if on_screen.flipped else '0'}\n"
         f"portrait={_flag_or_unknown(on_screen.portrait)}\n"
         f"shape={hand.shape.value}\n"

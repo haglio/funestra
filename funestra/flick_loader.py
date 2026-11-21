@@ -76,9 +76,13 @@ class FlickLoadController:
 
         path, frames, err = result
         if err:
+            self._failed_to_decode.add(path)
             return
 
         self._adopt(path, frames)
+
+    def could_not_decode(self, path: Path) -> bool:
+        return path in self._failed_to_decode
 
     def adopt_prefetch_if_ready(self) -> None:
         result = self.prefetch_state.take_completed_result()
