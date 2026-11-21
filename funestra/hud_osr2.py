@@ -165,7 +165,7 @@ class _DeviceDot:
                 start = HELD_HEIGHT[self._held] if self._height is None else self._height
                 self._walk = the_hand_taking_back(start, now)
                 self._held = None
-            if self._walk is not None and now >= self._walk.began + self._walk.wait_s + self._walk.over_s:
+            if self._walk is not None and now >= self._walk.ends:
                 self._walk = None
             height = line if self._walk is None else self._walk.height_at(now, line)
         self._height = height

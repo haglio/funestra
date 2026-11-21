@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
-from app_support.osr2_hold import HOLD_MOVE_MS, HOLD_WAIT_S, PARK, RETRACT
+from app_support.osr2_hold import HOLD_MOVE_MS, PARK, RETRACT
 from funestra_fakes import holds_of_the_lock
 from genau_fakes import FakeLoader, FakeNotifier, FakeRenderer, FakeSelection, FakeTCodeSender
 
@@ -695,10 +695,9 @@ def _heights(*heights: float):
 
 class TestTheRoomHoldingTheDevice:
     ASKED = 5.1
-    WAITS = HOLD_WAIT_S[PARK]
     GLIDES = HOLD_MOVE_MS[PARK] / 1000
     RETRACT_GLIDES = HOLD_MOVE_MS[RETRACT] / 1000
-    SETTLED = ASKED + WAITS + GLIDES
+    SETTLED = ASKED + GLIDES
 
     @staticmethod
     def _room(position: int = 5000):
@@ -723,10 +722,9 @@ class TestTheRoomHoldingTheDevice:
         tick, _hand, _tcode = self._room(position=5000)
 
         shown = [tick(5.0), tick(self.ASKED, "PAUSE", "PARK"),
-                 tick(self.ASKED + self.WAITS - 0.1),
-                 tick(self.ASKED + self.WAITS + self.GLIDES / 2), tick(self.SETTLED)]
+                 tick(self.ASKED + self.GLIDES / 2), tick(self.SETTLED)]
 
-        assert shown == _heights(0.5, 0.5, 0.5, 0.25, 0.0)
+        assert shown == _heights(0.5, 0.5, 0.25, 0.0)
 
     def test_the_frame_goes_to_the_far_end_with_the_device(self):
         tick, _hand, _tcode = self._room(position=5000)
@@ -743,7 +741,7 @@ class TestTheRoomHoldingTheDevice:
         tick(self.ASKED, "RESUME", "SET_TCODE_ENABLED 0", "PARK")
         tcode._position = 8000
 
-        shown = [tick(self.ASKED + self.WAITS + self.GLIDES / 2), tick(self.SETTLED + 1.0)]
+        shown = [tick(self.ASKED + self.GLIDES / 2), tick(self.SETTLED + 1.0)]
 
         assert (hand.playing, shown) == (True, _heights(0.25, 0.0))
 
@@ -792,7 +790,7 @@ class TestTheRoomHoldingTheDevice:
         tick, _hand, _tcode = self._room(position=5000)
         tick(5.0)
         tick(self.ASKED, "PAUSE", "PARK")
-        tick(self.ASKED + self.WAITS - 0.1, "PAUSE", "PARK")
+        tick(self.ASKED + self.GLIDES / 2, "PAUSE", "PARK")
 
         assert [tick(self.SETTLED)] == _heights(0.0)
 
@@ -822,7 +820,7 @@ class TestTheRoomHoldingTheDevice:
         tcode._position = 2000
         tick(self.ASKED - 0.01)
 
-        shown = [tick(self.ASKED, "PARK"), tick(self.ASKED + self.WAITS + self.GLIDES / 2),
+        shown = [tick(self.ASKED, "PARK"), tick(self.ASKED + self.GLIDES / 2),
                  tick(self.SETTLED)]
 
         assert shown == _heights(0.5, 0.25, 0.0)

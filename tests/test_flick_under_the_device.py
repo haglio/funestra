@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import pytest
-from app_support.osr2_hold import HOLD_MOVE_MS, HOLD_WAIT_S, PARK
+from app_support.osr2_hold import HOLD_MOVE_MS, PARK
 from genau_fakes import FakeTCodeSender
 
 from funestra.flag import Flag
@@ -54,13 +54,13 @@ class TestThePointOfTheLoopOnScreen:
 
 class TestTheRoomHoldingTheDevice:
     ASKED = 5.1
-    SETTLED = ASKED + HOLD_WAIT_S[PARK] + HOLD_MOVE_MS[PARK] / 1000
+    SETTLED = ASKED + HOLD_MOVE_MS[PARK] / 1000
 
     def _shown(self, under, now: float) -> float:
         under.follow_the_room_hold(now)
         return _height_shown(under.phase(FRAMES, now, with_no_device=0.0))
 
-    def test_a_park_walks_the_frame_home_after_the_broker_s_wait(self):
+    def test_a_park_walks_the_frame_home_from_the_moment_it_is_asked_for(self):
         under, controls, _sender = _under(position=5000)
         self._shown(under, 5.0)
         controls.robot_hand.playing = False
