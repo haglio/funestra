@@ -83,6 +83,8 @@ class WorkerTheTestRuns:
         self.jobs: list[tuple] = []
         self.delivered = 0
         self.closed = False
+        self.heard: list[str] = []
+        self.followed: list[str] = []
 
     def publish(self, path, text: str) -> bool:
         self.published.append((path.name, text))
@@ -96,6 +98,14 @@ class WorkerTheTestRuns:
 
     def deliver(self) -> None:
         self.delivered += 1
+
+    def follow_commands(self, path, *, log=None):
+        self.followed.append(path.name)
+        return self._take
+
+    def _take(self) -> list[str]:
+        taken, self.heard = self.heard, []
+        return taken
 
     def close(self) -> None:
         self.closed = True

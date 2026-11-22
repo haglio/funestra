@@ -12,7 +12,6 @@ from app_support.osr2_slot import Osr2Sender
 
 from .control_registry import look_up
 from .drive_gate import DriveGate
-from .file_channel import consume_command_file
 from .flick_overlay import FlickFrame, FlickOverlay
 from .frame_record import NO_COUNTS, FrameRecord
 from .funestra_controls import VERBS, FunestraControls
@@ -108,6 +107,10 @@ def osr2_line(channels: Channels) -> FunscriptTCodeDriver | None:
     return FunscriptTCodeDriver(UdpTCodeSink(channels.tcode_host, channels.tcode_port))
 
 
+def _told_nothing() -> list[str]:
+    return []
+
+
 class Funestra:
     IN_FRAME_OVERLAY_ID = IN_FRAME_OVERLAY_ID
     OUT_FRAME_OVERLAY_ID = OUT_FRAME_OVERLAY_ID
@@ -124,6 +127,8 @@ class Funestra:
         self._sought_this_pass = False
         self._seek_owed: float | None = None
         self._paused_flag = None if channels.paused is None else PausedFlag(channels.paused)
+        self._commands = (_told_nothing if channels.command is None
+                          else self._off_the_loop.follow_commands(channels.command, log=logger))
         self._frame_record = FrameRecord(
             setup.frame_ms, clock=setup.frame_clock,
             mpv_counts=getattr(engine, "frame_counts", lambda: NO_COUNTS))
@@ -400,7 +405,6 @@ class Funestra:
         record.end()
 
     def _hear_what_it_is_told(self, lap: Lap) -> None:
-        channels = self._channels
         if self._paused_flag is not None:
             paused = self._paused_flag.read()
             if self._paused_before_the_scrub is None:
@@ -408,8 +412,7 @@ class Funestra:
             else:
                 self._paused_before_the_scrub = paused
         lap("told by the paused flag")
-        commands = ([] if channels.command is None
-                    else consume_command_file(channels.command, logger=logger, uppercase=False))
+        commands = self._commands()
         lap("reading the command file")
         for command in commands:
             self.apply(command)

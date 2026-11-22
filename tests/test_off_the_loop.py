@@ -4,6 +4,7 @@ import logging
 import threading
 
 import pytest
+from app_support.threading_utils import wait_until
 
 from funestra import off_the_loop
 from funestra.off_the_loop import AtOnce, BehindTheLoop
@@ -109,9 +110,47 @@ class TestBehindTheLoop:
         assert [record.getMessage() for record in caplog.records] == [
             "A job handed off a Funestra's loop failed"]
 
+    def test_the_command_file_is_read_on_a_thread_of_its_own_never_the_loops(
+            self, tmp_path, monkeypatch):
+        read_on: list[str] = []
+
+        def consume(_path, **_how) -> list[str]:
+            read_on.append(threading.current_thread().name)
+            return []
+
+        monkeypatch.setattr(off_the_loop, "consume_command_file", consume)
+        worker = BehindTheLoop()
+        take = worker.follow_commands(tmp_path / "cmd.txt")
+
+        wait_until(lambda: read_on)
+        take()
+        worker.close()
+
+        assert set(read_on) == {"funestra-commands"}
+
+    def test_closing_stops_following_the_command_file(self, tmp_path):
+        before = set(threading.enumerate())
+        worker = BehindTheLoop()
+        worker.follow_commands(tmp_path / "cmd.txt")
+
+        worker.close()
+
+        assert set(threading.enumerate()) <= before
+
     def test_closing_a_worker_that_was_handed_nothing_starts_no_thread(self):
         before = threading.active_count()
 
         BehindTheLoop().close()
 
         assert threading.active_count() == before
+
+
+def test_the_commands_written_to_a_command_file_are_taken_in_the_order_written(worker, tmp_path):
+    path = tmp_path / "cmd.txt"
+    path.write_text("NEXT\nLOCK\nNEXT\n", encoding="utf-8")
+    take = worker.follow_commands(path)
+    taken: list[str] = []
+
+    wait_until(lambda: taken.extend(take()) or len(taken) >= 3)
+
+    assert taken == ["NEXT", "LOCK", "NEXT"]

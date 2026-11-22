@@ -9,6 +9,15 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-22 — A Funestra's command file is read on a thread of its own
+
+`OffTheLoop.follow_commands(path, log=)` is new: `AtOnce` reads the command
+file where it is asked, as before, and `BehindTheLoop` reads it every 1/120 s
+on a thread named "funestra-commands", handing the loop the commands it heard
+in the order they were written; `close()` stops that thread. A Funestra takes
+its commands through it, so under `Funestra.on_window` and the headset (both
+`BehindTheLoop`) the frame loop no longer stats, renames, reads or deletes the
+command file. A command now reaches the loop up to one listen later.
 ## 2026-11-22 — A late pass names the part of the HUD's drawing that was slow
 
 The late-frame record's step "the HUD and what is drawn over the item" is split
