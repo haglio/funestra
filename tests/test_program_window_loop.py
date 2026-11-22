@@ -32,7 +32,9 @@ class _Spy:
     def deal(self, events, viewport) -> None:
         self.happened.append(("dealt", events, viewport))
 
-    def tick(self, *, viewport) -> None:
+    def tick(self, *, viewport, take_input) -> None:
+        self.happened.append(("pass begun", viewport))
+        take_input()
         self.happened.append(("ticked", viewport))
         self._passes_left -= 1
 
@@ -47,13 +49,13 @@ def _run(spy: _Spy) -> None:
     run_until_stopped(spy, window_size=spy.window_size, events=spy.events, deal=spy.deal, pace=spy.pace)
 
 
-def test_each_pass_measures_the_window_deals_the_events_then_ticks_then_paces():
+def test_each_pass_measures_the_window_then_ticks_dealing_its_events_inside_the_pass_then_paces():
     spy = _Spy(passes=1)
 
     _run(spy)
 
-    assert spy.happened == [("measured",), ("events",), ("dealt", BATCH, WINDOW), ("ticked", WINDOW),
-                            ("paced",), ("closed",)]
+    assert spy.happened == [("measured",), ("pass begun", WINDOW), ("events",),
+                            ("dealt", BATCH, WINDOW), ("ticked", WINDOW), ("paced",), ("closed",)]
 
 
 def test_each_pass_deals_its_events_against_that_passs_window_size():

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, replace
+from enum import Enum
 from typing import NamedTuple
 
 import numpy as np
@@ -125,10 +126,17 @@ _LOOP_ICON = shared_icon(LOOP_ICON)
 _EXPAND_ICON = shared_icon(EXPAND_ICON)
 
 
+class Drawn(Enum):
+    WHOLE = "drawing the HUD whole"
+    ROW = "drawing the HUD's row"
+    MINIMIZED = "drawing the minimized HUD"
+
+
 @dataclass(frozen=True)
 class RenderedHud:
     bgra: np.ndarray
     targets: HudTargets
+    drawn: Drawn = Drawn.WHOLE
 
 
 @dataclass(frozen=True)
@@ -311,12 +319,13 @@ class HudRenderer:
                 model.funestra, model.hud_corner, hover=self._pointer,
                 room_for_the_tooltip=not drawn_with.may_grow_on_hover, flash=drawn_with.flash)
             return RenderedHud(bgra, HudTargets(click=[], loop=[], filter=[], expand=None,
-                                                buttons=buttons))
+                                                buttons=buttons), Drawn.MINIMIZED)
         model = replace(model, osr2="", osr2_rows=(), osr2_controls=(), max_intensity=None,
                         drive=None)
         drawn_for = self._all_but_the_row(model, scrubber_row, drawn_with, host_controls)
         if drawn_for is not None and self._drawn is not None and self._drawn.drawn_for == drawn_for:
-            return self._with_the_row(self._drawn, scrubber_row, heatmap, drawn_with)
+            return replace(self._with_the_row(self._drawn, scrubber_row, heatmap, drawn_with),
+                           drawn=Drawn.ROW)
         return self._drawn_whole(model, drawn_for, scrubber_row, heatmap,
                                  _Drawing(drawn_with, host_controls))
 

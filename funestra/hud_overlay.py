@@ -20,6 +20,7 @@ from .main_hud import ModeHud
 from .modes import MainMode, Osr2State
 from .name_copy import COPY_NAME, copy_while_the_funestra_plays_on
 from .osr2_visualizer import DriveHud, DrivePublisher, published_here, read_drive
+from .playback_setup import Lap, unlapped
 from .satellite_hud import (
     MARGIN,
     MINUS_INSET,
@@ -80,6 +81,9 @@ class _Hover(NamedTuple):
 
 
 _ON_NO_CONTROL = _Hover("", "", None, None)
+
+_REDRAWN_FOR = ("what it shows", "the item on screen", "the speed", "the window's size",
+                "the host's controls", "the lock's light", "the scrubber row", "a draw owed")
 
 
 class PublishedHud:
@@ -161,8 +165,10 @@ class HudOverlay:
         clock=time.monotonic,
         clipboard: Callable[[str], None] = copy_while_the_funestra_plays_on,
         step_here: Callable[[str], None] | None = None,
+        lap: Lap = unlapped,
     ) -> None:
         self._source = source
+        self._lap = lap
         self._step_here = step_here
         self._clipboard = clipboard
         self._drive_file = None if drive.file is None else WrittenFile(drive.file)
@@ -223,9 +229,13 @@ class HudOverlay:
              playing: PlayingFacts | None = None) -> None:
         row, heatmap = (None, None) if scrubber_row is None else scrubber_row
         the_row_moved = row != self._scrubber_row or heatmap is not self._heatmap
-        redraw = (playing != self._playing or video != self._video or playback_speed != self._playback_speed
-                  or viewport != self._viewport or flash != self._flash
-                  or (the_row_moved and not self.minimized))
+        what_changed = {
+            "the item on screen": (playing != self._playing or video != self._video
+                                   or flash != self._flash),
+            "the speed": playback_speed != self._playback_speed,
+            "the window's size": viewport != self._viewport,
+            "the scrubber row": the_row_moved and not self.minimized,
+        }
         self._video = video
         self._playing = playing
         self._playback_speed = playback_speed
@@ -233,9 +243,8 @@ class HudOverlay:
         self._flash = flash
         self._scrubber_row, self._heatmap = row, heatmap
         host_drawing = self._host_controls.drawing()
-        if host_drawing != self._host_drawing:
-            self._host_drawing = host_drawing
-            redraw = True
+        what_changed["the host's controls"] = host_drawing != self._host_drawing
+        self._host_drawing = host_drawing
         model, changed = self._source.next(self._model)
         if changed:
             if model is not None:
@@ -245,21 +254,26 @@ class HudOverlay:
                 self._clicks.active_loop = model.active_loop
                 self._clicks.active_filter = model.filter_query
             self._model = model
-            redraw = True
-        if self._lock_light is not None and self._host_caught_up_with_the_lock():
+        what_changed["what it shows"] = changed
+        self._lap("reading what the HUD shows")
+        what_changed["the lock's light"] = (self._lock_light is not None
+                                     and self._host_caught_up_with_the_lock())
+        if what_changed["the lock's light"]:
             self._lock_light = None
-            redraw = True
         drive = self._motion()
         if drive is not None:
             self._visualizer.publish(drive, self._clock())
-        if redraw or self._draw_owed:
-            self._draw()
+        self._lap("the HUD's OSR2 readout")
+        what_changed["a draw owed"] = self._draw_owed
+        why = next((reason for reason in _REDRAWN_FOR if what_changed[reason]), None)
+        if why is not None:
+            self._draw(why)
 
     def lock_pressed(self) -> None:
         if self._model is None or self._model.facts is None:
             return
         self._lock_light = (not self._lock_shown(), self._clock())
-        self._draw()
+        self._draw("the lock")
 
     def _lock_shown(self) -> bool:
         return self._model.facts.locked if self._lock_light is None else self._lock_light[0]
@@ -276,7 +290,7 @@ class HudOverlay:
         self._pointer_at = self._local(x, y)
         if self._host_controls.press(*self._pointer_at, layout=self.targets.host_controls):
             self._host_drawing = self._host_controls.drawing()
-            self._draw()
+            self._draw("a press")
             return True
         if self._row.press(*self._pointer_at, layout=self.targets.row,
                            duration_ms=self._track_duration()):
@@ -290,7 +304,7 @@ class HudOverlay:
             self._clipboard(self._name)
         elif command:
             self._post(command)
-            self._draw()
+            self._draw("a press")
         return True
 
     def wheel(self, x: int, y: int, steps: int) -> bool:
@@ -363,7 +377,7 @@ class HudOverlay:
         if hover.is_on_the_same_control_as(self._hover.reading):
             return
         self._hover.take(hover)
-        self._draw()
+        self._draw("a hover")
 
     def close(self) -> None:
         self._hud_size = None
@@ -425,13 +439,16 @@ class HudOverlay:
             self._drive_file.was_read()
             self._published_drive = drive
 
-    def _draw(self) -> None:
+    def _draw(self, why: str) -> None:
         hover = self._hover.on(self._model)
         if (self._model is None or self._renderer is None
                 or (self._model.hud_minimized and not self._minus_on_the_hud)):
             self.targets = _EMPTY_TARGETS
             self.close()
+            self._lap("taking the HUD down")
             return
+        if self._hud_size is None:
+            why = "a first draw"
         corner = self._model.hud_corner if self._over_the_video else HudCorner.UPPER_LEFT
         model = replace(self._model, playback_speed=self._playback_speed, hud_corner=corner)
         if self._playing is not None and model.facts is not None:
@@ -448,9 +465,11 @@ class HudOverlay:
                 width=self._width),
             host_controls=self._host_drawing,
         )
+        self._lap(f"{rendered.drawn.value}, for {why}")
         height, width = rendered.bgra.shape[:2]
         origin = self._place(corner, (width, height))
         self._engine.overlay(self.overlay_id, *origin, rendered.bgra)
+        self._lap("handing the HUD to mpv")
         self._draw_owed = False
         self.targets = rendered.targets
         self._hud_size = (width, height)

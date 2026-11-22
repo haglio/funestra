@@ -9,6 +9,23 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-22 — A late pass names the part of the HUD's drawing that was slow
+
+The late-frame record's step "the HUD and what is drawn over the item" is split
+so a "Late pass" line names the part that took the time: "Genau's frame over
+the item", "laying out the scrubber row", "reading what the HUD shows", "the
+HUD's OSR2 readout", "drawing the HUD whole", "drawing the HUD's row" or
+"drawing the minimized HUD" (each followed by ", for " and why it was drawn: a
+first draw, what it shows, the item on screen, the speed, the window's size,
+the host's controls, the lock's light, the scrubber row, a draw owed, a hover,
+a press or the lock), "handing the HUD to mpv", "taking the HUD down", "the
+loop's first and last frames over the row" and "the plus beside the HUD".
+"the HUD and what is drawn over the item" is left for what none of those
+covers. A Funestra program's pass now also counts the pointer and keys it
+deals with ("the pointer and keys"), which ran outside every pass before, so a
+HUD drawn for a hover or a press is in the record. `Funestra.tick(take_input=)`
+and `HudOverlay(lap=)` are how; both default to doing nothing.
+
 ## 2026-11-20 — A late pass names the call inside playback that was slow
 
 The late-frame record's steps "playback" and "the files it is told through"
