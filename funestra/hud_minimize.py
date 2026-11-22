@@ -123,7 +123,7 @@ def collapsed_button(funestra: str, corner: HudCorner = HudCorner.UPPER_LEFT, *,
     if named is not None:
         image.alpha_composite(named, (0 if corner.right else ROOM, 0))
     if hover is not None:
-        draw_tooltip(ImageDraw.Draw(image), icon_font(), RESTORE_TOOLTIP, hover, size)
+        draw_tooltip(ImageDraw.Draw(image), RESTORE_TOOLTIP, hover, size)
     return image, [(rect, restore_button(funestra))]
 
 

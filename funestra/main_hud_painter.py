@@ -240,7 +240,7 @@ class PressableHud:
 
     def _with_the_tooltip(self, tip: str, at: tuple[int, int]) -> Image.Image:
         tipped = self._base.copy()
-        draw_tooltip(ImageDraw.Draw(tipped), self._fonts.tiny, tip, at, tipped.size)
+        draw_tooltip(ImageDraw.Draw(tipped), tip, at, tipped.size)
         return tipped
 
     def _resolve(self, hud: MainHud) -> MainHud:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 from main_hud_rows import RowLights, main_hud_rows, motion_rows
-from shared_ui import colors
+from shared_ui import colors, tooltip_look
 from shared_ui.app_icon import LETTERS
 from shared_ui.palette import (
     BG_PRIMARY,
@@ -18,7 +18,6 @@ from shared_ui.type_scale import SIZE_TINY
 from funestra.drive_layout import AMPLITUDE, CENTER, MAX_INTENSITY, SPEED
 from funestra.geometry import Rect
 from funestra.hud import (
-    TOOLTIP_PAD,
     load_font,
     text_width,
 )
@@ -96,7 +95,7 @@ class TestPainter:
         tipped = _rgb(Osr2PartPainter().bgra(hud, hover=(x + w // 2, y + h // 2)))
 
         rows, cols = np.nonzero((tipped != plain).any(axis=2))
-        one_line_height = sum(tiny.getmetrics()) + 2 * TOOLTIP_PAD
+        one_line_height = sum(tiny.getmetrics()) + 2 * tooltip_look.PAD
 
         assert len(cols)
         assert cols.max() < plain.shape[1] - 1
