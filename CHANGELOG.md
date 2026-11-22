@@ -9,6 +9,15 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-22 — A Satellite HUD's map pictures load behind the loop
+
+`HudOverlay(behind=)` is new (`off_the_loop.at_once` unless said; a Funestra
+hands it its worker's `do`): a map whose pictures are not loaded yet has them
+loaded there, and the HUD on screen stays until they come back.
+`HudRenderer.pictures_wanted` and `take_pictures`, and
+`satellite_hud_paint.fitted_pictures`, are how. A HUD keeps only the pictures
+of the map it last drew and the ones it was just handed.
+
 ## 2026-11-22 — A Funestra's command file is read on a thread of its own
 
 `OffTheLoop.follow_commands(path, log=)` is new: `AtOnce` reads the command

@@ -224,7 +224,7 @@ class Funestra:
             return HudOverlay(
                 source=WindowsOwnHud(hud, self.apply),
                 drawn_on=DrawnOn(drawn_on, minus_on_the_hud=self._hud_surface is None),
-                row=self._row_press(), lap=self._frame_record.lap,
+                row=self._row_press(), lap=self._frame_record.lap, behind=self._off_the_loop.do,
             )
         if channels.console is not None:
             return HudOverlay(
@@ -235,7 +235,7 @@ class Funestra:
                     width=None if self._hud_surface is None else self._hud_surface.width),
                 drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
                 row=self._row_press(), host_controls=self._setup.host_controls,
-                clock=self._setup.clock, step_here=self.apply, lap=self._frame_record.lap,
+                clock=self._setup.clock, step_here=self.apply, lap=self._frame_record.lap, behind=self._off_the_loop.do,
             )
         if channels.hud is not None:
             return HudOverlay(
@@ -245,7 +245,7 @@ class Funestra:
                                  minus_on_the_hud=self._hud_surface is None),
                 drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
                 row=self._row_press(), clock=self._setup.clock, step_here=self.apply,
-                lap=self._frame_record.lap,
+                lap=self._frame_record.lap, behind=self._off_the_loop.do,
             )
         return None
 
