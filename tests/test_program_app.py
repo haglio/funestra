@@ -72,7 +72,8 @@ class _FakeFunestra:
     def stopped(self) -> bool:
         return self._passes_left <= 0
 
-    def tick(self, *, viewport) -> None:
+    def tick(self, *, viewport, take_input) -> None:
+        take_input()
         self.ticks.append(viewport)
         self._passes_left -= 1
 

@@ -1145,3 +1145,59 @@ class TestALockPressedLightsAtOnce:
         now[0] = LOCK_LIGHT_WAITS_S + 0.1
 
         assert not self._lit(overlay)
+
+
+class TestWhatTheHudTellsTheFrameRecord:
+    def test_a_first_draw_names_reading_what_it_shows_drawing_it_whole_and_handing_it_to_mpv(
+            self, tmp_path, hud):
+        laps: list[str] = []
+        overlay = _overlay(tmp_path, hud, FakeEngine(), lap=laps.append)
+
+        overlay.tick()
+
+        assert laps == ["reading what the HUD shows", "the HUD's OSR2 readout",
+                        "drawing the HUD whole, for a first draw", "handing the HUD to mpv"]
+
+    def test_a_playhead_that_moved_names_drawing_only_the_row_for_it(self, tmp_path, hud):
+        laps: list[str] = []
+        overlay = _overlay(tmp_path, hud, FakeEngine(), lap=laps.append)
+        overlay.tick(scrubber_row=ScrubberRowDraw(RowHud(position_ms=0.0, duration_ms=10_000.0)))
+        laps.clear()
+
+        overlay.tick(scrubber_row=ScrubberRowDraw(RowHud(position_ms=20.0, duration_ms=10_000.0)))
+
+        assert laps == ["reading what the HUD shows", "the HUD's OSR2 readout",
+                        "drawing the HUD's row, for the scrubber row", "handing the HUD to mpv"]
+
+    def test_a_pass_with_nothing_new_names_no_draw(self, tmp_path, hud):
+        laps: list[str] = []
+        overlay = _overlay(tmp_path, hud, FakeEngine(), lap=laps.append)
+        overlay.tick()
+        laps.clear()
+
+        overlay.tick()
+
+        assert laps == ["reading what the HUD shows", "the HUD's OSR2 readout"]
+
+    def test_a_hover_names_its_draw(self, tmp_path, hud):
+        laps: list[str] = []
+        overlay = _overlay(tmp_path, hud, FakeEngine(), lap=laps.append)
+        overlay.tick()
+        rect = {kind: r for r, kind in overlay.targets.loop}["action"]
+        laps.clear()
+
+        overlay.motion(rect[0] + MARGIN + 2, rect[1] + MARGIN + 2)
+
+        assert laps == ["drawing the HUD whole, for a hover", "handing the HUD to mpv"]
+
+    def test_a_hud_that_went_away_names_taking_it_down(self, tmp_path, hud):
+        laps: list[str] = []
+        overlay = _overlay(tmp_path, hud, FakeEngine(), lap=laps.append)
+        overlay.tick()
+        hud.unlink()
+        laps.clear()
+
+        overlay.tick()
+
+        assert laps == ["reading what the HUD shows", "the HUD's OSR2 readout",
+                        "taking the HUD down"]

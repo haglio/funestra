@@ -219,7 +219,7 @@ class Funestra:
             return HudOverlay(
                 source=WindowsOwnHud(hud, self.apply),
                 drawn_on=DrawnOn(drawn_on, minus_on_the_hud=self._hud_surface is None),
-                row=self._row_press(),
+                row=self._row_press(), lap=self._frame_record.lap,
             )
         if channels.console is not None:
             return HudOverlay(
@@ -230,7 +230,7 @@ class Funestra:
                     width=None if self._hud_surface is None else self._hud_surface.width),
                 drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
                 row=self._row_press(), host_controls=self._setup.host_controls,
-                clock=self._setup.clock, step_here=self.apply,
+                clock=self._setup.clock, step_here=self.apply, lap=self._frame_record.lap,
             )
         if channels.hud is not None:
             return HudOverlay(
@@ -240,6 +240,7 @@ class Funestra:
                                  minus_on_the_hud=self._hud_surface is None),
                 drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
                 row=self._row_press(), clock=self._setup.clock, step_here=self.apply,
+                lap=self._frame_record.lap,
             )
         return None
 
@@ -372,9 +373,12 @@ class Funestra:
     def leave(self) -> None:
         self._pointer.leave()
 
-    def tick(self, *, viewport: tuple[int, int]) -> None:
+    def tick(self, *, viewport: tuple[int, int],
+             take_input: Callable[[], None] = lambda: None) -> None:
         record = self._frame_record
         record.begin()
+        take_input()
+        record.lap("the pointer and keys")
         self._off_the_loop.deliver()
         record.lap("what came back from behind the loop")
         self._seek_where_the_scrubber_was_last_dragged()
@@ -468,9 +472,11 @@ class Funestra:
             self._short_of_memory = False
 
     def _paint(self, viewport: tuple[int, int]) -> None:
+        lap = self._frame_record.lap
         frame = self._front.own_frame()
         if frame is None:
             self._users_frames.hide()
+            lap("Genau's frame over the item")
             self._paint_hud(viewport, self.scrubber_row(), self.strip.colors, self.playback.speed)
             if self._hud_surface is None:
                 self._loop_frames.paint(
@@ -478,10 +484,13 @@ class Funestra:
                     None if self._hud is None else self._hud.row_track, viewport[0])
         else:
             self._users_frames.show(frame, viewport)
+            lap("Genau's frame over the item")
             self._paint_hud(viewport, frame_row(frame, self._volume.hud), None, 1.0)
             self._loop_frames.take_down()
+        lap("the loop's first and last frames over the row")
         if self._corners is not None:
             self._corners.paint(viewport=viewport)
+        lap("the plus beside the HUD")
 
     def scrubber_row(self) -> RowHud:
         return self._row.row(self._volume.hud, self._track_width())
@@ -497,6 +506,7 @@ class Funestra:
         scrubber_row = None if row is None else ScrubberRowDraw(row, colors)
         video = self._front.top_block().video or self.playback.name_on_screen
         self._flash = self._name_flash.showing(video)
+        self._frame_record.lap("laying out the scrubber row")
         self._hud.tick(video=video, playback_speed=playback_speed, viewport=viewport,
                        scrubber_row=scrubber_row, flash=self._flash, playing=PlayingFacts(
                            has_funscript=self.playback.has_funscript,

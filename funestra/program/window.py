@@ -3,6 +3,7 @@ from __future__ import annotations
 import ctypes
 import logging
 import warnings
+from functools import partial
 from pathlib import Path
 
 from app_support.win32 import described_taskbar_app, dress_window, set_app_user_model_id
@@ -75,10 +76,13 @@ def take_outside_resizes(pygame) -> None:
 def run_until_stopped(funestra, *, window_size, events, deal, pace) -> None:
     while not funestra.stopped:
         window = window_size()
-        deal(events(), window)
-        funestra.tick(viewport=window)
+        funestra.tick(viewport=window, take_input=partial(_deal_now, deal, events, window))
         pace()
     funestra.close()
+
+
+def _deal_now(deal, events, window) -> None:
+    deal(events(), window)
 
 
 def run_the_window(pygame, funestra, deal) -> None:

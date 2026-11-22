@@ -1956,17 +1956,24 @@ class _SlowAt(FakeEngine):
         self._taking_its_time("load")
         super().load(path, start_ms)
 
+    def overlay(self, ident: int, x: int, y: int, bgra) -> None:
+        self._taking_its_time("overlay")
+        super().overlay(ident, x, y, bgra)
+
 
 def _late_lines(caplog) -> list[str]:
     return [record.getMessage() for record in caplog.records
             if record.name == "funestra.frame_record" and record.getMessage().startswith("Late")]
 
 
-def _late_on(tmp_path, caplog, *slow: str) -> tuple[Funestra, _SlowAt, _Clock]:
+def _late_on(tmp_path, caplog, *slow: str, hud: bool = False
+             ) -> tuple[Funestra, _SlowAt, _Clock]:
     caplog.set_level(logging.INFO, logger="funestra.frame_record")
     clock = _Clock()
     channels = _channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0", "v1", "v2")],
-                         commands="")
+                         commands="", hud=hud)
+    if hud:
+        _publish_hud(tmp_path)
     engine = _SlowAt(clock, 0.040, *slow)
     funestra = Funestra(engine, FunestraSetup(
         channels=channels, playlist=read_playlist(channels.playlist), frame_clock=clock))
@@ -2024,6 +2031,27 @@ class TestTheStepOfALatePass:
 
         assert _late_lines(caplog) == [
             "Late pass: 40.0 ms of a 16.7 ms budget, longest step playback paying an owed seek "
+            "(40.0 ms); 1 late pass(es) since the last line"]
+
+    def test_the_pointer_and_keys_dealt_in_the_pass_are_counted_in_it(self, tmp_path, caplog):
+        funestra, _engine, clock = _late_on(tmp_path, caplog)
+
+        def slow_input() -> None:
+            clock.now += 0.040
+
+        funestra.tick(viewport=WINDOW, take_input=slow_input)
+
+        assert _late_lines(caplog) == [
+            "Late pass: 40.0 ms of a 16.7 ms budget, longest step the pointer and keys "
+            "(40.0 ms); 1 late pass(es) since the last line"]
+
+    def test_a_hud_mpv_was_slow_to_take_names_the_handing_over(self, tmp_path, caplog):
+        funestra, _engine, _clock = _late_on(tmp_path, caplog, "overlay", hud=True)
+
+        funestra.tick(viewport=WINDOW)
+
+        assert _late_lines(caplog) == [
+            "Late pass: 40.0 ms of a 16.7 ms budget, longest step handing the HUD to mpv "
             "(40.0 ms); 1 late pass(es) since the last line"]
 
 
