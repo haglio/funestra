@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, replace
+from functools import partial
 from pathlib import Path
 from typing import NamedTuple
 
@@ -19,6 +20,7 @@ from .hud_row import RowHud, RowLayout, RowPress, ScrubberRowDraw, track_on_scre
 from .main_hud import ModeHud
 from .modes import MainMode, Osr2State
 from .name_copy import COPY_NAME, copy_while_the_funestra_plays_on
+from .off_the_loop import at_once
 from .osr2_visualizer import DriveHud, DrivePublisher, published_here, read_drive
 from .playback_setup import Lap, unlapped
 from .satellite_hud import (
@@ -32,7 +34,7 @@ from .satellite_hud import (
     parse_hud,
 )
 from .satellite_hud_clicks import HudClicks, button_tooltip
-from .satellite_hud_paint import DrawnWith, HudRenderer
+from .satellite_hud_paint import DrawnWith, HudRenderer, Pictures, fitted_pictures
 
 HUD_OVERLAY_ID = 10
 
@@ -166,9 +168,13 @@ class HudOverlay:
         clipboard: Callable[[str], None] = copy_while_the_funestra_plays_on,
         step_here: Callable[[str], None] | None = None,
         lap: Lap = unlapped,
+        behind: Callable = at_once,
     ) -> None:
         self._source = source
         self._lap = lap
+        self._behind = behind
+        self._waiting_for_its_pictures: HudModel | None = None
+        self._pictures_came_for: HudModel | None = None
         self._step_here = step_here
         self._clipboard = clipboard
         self._drive_file = None if drive.file is None else WrittenFile(drive.file)
@@ -246,13 +252,16 @@ class HudOverlay:
         what_changed["the host's controls"] = host_drawing != self._host_drawing
         self._host_drawing = host_drawing
         model, changed = self._source.next(self._model)
+        if changed and model is not None and self._its_pictures_are_still_to_load(model):
+            model, changed = self._model, False
+        if self._pictures_came_for is not None:
+            model, changed = self._pictures_came_for, True
+            self._pictures_came_for = None
         if changed:
             if model is not None:
-                if self._renderer is None:
-                    self._renderer = HudRenderer(model.funestra)
-                    self._clicks = HudClicks(model.funestra)
                 self._clicks.active_loop = model.active_loop
                 self._clicks.active_filter = model.filter_query
+            self._waiting_for_its_pictures = None
             self._model = model
         what_changed["what it shows"] = changed
         self._lap("reading what the HUD shows")
@@ -268,6 +277,25 @@ class HudOverlay:
         why = next((reason for reason in _REDRAWN_FOR if what_changed[reason]), None)
         if why is not None:
             self._draw(why)
+
+    def _its_pictures_are_still_to_load(self, model: HudModel) -> bool:
+        if self._renderer is None:
+            self._renderer = HudRenderer(model.funestra)
+            self._clicks = HudClicks(model.funestra)
+        if model == self._waiting_for_its_pictures:
+            return True
+        wanted = self._renderer.pictures_wanted(model)
+        if not wanted:
+            return False
+        self._waiting_for_its_pictures = model
+        self._behind(partial(fitted_pictures, model.funestra, wanted),
+                     partial(self._pictures_came, model))
+        return self._waiting_for_its_pictures is model
+
+    def _pictures_came(self, model: HudModel, pictures: Pictures) -> None:
+        self._renderer.take_pictures(pictures)
+        if model is self._waiting_for_its_pictures:
+            self._pictures_came_for = model
 
     def lock_pressed(self) -> None:
         if self._model is None or self._model.facts is None:

@@ -256,6 +256,22 @@ def _cut(image: Image.Image, rect: Rect) -> Image.Image:
     return image.crop((x, y, x + width, y + height))
 
 
+Pictures = dict[str, Image.Image | None]
+
+
+def fitted_pictures(funestra: str, paths: list[str]) -> Pictures:
+    place_w = place_width(funestra)
+    return {path: _fitted_thumbnail(path, place_w) for path in paths}
+
+
+def _nav_map_pictures(model: HudModel) -> list[str]:
+    if model.hud_minimized or model.corner is None:
+        return []
+    narrowed, _seeds, _actions = narrowed_to_window(model)
+    cells = (narrowed.corner, *narrowed.seeds, *narrowed.actions)
+    return list(dict.fromkeys(cell.thumb for cell in cells if cell.thumb))
+
+
 def _fitted_thumbnail(thumb: str, place_w: int) -> Image.Image | None:
     try:
         image = Image.open(thumb).convert("RGBA")
@@ -273,12 +289,21 @@ class HudRenderer:
         self._tiny = load_font(SIZE_TINY)
         self._pointer: tuple[int, int] | None = None
         self._icon = load_font(SIZE_BODY, SYMBOL_FONT)
-        self._thumbs_by_path: dict[str, Image.Image | None] = {}
+        self._thumbs_by_path: Pictures = {}
+        self._pictures_drawn: set[str] = set()
         self._scrubber_row = RowSection()
         self._host_controls = HostControlsSection()
         self._widest_titles: dict[HudKind, int] = {}
         self._drawn: _DrawnButTheRow | None = None
         self._tooltip_alone: _TooltipAlone | None = None
+
+    def pictures_wanted(self, model: HudModel) -> list[str]:
+        return [path for path in _nav_map_pictures(model) if path not in self._thumbs_by_path]
+
+    def take_pictures(self, pictures: Pictures) -> None:
+        kept = self._pictures_drawn | pictures.keys()
+        self._thumbs_by_path = {path: picture for path, picture in self._thumbs_by_path.items()
+                                if path in kept} | pictures
 
     def _thumbnail(self, cell: HudCell) -> Image.Image:
         place_w = place_width(self._funestra)
@@ -365,6 +390,8 @@ class HudRenderer:
         counts = count_lines(model)
         model, seed_win, action_win = narrowed_to_window(model)
         thumbs = NavMapThumbs(*self._nav_map_thumbnails(model))
+        self._pictures_drawn = {cell.thumb for cell in (model.corner, *model.seeds, *model.actions)
+                                if cell is not None}
         sizes = self._measure(model, scrubber_row, drawing)
         layout, width, foot_h = sizes.layout, sizes.width, sizes.foot_h
         hud = Hud(width, layout.height)

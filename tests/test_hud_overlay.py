@@ -1201,3 +1201,77 @@ class TestWhatTheHudTellsTheFrameRecord:
 
         assert laps == ["reading what the HUD shows", "the HUD's OSR2 readout",
                         "taking the HUD down"]
+
+
+class _HeldJobs:
+    def __init__(self) -> None:
+        self.jobs: list[tuple] = []
+
+    def __call__(self, work, then=None) -> None:
+        self.jobs.append((work, then))
+
+    def run(self) -> None:
+        jobs, self.jobs = self.jobs, []
+        for work, then in jobs:
+            done = work()
+            if then is not None:
+                then(done)
+
+
+def _republish_with_new_pictures(tmp_path: Path, hud: Path, name: str) -> None:
+    published = json.loads(hud.read_text(encoding="utf-8"))
+    picture = tmp_path / f"{name}.jpg"
+    Image.new("RGB", (40, 60), (30, 60, 90)).save(picture)
+    published["corner"] = {"path": f"C:/v/{name}.mp4", "thumb": str(picture)}
+    hud.write_text(json.dumps(published), encoding="utf-8")
+
+
+class TestTheNavMapsPicturesAreLoadedBehindTheLoop:
+    def test_the_hud_waits_for_its_pictures_with_the_last_one_still_up(self, tmp_path, hud):
+        engine, behind = FakeEngine(), _HeldJobs()
+        overlay = _overlay(tmp_path, hud, engine, behind=behind)
+        overlay.tick()
+        behind.run()
+        overlay.tick()
+        first = engine.overlays[overlay.overlay_id][2]
+        _republish_with_new_pictures(tmp_path, hud, "next")
+
+        overlay.tick()
+        waiting = engine.overlays[overlay.overlay_id][2]
+        behind.run()
+        overlay.tick()
+
+        assert (waiting is first, engine.overlays[overlay.overlay_id][2] is not first) == (
+            True, True)
+
+    def test_the_pictures_of_a_map_it_has_moved_on_from_are_let_go(self, tmp_path, hud):
+        engine, behind = FakeEngine(), _HeldJobs()
+        overlay = _overlay(tmp_path, hud, engine, behind=behind)
+        _republish_with_new_pictures(tmp_path, hud, "first")
+        overlay.tick()
+        behind.run()
+        overlay.tick()
+        first_map = hud.read_text(encoding="utf-8")
+        for name in ("second", "third"):
+            _republish_with_new_pictures(tmp_path, hud, name)
+            overlay.tick()
+            behind.run()
+            overlay.tick()
+
+        hud.write_text(first_map, encoding="utf-8")
+        overlay.tick()
+
+        assert len(behind.jobs) == 1
+
+    def test_a_map_whose_pictures_are_all_loaded_is_drawn_at_once(self, tmp_path, hud):
+        engine, behind = FakeEngine(), _HeldJobs()
+        overlay = _overlay(tmp_path, hud, engine, behind=behind)
+        overlay.tick()
+        behind.run()
+        overlay.tick()
+        first = engine.overlays[overlay.overlay_id][2]
+
+        _locked(hud)
+        overlay.tick()
+
+        assert (behind.jobs, engine.overlays[overlay.overlay_id][2] is first) == ([], False)

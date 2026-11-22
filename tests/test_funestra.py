@@ -19,6 +19,7 @@ from app_support.osr2_slot import Osr2Slot
 from app_support.threading_utils import start_daemon_thread
 from funestra_fakes import WorkerTheTestRuns, stamped_long_ago
 from host_controls_fakes import AHost, middle_of
+from PIL import Image
 
 from funestra.flick_overlay import (
     BACKDROP_OVERLAY_ID,
@@ -2152,6 +2153,19 @@ class TestWhatAFunestraHandsOffItsLoop:
         funestra.tick(viewport=WINDOW)
 
         assert (worker.followed, funestra.stopped) == (["cmd.txt"], True)
+
+    def test_the_pictures_on_its_huds_nav_map_are_loaded_by_its_worker(self, tmp_path):
+        funestra, engine, worker = self._handing_off(tmp_path)
+        picture = tmp_path / "made_up_picture.png"
+        Image.new("RGB", (40, 60), (30, 60, 90)).save(picture)
+        _publish_hud(tmp_path, corner={"path": "C:/made/up.mp4", "thumb": str(picture)})
+        funestra.tick(viewport=WINDOW)
+        assert HUD_OVERLAY_ID not in engine.overlays
+
+        worker.run_the_jobs()
+        funestra.tick(viewport=WINDOW)
+
+        assert HUD_OVERLAY_ID in engine.overlays
 
     def test_a_window_of_its_own_gets_a_worker_of_its_own_and_closes_it(self, tmp_path):
         channels = _channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
