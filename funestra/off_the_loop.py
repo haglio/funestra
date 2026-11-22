@@ -8,12 +8,16 @@ from functools import partial
 from pathlib import Path
 from typing import Protocol
 
-from app_support.file_channel import publish_whole
+from app_support.file_channel import consume_command_file, publish_whole
 from app_support.threading_utils import start_daemon_thread
 
 from .dashboard import ask
 
 logger = logging.getLogger(__name__)
+
+LISTENS_EVERY_S = 1.0 / 120.0
+
+Commands = Callable[[], list[str]]
 
 
 class OffTheLoop(Protocol):
@@ -24,6 +28,8 @@ class OffTheLoop(Protocol):
     def do[T](self, work: Callable[[], T], then: Callable[[T], None] | None = None) -> None: ...
 
     def deliver(self) -> None: ...
+
+    def follow_commands(self, path: Path, *, log: logging.Logger = logger) -> Commands: ...
 
     def close(self) -> None: ...
 
@@ -47,6 +53,9 @@ class AtOnce:
     def deliver(self) -> None:
         pass
 
+    def follow_commands(self, path: Path, *, log: logging.Logger = logger) -> Commands:
+        return partial(consume_command_file, path, logger=log, uppercase=False)
+
     def close(self) -> None:
         pass
 
@@ -58,6 +67,7 @@ class BehindTheLoop:
         self._texts: dict[Path, str] = {}
         self._texts_lock = threading.Lock()
         self._worker: threading.Thread | None = None
+        self._listeners: list[_CommandListener] = []
 
     def publish(self, path: Path, text: str) -> bool:
         with self._texts_lock:
@@ -91,7 +101,16 @@ class BehindTheLoop:
                 return
             hand_back()
 
+    def follow_commands(self, path: Path, *, log: logging.Logger = logger) -> Commands:
+        listener = _CommandListener(partial(consume_command_file, path, logger=log,
+                                            uppercase=False))
+        self._listeners.append(listener)
+        return listener.take
+
     def close(self) -> None:
+        for listener in self._listeners:
+            listener.stop()
+        self._listeners.clear()
         if self._worker is None:
             return
         self._jobs.put(None)
@@ -109,3 +128,29 @@ class BehindTheLoop:
                 job()
             except Exception:
                 logger.exception("A job handed off a Funestra's loop failed")
+
+
+class _CommandListener:
+    def __init__(self, read: Commands) -> None:
+        self._read = read
+        self._heard: queue.SimpleQueue[str] = queue.SimpleQueue()
+        self._stopped = threading.Event()
+        self._thread = start_daemon_thread(target=self._listen, name="funestra-commands")
+
+    def _listen(self) -> None:
+        while not self._stopped.is_set():
+            for command in self._read():
+                self._heard.put(command)
+            self._stopped.wait(LISTENS_EVERY_S)
+
+    def take(self) -> list[str]:
+        taken: list[str] = []
+        while True:
+            try:
+                taken.append(self._heard.get_nowait())
+            except queue.Empty:
+                return taken
+
+    def stop(self) -> None:
+        self._stopped.set()
+        self._thread.join()

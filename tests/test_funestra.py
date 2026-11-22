@@ -1591,11 +1591,12 @@ def test_on_a_window_the_way_of_playing_can_be_heard(tmp_path):
     channels = _channels(tmp_path, [str(videos[0])])
 
     with patch("funestra.funestra.MpvEngine", return_value=FakeEngine()) as mpv:
-        Funestra.on_window(4242,
+        funestra = Funestra.on_window(4242,
             FunestraSetup(
                 channels=channels,
                 playlist=read_playlist(channels.playlist),
                 muted=False))
+    funestra.close()
 
     mpv.assert_called_once_with(4242, muted=False, loop_file=False, prefetch=True, audio=True)
 
@@ -1605,11 +1606,12 @@ def test_on_a_window_that_can_never_be_heard_the_way_of_playing_takes_no_sound(t
     channels = _channels(tmp_path, [str(videos[0])])
 
     with patch("funestra.funestra.MpvEngine", return_value=FakeEngine()) as mpv:
-        Funestra.on_window(4242,
+        funestra = Funestra.on_window(4242,
             FunestraSetup(
                 channels=channels,
                 playlist=read_playlist(channels.playlist),
                 audible=False))
+    funestra.close()
 
     mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True, audio=False)
 
@@ -2138,6 +2140,19 @@ class TestWhatAFunestraHandsOffItsLoop:
             channels=channels, playlist=read_playlist(channels.playlist), off_the_loop=worker))
         return funestra, engine, worker
 
+    def test_its_commands_are_the_ones_its_worker_heard_and_the_loop_never_reads_the_file(
+            self, tmp_path):
+        funestra, _engine, worker = self._handing_off(tmp_path)
+        (tmp_path / "cmd.txt").write_text("QUIT\n", encoding="utf-8")
+        funestra.tick(viewport=WINDOW)
+        assert (funestra.stopped, (tmp_path / "cmd.txt").read_text(encoding="utf-8")) == (
+            False, "QUIT\n")
+
+        worker.heard = ["QUIT"]
+        funestra.tick(viewport=WINDOW)
+
+        assert (worker.followed, funestra.stopped) == (["cmd.txt"], True)
+
     def test_a_window_of_its_own_gets_a_worker_of_its_own_and_closes_it(self, tmp_path):
         channels = _channels(tmp_path, [str(video) for video in _videos(tmp_path, "v0")])
         with patch("funestra.funestra.MpvEngine", return_value=FakeEngine()):
@@ -2149,7 +2164,7 @@ class TestWhatAFunestraHandsOffItsLoop:
 
         assert "loads=1" in _status(tmp_path)
         assert not [thread for thread in threading.enumerate()
-                    if thread.name == "funestra-off-the-loop"]
+                    if thread.name in ("funestra-off-the-loop", "funestra-commands")]
 
     def test_its_status_is_written_by_the_worker(self, tmp_path):
         funestra, _engine, worker = self._handing_off(tmp_path)
