@@ -66,7 +66,7 @@ def _button_bgra(button: Button, pointed: bool) -> np.ndarray:
 def _tip_bgra(name: str) -> np.ndarray:
     size = tooltip_size(name)
     image = Image.new("RGBA", size, (0, 0, 0, 0))
-    draw_tooltip(ImageDraw.Draw(image), icon_font(), name, (0, 0), size)
+    draw_tooltip(ImageDraw.Draw(image), name, (0, 0), size)
     return to_bgra(image)
 
 

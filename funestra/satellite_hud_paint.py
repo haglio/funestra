@@ -458,7 +458,7 @@ class HudRenderer:
                                           targets)
             return self._with_the_row(self._drawn, scrubber_row, heatmap, drawn_with)
         if drawn_with.hover_tip:
-            draw_tooltip(draw, self._tiny, drawn_with.hover_tip, drawn_with.hover_pos,
+            draw_tooltip(draw, drawn_with.hover_tip, drawn_with.hover_pos,
                          image.size)
         return RenderedHud(hud.to_bgra(), targets)
 
@@ -510,7 +510,7 @@ class HudRenderer:
 
     def _under_the_tooltip(self, drawn: _DrawnButTheRow, row: _Patch,
                            drawn_with: DrawnWith) -> list[_Patch]:
-        tooltip = tooltip_for(self._tiny, drawn_with.hover_tip, drawn_with.hover_pos,
+        tooltip = tooltip_for(drawn_with.hover_tip, drawn_with.hover_pos,
                               drawn.image.size)
         if tooltip is None:
             return [row]
@@ -519,7 +519,7 @@ class HudRenderer:
         both = _around(tooltip.rect, row.rect)
         image = _cut(drawn.image, both)
         image.paste(row.image, (row.rect[0] - both[0], row.rect[1] - both[1]))
-        draw_the_tooltip(ImageDraw.Draw(image), self._tiny, tooltip.moved_by(-both[0], -both[1]))
+        draw_the_tooltip(ImageDraw.Draw(image), tooltip.moved_by(-both[0], -both[1]))
         return [_Patch(both, image)]
 
     def _the_tooltip_alone(self, drawn: _DrawnButTheRow, drawn_with: DrawnWith,
@@ -527,8 +527,7 @@ class HudRenderer:
         kept = self._tooltip_alone
         if kept is None or kept.over is not drawn or kept.drawn_with != drawn_with:
             image = _cut(drawn.image, tooltip.rect)
-            draw_the_tooltip(ImageDraw.Draw(image), self._tiny,
-                             tooltip.moved_by(-tooltip.rect[0], -tooltip.rect[1]))
+            draw_the_tooltip(ImageDraw.Draw(image), tooltip.moved_by(-tooltip.rect[0], -tooltip.rect[1]))
             kept = self._tooltip_alone = _TooltipAlone(drawn, drawn_with,
                                                        _Patch(tooltip.rect, image))
         return kept.patch

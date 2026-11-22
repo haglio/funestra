@@ -6,9 +6,10 @@ from functools import lru_cache
 
 import numpy as np
 from PIL import Image, ImageDraw
+from shared_ui import tooltip_look
 from shared_ui.spacing import BUTTON_GAP
 
-from .hud import TOOLTIP_PAD, ButtonLook, draw_button, draw_tooltip, text_width, to_bgra
+from .hud import ButtonLook, draw_button, draw_tooltip, text_width, to_bgra, tooltip_font
 from .hud_button import Button
 from .hud_minimize import BUTTON, RESTORE_ICON, icon_font, restore_at_command
 from .hud_placement import HudCorner, corner_at, hud_origin
@@ -56,9 +57,9 @@ def plus_button(funestra: str, place: str, *, minimized: bool) -> Button:
 
 
 def tooltip_size(text: str) -> tuple[int, int]:
-    font = icon_font()
-    return (text_width(font, text) + 2 * (TOOLTIP_PAD + _TOOLTIP_EDGE),
-            sum(font.getmetrics()) + 2 * (TOOLTIP_PAD + _TOOLTIP_EDGE))
+    font = tooltip_font()
+    return (text_width(font, text) + 2 * (tooltip_look.PAD + _TOOLTIP_EDGE),
+            sum(font.getmetrics()) + 2 * (tooltip_look.PAD + _TOOLTIP_EDGE))
 
 
 @lru_cache(maxsize=16)
@@ -76,7 +77,7 @@ def plus_bgra(button: Button, corner: HudCorner) -> np.ndarray:
             icon_font=font,
             word_font=font))
     inward = (-_FAR if corner.right else _FAR, _FAR if corner.lower else -_FAR)
-    draw_tooltip(draw, font, button.tooltip, inward, (width, height))
+    draw_tooltip(draw, button.tooltip, inward, (width, height))
     return to_bgra(image)
 
 

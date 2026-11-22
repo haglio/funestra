@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from typing import NamedTuple
 
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
-from shared_ui import lettering
+from shared_ui import lettering, tooltip_look
 from shared_ui.app_icon import draw_letter
 from shared_ui.button_pil import slab
 from shared_ui.icons_pil import paste_icon
@@ -24,7 +25,7 @@ from shared_ui.palette import (
     YELLOW,
     hovered,
 )
-from shared_ui.spacing import BUTTON_ICON_INSET, BUTTON_RADIUS, GAP_SMALL
+from shared_ui.spacing import BUTTON_ICON_INSET, BUTTON_RADIUS
 from shared_ui.toggle_geometry import TRACK_HUD
 from shared_ui.toggle_switch_pil import paste_toggle_switch
 from shared_ui.type_scale import in_pixels
@@ -107,9 +108,6 @@ def active_dot_top(font: ImageFont.FreeTypeFont, baseline: int) -> int:
     return baseline - ascent + (ascent + descent) // 2 - ACTIVE_DOT // 2
 
 
-TOOLTIP_PAD = GAP_SMALL
-TOOLTIP_RADIUS = BUTTON_RADIUS
-TOOLTIP_ALPHA = 240
 _TOOLTIP_EDGE = 2
 _TOOLTIP_OFFSET = (14, 16)
 
@@ -123,39 +121,44 @@ class Tooltip(NamedTuple):
         return Tooltip(self.lines, (x + dx, y + dy, w, h))
 
 
-def tooltip_for(font: ImageFont.FreeTypeFont, text: str, pos: tuple[int, int],
-                bounds: tuple[int, int]) -> Tooltip | None:
-    room = max(1, bounds[0] - 2 * (_TOOLTIP_EDGE + TOOLTIP_PAD))
+@lru_cache(maxsize=1)
+def tooltip_font() -> ImageFont.FreeTypeFont:
+    return load_font(tooltip_look.LETTERING_SIZE)
+
+
+def tooltip_for(text: str, pos: tuple[int, int], bounds: tuple[int, int]) -> Tooltip | None:
+    font = tooltip_font()
+    room = max(1, bounds[0] - 2 * (_TOOLTIP_EDGE + tooltip_look.PAD))
     lines = wrap_text(font, text, room)
     if not lines:
         return None
     ascent, descent = font.getmetrics()
-    w = max(text_width(font, line) for line in lines) + 2 * TOOLTIP_PAD
-    h = (ascent + descent) * len(lines) + 2 * TOOLTIP_PAD
+    w = max(text_width(font, line) for line in lines) + 2 * tooltip_look.PAD
+    h = (ascent + descent) * len(lines) + 2 * tooltip_look.PAD
     x = max(_TOOLTIP_EDGE, min(pos[0] + _TOOLTIP_OFFSET[0], bounds[0] - w - _TOOLTIP_EDGE))
     y = max(_TOOLTIP_EDGE, min(pos[1] + _TOOLTIP_OFFSET[1], bounds[1] - h - _TOOLTIP_EDGE))
     return Tooltip(tuple(lines), (x, y, w, h))
 
 
-def draw_the_tooltip(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont,
-                     tooltip: Tooltip) -> None:
+def draw_the_tooltip(draw: ImageDraw.ImageDraw, tooltip: Tooltip) -> None:
+    font = tooltip_font()
     x, y, w, h = tooltip.rect
     ascent, descent = font.getmetrics()
     line_h = ascent + descent
-    draw.rounded_rectangle([x, y, x + w - 1, y + h - 1], radius=TOOLTIP_RADIUS,
-                           fill=(*BG_PRIMARY, TOOLTIP_ALPHA),
-                           outline=(*BORDER_PANEL, 255), width=1)
+    draw.rounded_rectangle([x, y, x + w - 1, y + h - 1], radius=tooltip_look.RADIUS,
+                           fill=(*tooltip_look.GROUND, tooltip_look.GROUND_ALPHA),
+                           outline=(*tooltip_look.OUTLINE, 255), width=1)
     for index, line in enumerate(tooltip.lines):
-        draw.text((x + w / 2, y + TOOLTIP_PAD + index * line_h + ascent), line,
-                  font=font, anchor="ms", fill=(*TEXT_PRIMARY, 255))
+        draw.text((x + w / 2, y + tooltip_look.PAD + index * line_h + ascent), line,
+                  font=font, anchor="ms", fill=(*tooltip_look.INK, 255))
 
 
-def draw_tooltip(draw: ImageDraw.ImageDraw, font: ImageFont.FreeTypeFont, text: str,
-                 pos: tuple[int, int], bounds: tuple[int, int]) -> tuple[int, int, int, int]:
-    tooltip = tooltip_for(font, text, pos, bounds)
+def draw_tooltip(draw: ImageDraw.ImageDraw, text: str, pos: tuple[int, int],
+                 bounds: tuple[int, int]) -> tuple[int, int, int, int]:
+    tooltip = tooltip_for(text, pos, bounds)
     if tooltip is None:
         return (0, 0, 0, 0)
-    draw_the_tooltip(draw, font, tooltip)
+    draw_the_tooltip(draw, tooltip)
     return tooltip.rect
 
 

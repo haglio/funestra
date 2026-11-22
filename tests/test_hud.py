@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 from PIL import Image, ImageDraw
-from shared_ui import palette
+from shared_ui import palette, tooltip_look
 from shared_ui.icons_pil import paste_icon
 from shared_ui.palette import BG_PRIMARY, MAGENTA, TEXT_MUTED, WHITE
 from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL
@@ -10,7 +10,6 @@ from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL
 from funestra import hud
 from funestra.hud import (
     ACTIVE_DOT,
-    TOOLTIP_PAD,
     ButtonLook,
     Hud,
     draw_active_dot,
@@ -19,6 +18,7 @@ from funestra.hud import (
     draw_tooltip,
     load_font,
     text_width,
+    tooltip_font,
 )
 from funestra.hud_button import Button
 from funestra.hud_icons import app_icon
@@ -111,44 +111,43 @@ def test_an_icons_ink_is_probed_once_per_face_size_and_icon():
 
 def test_a_tooltip_wider_than_the_hud_wraps_rather_than_running_off_it():
     hud = Hud(150, 120)
-    font = load_font(8)
+    font = tooltip_font()
 
-    rect = draw_tooltip(hud.draw, font, "Unfavorite it or send to Trash when it is "
+    rect = draw_tooltip(hud.draw, "Unfavorite it or send to Trash when it is "
                         "not a favorite", (20, 20), hud.image.size)
 
     x, y, w, h = rect
     assert (x, y) >= (0, 0)
     assert (x + w, y + h) <= (150, 120)
-    assert h > sum(font.getmetrics()) + 2 * TOOLTIP_PAD
+    assert h > sum(font.getmetrics()) + 2 * tooltip_look.PAD
 
 
 def test_a_tooltip_that_fits_stays_on_one_line_right_of_and_below_the_pointer_clear_of_its_arrow():
     hud = Hud(300, 200)
-    font = load_font(8)
+    font = tooltip_font()
 
-    x, y, _w, h = draw_tooltip(hud.draw, font, "Next clip", (40, 60),
+    x, y, _w, h = draw_tooltip(hud.draw, "Next clip", (40, 60),
                                hud.image.size)
 
-    assert h == sum(font.getmetrics()) + 2 * TOOLTIP_PAD
+    assert h == sum(font.getmetrics()) + 2 * tooltip_look.PAD
     assert (x - 40, y - 60) == (14, 16)
 
 
 def test_a_tooltip_starts_a_new_line_wherever_its_text_does():
     hud = Hud(300, 200)
-    font = load_font(8)
+    font = tooltip_font()
 
-    _x, _y, _w, h = draw_tooltip(hud.draw, font, "Next clip\nThen the one after it",
+    _x, _y, _w, h = draw_tooltip(hud.draw, "Next clip\nThen the one after it",
                                  (40, 60), hud.image.size)
 
-    assert h == 2 * sum(font.getmetrics()) + 2 * TOOLTIP_PAD
+    assert h == 2 * sum(font.getmetrics()) + 2 * tooltip_look.PAD
 
 
 def test_a_tooltip_keeps_the_spaces_it_was_written_with():
     hud = Hud(300, 200)
-    font = load_font(8)
 
-    _x, _y, single, _h = draw_tooltip(hud.draw, font, "Next clip", (40, 60), hud.image.size)
-    _x, _y, spaced, _h = draw_tooltip(hud.draw, font, "Next    clip", (40, 60),
+    _x, _y, single, _h = draw_tooltip(hud.draw, "Next clip", (40, 60), hud.image.size)
+    _x, _y, spaced, _h = draw_tooltip(hud.draw, "Next    clip", (40, 60),
                                       hud.image.size)
 
     assert spaced > single
@@ -231,7 +230,7 @@ def test_a_button_with_no_command_draws_no_ground_under_its_word():
 def test_a_tooltip_near_the_far_corner_is_nudged_back_inside_the_hud():
     hud = Hud(150, 120)
 
-    x, y, w, h = draw_tooltip(hud.draw, load_font(8), "Next clip", (148, 118),
+    x, y, w, h = draw_tooltip(hud.draw, "Next clip", (148, 118),
                               hud.image.size)
 
     assert (x, y) >= (0, 0)
@@ -240,3 +239,8 @@ def test_a_tooltip_near_the_far_corner_is_nudged_back_inside_the_hud():
 
 def test_every_label_is_bold_unless_asked_otherwise_since_it_is_read_at_a_glance_over_moving_video():
     assert load_font(SIZE_SMALL).getname()[1] == "Bold"
+
+
+def test_every_hud_tooltip_is_lettered_as_every_other_haglio_tooltip_is():
+    assert tooltip_font().size == load_font(tooltip_look.LETTERING_SIZE).size
+    assert tooltip_font().path == load_font(tooltip_look.LETTERING_SIZE).path
