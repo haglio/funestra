@@ -14,9 +14,10 @@ from .broker_feed import BrokerFeed, UdpListener, udp_reader
 from .flag import Flag
 from .flick_advance import FlickAdvanceState
 from .flick_cache import DecodeRequestState, FlickCacheStore
-from .flick_decode import load_flick_frames
+from .flick_decode import load_flick_frames, read_frames_per_second
 from .flick_flip import FlickFlip, FlipsKeptElsewhere
 from .flick_folder import move_to_trash
+from .flick_frame_rates import FlickFrameRates
 from .flick_loader import FlickLoadController, FlickLoadParts
 from .flick_renderer import FlickRenderController
 from .flick_selection import FlickSelectionController, FlickSelectionParts
@@ -126,6 +127,7 @@ class GenauHost:
 class EngineSeams:
     stop_event: threading.Event | None = None
     decode: Callable[[Path], list] = load_flick_frames
+    frame_rate: Callable[[Path], float] = read_frames_per_second
     start_thread: Callable = start_daemon_thread
     clock: Callable[[], float] = time.monotonic
     sleep: Callable[[float], None] = time.sleep
@@ -197,6 +199,7 @@ def build_genau_engine(
                 says=PROJECTION.flash((plays_flat, plays_vr)))),
         play_file=selection.play,
         flick_flip=FlickFlip(library.metadata_root, kept_elsewhere=library.flips),
+        flick_frame_rates=FlickFrameRates(read=seams.frame_rate),
     )
     controller = GenauRefreshController(
         controls,

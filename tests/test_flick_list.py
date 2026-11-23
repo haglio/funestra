@@ -89,6 +89,7 @@ class Room:
                      outputs=GenauOutputs(notifier=FakeNotifier(), tcode_sink=FakeSink()),
                      latest=True,
                      seams=EngineSeams(decode=lambda _path: _frames(),
+                                       frame_rate=lambda _flick: 30.0,
                                        start_thread=every_thread_now_but_the_ones_that_run_for_good,
                                        off_the_loop=AtOnce))
 

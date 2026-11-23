@@ -41,6 +41,7 @@ class Standalone:
             playlist=read_playlist(self.playlist),
             users=kino_and_genau(launch, notice=None, seams=EngineSeams(
                 decode=lambda _path: [np.zeros((8, 16, 3), dtype=np.uint8)] * 4,
+                frame_rate=lambda _flick: 30.0,
                 start_thread=every_thread_now_but_the_ones_that_run_for_good,
                 off_the_loop=AtOnce))))
 
