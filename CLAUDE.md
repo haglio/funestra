@@ -95,9 +95,9 @@ install -- so a worktree of this repo needs nothing copied in. A checkout's own
 - **To try a change here inside an app**, install this checkout over the pin in
   that app's venv (`pip install -e ../funestra --config-settings
   editable_mode=compat`), and reinstall the app afterwards to put its pin back.
-- **Run all three suites before merging**: this one, genau's unit suite, and
-  fun_time's unit *and* hidden-desktop integration suites (the last is what
-  actually launches `MpvEngine` against the real DLL).
+- **Run both suites before merging**: this one, and fun_time's unit *and*
+  hidden-desktop integration suites (the last is what actually launches
+  `MpvEngine` against the real DLL).
 - **The dead-code check reads the apps.** The family's dead-code gate, asked to
   by `apps-are-callers` in pyproject, runs vulture over this package with its
   own tests and the tracked code of every checkout beside it that imports it,
