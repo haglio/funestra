@@ -101,9 +101,16 @@ class PaintedFoot:
     def paint(self, image: Image.Image, x: int, y: int, width: int,
               pointer: tuple[int, int] | None) -> list[tuple[Rect, Button]]:
         with contextlib.suppress(OSError):
-            image.alpha_composite(_painted_at(self.file, self.stamp), (x, y))
+            image.alpha_composite(self.picture(), (x, y))
         return [((x + left, y + top, w, h), button)
                 for (left, top, w, h), button in self.targets]
+
+    def picture(self) -> Image.Image:
+        return _painted_at(self.file, self.stamp)
+
+    def shows_the_picture_of(self, other: object) -> bool:
+        return (isinstance(other, PaintedFoot)
+                and (other.file, other.stamp) == (self.file, self.stamp))
 
     def raw(self) -> dict:
         return {"file": self.file, "width": self.width, "height": self.height,

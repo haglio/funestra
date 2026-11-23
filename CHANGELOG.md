@@ -9,6 +9,13 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-22 — A Satellite HUD's Job Queue picture loads behind the loop
+
+`PaintedFoot.picture()` and `PaintedFoot.shows_the_picture_of()` are new, as
+are `HudRenderer.foot_wanted()` and `fitted_pictures(foot=)`: a HUD handed a
+Job Queue picture it has not drawn yet has it opened on the Funestra's worker
+with the map's pictures, and the HUD on screen stays until it is back.
+
 ## 2026-11-22 — A Funestra's HUD file is read behind the loop
 
 `PublishedHud(follow=)` and `ConsoleHud(follow=)` are new
