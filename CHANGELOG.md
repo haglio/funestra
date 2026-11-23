@@ -9,6 +9,13 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-22 — A Funestra's HUD file is read behind the loop
+
+`PublishedHud(follow=)` and `ConsoleHud(follow=)` are new
+(`off_the_loop.follow_at_once` unless said; a Funestra hands them its worker's
+`follow`): the HUD file is stat'ed, read and parsed where `follow` reads, and
+the HUD takes the newest HUD heard since its last pass.
+
 ## 2026-11-22 — A Funestra's paused flag and playlist are read behind the loop too
 
 `OffTheLoop.follow(read)` takes the place of `follow_commands`: `AtOnce` calls

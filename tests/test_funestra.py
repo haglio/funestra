@@ -2190,11 +2190,23 @@ class TestWhatAFunestraHandsOffItsLoop:
 
         assert engine.paused is True
 
+    def test_what_its_hud_shows_is_what_its_worker_read_and_the_loop_never_reads_the_file(
+            self, tmp_path):
+        funestra, engine, worker = self._handing_off(tmp_path)
+        funestra.tick(viewport=WINDOW)
+        assert HUD_OVERLAY_ID not in engine.overlays
+
+        worker.listen()
+        funestra.tick(viewport=WINDOW)
+
+        assert HUD_OVERLAY_ID in engine.overlays
+
     def test_the_pictures_on_its_huds_nav_map_are_loaded_by_its_worker(self, tmp_path):
         funestra, engine, worker = self._handing_off(tmp_path)
         picture = tmp_path / "made_up_picture.png"
         Image.new("RGB", (40, 60), (30, 60, 90)).save(picture)
         _publish_hud(tmp_path, corner={"path": "C:/made/up.mp4", "thumb": str(picture)})
+        worker.listen()
         funestra.tick(viewport=WINDOW)
         assert HUD_OVERLAY_ID not in engine.overlays
 
@@ -2226,6 +2238,7 @@ class TestWhatAFunestraHandsOffItsLoop:
 
     def test_a_press_on_its_item_is_asked_of_the_host_by_the_worker(self, tmp_path):
         funestra, engine, worker = self._handing_off(tmp_path)
+        worker.listen()
         funestra.tick(viewport=WINDOW)
         left, top, hud = engine.overlays[HUD_OVERLAY_ID]
 

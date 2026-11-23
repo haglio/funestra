@@ -20,7 +20,7 @@ from .hud_row import RowHud, RowLayout, RowPress, ScrubberRowDraw, track_on_scre
 from .main_hud import ModeHud
 from .modes import MainMode, Osr2State
 from .name_copy import COPY_NAME, copy_while_the_funestra_plays_on
-from .off_the_loop import at_once
+from .off_the_loop import Heard, at_once, follow_at_once
 from .osr2_visualizer import DriveHud, DrivePublisher, published_here, read_drive
 from .playback_setup import Lap, unlapped
 from .satellite_hud import (
@@ -88,28 +88,41 @@ _REDRAWN_FOR = ("what it shows", "the item on screen", "the speed", "the window'
                 "the host's controls", "the lock's light", "the scrubber row", "a draw owed")
 
 
+class _Published(NamedTuple):
+    model: HudModel | None
+
+
 class PublishedHud:
     def __init__(self, hud_file: Path, command_file: Path,
-                 ask: Callable[[Path | None, str], None] = ask) -> None:
+                 ask: Callable[[Path | None, str], None] = ask, *,
+                 follow: Callable[[Callable[[], _Published | None]], Heard[_Published]]
+                 = follow_at_once) -> None:
         self._hud_file = WrittenFile(hud_file)
         self._command_file = Path(command_file)
         self._ask = ask
         self._published = ""
+        self._heard = follow(self._read)
 
     def next(self, shown: HudModel | None) -> tuple[HudModel | None, bool]:
-        if not self._hud_file.may_have_been_written():
+        heard = self._heard()
+        if not heard:
             return shown, False
+        return heard[-1].model, True
+
+    def _read(self) -> _Published | None:
+        if not self._hud_file.may_have_been_written():
+            return None
         try:
             text = self._hud_file.path.read_text(encoding="utf-8")
         except FileNotFoundError:
             text = ""
         except OSError:
-            return shown, False
+            return None
         self._hud_file.was_read()
         if text == self._published:
-            return shown, False
+            return None
         self._published = text
-        return (parse_hud(text) if text else None), True
+        return _Published(parse_hud(text) if text else None)
 
     def post(self, command: str) -> None:
         self._ask(self._command_file, command)
@@ -117,8 +130,10 @@ class PublishedHud:
 
 class ConsoleHud:
     def __init__(self, console: Path, command_file: Path, top_block: Callable[[], ModeHud],
-                 ask: Callable[[Path | None, str], None] = ask) -> None:
-        self._published = PublishedHud(console, command_file, ask)
+                 ask: Callable[[Path | None, str], None] = ask, *,
+                 follow: Callable[[Callable[[], _Published | None]], Heard[_Published]]
+                 = follow_at_once) -> None:
+        self._published = PublishedHud(console, command_file, ask, follow=follow)
         self._top_block = top_block
         self._console = _AT_REST
         self._built_from: tuple[HudModel, ModeHud] | None = None
