@@ -12,6 +12,7 @@ from app_support.osr2_slot import Osr2Sender
 
 from .control_registry import look_up
 from .drive_gate import DriveGate
+from .file_channel import consume_command_file
 from .flick_overlay import FlickFrame, FlickOverlay
 from .frame_record import NO_COUNTS, FrameRecord
 from .funestra_controls import VERBS, FunestraControls
@@ -55,6 +56,7 @@ from .session_quit import quit_gesture
 from .status import StatusWriter
 from .tcode import UdpTCodeSink
 from .tcode_driver import FunscriptTCodeDriver
+from .told_through import NOTHING_NEW, FilesItIsToldThrough
 from .volume import VolumeHud
 from .volume_control import told_to_the_host
 
@@ -126,19 +128,24 @@ class Funestra:
         self._paused_before_the_scrub: bool | None = None
         self._sought_this_pass = False
         self._seek_owed: float | None = None
-        self._paused_flag = None if channels.paused is None else PausedFlag(channels.paused)
-        self._commands = (_told_nothing if channels.command is None
-                          else self._off_the_loop.follow_commands(channels.command, log=logger))
+        paused_flag = None if channels.paused is None else PausedFlag(channels.paused)
+        self._paused_told = None if paused_flag is None else paused_flag.read()
         self._frame_record = FrameRecord(
             setup.frame_ms, clock=setup.frame_clock,
             mpv_counts=getattr(engine, "frame_counts", lambda: NO_COUNTS))
         self._playback = Playback(
             [item.path for item in setup.playlist], engine=engine,
             setup=setup.playback_setup(
-                start_paused=self._paused_flag is not None and self._paused_flag.read(),
+                start_paused=bool(self._paused_told),
                 lap=self._frame_record.lap))
         self._follower = (None if channels.playlist is None
                           else PlaylistFollower(channels.playlist, take=self.take_the_list))
+        self._told = self._off_the_loop.follow(FilesItIsToldThrough(
+            commands=(_told_nothing if channels.command is None
+                      else partial(consume_command_file, channels.command, logger=logger,
+                                   uppercase=False)),
+            paused=paused_flag, playlist=self._follower,
+            paused_at_the_start=self._paused_told).read)
         self._drive_gate = DriveGate(self.playback)
         self._row = ItemsRow(self.playback, engine)
         self._volume = setup.volume_on(engine)
@@ -405,21 +412,27 @@ class Funestra:
         record.end()
 
     def _hear_what_it_is_told(self, lap: Lap) -> None:
-        if self._paused_flag is not None:
-            paused = self._paused_flag.read()
-            if self._paused_before_the_scrub is None:
-                self.playback.set_paused(paused)
-            else:
-                self._paused_before_the_scrub = paused
-        lap("told by the paused flag")
-        commands = self._commands()
-        lap("reading the command file")
-        for command in commands:
-            self.apply(command)
-        lap("doing what the command file said")
-        if self._follower is not None:
-            self._follower.tick()
-        lap("told by the playlist file")
+        heard = self._told() or [NOTHING_NEW]
+        lap("the files it is told through")
+        for told in heard:
+            if told.paused is not None:
+                self._paused_told = told.paused
+            self._hold_to_the_paused_flag()
+            lap("told by the paused flag")
+            if told.playlist is not None:
+                self._follower.take_heard(told.playlist)
+            lap("told by the playlist file")
+            for command in told.commands:
+                self.apply(command)
+            lap("doing what the command file said")
+
+    def _hold_to_the_paused_flag(self) -> None:
+        if self._paused_told is None:
+            return
+        if self._paused_before_the_scrub is None:
+            self.playback.set_paused(self._paused_told)
+        else:
+            self._paused_before_the_scrub = self._paused_told
 
     def close(self) -> None:
         self._runs_here.close()

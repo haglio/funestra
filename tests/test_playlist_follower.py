@@ -14,6 +14,12 @@ def _write(playlist: Path, *names: str) -> None:
     write_playlist(playlist, [PlaylistItem(playlist.parent / name) for name in names])
 
 
+def _follow(follower: PlaylistFollower) -> None:
+    heard = follower.look()
+    if heard is not None:
+        follower.take_heard(heard)
+
+
 def _names(taken: list[list[PlaylistItem]]) -> list[list[str]]:
     return [[item.path.name for item in items] for items in taken]
 
@@ -26,7 +32,7 @@ class TestAListWrittenUnderTheWindow:
         follower = PlaylistFollower(playlist, take=taken.append)
 
         _write(playlist, "a show.png")
-        follower.tick()
+        _follow(follower)
 
         assert _names(taken) == [["a show.png"]]
 
@@ -38,7 +44,7 @@ class TestAListWrittenUnderTheWindow:
 
         _write(playlist, "a show.png")
         for _ in range(5):
-            follower.tick()
+            _follow(follower)
 
         assert _names(taken) == [["a show.png"]]
 
@@ -54,7 +60,7 @@ class TestAListWrittenUnderTheWindow:
         os.utime(playlist, ns=(first.st_atime_ns, first.st_mtime_ns))
         assert (playlist.stat().st_size, playlist.stat().st_mtime_ns) == (
             first.st_size, first.st_mtime_ns)
-        follower.tick()
+        _follow(follower)
 
         assert _names(taken) == [["v2.mp4"]]
 
@@ -64,7 +70,7 @@ class TestAListWrittenUnderTheWindow:
         taken: list[list[PlaylistItem]] = []
         follower = PlaylistFollower(playlist, take=taken.append)
 
-        follower.tick()
+        _follow(follower)
 
         assert taken == []
 
@@ -82,9 +88,9 @@ class TestAReadThatLandsInsideTheWrite:
         monkeypatch.setattr(playlist_follower, "playlist_text",
                             lambda path: answers.pop(0) if answers else real(path))
 
-        follower.tick()
-        follower.tick()
-        follower.tick()
+        _follow(follower)
+        _follow(follower)
+        _follow(follower)
 
         assert _names(taken) == [["a show.png"]]
 
@@ -98,7 +104,7 @@ class TestAListTakenAway:
 
         playlist.unlink()
         for _ in range(5):
-            follower.tick()
+            _follow(follower)
 
         assert taken == []
 
@@ -110,7 +116,7 @@ class TestAListTakenAway:
 
         playlist.write_text("", encoding="utf-8")
         for _ in range(5):
-            follower.tick()
+            _follow(follower)
 
         assert taken == []
 
@@ -127,6 +133,22 @@ class TestTheReloadVerb:
         assert _names(taken) == [["a show.png"]]
 
 
+class TestAListHeardBeforeTheReloadVerb:
+    def test_is_not_taken_after_the_list_the_reload_read_since_that_one_is_newer(self, tmp_path):
+        playlist = tmp_path / "landscape.tsv"
+        _write(playlist, "its own clip.mp4")
+        taken: list[list[PlaylistItem]] = []
+        follower = PlaylistFollower(playlist, take=taken.append)
+        _write(playlist, "a show.png")
+        heard_before = follower.look()
+
+        _write(playlist, "another show.png")
+        follower.read_now()
+        follower.take_heard(heard_before)
+
+        assert _names(taken) == [["another show.png"]]
+
+
 class TestAListThatHasNotChanged:
     def test_is_neither_opened_nor_parsed_again_however_many_frames_follow(
             self, tmp_path, monkeypatch):
@@ -140,7 +162,7 @@ class TestAListThatHasNotChanged:
         monkeypatch.setattr(playlist_follower, "parse_playlist", parsed.append)
 
         for _ in range(60):
-            follower.tick()
+            _follow(follower)
 
         assert (opened, parsed) == ([], [])
 
@@ -152,8 +174,8 @@ class TestAListThatHasNotChanged:
         monkeypatch.setattr(playlist_follower, "playlist_text", opened.append)
 
         playlist.write_text("", encoding="utf-8")
-        follower.tick()
+        _follow(follower)
         playlist.unlink()
-        follower.tick()
+        _follow(follower)
 
         assert opened == []

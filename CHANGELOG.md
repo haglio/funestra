@@ -9,6 +9,21 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-22 — A Funestra's paused flag and playlist are read behind the loop too
+
+`OffTheLoop.follow(read)` takes the place of `follow_commands`: `AtOnce` calls
+`read` where the loop asks, and `BehindTheLoop` calls every `read` it was
+handed, in the order handed, every 1/120 s on one thread named
+"funestra-listening", handing the loop what each heard in the order heard
+(`None` is nothing heard). A Funestra hands it one read,
+`told_through.FilesItIsToldThrough.read`, which reads the command file first,
+then the paused flag, then the playlist, and the loop takes the flag, then the
+list, then the commands of each read, so a command is never done before a list
+or a flag written before it. `PlaylistFollower.tick` is gone: `look()` reads,
+`take_heard()` takes, and a list heard before a `read_now()` is not taken
+after it. The frame record's "reading the command file" step is now "the files
+it is told through".
+
 ## 2026-11-22 — A Satellite HUD's map pictures load behind the loop
 
 `HudOverlay(behind=)` is new (`off_the_loop.at_once` unless said; a Funestra
