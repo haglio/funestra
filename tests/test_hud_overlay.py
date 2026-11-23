@@ -9,6 +9,7 @@ import pytest
 from PIL import Image
 from shared_ui.spacing import BUTTON_SIZE_HUD
 
+from funestra import satellite_hud
 from funestra.hud_button import Button
 from funestra.hud_corners import HudPlace
 from funestra.hud_kinds import HudFacts, HudKind
@@ -1275,6 +1276,60 @@ class TestTheNavMapsPicturesAreLoadedBehindTheLoop:
         overlay.tick()
 
         assert (behind.jobs, engine.overlays[overlay.overlay_id][2] is first) == ([], False)
+
+
+def _republish_with_a_job_queue(tmp_path: Path, hud: Path, stamp: str) -> Path:
+    published = json.loads(hud.read_text(encoding="utf-8"))
+    picture = tmp_path / f"portrait_hud_foot_{stamp}.png"
+    Image.new("RGBA", (120, 40), (30, 60, 90, 255)).save(picture)
+    published["foot"] = {"file": str(picture), "width": 120, "height": 40, "stamp": stamp}
+    hud.write_text(json.dumps(published), encoding="utf-8")
+    return picture
+
+
+class TestTheJobQueuesPictureIsLoadedBehindTheLoop:
+    def _opened(self, monkeypatch) -> list[str]:
+        opened: list[str] = []
+        real = satellite_hud.Image.open
+
+        def opening(path, *args, **kwargs):
+            opened.append(Path(path).name)
+            return real(path, *args, **kwargs)
+
+        monkeypatch.setattr(satellite_hud.Image, "open", opening)
+        return opened
+
+    def test_the_hud_waits_for_a_new_picture_with_the_last_one_still_up(
+            self, tmp_path, hud, monkeypatch):
+        engine, behind = FakeEngine(), _HeldJobs()
+        overlay = _overlay(tmp_path, hud, engine, behind=behind)
+        overlay.tick()
+        behind.run()
+        overlay.tick()
+        first = engine.overlays[overlay.overlay_id][2]
+        picture = _republish_with_a_job_queue(tmp_path, hud, "a1")
+        opened = self._opened(monkeypatch)
+
+        overlay.tick()
+        waiting, opened_on_the_loop = engine.overlays[overlay.overlay_id][2], opened[:]
+        behind.run()
+        overlay.tick()
+
+        assert (waiting is first, picture.name in opened_on_the_loop, picture.name in opened,
+                engine.overlays[overlay.overlay_id][2] is not first) == (True, False, True, True)
+
+    def test_a_picture_already_shown_is_not_loaded_again(self, tmp_path, hud):
+        engine, behind = FakeEngine(), _HeldJobs()
+        overlay = _overlay(tmp_path, hud, engine, behind=behind)
+        _republish_with_a_job_queue(tmp_path, hud, "a1")
+        overlay.tick()
+        behind.run()
+        overlay.tick()
+
+        _locked(hud)
+        overlay.tick()
+
+        assert behind.jobs == []
 
 
 class TestAPublishedHudReadBehindTheLoop:

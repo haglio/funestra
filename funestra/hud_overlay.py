@@ -300,10 +300,11 @@ class HudOverlay:
         if model == self._waiting_for_its_pictures:
             return True
         wanted = self._renderer.pictures_wanted(model)
-        if not wanted:
+        foot = self._renderer.foot_wanted(model)
+        if not wanted and foot is None:
             return False
         self._waiting_for_its_pictures = model
-        self._behind(partial(fitted_pictures, model.funestra, wanted),
+        self._behind(partial(fitted_pictures, model.funestra, wanted, foot),
                      partial(self._pictures_came, model))
         return self._waiting_for_its_pictures is model
 

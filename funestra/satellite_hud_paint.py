@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import math
 from dataclasses import dataclass, replace
 from enum import Enum
@@ -79,6 +80,7 @@ from .satellite_hud import (
     HudTargets,
     NavMapRects,
     NavMapWindow,
+    PaintedFoot,
     SectionHeights,
     act_is_filtered,
     act_named,
@@ -259,7 +261,11 @@ def _cut(image: Image.Image, rect: Rect) -> Image.Image:
 Pictures = dict[str, Image.Image | None]
 
 
-def fitted_pictures(funestra: str, paths: list[str]) -> Pictures:
+def fitted_pictures(funestra: str, paths: list[str],
+                    foot: PaintedFoot | None = None) -> Pictures:
+    if foot is not None:
+        with contextlib.suppress(OSError):
+            foot.picture()
     place_w = place_width(funestra)
     return {path: _fitted_thumbnail(path, place_w) for path in paths}
 
@@ -291,11 +297,18 @@ class HudRenderer:
         self._icon = load_font(SIZE_BODY, SYMBOL_FONT)
         self._thumbs_by_path: Pictures = {}
         self._pictures_drawn: set[str] = set()
+        self._foot_drawn: object = None
         self._scrubber_row = RowSection()
         self._host_controls = HostControlsSection()
         self._widest_titles: dict[HudKind, int] = {}
         self._drawn: _DrawnButTheRow | None = None
         self._tooltip_alone: _TooltipAlone | None = None
+
+    def foot_wanted(self, model: HudModel) -> PaintedFoot | None:
+        foot = model.foot
+        if not isinstance(foot, PaintedFoot) or foot.shows_the_picture_of(self._foot_drawn):
+            return None
+        return foot
 
     def pictures_wanted(self, model: HudModel) -> list[str]:
         return [path for path in _nav_map_pictures(model) if path not in self._thumbs_by_path]
@@ -392,6 +405,7 @@ class HudRenderer:
         thumbs = NavMapThumbs(*self._nav_map_thumbnails(model))
         self._pictures_drawn = {cell.thumb for cell in (model.corner, *model.seeds, *model.actions)
                                 if cell is not None}
+        self._foot_drawn = model.foot
         sizes = self._measure(model, scrubber_row, drawing)
         layout, width, foot_h = sizes.layout, sizes.width, sizes.foot_h
         hud = Hud(width, layout.height)
