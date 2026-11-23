@@ -1275,3 +1275,31 @@ class TestTheNavMapsPicturesAreLoadedBehindTheLoop:
         overlay.tick()
 
         assert (behind.jobs, engine.overlays[overlay.overlay_id][2] is first) == ([], False)
+
+
+class TestAPublishedHudReadBehindTheLoop:
+    def test_of_two_huds_heard_before_one_pass_the_later_is_the_one_shown(self, tmp_path):
+        hud_file = tmp_path / "portrait_hud.json"
+        hud_file.write_text(json.dumps({"funestra": "portrait", "title": "first"}),
+                            encoding="utf-8")
+
+        def heard_twice(read):
+            def take() -> list:
+                first = read()
+                hud_file.write_text(json.dumps({"funestra": "portrait", "title": "second"}),
+                                    encoding="utf-8")
+                return [heard for heard in (first, read()) if heard is not None]
+            return take
+
+        published = PublishedHud(hud_file, tmp_path / "dashboard_cmd.txt", follow=heard_twice)
+
+        model, changed = published.next(None)
+
+        assert (model.title, changed) == ("second", True)
+
+    def test_nothing_heard_leaves_the_hud_on_screen(self, tmp_path):
+        shown = HudModel(funestra="portrait", title="on screen")
+        published = PublishedHud(tmp_path / "portrait_hud.json", tmp_path / "dashboard_cmd.txt",
+                                 follow=lambda _read: list)
+
+        assert published.next(shown) == (shown, False)

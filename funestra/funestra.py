@@ -236,7 +236,7 @@ class Funestra:
         if channels.console is not None:
             return HudOverlay(
                 source=ConsoleHud(channels.console, channels.dashboard_cmd, self._top_block,
-                                  self._off_the_loop.ask),
+                                  self._off_the_loop.ask, follow=self._off_the_loop.follow),
                 drawn_on=DrawnOn(
                     drawn_on, minus_on_the_hud=self._hud_surface is None,
                     width=None if self._hud_surface is None else self._hud_surface.width),
@@ -247,7 +247,7 @@ class Funestra:
         if channels.hud is not None:
             return HudOverlay(
                 source=PublishedHud(channels.hud, channels.dashboard_cmd,
-                                    self._off_the_loop.ask),
+                                    self._off_the_loop.ask, follow=self._off_the_loop.follow),
                 drawn_on=DrawnOn(drawn_on, over_the_video=self._hud_surface is None,
                                  minus_on_the_hud=self._hud_surface is None),
                 drive=DriveFeed(channels.drive, self._drive_gate, self._visualizer_for(channels)),
