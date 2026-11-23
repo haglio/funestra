@@ -44,6 +44,7 @@ class FunestraSetup(NamedTuple):
     clock: Callable[[], float] = time.monotonic
     frame_ms: float = DESKTOP_FRAME_MS
     frame_clock: Callable[[], float] = time.perf_counter
+    file_clock_ns: Callable[[], int] = time.time_ns
     off_the_loop: OffTheLoop = AtOnce()
     window: int | None = None
 
