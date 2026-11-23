@@ -42,7 +42,7 @@ from funestra.modes import LengthMode, MainMode, Osr2State
 from funestra.osr2_visualizer import DriveHud, DrivePublisher, publish_drive, read_drive
 from funestra.outside_buttons import OutsideButtons
 from funestra.playhead import FIGURE_SPACE
-from funestra.playlist import PlaylistItem, read_playlist
+from funestra.playlist import PlaylistItem, read_playlist, write_playlist
 from funestra.pointer import OMNIPAUSE_TOGGLE, PRESSED_AGAIN
 from funestra.radio import radio_file_for, write_radio
 from funestra.runs_here import _Nobody
@@ -540,6 +540,18 @@ def test_the_paused_flag_reaches_the_engine_each_pass(tmp_path):
     funestra.tick(viewport=WINDOW)
 
     assert engine.paused is True
+
+
+def test_a_command_is_done_on_the_list_that_was_written_before_it(tmp_path):
+    a0, a1, b0, b1 = _videos(tmp_path, "a0", "a1", "b0", "b1")
+    funestra, _engine = _funestra(tmp_path, [str(a0), str(a1)], commands="")
+    funestra.tick(viewport=WINDOW)
+
+    write_playlist(tmp_path / "playlist.tsv", [PlaylistItem(b0), PlaylistItem(b1)])
+    (tmp_path / "cmd.txt").write_text("NEXT\n", encoding="utf-8")
+    funestra.tick(viewport=WINDOW)
+
+    assert funestra.playback.current_video == b1
 
 
 def test_a_paused_flag_already_up_opens_the_engine_paused(tmp_path):
@@ -2149,10 +2161,34 @@ class TestWhatAFunestraHandsOffItsLoop:
         assert (funestra.stopped, (tmp_path / "cmd.txt").read_text(encoding="utf-8")) == (
             False, "QUIT\n")
 
-        worker.heard = ["QUIT"]
+        worker.listen()
         funestra.tick(viewport=WINDOW)
 
-        assert (worker.followed, funestra.stopped) == (["cmd.txt"], True)
+        assert funestra.stopped is True
+
+    def test_its_paused_flag_and_its_list_are_the_ones_its_worker_heard(self, tmp_path):
+        funestra, engine, worker = self._handing_off(tmp_path)
+        newer = _videos(tmp_path, "v1")[0]
+        (tmp_path / "paused.txt").write_text("1", encoding="utf-8")
+        write_playlist(tmp_path / "playlist.tsv", [PlaylistItem(newer)])
+        funestra.tick(viewport=WINDOW)
+        assert (engine.paused, funestra.playback.current_video) == (False, tmp_path / "v0.mp4")
+
+        worker.listen()
+        funestra.tick(viewport=WINDOW)
+
+        assert (engine.paused, funestra.playback.current_video) == (True, newer)
+
+    def test_a_paused_flag_its_worker_heard_holds_on_every_pass_after(self, tmp_path):
+        funestra, engine, worker = self._handing_off(tmp_path)
+        (tmp_path / "paused.txt").write_text("1", encoding="utf-8")
+        worker.listen()
+        funestra.tick(viewport=WINDOW)
+
+        funestra.playback.set_paused(False)
+        funestra.tick(viewport=WINDOW)
+
+        assert engine.paused is True
 
     def test_the_pictures_on_its_huds_nav_map_are_loaded_by_its_worker(self, tmp_path):
         funestra, engine, worker = self._handing_off(tmp_path)
@@ -2178,7 +2214,7 @@ class TestWhatAFunestraHandsOffItsLoop:
 
         assert "loads=1" in _status(tmp_path)
         assert not [thread for thread in threading.enumerate()
-                    if thread.name in ("funestra-off-the-loop", "funestra-commands")]
+                    if thread.name in ("funestra-off-the-loop", "funestra-listening")]
 
     def test_its_status_is_written_by_the_worker(self, tmp_path):
         funestra, _engine, worker = self._handing_off(tmp_path)

@@ -110,28 +110,52 @@ class TestBehindTheLoop:
         assert [record.getMessage() for record in caplog.records] == [
             "A job handed off a Funestra's loop failed"]
 
-    def test_the_command_file_is_read_on_a_thread_of_its_own_never_the_loops(
-            self, tmp_path, monkeypatch):
+    def test_what_it_follows_is_read_on_a_thread_of_its_own_never_the_loops(self):
         read_on: list[str] = []
-
-        def consume(_path, **_how) -> list[str]:
-            read_on.append(threading.current_thread().name)
-            return []
-
-        monkeypatch.setattr(off_the_loop, "consume_command_file", consume)
         worker = BehindTheLoop()
-        take = worker.follow_commands(tmp_path / "cmd.txt")
+        take = worker.follow(lambda: read_on.append(threading.current_thread().name))
 
         wait_until(lambda: read_on)
         take()
         worker.close()
 
-        assert set(read_on) == {"funestra-commands"}
+        assert set(read_on) == {"funestra-listening"}
 
-    def test_closing_stops_following_the_command_file(self, tmp_path):
+    def test_everything_it_follows_is_read_on_one_thread_in_the_order_it_was_handed(self):
+        read: list[str] = []
+        worker = BehindTheLoop()
+        worker.follow(lambda: read.append("first"))
+        worker.follow(lambda: read.append("second"))
+
+        wait_until(lambda: len(read) >= 4)
+        worker.close()
+
+        assert read[:4] == ["first", "second", "first", "second"]
+
+    def test_a_read_that_fails_is_logged_and_the_next_one_still_runs(self, caplog):
+        caplog.set_level(logging.ERROR, logger="funestra.off_the_loop")
+        worker = BehindTheLoop()
+        reads = iter([ValueError("made-up failure"), "heard"])
+
+        def read() -> str:
+            made = next(reads, None)
+            if isinstance(made, Exception):
+                raise made
+            return made
+
+        take = worker.follow(read)
+        taken: list[str] = []
+        wait_until(lambda: taken.extend(take()) or taken)
+        worker.close()
+
+        assert taken == ["heard"]
+        assert [record.getMessage() for record in caplog.records] == [
+            "A file a Funestra follows could not be read"]
+
+    def test_closing_stops_following(self):
         before = set(threading.enumerate())
         worker = BehindTheLoop()
-        worker.follow_commands(tmp_path / "cmd.txt")
+        worker.follow(lambda: None)
 
         worker.close()
 
@@ -145,12 +169,11 @@ class TestBehindTheLoop:
         assert threading.active_count() == before
 
 
-def test_the_commands_written_to_a_command_file_are_taken_in_the_order_written(worker, tmp_path):
-    path = tmp_path / "cmd.txt"
-    path.write_text("NEXT\nLOCK\nNEXT\n", encoding="utf-8")
-    take = worker.follow_commands(path)
+def test_what_is_heard_is_taken_in_the_order_it_was_heard_and_nothing_heard_is_left_out(worker):
+    heard = iter(["one", None, "two", "three"])
+    take = worker.follow(lambda: next(heard, None))
     taken: list[str] = []
 
     wait_until(lambda: taken.extend(take()) or len(taken) >= 3)
 
-    assert taken == ["NEXT", "LOCK", "NEXT"]
+    assert taken == ["one", "two", "three"]
