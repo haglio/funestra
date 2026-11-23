@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 ROBOT_HAND = "robot hand"
 
-Narrow = Callable[[str], None]
+NarrowSaying = Callable[[str], None]
 
 
 @dataclass(frozen=True)
@@ -55,7 +55,7 @@ class FlickSource(Protocol):
 
     def name_of(self, flick: Path) -> str: ...
 
-    def apply_command(self, command: str, narrow: Narrow) -> bool: ...
+    def apply_command(self, command: str, narrow: NarrowSaying) -> bool: ...
 
 
 @dataclass(frozen=True)

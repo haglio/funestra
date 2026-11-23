@@ -14,7 +14,7 @@ from app_support import haglio_settings
 
 from funestra import genau_engine
 from funestra.flick_folder import scan_flicks
-from funestra.genau import Genau, GenauOutputs, Narrow, Opening
+from funestra.genau import Genau, GenauOutputs, NarrowSaying, Opening
 from funestra.genau_engine import EngineSeams, GenauChannels
 from funestra.genau_refresh import SEND_THREAD
 from funestra.genau_settings import GenauSettings
@@ -74,7 +74,7 @@ class ListedFlicks:
         arrived, self.arriving = self.arriving, []
         return arrived
 
-    def apply_command(self, command: str, narrow: Narrow) -> bool:
+    def apply_command(self, command: str, narrow: NarrowSaying) -> bool:
         verb, _, kept = command.partition(" ")
         if verb != KEEP_ONLY:
             return False
@@ -181,6 +181,7 @@ class World:
         self.clock = Clock()
         seams = EngineSeams(
             decode=lambda _path: _frames(),
+            frame_rate=lambda _flick: 30.0,
             start_thread=setup.start_thread,
             clock=self.clock,
             log=logging.getLogger("test.genau"),

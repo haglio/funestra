@@ -5,7 +5,7 @@ from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from pathlib import Path
 
 from .flick_overlay import NOTHING_UP, FlickFrame
-from .genau import Genau, Narrow, Opening, a_step_shown_genau_takes
+from .genau import Genau, NarrowSaying, Opening, a_step_shown_genau_takes
 from .main_hud import ModeHud
 from .playlist import PlaylistItem, read_playlist, write_playlist
 from .runs_here import AddsNothing
@@ -63,7 +63,7 @@ class FlickList:
     def name_of(self, flick: Path) -> str:
         return flick.stem
 
-    def apply_command(self, command: str, narrow: Narrow) -> bool:
+    def apply_command(self, command: str, narrow: NarrowSaying) -> bool:
         verb, _, says = command.partition(" ")
         if verb != RELOAD_FLICKS:
             return False
