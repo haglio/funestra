@@ -18,6 +18,7 @@ from .hud import (
     load_font,
     text_width,
     to_bgra,
+    tooltip_size,
 )
 from .hud_button import Button
 from .hud_icons import shared_icon
@@ -34,10 +35,6 @@ MINIMIZE_TOOLTIP = "Minimize this HUD"
 RESTORE_TOOLTIP = "Show this HUD again"
 
 FLASH_S = 3.0
-
-_TOOLTIP_ROOM_W = 118
-_TOOLTIP_ROOM_H = 26
-
 
 @lru_cache(maxsize=1)
 def icon_font():
@@ -104,7 +101,8 @@ def _collapsed_size(*, room_for_the_tooltip: bool,
         return ROOM + beside.width, BUTTON
     if not room_for_the_tooltip:
         return BUTTON, BUTTON
-    return BUTTON + _TOOLTIP_ROOM_W, BUTTON + _TOOLTIP_ROOM_H
+    room_w, room_h = tooltip_size(RESTORE_TOOLTIP)
+    return BUTTON + room_w, BUTTON + room_h
 
 
 def collapsed_button(funestra: str, corner: HudCorner = HudCorner.UPPER_LEFT, *,

@@ -3,13 +3,13 @@ from __future__ import annotations
 import pytest
 from shared_ui.spacing import BUTTON_GAP
 
+from funestra.hud import tooltip_size
 from funestra.hud_corners import (
     CORNER_PLUS_OVERLAY_ID,
     HudCorners,
     HudPlace,
     plus_bgra,
     plus_button,
-    tooltip_size,
 )
 from funestra.hud_minimize import BUTTON
 from funestra.hud_placement import HudCorner

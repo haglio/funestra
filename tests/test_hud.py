@@ -3,6 +3,7 @@ from __future__ import annotations
 import numpy as np
 from PIL import Image, ImageDraw
 from shared_ui import palette, tooltip_look
+from shared_ui.body_text import body_text_pixels
 from shared_ui.icons_pil import paste_icon
 from shared_ui.palette import BG_PRIMARY, MAGENTA, TEXT_MUTED, WHITE
 from shared_ui.type_scale import SIZE_BODY, SIZE_SMALL
@@ -119,7 +120,7 @@ def test_a_tooltip_wider_than_the_hud_wraps_rather_than_running_off_it():
     x, y, w, h = rect
     assert (x, y) >= (0, 0)
     assert (x + w, y + h) <= (150, 120)
-    assert h > sum(font.getmetrics()) + 2 * tooltip_look.PAD
+    assert h > sum(font.getmetrics()) + 2 * tooltip_look.PAD_V
 
 
 def test_a_tooltip_that_fits_stays_on_one_line_right_of_and_below_the_pointer_clear_of_its_arrow():
@@ -129,7 +130,7 @@ def test_a_tooltip_that_fits_stays_on_one_line_right_of_and_below_the_pointer_cl
     x, y, _w, h = draw_tooltip(hud.draw, "Next clip", (40, 60),
                                hud.image.size)
 
-    assert h == sum(font.getmetrics()) + 2 * tooltip_look.PAD
+    assert h == sum(font.getmetrics()) + 2 * tooltip_look.PAD_V
     assert (x - 40, y - 60) == (14, 16)
 
 
@@ -140,7 +141,7 @@ def test_a_tooltip_starts_a_new_line_wherever_its_text_does():
     _x, _y, _w, h = draw_tooltip(hud.draw, "Next clip\nThen the one after it",
                                  (40, 60), hud.image.size)
 
-    assert h == 2 * sum(font.getmetrics()) + 2 * tooltip_look.PAD
+    assert h == 2 * sum(font.getmetrics()) + 2 * tooltip_look.PAD_V
 
 
 def test_a_tooltip_keeps_the_spaces_it_was_written_with():
@@ -242,5 +243,19 @@ def test_every_label_is_bold_unless_asked_otherwise_since_it_is_read_at_a_glance
 
 
 def test_every_hud_tooltip_is_lettered_as_every_other_haglio_tooltip_is():
-    assert tooltip_font().size == load_font(tooltip_look.LETTERING_SIZE).size
-    assert tooltip_font().path == load_font(tooltip_look.LETTERING_SIZE).path
+    assert tooltip_font().size == body_text_pixels()
+    assert tooltip_font().getname() == ("Segoe UI", "Regular")
+
+
+def test_a_hud_tooltip_is_a_square_solid_box_with_its_words_starting_at_the_left():
+    hud = Hud(400, 120)
+    hud.image.paste((0, 0, 0, 0), (0, 0, 400, 120))
+
+    x, y, w, h = draw_tooltip(hud.draw, "Next clip", (20, 20), hud.image.size)
+
+    assert hud.image.getpixel((x + 1, y + 1)) == (*tooltip_look.GROUND, 255)
+    assert hud.image.getpixel((x, y)) == (*tooltip_look.OUTLINE, 255)
+    inked = [column for column in range(x + 1, x + w - 1)
+             if any(hud.image.getpixel((column, row))[:3] != tooltip_look.GROUND
+                    for row in range(y + 1, y + h - 1))]
+    assert inked[0] - x <= tooltip_look.PAD_H + 2

@@ -6,9 +6,9 @@ from functools import lru_cache
 import numpy as np
 from PIL import Image, ImageDraw
 
-from .hud import ButtonLook, draw_button, draw_tooltip, to_bgra
+from .hud import ButtonLook, draw_button, draw_tooltip, to_bgra, tooltip_size
 from .hud_button import Button
-from .hud_corners import plus_bgra, plus_button, tooltip_size
+from .hud_corners import plus_bgra, plus_button
 from .hud_minimize import BUTTON, icon_font, minimize_button, name_slab, restore_button
 from .hud_placement import HudCorner, HudEdge
 

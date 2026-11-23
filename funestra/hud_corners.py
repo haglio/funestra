@@ -6,10 +6,9 @@ from functools import lru_cache
 
 import numpy as np
 from PIL import Image, ImageDraw
-from shared_ui import tooltip_look
 from shared_ui.spacing import BUTTON_GAP
 
-from .hud import ButtonLook, draw_button, draw_tooltip, text_width, to_bgra, tooltip_font
+from .hud import ButtonLook, draw_button, draw_tooltip, to_bgra, tooltip_size
 from .hud_button import Button
 from .hud_minimize import BUTTON, RESTORE_ICON, icon_font, restore_at_command
 from .hud_placement import HudCorner, corner_at, hud_origin
@@ -19,7 +18,6 @@ REACH = 64
 MOVE_TOOLTIP = "Move this HUD here"
 SHOW_TOOLTIP = "Show this HUD here"
 
-_TOOLTIP_EDGE = 2
 _FAR = 1 << 16
 
 
@@ -54,12 +52,6 @@ def _corner_beside(place: HudPlace, x: int, y: int, *,
 def plus_button(funestra: str, place: str, *, minimized: bool) -> Button:
     return Button(restore_at_command(funestra, place), RESTORE_ICON,
                   SHOW_TOOLTIP if minimized else MOVE_TOOLTIP)
-
-
-def tooltip_size(text: str) -> tuple[int, int]:
-    font = tooltip_font()
-    return (text_width(font, text) + 2 * (tooltip_look.PAD + _TOOLTIP_EDGE),
-            sum(font.getmetrics()) + 2 * (tooltip_look.PAD + _TOOLTIP_EDGE))
 
 
 @lru_cache(maxsize=16)

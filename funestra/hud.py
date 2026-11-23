@@ -8,9 +8,10 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 from shared_ui import lettering, tooltip_look
 from shared_ui.app_icon import draw_letter
+from shared_ui.body_text import body_text_pixels
 from shared_ui.button_pil import slab
 from shared_ui.icons_pil import paste_icon
-from shared_ui.lettering import BOLD_FACE, wrap_text
+from shared_ui.lettering import BOLD_FACE, REGULAR_FACE, wrap_text
 from shared_ui.palette import (
     BG_BUTTON,
     BG_BUTTON_ACTIVE,
@@ -123,18 +124,24 @@ class Tooltip(NamedTuple):
 
 @lru_cache(maxsize=1)
 def tooltip_font() -> ImageFont.FreeTypeFont:
-    return load_font(tooltip_look.LETTERING_SIZE)
+    return lettering.load_font(body_text_pixels(), REGULAR_FACE)
+
+
+def tooltip_size(text: str) -> tuple[int, int]:
+    font = tooltip_font()
+    return (text_width(font, text) + 2 * (tooltip_look.PAD_H + _TOOLTIP_EDGE),
+            sum(font.getmetrics()) + 2 * (tooltip_look.PAD_V + _TOOLTIP_EDGE))
 
 
 def tooltip_for(text: str, pos: tuple[int, int], bounds: tuple[int, int]) -> Tooltip | None:
     font = tooltip_font()
-    room = max(1, bounds[0] - 2 * (_TOOLTIP_EDGE + tooltip_look.PAD))
+    room = max(1, bounds[0] - 2 * (_TOOLTIP_EDGE + tooltip_look.PAD_H))
     lines = wrap_text(font, text, room)
     if not lines:
         return None
     ascent, descent = font.getmetrics()
-    w = max(text_width(font, line) for line in lines) + 2 * tooltip_look.PAD
-    h = (ascent + descent) * len(lines) + 2 * tooltip_look.PAD
+    w = max(text_width(font, line) for line in lines) + 2 * tooltip_look.PAD_H
+    h = (ascent + descent) * len(lines) + 2 * tooltip_look.PAD_V
     x = max(_TOOLTIP_EDGE, min(pos[0] + _TOOLTIP_OFFSET[0], bounds[0] - w - _TOOLTIP_EDGE))
     y = max(_TOOLTIP_EDGE, min(pos[1] + _TOOLTIP_OFFSET[1], bounds[1] - h - _TOOLTIP_EDGE))
     return Tooltip(tuple(lines), (x, y, w, h))
@@ -145,12 +152,11 @@ def draw_the_tooltip(draw: ImageDraw.ImageDraw, tooltip: Tooltip) -> None:
     x, y, w, h = tooltip.rect
     ascent, descent = font.getmetrics()
     line_h = ascent + descent
-    draw.rounded_rectangle([x, y, x + w - 1, y + h - 1], radius=tooltip_look.RADIUS,
-                           fill=(*tooltip_look.GROUND, tooltip_look.GROUND_ALPHA),
-                           outline=(*tooltip_look.OUTLINE, 255), width=1)
+    draw.rectangle([x, y, x + w - 1, y + h - 1], fill=(*tooltip_look.GROUND, 255),
+                   outline=(*tooltip_look.OUTLINE, 255), width=1)
     for index, line in enumerate(tooltip.lines):
-        draw.text((x + w / 2, y + tooltip_look.PAD + index * line_h + ascent), line,
-                  font=font, anchor="ms", fill=(*tooltip_look.INK, 255))
+        draw.text((x + tooltip_look.PAD_H, y + tooltip_look.PAD_V + index * line_h + ascent), line,
+                  font=font, anchor="ls", fill=(*tooltip_look.INK, 255))
 
 
 def draw_tooltip(draw: ImageDraw.ImageDraw, text: str, pos: tuple[int, int],

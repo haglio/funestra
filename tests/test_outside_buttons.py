@@ -3,8 +3,8 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from funestra.hud import to_bgra
-from funestra.hud_corners import plus_bgra, plus_button, tooltip_size
+from funestra.hud import to_bgra, tooltip_size
+from funestra.hud_corners import plus_bgra, plus_button
 from funestra.hud_minimize import BUTTON, MINIMIZE_TOOLTIP, RESTORE_TOOLTIP, name_slab
 from funestra.hud_placement import HudCorner, HudEdge
 from funestra.outside_buttons import OutsideButtons
