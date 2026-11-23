@@ -107,6 +107,7 @@ def _channels(tmp_path: Path, lines: list[str], *, commands: str = "QUIT\n",
 
 
 def _funestra(tmp_path: Path, lines: list[str], *, audible: bool = True, tiles: bool = False,
+              setup_choices: dict | None = None,
               **channel_choices) -> tuple[Funestra, FakeEngine]:
     channels = _channels(tmp_path, lines, **channel_choices)
     engine = FakeEngine()
@@ -115,7 +116,8 @@ def _funestra(tmp_path: Path, lines: list[str], *, audible: bool = True, tiles: 
             channels=channels,
             playlist=read_playlist(channels.playlist),
             audible=audible,
-            tiles=tiles)), engine
+            tiles=tiles,
+            **(setup_choices or {}))), engine
 
 
 def _status(tmp_path: Path) -> str:
@@ -2275,11 +2277,13 @@ class TestWhatAFunestraHandsOffItsLoop:
 
 
 def test_a_flag_written_twice_in_place_inside_one_tick_of_the_file_clock_is_still_heard(tmp_path):
-    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
-                                 commands="")
     flag = tmp_path / "paused.txt"
+    now = [0]
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
+                                 commands="", setup_choices={"file_clock_ns": lambda: now[0]})
     flag.write_text("0", encoding="utf-8")
     one_stamp = flag.stat()
+    now[0] = one_stamp.st_mtime_ns
     funestra.tick(viewport=WINDOW)
 
     flag.write_text("1", encoding="utf-8")

@@ -128,7 +128,8 @@ class Funestra:
         self._paused_before_the_scrub: bool | None = None
         self._sought_this_pass = False
         self._seek_owed: float | None = None
-        paused_flag = None if channels.paused is None else PausedFlag(channels.paused)
+        paused_flag = (None if channels.paused is None
+                       else PausedFlag(channels.paused, now_ns=setup.file_clock_ns))
         self._paused_told = None if paused_flag is None else paused_flag.read()
         self._frame_record = FrameRecord(
             setup.frame_ms, clock=setup.frame_clock,
