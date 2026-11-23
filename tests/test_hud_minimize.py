@@ -65,7 +65,7 @@ class TestTheRoomBesideThePlus:
 
         _x, _y, _w, h = draw_tooltip(ImageDraw.Draw(image), RESTORE_TOOLTIP, (0, 0), size)
 
-        assert h == sum(tooltip_font().getmetrics()) + 2 * tooltip_look.PAD
+        assert h == sum(tooltip_font().getmetrics()) + 2 * tooltip_look.PAD_V
 
 
 class TestTheNameBesideThePlus:

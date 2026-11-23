@@ -95,7 +95,7 @@ class TestPainter:
         tipped = _rgb(Osr2PartPainter().bgra(hud, hover=(x + w // 2, y + h // 2)))
 
         rows, cols = np.nonzero((tipped != plain).any(axis=2))
-        one_line_height = sum(tiny.getmetrics()) + 2 * tooltip_look.PAD
+        one_line_height = sum(tiny.getmetrics()) + 2 * tooltip_look.PAD_V
 
         assert len(cols)
         assert cols.max() < plain.shape[1] - 1
