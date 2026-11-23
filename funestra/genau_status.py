@@ -87,6 +87,8 @@ class GenauStatus:
     flipped: bool = False
     portrait: bool | None = None
     up_at: float | None = None
+    whole: bool = False
+    unreadable: bool = False
     interval: int = DEFAULT_INTERVAL_S
 
 
@@ -120,5 +122,7 @@ def genau_status_from(values: dict[str, str]) -> GenauStatus:
         flipped=_on(values, "flipped"),
         portrait=_on_or_unknown(values, "portrait"),
         up_at=_seconds_or_none(values, "up_at"),
+        whole=_on(values, "whole"),
+        unreadable=_on(values, "unreadable"),
         interval=_whole_seconds(values, "interval", DEFAULT_INTERVAL_S),
     )

@@ -236,6 +236,15 @@ def test_what_genau_writes_reads_back_as_the_flick_on_screen_its_lock_flip_and_s
             heard.up_at) == (str(Path("C:/made/up/one.mp4")), False, True, 12, True, 3.5)
 
 
+def test_what_genau_writes_reads_back_whether_the_flick_is_whole_or_could_not_be_read():
+    whole = _read_back(build_status_text(RobotHandState(), on_screen=FlickOnScreen(whole=True)))
+    unreadable = _read_back(build_status_text(RobotHandState(),
+                                              on_screen=FlickOnScreen(unreadable=True)))
+
+    assert (whole.whole, whole.unreadable) == (True, False)
+    assert (unreadable.whole, unreadable.unreadable) == (False, True)
+
+
 def test_nothing_written_yet_reads_as_genau_as_it_opens():
     heard = genau_status.genau_status_from({})
 
