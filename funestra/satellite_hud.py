@@ -78,6 +78,7 @@ class HudCell:
     path: str
     thumb: str = ""
     label: str = ""
+    name: str = ""
 
 
 class HudSection(Protocol):
@@ -447,6 +448,7 @@ class HudTargets:
     favorite: Rect | None = None
     wrong_action: Rect | None = None
     words: list[tuple[Rect, str]] = field(default_factory=list)
+    names: list[tuple[Rect, str]] = field(default_factory=list)
     tracks: list[DriveTrack] = field(default_factory=list)
     row: RowLayout | None = None
     foot: Rect | None = None
@@ -454,13 +456,21 @@ class HudTargets:
 
 
 def build_click_targets(rects: NavMapRects, model: HudModel) -> list[tuple[Rect, str]]:
-    targets: list[tuple[Rect, str]] = []
-    if rects.corner is not None and model.corner is not None and model.corner.path:
-        targets.append((rects.corner, model.corner.path))
-    targets.extend((rect, cell.path) for rect, cell in zip(rects.seeds, model.seeds, strict=False))
-    targets.extend((rect, cell.path)
-                   for rect, cell in zip(rects.actions, model.actions, strict=False))
-    return targets
+    return [(rect, cell.path) for rect, cell in _placed_cells(rects, model)
+            if cell.path or cell is not model.corner]
+
+
+def build_name_targets(rects: NavMapRects, model: HudModel) -> list[tuple[Rect, str]]:
+    return [(rect, cell.name) for rect, cell in _placed_cells(rects, model) if cell.name]
+
+
+def _placed_cells(rects: NavMapRects, model: HudModel) -> list[tuple[Rect, HudCell]]:
+    placed: list[tuple[Rect, HudCell]] = []
+    if rects.corner is not None and model.corner is not None:
+        placed.append((rects.corner, model.corner))
+    placed.extend(zip(rects.seeds, model.seeds, strict=False))
+    placed.extend(zip(rects.actions, model.actions, strict=False))
+    return placed
 
 
 def hit_test_targets(targets: list[tuple[Rect, str]], px: int, py: int) -> str:
@@ -547,6 +557,7 @@ def _cell(raw: object) -> HudCell | None:
         path=str(raw.get("path", "")),
         thumb=str(raw.get("thumb", "") or ""),
         label=str(raw.get("label", "") or ""),
+        name=str(raw.get("name", "") or ""),
     )
 
 
@@ -554,6 +565,8 @@ def _cell_raw(cell: HudCell) -> dict[str, str]:
     raw = {"path": cell.path, "thumb": cell.thumb}
     if cell.label:
         raw["label"] = cell.label
+    if cell.name:
+        raw["name"] = cell.name
     return raw
 
 

@@ -41,7 +41,8 @@ def button_tooltip(targets: HudTargets, px: int, py: int) -> str:
         (_in(targets.expand, px, py), tooltip_for(EXPAND_ICON, EXPAND_TOOLTIP)),
         (_in(targets.favorite, px, py), tooltip_for(FAVORITE_ICON, FAVORITE_TOOLTIP)),
     )
-    return next((tooltip for hit, tooltip in beneath if hit), "")
+    return (next((tooltip for hit, tooltip in beneath if hit), "")
+            or hit_test_targets(targets.names, px, py))
 
 
 # Windows' default double-click time.

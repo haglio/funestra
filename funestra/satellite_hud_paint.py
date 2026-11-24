@@ -87,6 +87,7 @@ from .satellite_hud import (
     action_label_blocks,
     actions_are_filtered,
     build_click_targets,
+    build_name_targets,
     button_row_rects,
     button_row_width,
     expand_button_rect,
@@ -573,6 +574,7 @@ class HudRenderer:
             self._icon_button(hud, expand_rect, _EXPAND_ICON)
         return HudTargets(
             click=build_click_targets(rects, model),
+            names=build_name_targets(rects, model),
             loop=[(button, kind)
                   for kind, button in (("action", loop_action_rect), ("seed", loop_seed_rect))
                   if button is not None],
