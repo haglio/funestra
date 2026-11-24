@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import replace
-
 import pytest
 
 from funestra.funestra_verbs import SEEK_BACK, SEEK_FWD
@@ -35,7 +33,6 @@ from funestra.hud_controls import (
     too_short_to_step,
     transport,
     trash_button,
-    trash_button_under,
     versions_button,
     why_it_cannot_step,
 )
@@ -161,19 +158,12 @@ class TestTheSwitchesAndTheThingsDone:
         assert held.tooltip == "Locked — this clip repeats; press to play on through the playlist"
         assert free.tooltip == "Unlocked — plays on through the playlist; press to hold this clip"
 
-    def test_the_trash_unfavorites_a_favorite_and_sends_anything_else_to_trash(self):
-        trash = trash_button("portrait")
+    def test_the_trash_says_it_sends_what_shows_to_trash(self):
+        trash = trash_button("portrait_trash", "clip")
 
         assert (trash.command, trash.icon, trash.tooltip) == (
-            "portrait_trash", TRASH_ICON,
-            "Unfavorite it — or send it to Trash when it is not a favorite")
+            "portrait_trash", TRASH_ICON, "Send this clip to Trash and move on to the next")
         assert trash.danger
-
-    def test_a_source_whose_trash_does_something_else_says_so_and_keeps_the_trash_s_face(self):
-        trash = trash_button_under("made_up_trash", "Send to Trash — move it out")
-
-        assert trash == replace(trash_button("portrait"), command="made_up_trash",
-                                tooltip="Send to Trash — move it out")
 
     def test_each_filter_wears_its_collection_s_own_mark_with_the_filter_s_funnel(self):
         assert (shared_icon_name(FAVORITES_ICON), shared_icon_name(ENHANCED_ICON)) == (

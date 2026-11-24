@@ -11,8 +11,8 @@ from funestra.hud_controls import (
     AN_IMAGE,
     LATEST_ICON,
     RESET_PUTS_BACK_THE_SPEED,
-    TRASH_TOOLTIP,
     lock_tooltip,
+    trash_tooltip,
 )
 from funestra.hud_icons import (
     MINIMIZE_FUNESTRA_ICON,
@@ -937,7 +937,7 @@ class TestSlideshowWords:
         row = _by_name()
 
         assert row["lock"].tooltip == lock_tooltip(False, "slide")
-        assert row["trash"].tooltip == TRASH_TOOLTIP
+        assert row["trash"].tooltip == trash_tooltip("slide")
         assert row["reset"].tooltip.startswith("Reset — ")
 
 
@@ -1263,6 +1263,12 @@ def test_every_hud_has_a_trash_kino_on_the_main_funestra_included():
     for kind, facts, command in _EVERY_TRASH:
         assert _trash_of(kind, facts).command == command
         assert _trash_of(kind, facts).icon == shared_icon("trash")
+
+
+def test_a_trash_on_what_is_no_favorite_speaks_only_of_sending_it_to_trash():
+    nouns = ("video", _main_facts(main_mode=MainMode.GENAU).flick_one, "slide", "slide")
+    for (kind, facts, _command), noun in zip(_EVERY_TRASH, nouns, strict=True):
+        assert _trash_of(kind, facts).tooltip == f"Send this {noun} to Trash and move on to the next"
 
 
 def test_on_a_favorite_every_trash_becomes_the_star_struck_through_posting_the_same_verb():

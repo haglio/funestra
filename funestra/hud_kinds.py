@@ -29,7 +29,6 @@ from .hud_controls import (
     reset_button,
     transport,
     trash_button,
-    trash_button_under,
     versions_button,
 )
 from .hud_icons import MINIMIZE_FUNESTRA_ICON, UNFAVORITE_ICON, shared_icon
@@ -243,19 +242,20 @@ def _lock(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
 
 
 def _slide_trash(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
-    return (_opening_the_lock_s_group(trash_button(facts.funestra), facts, shows),)
+    return (_opening_the_lock_s_group(f"{facts.funestra}_trash", facts, shows),)
 
 
 def _video_trash(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
-    return (_opening_the_lock_s_group(trash_button("main"), facts, shows),)
+    return (_opening_the_lock_s_group("main_trash", facts, shows),)
 
 
-def _opening_the_lock_s_group(trash: Button, facts: HudFacts, shows: Shows) -> Button:
-    trash = replace(trash, group_break=True)
+def _opening_the_lock_s_group(command: str, facts: HudFacts, shows: Shows) -> Button:
+    noun = _noun(facts, shows)
+    trash = replace(trash_button(command, noun), group_break=True)
     if not facts.favorite:
         return trash
     return replace(trash, icon=UNFAVORITE_ICON, danger=False,
-                   tooltip=f"Unfavorite this {_noun(facts, shows)} and move on to the next")
+                   tooltip=f"Unfavorite this {noun} and move on to the next")
 
 
 def _things(facts: HudFacts, shows: Shows) -> str:
@@ -277,8 +277,7 @@ def _flip(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
 
 
 def _flick_trash(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
-    return (_opening_the_lock_s_group(trash_button_under(TRASH_FLICK, "Send to Trash — move it out"),
-                               facts, shows),)
+    return (_opening_the_lock_s_group(TRASH_FLICK, facts, shows),)
 
 
 def _media(facts: HudFacts, _shows: Shows) -> tuple[Button, ...]:
