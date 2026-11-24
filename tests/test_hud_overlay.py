@@ -380,6 +380,36 @@ def test_presses_land_on_the_hud_on_screen_until_mpv_has_taken_the_next(
     assert (while_mpv_copies is on_screen, overlay.targets is on_screen) == (True, False)
 
 
+def test_a_scrubber_that_moved_by_less_than_a_pixel_is_not_handed_to_mpv_again(
+        tmp_path: Path, hud: Path):
+    engine = FakeEngine()
+    overlay = _overlay(tmp_path, hud, engine)
+    for still_shown_ms in (0.0, 1.0, 2.0):
+        overlay.tick(scrubber_row=ScrubberRowDraw(RowHud(
+            position_ms=still_shown_ms, duration_ms=60_000.0, volume=VolumeHud(volume=40))))
+
+    assert engine.overlays_sent == [overlay.overlay_id]
+
+
+def test_an_unchanged_hud_drawn_while_mpv_copies_the_last_waits_for_mpv_to_take_that_one(
+        tmp_path: Path, hud: Path):
+    engine = _EngineMpvTakesItsTime()
+    overlay = _overlay(tmp_path, hud, engine)
+
+    def drawn_at(still_shown_ms: float) -> None:
+        overlay.tick(scrubber_row=ScrubberRowDraw(RowHud(
+            position_ms=still_shown_ms, duration_ms=60_000.0, volume=VolumeHud(volume=40))))
+
+    drawn_at(0.0)
+    drawn_at(1.0)
+    pressable_while_mpv_copies = overlay.covers(MARGIN + 1, MARGIN + 1)
+    engine.handed[0].taken = True
+    drawn_at(2.0)
+
+    assert (len(engine.handed), pressable_while_mpv_copies,
+            overlay.covers(MARGIN + 1, MARGIN + 1)) == (1, False, True)
+
+
 def test_a_hud_taken_down_before_mpv_took_its_picture_takes_no_presses(
         tmp_path: Path, hud: Path):
     engine = _EngineMpvTakesItsTime()

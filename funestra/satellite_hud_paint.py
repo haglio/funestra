@@ -203,14 +203,28 @@ class _Patch(NamedTuple):
     image: Image.Image
 
 
+_Pasted = list[tuple[Rect, np.ndarray]]
+
+
+def _the_same_pixels(one: _Pasted, other: _Pasted) -> bool:
+    return len(one) == len(other) and all(
+        rect == other_rect and np.array_equal(pixels, other_pixels)
+        for (rect, pixels), (other_rect, other_pixels) in zip(one, other, strict=True))
+
+
 class _PatchedCopies:
     def __init__(self, image: Image.Image) -> None:
         self._as_drawn = to_bgra(image)
+        self._last: tuple[_Pasted, np.ndarray] | None = None
 
     def with_the(self, patches: list[_Patch]) -> np.ndarray:
+        pasted = [(patch.rect, to_bgra(patch.image)) for patch in patches]
+        if self._last is not None and _the_same_pixels(pasted, self._last[0]):
+            return self._last[1]
         bitmap = self._as_drawn.copy()
-        for (x, y, width, height), image in patches:
-            bitmap[y:y + height, x:x + width] = to_bgra(image)
+        for (x, y, width, height), pixels in pasted:
+            bitmap[y:y + height, x:x + width] = pixels
+        self._last = (pasted, bitmap)
         return bitmap
 
 
