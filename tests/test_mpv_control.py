@@ -764,6 +764,13 @@ def test_a_frame_the_busy_card_could_not_decode_in_time_is_news_since_mpv_drops_
     assert {r.levelno for r in caplog.records} == {logging.INFO}
 
 
+def test_a_video_s_unreadable_tags_are_news_since_the_demuxer_reads_them_again_raw_and_plays_on(caplog):
+    with caplog.at_level(1, logger=mpv_engine.logger.name):
+        mpv_engine._log_mpv("warn", "ffmpeg/demuxer", "mov,mp4,m4a,3gp,3g2,mj2: UDTA parsing failed retrying raw\n")
+
+    assert [r.levelno for r in caplog.records] == [logging.INFO]
+
+
 def test_the_card_refusing_a_frame_for_any_other_reason_stays_an_error(caplog):
     with caplog.at_level(1, logger=mpv_engine.logger.name):
         mpv_engine._log_mpv("error", "ffmpeg/video", "h264: Failed to begin frame: 0x80070057\n")

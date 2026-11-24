@@ -54,6 +54,7 @@ _RIDDEN_OUT_BY_MPV = frozenset({
     "Failed to begin frame: 0x8000000a",
     "hardware accelerator failed to decode picture",
     "Error while decoding frame (hardware decoding)!",
+    "UDTA parsing failed retrying raw",
 })
 
 
