@@ -1784,3 +1784,30 @@ def test_a_loop_that_was_set_is_cleared_once():
     control.clear_ab_loop()
 
     assert mpv.calls == [("set", "ab_loop_a", "no"), ("set", "ab_loop_b", "no")]
+
+
+class _AnMpvSayingWhatHoldsIt(FakeMpv):
+    def __init__(self, said: dict[str, object]) -> None:
+        super().__init__()
+        self.said = said
+
+    def __getitem__(self, name: str) -> object:
+        if name not in self.said:
+            raise RuntimeError(name)
+        return self.said[name]
+
+
+def test_what_mpv_says_of_a_still_video_is_each_reason_it_could_stand_still():
+    control = Control(_AnMpvSayingWhatHoldsIt({
+        "pause": False, "core-idle": True, "paused-for-cache": False, "seeking": True,
+        "eof-reached": False, "idle-active": False}))
+
+    assert control.what_mpv_says == (
+        "pause=False core-idle=True paused-for-cache=False seeking=True eof-reached=False "
+        "idle-active=False")
+
+
+def test_what_mpv_says_names_a_property_it_could_not_read():
+    control = Control(_AnMpvSayingWhatHoldsIt({}))
+
+    assert control.what_mpv_says.split()[0] == "pause=unreadable"
