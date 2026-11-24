@@ -578,3 +578,62 @@ def test_the_whole_image_comes_round_as_often_as_all_the_places_together():
     assert stops.count(None) / len(stops) == pytest.approx(1 / 2, abs=0.03)
     for place in places:
         assert stops.count(place) / len(stops) == pytest.approx(1 / 6, abs=0.03)
+
+
+def test_stepping_on_goes_from_the_whole_image_to_each_place_in_turn_and_round_to_it_again():
+    still = paced(deals=Deals(DRIFT, CREEP))
+    still.set_points_of_interest((FACE, HAND), now_s=100.0)
+    framed = Fit((0, 0), (0, 0)).framing
+
+    views = []
+    for _ in range(3):
+        still.step_fix(1, now_s=101.0)
+        views.append(still.view(now_s=101.0))
+
+    assert views == [framed(FACE), framed(HAND), CREEP.at(0.25)]
+
+
+def test_an_image_with_no_places_keeps_its_move_when_stepped():
+    still = paced(deals=Deals(DRIFT, CREEP))
+
+    still.step_fix(1, now_s=101.0)
+
+    assert_along(still.view(now_s=101.0), DRIFT, 0.25)
+
+
+def test_stepping_back_from_the_whole_image_goes_to_its_last_place():
+    still = paced(deals=Deals(DRIFT))
+    still.set_points_of_interest((FACE, HAND), now_s=100.0)
+
+    still.step_fix(-1, now_s=101.0)
+
+    assert still.view(now_s=101.0) == Fit((0, 0), (0, 0)).framing(HAND)
+
+
+def test_stepping_on_goes_to_the_place_after_the_one_the_round_picked():
+    still = locked_with_places(FACE, HAND, PLACE, deals=Deals(DRIFT, stops=(HAND,)))
+    still.view(now_s=104.0)
+
+    still.step_fix(1, now_s=105.0)
+
+    assert still.view(now_s=105.0) == Fit((0, 0), (0, 0)).framing(PLACE)
+
+
+def test_a_locked_image_stepped_to_a_place_goes_back_to_picking_its_stops_next_round():
+    deals = Deals(DRIFT, CREEP, stops=(None,))
+    still = locked_with_places(FACE, HAND, deals=deals)
+
+    still.step_fix(1, now_s=101.0)
+
+    assert still.view(now_s=104.0) == CREEP.at(0.0)
+    assert deals.offered == [(FACE, HAND)]
+
+
+def test_a_step_leaves_the_image_its_time_so_an_unlocked_one_moves_on_when_it_would_have():
+    still = paced(deals=Deals(DRIFT))
+    still.set_points_of_interest((FACE,), now_s=100.0)
+
+    still.step_fix(1, now_s=103.0)
+
+    assert (still.progress(now_s=103.0), still.ran_out(now_s=103.9), still.ran_out(now_s=104.0)) == (
+        0.75, False, True)

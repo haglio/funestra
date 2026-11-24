@@ -498,6 +498,9 @@ class _MpvControl:
     def hold_image_for(self, seconds: float | None) -> None:
         self._ken_burns.hold_for(seconds)
 
+    def step_fix(self, steps: int) -> None:
+        self._ken_burns.step_fix(steps, self._now())
+
     def zoom_at(self, x: int, y: int, *, steps: int) -> None:
         zoomed = self._zoomed or WheelZoom()
         self._zoomed = zoomed.zoomed_at(self._under_the_wheel(self._now()), self._fit(), (x, y),

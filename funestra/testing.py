@@ -94,6 +94,7 @@ class FakeEngine(RefusesSeeks):
         self.image_time: tuple[float, float] | None = None
         self.image_seeks: list[float] = []
         self.held_for: float | None = None
+        self.fix_steps: list[int] = []
         self.source_dims = (0, 0)
         self.ab_loop: tuple[float, float] | None = None
         self.pushes = 0
@@ -178,6 +179,9 @@ class FakeEngine(RefusesSeeks):
 
     def hold_image_for(self, seconds: float | None) -> None:
         self.held_for = seconds or None
+
+    def step_fix(self, steps: int) -> None:
+        self.fix_steps.append(steps)
 
     def zoom_at(self, x: int, y: int, *, steps: int) -> None:
         self.zooms.append((x, y, steps))

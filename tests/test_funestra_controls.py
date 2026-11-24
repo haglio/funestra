@@ -18,11 +18,13 @@ from funestra.funestra_verbs import (
     LOCK_OFF,
     LOCK_ON,
     NEXT,
+    NEXT_FIX,
     NEXT_FUNSCRIPTED,
     NEXT_VERSION,
     PLAY_FILE,
     PLAY_NEXT,
     PREV,
+    PREV_FIX,
     PREV_VERSION,
     QUIT,
     RELOAD_PLAYLIST,
@@ -100,6 +102,13 @@ class TestApplyCommand:
 
         assert apply_command(f"{HOLD_PICTURE} 2", controls) is True
         assert engine.held_for == 2.0
+
+    def test_next_and_prev_fix_step_the_image_on_screen_through_its_fixes(self, tmp_path):
+        playback, engine = make_playback(tmp_path)
+        controls = FunestraControls(playback, reload_playlist=_never_reloads)
+
+        assert (apply_command(NEXT_FIX, controls), apply_command(PREV_FIX, controls)) == (True, True)
+        assert engine.fix_steps == [1, -1]
 
     def test_next_and_prev_navigate(self, tmp_path):
         controls = _controls(tmp_path)
@@ -477,7 +486,7 @@ def test_every_verb_a_funestra_answers_is_spelled_in_the_familys_vocabulary():
     assert set(VERBS) == {
         NEXT, PREV, LOCK_ON, LOCK_OFF, TOGGLE_LOCK, TRASH, LET_GO, NEXT_VERSION, PREV_VERSION, FORGET_VERSIONS,
         SEEK_FWD, SEEK_BACK, SPEED_UP, SPEED_DOWN, SET_SPEED, PLAY_FILE, PLAY_NEXT,
-        RELOAD_PLAYLIST, SET_PACE, HOLD_PICTURE, SHOW_FRAME, CLEAR_FRAME, QUIT,
+        RELOAD_PLAYLIST, SET_PACE, HOLD_PICTURE, NEXT_FIX, PREV_FIX, SHOW_FRAME, CLEAR_FRAME, QUIT,
         SET_TCODE_ENABLED,
         SET_MAX_INTENSITY, SET_VOLUME, SHOW,
         JUMP_TO_FUNSCRIPT, NEXT_FUNSCRIPTED,

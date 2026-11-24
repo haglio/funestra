@@ -276,6 +276,9 @@ class Playback:
     def hold_image_for(self, seconds: float) -> None:
         self._engine.hold_image_for(seconds)
 
+    def step_fix(self, steps: int) -> None:
+        self._engine.step_fix(steps)
+
     def show_frame(self, frame: Path) -> None:
         self._lineup.put_up(frame)
         self._engine.swap_image(frame)

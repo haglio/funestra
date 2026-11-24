@@ -171,6 +171,7 @@ class KenBurns:
         self._looping = looping
         self._hold_s: float | None = None
         self._places: tuple[Place, ...] = ()
+        self._fix = 0
 
     @property
     def pace_s(self) -> float:
@@ -202,10 +203,18 @@ class KenBurns:
         self._started_s = self._clock.read(now_s)
         self._held_progress = 0.0
         self._hold_s = None
+        self._fix = 0
 
     def set_points_of_interest(self, places: tuple[Place, ...], now_s: float) -> None:
         self.progress(now_s)
         self._places = tuple(places)
+
+    def step_fix(self, steps: int, now_s: float) -> None:
+        self.progress(now_s)
+        if not self._places:
+            return
+        self._fix = (self._fix + steps) % (len(self._places) + 1)
+        self._move = self._move_to(self._fix)
 
     def set_paused(self, paused: bool, now_s: float) -> None:
         if paused:
@@ -241,6 +250,10 @@ class KenBurns:
 
     def _next_stop(self) -> Move:
         place = self._moves.stop_among(self._places)
-        if place is None:
+        self._fix = 0 if place is None else self._places.index(place) + 1
+        return self._move_to(self._fix)
+
+    def _move_to(self, fix: int) -> Move:
+        if not fix:
             return self._moves.deal()
-        return self._moves.close_up(self._fit().framing, place)
+        return self._moves.close_up(self._fit().framing, self._places[fix - 1])

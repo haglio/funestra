@@ -17,11 +17,13 @@ from .funestra_verbs import (
     LOCK_OFF,
     LOCK_ON,
     NEXT,
+    NEXT_FIX,
     NEXT_FUNSCRIPTED,
     NEXT_VERSION,
     PLAY_FILE,
     PLAY_NEXT,
     PREV,
+    PREV_FIX,
     PREV_VERSION,
     QUIT,
     RELOAD_PLAYLIST,
@@ -197,6 +199,13 @@ def _hold_image(controls: FunestraControls, value: str) -> bool:
     return True
 
 
+def _fix_stepper(steps: int):
+    def step(controls: FunestraControls, _value: str) -> bool:
+        controls.playback.step_fix(steps)
+        return True
+    return step
+
+
 def _show_frame(controls: FunestraControls, value: str) -> bool:
     if not value.strip():
         return False
@@ -272,6 +281,7 @@ CONTROLS: tuple[Control, ...] = (
     ),
     Control(name="pace", verbs=(Verb(SET_PACE, _set_pace, takes_a_value=True),
                                 Verb(HOLD_PICTURE, _hold_image, takes_a_value=True))),
+    Control(name="fix", verbs=(Verb(NEXT_FIX, _fix_stepper(1)), Verb(PREV_FIX, _fix_stepper(-1)))),
     Control(
         name="frame",
         verbs=(Verb(SHOW_FRAME, _show_frame, takes_a_value=True),
