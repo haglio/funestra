@@ -34,6 +34,7 @@ from funestra.satellite_hud import (
     action_label_blocks,
     actions_are_filtered,
     build_click_targets,
+    build_name_targets,
     button_row_rects,
     ellipsis_rects,
     expand_button_rect,
@@ -398,6 +399,39 @@ def test_button_tooltip_names_each_button_probed_where_it_was_laid_out_since_the
         assert button_tooltip(targets, bx + 5, by + 5) == button.tooltip
     assert button_tooltip(targets, 305, 65) == "In the favorites"
     assert button_tooltip(targets, 400, 400) == ""
+
+
+def build_hud_targets_for_items(rects: NavMapRects, model: HudModel) -> HudTargets:
+    return _targets(click=build_click_targets(rects, model), names=build_name_targets(rects, model))
+
+
+def test_an_item_in_the_nav_map_wears_its_gallery_name_on_hover():
+    targets = build_hud_targets_for_items(
+        NavMapRects((0, 0, 40, 30), [(50, 0, 40, 30)], [(0, 40, 40, 30)]),
+        HudModel(funestra="portrait", corner=HudCell(path="C:/v/cur.png", name="A3F 012"),
+                 seeds=(HudCell(path="C:/v/s1.png", name="A3F 013"),),
+                 actions=(HudCell(path="C:/v/a1.png"),)))
+
+    assert button_tooltip(targets, 5, 5) == "A3F 012"
+    assert button_tooltip(targets, 55, 5) == "A3F 013"
+    assert button_tooltip(targets, 5, 45) == ""
+
+
+def test_a_live_item_with_no_file_still_wears_its_name_on_hover():
+    targets = build_hud_targets_for_items(
+        NavMapRects((0, 0, 40, 30), [], []),
+        HudModel(funestra="portrait", corner=HudCell(path="", name="A3F 014")))
+
+    assert button_tooltip(targets, 5, 5) == "A3F 014"
+
+
+def test_an_items_name_comes_through_the_published_hud():
+    model = HudModel(funestra="portrait", corner=HudCell(path="C:/v/cur.png", name="A3F 012"))
+
+    parsed = parse_hud(hud_text(model))
+
+    assert parsed is not None
+    assert parsed.corner == model.corner
 
 
 def test_no_control_is_silent_on_hover_since_its_face_is_a_wordless_icon_and_a_painted_hud_has_no_other_tooltip():
