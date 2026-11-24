@@ -152,16 +152,20 @@ def lit_or_remembered(on: bool, remembered: bool) -> dict:
     return {"lit": on and not remembered, "remembered": on and remembered}
 
 
-def browse_order_buttons(funestra: str, *, latest: bool | None,
+def browse_order_buttons(funestra: str, *, latest: bool | None, in_order: str = LATEST_LABEL,
                          remembered: bool = False) -> tuple[Button, ...]:
     if latest is None:
         return ()
     return (
         Button(f"{funestra}_shuffle", SHUFFLE_ICON, f"{SHUFFLE_LABEL} — reshuffle what plays",
                group_break=True, **lit_or_remembered(not latest, remembered)),
-        Button(f"{funestra}_latest", LATEST_ICON, f"{LATEST_LABEL} — reload it newest-first",
+        Button(f"{funestra}_latest", LATEST_ICON, f"{in_order} — {_RELOADS.get(in_order, _IN_THAT_ORDER)}",
                **lit_or_remembered(latest, remembered)),
     )
+
+
+_RELOADS = {LATEST_LABEL: "reload it newest-first"}
+_IN_THAT_ORDER = "reload it in that order"
 
 
 PLAYBACK_SPEED = "playback_speed"

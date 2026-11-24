@@ -216,6 +216,13 @@ class TestTheSwitchesAndTheThingsDone:
         assert (shuffle.group_break, latest.group_break) == (True, False)
         assert browse_order_buttons("portrait", latest=None) == ()
 
+    def test_the_in_order_button_names_the_order_it_plays_in(self):
+        _shuffle, in_order = browse_order_buttons("portrait", latest=True,
+                                                  in_order="Oldest first")
+
+        assert in_order.tooltip.startswith("Oldest first — ")
+        assert in_order.icon == LATEST_ICON
+
     def test_an_order_chosen_but_not_yet_applied_is_remembered_rather_than_lit(self):
         assert lit_or_remembered(True, True) == {"lit": False, "remembered": True}
         assert lit_or_remembered(True, False) == {"lit": True, "remembered": False}
