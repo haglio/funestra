@@ -32,7 +32,6 @@ FUNSCRIPT_JUMP_ICON = shared_icon("funscript_jump")
 
 NONE_FOR_THIS_ONE = " (none for this one)"
 AN_IMAGE = "this is an image"
-TRASH_TOOLTIP = "Unfavorite it — or send it to Trash when it is not a favorite"
 RESET_PUTS_BACK_THE_SPEED = "normal speed"
 RESET_TOOLTIP = (f"Reset — no filter, no lock, no loop, no {FAVORITES_LABEL}, no {ENHANCED_LABEL}, "
                  f"{RESET_PUTS_BACK_THE_SPEED}, shuffled from the top")
@@ -117,12 +116,12 @@ def lock_button(funestra: str, *, locked: bool, tooltip: str,
                   group_break=group_break)
 
 
-def trash_button(funestra: str) -> Button:
-    return trash_button_under(f"{funestra}_trash", TRASH_TOOLTIP)
+def trash_tooltip(noun: str) -> str:
+    return f"Send this {noun} to Trash and move on to the next"
 
 
-def trash_button_under(command: str, tooltip: str) -> Button:
-    return Button(command, TRASH_ICON, tooltip, danger=True)
+def trash_button(command: str, noun: str) -> Button:
+    return Button(command, TRASH_ICON, trash_tooltip(noun), danger=True)
 
 
 def _only_the(kept: str, label: str, things: str, *, on: bool) -> str:
