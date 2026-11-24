@@ -27,6 +27,7 @@ from funestra.hud_placement import HudCorner, HudEdge
 from funestra.hud_row import UNDER_THE_HUD_GAP, RowHud, RowPress, ScrubberRowDraw
 from funestra.name_copy import COPY_NAME, COPY_TOOLTIP
 from funestra.osr2_visualizer import DriveHud, DrivePublisher, publish_drive, read_drive
+from funestra.overlay_hand_over import Handed
 from funestra.satellite_hud import MARGIN, MINUS_INSET, PAD, HudModel
 from funestra.satellite_hud_paint import HudRenderer
 from funestra.scrubber_bar import SCRUBBER_HEIGHT
@@ -348,6 +349,50 @@ def test_a_hud_the_engine_has_no_memory_to_put_up_keeps_the_last_one_until_it_ha
 
     assert kept is drawn
     assert engine.overlays[overlay.overlay_id][2] is not drawn
+
+
+class _EngineMpvTakesItsTime(FakeEngine):
+    def __init__(self) -> None:
+        super().__init__()
+        self.handed: list[Handed] = []
+
+    def overlay(self, ident: int, x: int, y: int, bgra) -> Handed:
+        super().overlay(ident, x, y, bgra)
+        self.handed.append(Handed())
+        return self.handed[-1]
+
+
+def test_presses_land_on_the_hud_on_screen_until_mpv_has_taken_the_next(
+        tmp_path: Path, hud: Path):
+    engine = _EngineMpvTakesItsTime()
+    overlay = _overlay(tmp_path, hud, engine)
+    overlay.tick()
+    engine.handed[-1].taken = True
+    overlay.tick()
+    on_screen = overlay.targets
+    _locked(hud)
+    overlay.tick()
+    while_mpv_copies = overlay.targets
+
+    engine.handed[-1].taken = True
+    overlay.tick()
+
+    assert (while_mpv_copies is on_screen, overlay.targets is on_screen) == (True, False)
+
+
+def test_a_hud_taken_down_before_mpv_took_its_picture_takes_no_presses(
+        tmp_path: Path, hud: Path):
+    engine = _EngineMpvTakesItsTime()
+    overlay = _overlay(tmp_path, hud, engine, drawn_on=DrawnOn(
+        engine, over_the_video=False, minus_on_the_hud=False))
+    overlay.tick()
+    _publish(hud, hud_minimized=True)
+    overlay.tick()
+
+    engine.handed[0].taken = True
+    overlay.tick()
+
+    assert (overlay.targets.buttons, overlay.covers(MARGIN + 1, MARGIN + 1)) == ([], False)
 
 
 def test_presses_land_on_the_hud_on_screen_while_the_next_cannot_be_put_up(
@@ -1158,6 +1203,17 @@ class TestWhatTheHudTellsTheFrameRecord:
 
         assert laps == ["reading what the HUD shows", "the HUD's OSR2 readout",
                         "drawing the HUD whole, for a first draw", "handing the HUD to mpv"]
+
+    def test_a_draw_while_mpv_still_copies_the_first_is_named_for_its_own_reason(
+            self, tmp_path, hud):
+        laps: list[str] = []
+        overlay = _overlay(tmp_path, hud, _EngineMpvTakesItsTime(), lap=laps.append)
+        overlay.tick(scrubber_row=ScrubberRowDraw(RowHud(position_ms=0.0, duration_ms=10_000.0)))
+        laps.clear()
+
+        overlay.tick(scrubber_row=ScrubberRowDraw(RowHud(position_ms=20.0, duration_ms=10_000.0)))
+
+        assert "drawing the HUD's row, for the scrubber row" in laps
 
     def test_a_playhead_that_moved_names_drawing_only_the_row_for_it(self, tmp_path, hud):
         laps: list[str] = []

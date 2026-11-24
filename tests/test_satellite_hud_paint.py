@@ -1849,13 +1849,14 @@ class TestAHudWhoseScrubberAloneMoves:
 
             assert np.array_equal(kept, _drawn_from_nothing(_model(), row, self.PLAIN))
 
-    def test_hands_back_a_bitmap_the_next_draw_leaves_as_it_was(self):
+    def test_hands_back_a_bitmap_no_later_draw_changes_since_mpv_may_still_be_copying_it(self):
         renderer = HudRenderer("portrait")
-        first_row, second_row = _moving(2)
+        first_row, *later_rows = [RowHud(position_ms=15_000.0 * quarter, duration_ms=60_000,
+                                         volume=VolumeHud(volume=40)) for quarter in range(4)]
         first = renderer.render(_model(), scrubber_row=first_row, drawn_with=self.PLAIN).bgra
         as_handed_back = first.copy()
 
-        second = renderer.render(_model(), scrubber_row=second_row, drawn_with=self.PLAIN).bgra
+        for row in later_rows:
+            renderer.render(_model(), scrubber_row=row, drawn_with=self.PLAIN)
 
-        assert second is not first
         assert np.array_equal(first, as_handed_back)

@@ -203,26 +203,14 @@ class _Patch(NamedTuple):
     image: Image.Image
 
 
-class _BitmapsInTurn:
-    # mpv copies an overlay as it takes it, so the bitmap from two draws back is free to draw
-    # on again, and only the patches differ from one draw of an unchanged HUD to the next.
-
+class _PatchedCopies:
     def __init__(self, image: Image.Image) -> None:
         self._as_drawn = to_bgra(image)
-        self._pair = [self._as_drawn.copy(), self._as_drawn.copy()]
-        self._patched: list[tuple[Rect, ...]] = [(), ()]
-        self._turn = 0
 
     def with_the(self, patches: list[_Patch]) -> np.ndarray:
-        turn, self._turn = self._turn, 1 - self._turn
-        bitmap = self._pair[turn]
-        rects = tuple(patch.rect for patch in patches)
-        for x, y, width, height in self._patched[turn]:
-            if (x, y, width, height) not in rects:
-                bitmap[y:y + height, x:x + width] = self._as_drawn[y:y + height, x:x + width]
+        bitmap = self._as_drawn.copy()
         for (x, y, width, height), image in patches:
             bitmap[y:y + height, x:x + width] = to_bgra(image)
-        self._patched[turn] = rects
         return bitmap
 
 
@@ -230,7 +218,7 @@ class _BitmapsInTurn:
 class _DrawnButTheRow:
     drawn_for: tuple
     image: Image.Image
-    bitmaps: _BitmapsInTurn
+    bitmaps: _PatchedCopies
     row_rect: tuple[int, int, int, int]
     targets: HudTargets
 
@@ -454,7 +442,7 @@ class HudRenderer:
         targets = replace(nav_map_targets, tracks=[], row=row, foot=foot_rect, buttons=buttons,
                           favorite=favorite, host_controls=host_controls)
         if drawn_for is not None:
-            self._drawn = _DrawnButTheRow(drawn_for, image, _BitmapsInTurn(image), row.rect,
+            self._drawn = _DrawnButTheRow(drawn_for, image, _PatchedCopies(image), row.rect,
                                           targets)
             return self._with_the_row(self._drawn, scrubber_row, heatmap, drawn_with)
         if drawn_with.hover_tip:

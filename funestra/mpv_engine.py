@@ -22,6 +22,7 @@ from .libmpv_loader import add_libmpv_to_path, libmpv_dirs
 from .lost_gpu import LostGpu
 from .mpv_gate import CallGate, mpv_call
 from .output_colors import OutputColors
+from .overlay_hand_over import Answered, Handed, OverlayHandOver
 from .wheel_zoom import WheelZoom
 
 logger = logging.getLogger(__name__)
@@ -202,7 +203,8 @@ class _MpvControl:
         self._gate = CallGate()
         self._frame_rate = 0.0
         self._image_track: bool | None = None
-        self._overlays: dict[int, np.ndarray] = {}
+        self._hand_over = OverlayHandOver(add=self._ask_mpv_to_put_up,
+                                          remove=self._ask_mpv_to_take_down)
         # mpv leaves an image's playhead at 0, so a clock of our own paces it.
         self._ken_burns = KenBurns(moves, looping=looping, fit=self._fit)
         self._viewport = (0, 0)
@@ -581,22 +583,27 @@ class _MpvControl:
         return np.ascontiguousarray(arr[:, :, [2, 1, 0, 3]], dtype=np.uint8)
 
     @mpv_call()
-    def overlay(self, ident: int, x: int, y: int, bgra) -> None:
-        arr = np.ascontiguousarray(bgra, dtype=np.uint8)
-        h, w = arr.shape[:2]
-        try:
-            self._mpv.overlay_add(
-                ident, x, y, "&" + str(arr.ctypes.data), 0, "bgra", w, h, w * 4,
-            )
-        except SystemError as refused:
-            raise MemoryError("mpv had no memory for a copy of the overlay") from refused
-        # hold a reference so the buffer isn't freed while mpv reads it
-        self._overlays[ident] = arr
+    def overlay(self, ident: int, x: int, y: int, bgra) -> Handed | None:
+        return self._hand_over.put_up(ident, x, y, np.ascontiguousarray(bgra, dtype=np.uint8))
 
     @mpv_call()
     def remove_overlay(self, ident: int) -> None:
-        self._mpv.overlay_remove(ident)
-        self._overlays.pop(ident, None)
+        self._hand_over.take_down(ident)
+
+    @mpv_call()
+    def hand_over_the_overlays(self) -> None:
+        self._hand_over.hand_over()
+
+    def _ask_mpv_to_put_up(self, ident: int, x: int, y: int, bgra: np.ndarray,
+                           answered: Answered) -> None:
+        height, width = bgra.shape[:2]
+        self._mpv.command_async(
+            "overlay-add", *map(str, (ident, x, y)), f"&{bgra.ctypes.data}", "0", "bgra",
+            *map(str, (width, height, width * 4)),
+            callback=lambda error, _result: answered(error))
+
+    def _ask_mpv_to_take_down(self, ident: int) -> None:
+        self._ask("overlay-remove", str(ident))
 
     def frame_counts(self) -> MpvCounts:
         dropped, decoder_dropped, delayed = (self._counted[counter] for counter in _FRAME_COUNTERS)
