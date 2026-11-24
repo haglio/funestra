@@ -9,6 +9,13 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-24 — A fix stepped to stays on screen
+
+Once `KenBurns.step_fix` has stepped a locked image to a fix, or to the whole
+image, each time the image comes round it makes another move on that same
+stop instead of picking one at random. A new image goes back to picking, and
+so does an image whose new places no longer include the stop it was on.
+
 ## 2026-11-23 — A slideshow's HUD names the order it plays in
 
 `HudFacts.in_order` is new, one of `hud_title.IN_ORDER_LABELS` (`LATEST_LABEL`,
