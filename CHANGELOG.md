@@ -9,6 +9,19 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-23 — A Funestra hands mpv its overlays without waiting
+
+`funestra.overlay_hand_over` is new (`OverlayHandOver`, `Handed`), and so is
+`MpvEngine.hand_over_the_overlays()`, which a Funestra calls once a pass: the
+engine's `overlay()` asks mpv with `overlay-add` run when mpv is free, keeps
+each picture until mpv says it has copied it, sends only the newest picture
+for an overlay once mpv has answered for the one before, and returns a
+`Handed` whose `taken` turns true when mpv has the picture. A picture mpv had
+no memory for goes again, and `hand_over_the_overlays()` raises `MemoryError`
+until mpv takes it. `remove_overlay()` is asked the same way, after what mpv
+is still copying. A `HudSurface.overlay()` may return `None` for a picture
+that is up at once. The HUD's renderer hands back a new bitmap each draw.
+
 ## 2026-11-22 — A Satellite HUD's Job Queue picture loads behind the loop
 
 `PaintedFoot.picture()` and `PaintedFoot.shows_the_picture_of()` are new, as

@@ -22,6 +22,7 @@ from .modes import MainMode, Osr2State
 from .name_copy import COPY_NAME, copy_while_the_funestra_plays_on
 from .off_the_loop import Heard, at_once, follow_at_once
 from .osr2_visualizer import DriveHud, DrivePublisher, published_here, read_drive
+from .overlay_hand_over import Handed
 from .playback_setup import Lap, unlapped
 from .satellite_hud import (
     MARGIN,
@@ -86,6 +87,17 @@ _ON_NO_CONTROL = _Hover("", "", None, None)
 
 _REDRAWN_FOR = ("what it shows", "the item on screen", "the speed", "the window's size",
                 "the host's controls", "the lock's light", "the scrubber row", "a draw owed")
+
+
+class _HudOnItsWay(NamedTuple):
+    handed: Handed | None
+    targets: HudTargets
+    size: tuple[int, int]
+    origin: tuple[int, int]
+
+    @property
+    def taken(self) -> bool:
+        return self.handed is None or self.handed.taken
 
 
 class _Published(NamedTuple):
@@ -223,6 +235,7 @@ class HudOverlay:
         self._viewport: tuple[int, int] | None = None
         self._origin = (MARGIN, MARGIN)
         self._hud_size: tuple[int, int] | None = None
+        self._on_its_way: _HudOnItsWay | None = None
         self.targets: HudTargets = _EMPTY_TARGETS
 
     @property
@@ -248,6 +261,7 @@ class HudOverlay:
              viewport: tuple[int, int] | None = None,
              scrubber_row: ScrubberRowDraw | None = None, flash: str = "",
              playing: PlayingFacts | None = None) -> None:
+        self._take_up_the_hud_mpv_took()
         row, heatmap = (None, None) if scrubber_row is None else scrubber_row
         the_row_moved = row != self._scrubber_row or heatmap is not self._heatmap
         what_changed = {
@@ -424,7 +438,7 @@ class HudOverlay:
         self._draw("a hover")
 
     def close(self) -> None:
-        self._hud_size = None
+        self._hud_size = self._on_its_way = None
         if self._shown:
             self._engine.remove_overlay(self.overlay_id)
             self._shown = False
@@ -491,7 +505,7 @@ class HudOverlay:
             self.close()
             self._lap("taking the HUD down")
             return
-        if self._hud_size is None:
+        if not self._shown:
             why = "a first draw"
         corner = self._model.hud_corner if self._over_the_video else HudCorner.UPPER_LEFT
         model = replace(self._model, playback_speed=self._playback_speed, hud_corner=corner)
@@ -512,13 +526,19 @@ class HudOverlay:
         self._lap(f"{rendered.drawn.value}, for {why}")
         height, width = rendered.bgra.shape[:2]
         origin = self._place(corner, (width, height))
-        self._engine.overlay(self.overlay_id, *origin, rendered.bgra)
+        handed = self._engine.overlay(self.overlay_id, *origin, rendered.bgra)
         self._lap("handing the HUD to mpv")
         self._draw_owed = False
-        self.targets = rendered.targets
-        self._hud_size = (width, height)
-        self._origin = origin
         self._shown = True
+        self._on_its_way = _HudOnItsWay(handed, rendered.targets, (width, height), origin)
+        self._take_up_the_hud_mpv_took()
+
+    def _take_up_the_hud_mpv_took(self) -> None:
+        hud = self._on_its_way
+        if hud is None or not hud.taken:
+            return
+        self._on_its_way = None
+        self.targets, self._hud_size, self._origin = hud.targets, hud.size, hud.origin
 
     @property
     def _name(self) -> str:

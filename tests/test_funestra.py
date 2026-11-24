@@ -926,6 +926,28 @@ def test_a_frame_there_is_no_memory_to_draw_is_dropped_and_said_once_while_it_pl
         "Out of memory drawing over the item; drawing it again on the next frame"]
 
 
+def test_overlays_mpv_had_no_memory_for_are_handed_over_each_pass_and_said_once(
+        tmp_path, caplog):
+    funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
+                                 hud=True, commands="")
+    handed_over: list[str] = []
+
+    def no_memory_for_them() -> None:
+        handed_over.append("handed over")
+        raise MemoryError
+
+    engine.hand_over_the_overlays = no_memory_for_them
+
+    with caplog.at_level(logging.WARNING):
+        funestra.tick(viewport=WINDOW)
+        funestra.tick(viewport=WINDOW)
+
+    assert (handed_over, [record.getMessage() for record in caplog.records
+                          if record.name == "funestra.funestra"]) == (
+        ["handed over"] * 2,
+        ["Out of memory drawing over the item; drawing it again on the next frame"])
+
+
 def test_a_hud_there_was_no_memory_for_is_drawn_once_there_is(tmp_path):
     funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
                                  hud=True, commands="")

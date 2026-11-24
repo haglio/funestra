@@ -41,6 +41,7 @@ class FakeMpv:
         self.waited_on: list[str] = []
         self.places: list[tuple[str, str]] = []
         self._asked_without_waiting = False
+        self.overlays_to_answer: list = []
         self.__dict__.update(dict.fromkeys(PLACING, 0.0))
 
     @property
@@ -84,6 +85,8 @@ class FakeMpv:
 
     def command_async(self, name: str, *args: str, callback=None, **named: str) -> None:
         self._asked_without_waiting = True
+        if name == "overlay-add":
+            self.overlays_to_answer.append(callback)
         if name == "loadfile" and "options" in named:
             self.places.append((named["url"], named["options"]))
         try:
@@ -99,6 +102,11 @@ class FakeMpv:
                 self.command(name, *args)
         finally:
             self._asked_without_waiting = False
+
+    def answer_the_overlays(self, error: BaseException | None = None) -> None:
+        answers, self.overlays_to_answer = self.overlays_to_answer, []
+        for answered in answers:
+            answered(error, None)
 
     def _waits(self, what: str) -> None:
         if not self._asked_without_waiting:
@@ -1355,16 +1363,27 @@ def test_the_tile_shader_ships_beside_the_engine_and_takes_its_count_as_a_parame
     assert "//!PARAM tiles" in TILES_SHADER.read_text(encoding="utf-8")
 
 
-class _MpvWithNoMemoryForAnOverlay(FakeMpv):
-    def overlay_add(self, *_args) -> None:
-        raise SystemError("Error running mpv command", -12, ())
+def test_an_overlay_goes_to_mpv_without_waiting_for_mpv_to_copy_it():
+    mpv = FakeMpv()
+    control = Control(mpv)
+    picture = np.zeros((2, 3, 4), dtype=np.uint8)
+
+    control.overlay(10, 4, 5, picture)
+
+    assert (mpv.calls[-1], mpv.waited_on) == (
+        ("command", "overlay-add", "10", "4", "5", f"&{picture.ctypes.data}", "0", "bgra",
+         "3", "2", "12"), [])
 
 
 def test_an_overlay_mpv_has_no_memory_to_copy_reaches_the_window_as_running_out_of_memory():
-    control = Control(_MpvWithNoMemoryForAnOverlay())
+    mpv = FakeMpv()
+    control = Control(mpv)
+    control.overlay(10, 0, 0, np.zeros((2, 2, 4), dtype=np.uint8))
+
+    mpv.answer_the_overlays(SystemError("Error running mpv command", -12, ()))
 
     with pytest.raises(MemoryError):
-        control.overlay(10, 0, 0, np.zeros((2, 2, 4), dtype=np.uint8))
+        control.hand_over_the_overlays()
 
 
 FACE = (0.4, 0.1, 0.6, 0.3)

@@ -42,6 +42,7 @@ from .mpv_engine import MpvEngine
 from .off_the_loop import BehindTheLoop
 from .osr2_visualizer import DrivePublisher
 from .outside_buttons import OutsideButtons
+from .overlay_hand_over import Handed
 from .paused_flag import PausedFlag
 from .playback import Playback
 from .playback_setup import Lap
@@ -86,7 +87,7 @@ class Channels:
 class HudSurface(Protocol):
     width: int | None
 
-    def overlay(self, ident: int, x: int, y: int, bgra) -> None: ...
+    def overlay(self, ident: int, x: int, y: int, bgra) -> Handed | None: ...
 
     def remove_overlay(self, ident: int) -> None: ...
 
@@ -482,6 +483,7 @@ class Funestra:
     def _paint_if_there_is_memory(self, viewport: tuple[int, int]) -> None:
         try:
             self._paint(viewport)
+            self._hand_over_the_overlays()
         except MemoryError:
             if not self._short_of_memory:
                 logger.warning("Out of memory drawing over the item; drawing it again on "
@@ -489,6 +491,12 @@ class Funestra:
             self._short_of_memory = True
         else:
             self._short_of_memory = False
+
+    def _hand_over_the_overlays(self) -> None:
+        hand_over = getattr(self._engine, "hand_over_the_overlays", None)
+        if hand_over is not None:
+            hand_over()
+        self._frame_record.lap("handing mpv the pictures that waited")
 
     def _paint(self, viewport: tuple[int, int]) -> None:
         lap = self._frame_record.lap
