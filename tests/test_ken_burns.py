@@ -619,14 +619,35 @@ def test_stepping_on_goes_to_the_place_after_the_one_the_round_picked():
     assert still.view(now_s=105.0) == Fit((0, 0), (0, 0)).framing(PLACE)
 
 
-def test_a_locked_image_stepped_to_a_place_goes_back_to_picking_its_stops_next_round():
+def test_a_locked_image_stepped_to_a_place_comes_round_to_that_place_again_and_again():
     deals = Deals(DRIFT, CREEP, stops=(None,))
     still = locked_with_places(FACE, HAND, deals=deals)
 
     still.step_fix(1, now_s=101.0)
 
-    assert still.view(now_s=104.0) == CREEP.at(0.0)
-    assert deals.offered == [(FACE, HAND)]
+    framed = Fit((0, 0), (0, 0)).framing(FACE)
+    assert [still.view(now_s=now) for now in (104.0, 108.0)] == [framed, framed]
+    assert deals.offered == []
+
+
+def test_a_locked_image_stepped_to_the_whole_image_comes_round_to_the_whole_image_again():
+    deals = Deals(DRIFT, CREEP, stops=(FACE,))
+    still = locked_with_places(FACE, deals=deals)
+    still.step_fix(1, now_s=101.0)
+
+    still.step_fix(1, now_s=102.0)
+
+    assert (still.view(now_s=104.0), deals.offered) == (CREEP.at(0.0), [])
+
+
+def test_a_new_image_goes_back_to_picking_its_stops():
+    deals = Deals(DRIFT, CREEP, stops=(HAND,))
+    still = locked_with_places(FACE, HAND, deals=deals)
+    still.step_fix(1, now_s=101.0)
+
+    still.new_image(now_s=102.0)
+
+    assert still.view(now_s=106.0) == Fit((0, 0), (0, 0)).framing(HAND)
 
 
 def test_a_step_leaves_the_image_its_time_so_an_unlocked_one_moves_on_when_it_would_have():
@@ -637,3 +658,13 @@ def test_a_step_leaves_the_image_its_time_so_an_unlocked_one_moves_on_when_it_wo
 
     assert (still.progress(now_s=103.0), still.ran_out(now_s=103.9), still.ran_out(now_s=104.0)) == (
         0.75, False, True)
+
+
+def test_a_kept_place_that_leaves_the_image_hands_the_round_back_to_picking():
+    deals = Deals(DRIFT, CREEP, stops=(FACE,))
+    still = locked_with_places(FACE, HAND, deals=deals)
+    still.step_fix(-1, now_s=101.0)
+
+    still.set_points_of_interest((FACE,), now_s=102.0)
+
+    assert (still.view(now_s=104.0), deals.offered) == (Fit((0, 0), (0, 0)).framing(FACE), [(FACE,)])
