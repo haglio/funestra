@@ -7,6 +7,7 @@ from functools import partial
 from pathlib import Path
 from typing import NamedTuple
 
+import numpy as np
 from app_support.written_file import WrittenFile
 
 from .dashboard import already_done, ask
@@ -236,6 +237,7 @@ class HudOverlay:
         self._origin = (MARGIN, MARGIN)
         self._hud_size: tuple[int, int] | None = None
         self._on_its_way: _HudOnItsWay | None = None
+        self._handed_last: tuple[np.ndarray, tuple[int, int]] | None = None
         self.targets: HudTargets = _EMPTY_TARGETS
 
     @property
@@ -526,12 +528,19 @@ class HudOverlay:
         self._lap(f"{rendered.drawn.value}, for {why}")
         height, width = rendered.bgra.shape[:2]
         origin = self._place(corner, (width, height))
-        handed = self._engine.overlay(self.overlay_id, *origin, rendered.bgra)
+        handed = self._hand_over(rendered.bgra, origin)
         self._lap("handing the HUD to mpv")
         self._draw_owed = False
         self._shown = True
         self._on_its_way = _HudOnItsWay(handed, rendered.targets, (width, height), origin)
         self._take_up_the_hud_mpv_took()
+
+    def _hand_over(self, bgra: np.ndarray, origin: tuple[int, int]) -> Handed | None:
+        last = self._handed_last
+        if self._shown and last is not None and last[0] is bgra and last[1] == origin:
+            return None if self._on_its_way is None else self._on_its_way.handed
+        self._handed_last = (bgra, origin)
+        return self._engine.overlay(self.overlay_id, *origin, bgra)
 
     def _take_up_the_hud_mpv_took(self) -> None:
         hud = self._on_its_way
