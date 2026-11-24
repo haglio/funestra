@@ -9,6 +9,13 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-23 — A slideshow's HUD names the order it plays in
+
+`HudFacts.in_order` is new, one of `hud_title.IN_ORDER_LABELS` (`LATEST_LABEL`,
+`OLDEST_LABEL`, `LONGEST_LABEL`, `SHORTEST_LABEL`), and `browse_order_buttons`
+takes it as `in_order`: while a set plays in order, the title says that order
+and the in-order button's tooltip starts with it. It stays `LATEST_LABEL` by
+default, so a caller that never sets it draws what it drew before.
 ## 2026-11-23 — An image steps through its fixes
 
 `NEXT_FIX` and `PREV_FIX` are new verbs, answered by `Playback.step_fix` and an

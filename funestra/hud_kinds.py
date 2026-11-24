@@ -35,6 +35,7 @@ from .hud_controls import (
 from .hud_icons import MINIMIZE_FUNESTRA_ICON, UNFAVORITE_ICON, shared_icon
 from .hud_title import (
     FAVORITES_LABEL,
+    IN_ORDER_LABELS,
     LATEST_LABEL,
     SEPARATOR,
     SHUFFLE_LABEL,
@@ -86,6 +87,7 @@ class HudFacts:
     favorites: bool = False
     enhanced: bool = False
     latest: bool | None = None
+    in_order: str = LATEST_LABEL
     longer_than_a_step: bool = False
     image: bool = False
     has_other_versions: bool = False
@@ -300,7 +302,7 @@ def _remembered(facts: HudFacts, shows: Shows) -> bool:
 
 
 def _browse_order(facts: HudFacts, shows: Shows) -> tuple[Button, ...]:
-    return browse_order_buttons(facts.funestra, latest=facts.latest,
+    return browse_order_buttons(facts.funestra, latest=facts.latest, in_order=facts.in_order,
                                 remembered=_remembered(facts, shows))
 
 
@@ -523,7 +525,7 @@ def title_filters(facts: HudFacts) -> tuple[str, ...]:
 def main_title(facts: HudFacts, block: ModeHud) -> str:
     playing_set = (f"{compilation_label(block.compilation)}{SEPARATOR}{block.position}/{block.total}"
                    if block.compilation else "")
-    order = "" if facts.latest is None else LATEST_LABEL if facts.latest else SHUFFLE_LABEL
+    order = _order_word(facts)
     if facts.main_mode is MainMode.GENAU and not facts.locked and facts.pace_s:
         order = SEPARATOR.join(part for part in (order, f"{facts.pace_s}s") if part)
     return hud_title(HudTitleFacts(locked=facts.locked, playing_set=playing_set, order=order,
@@ -531,10 +533,16 @@ def main_title(facts: HudFacts, block: ModeHud) -> str:
                                    filters=title_filters(facts)))
 
 
+def _order_word(facts: HudFacts) -> str:
+    if facts.latest is None:
+        return ""
+    return facts.in_order if facts.latest else SHUFFLE_LABEL
+
+
 def slideshow_title(facts: HudFacts, *, loop: str = "", action_filter: str = "") -> str:
     return hud_title(HudTitleFacts(
         playing_set=looping_label(loop) if loop else "", locked=facts.locked,
-        order="" if facts.latest is None else LATEST_LABEL if facts.latest else SHUFFLE_LABEL,
+        order=_order_word(facts),
         favorites=facts.favorites, enhanced=facts.enhanced,
         filters=(media_pair("").title_word(facts.media), action_filter)))
 
@@ -558,11 +566,11 @@ def _main_titles(modes) -> set[str]:
 
 def _slideshow_titles() -> set[str]:
     return {
-        slideshow_title(HudFacts(locked=locked, latest=latest, favorites=favorites, media=media,
-                                 enhanced=enhanced), loop=loop)
-        for loop, locked, latest, favorites, media, enhanced in product(
-            (OFF, SEED, ACTION), (True, False), (True, False), (True, False), _ONE_OR_BOTH,
-            (True, False))}
+        slideshow_title(HudFacts(locked=locked, latest=latest, in_order=in_order,
+                                 favorites=favorites, media=media, enhanced=enhanced), loop=loop)
+        for loop, locked, latest, in_order, favorites, media, enhanced in product(
+            (OFF, SEED, ACTION), (True, False), (True, False), IN_ORDER_LABELS, (True, False),
+            _ONE_OR_BOTH, (True, False))}
 
 
 def title_choices(kind: HudKind) -> tuple[str, ...]:

@@ -28,6 +28,8 @@ from funestra.hud_kinds import (
     HudFacts,
     HudKind,
     clip_seconds_row,
+    facts_from_raw,
+    facts_raw,
     hud_rows,
     main_title,
     osr2_button,
@@ -38,7 +40,9 @@ from funestra.hud_kinds import (
 from funestra.hud_title import (
     ENHANCED_LABEL,
     FAVORITES_LABEL,
+    IN_ORDER_LABELS,
     LATEST_LABEL,
+    OLDEST_LABEL,
     SHUFFLE_LABEL,
     compilation_label,
 )
@@ -1297,3 +1301,21 @@ def test_genaus_stroke_seconds_follow_the_playback_speed_on_kinos_speed_row():
     assert _commands(genau)[:len(kino)] == _commands(kino)
     assert genau[len(kino)].icon == "Pip seconds"
     assert genau[len(kino)].group_break
+
+
+def test_a_slideshow_played_in_order_says_which_order_in_its_title():
+    facts = HudFacts(funestra="portrait", locked=False, latest=True, in_order=OLDEST_LABEL)
+
+    assert slideshow_title(facts) == "Unlocked · Oldest first"
+
+
+def test_every_order_a_slideshow_can_play_in_is_among_its_title_choices():
+    for name in IN_ORDER_LABELS:
+        shown = slideshow_title(HudFacts(locked=True, latest=True, in_order=name), loop="seed")
+        assert shown in title_choices(HudKind.SLIDESHOW)
+
+
+def test_the_order_a_slideshow_plays_in_crosses_a_file_whole():
+    facts = HudFacts(latest=True, in_order=OLDEST_LABEL)
+
+    assert facts_from_raw(facts_raw(facts)).in_order == OLDEST_LABEL
