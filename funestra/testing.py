@@ -109,6 +109,7 @@ class FakeEngine(RefusesSeeks):
         self.zooms: list[tuple[int, int, int]] = []
         self.pans: list[tuple[int, int]] = []
         self.staged_at: float | None = None
+        self.what_mpv_says = ""
 
     def frame_counts(self) -> tuple[int, int, int]:
         return (0, 0, 0)

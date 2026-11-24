@@ -55,6 +55,7 @@ from .satellite_hud import HudModel
 from .scrubber import Heatmap
 from .session_quit import quit_gesture
 from .status import StatusWriter
+from .still_video import MovesAgain, StillVideo, StoodStill
 from .tcode import UdpTCodeSink
 from .tcode_driver import FunscriptTCodeDriver
 from .told_through import NOTHING_NEW, FilesItIsToldThrough
@@ -178,6 +179,7 @@ class Funestra:
         )
         self._loop_frames = LoopFrames(engine, behind=self._off_the_loop.do)
         self._short_of_memory = False
+        self._still = StillVideo()
 
     @property
     def playback(self) -> Playback:
@@ -403,6 +405,7 @@ class Funestra:
         self._runs_here.tick()
         record.lap("what runs here")
         self.playback.advance()
+        self._say_if_the_video_stands_still()
         self._write_the_status()
         record.lap("the status file")
         if self._setup.tiles:
@@ -429,6 +432,27 @@ class Funestra:
             for command in told.commands:
                 self.apply(command)
             lap("doing what the command file said")
+
+    def _say_if_the_video_stands_still(self) -> None:
+        playback = self.playback
+        heard = self._still.note(position_ms=playback.position_ms, now=self._setup.clock(),
+                                 should_play=self._the_video_should_play)
+        if isinstance(heard, StoodStill):
+            logger.warning("The video has stood still at %.0f ms for %.0f s while it should "
+                           "play: %s", playback.position_ms, heard.seconds, self._what_holds_it())
+        elif isinstance(heard, MovesAgain):
+            logger.info("The video moves again after standing still for %.0f s", heard.seconds)
+
+    def _the_video_should_play(self) -> bool:
+        playback = self.playback
+        return (not self._paused_told and not playback.has_nothing_to_play
+                and playback.duration_ms > 0 and not self._engine.showing_image
+                and self._front.own_frame() is None)
+
+    def _what_holds_it(self) -> str:
+        if self._paused_before_the_scrub is not None:
+            return "the scrubber is held, which keeps it paused"
+        return f"mpv says {self._engine.what_mpv_says}"
 
     def _hold_to_the_paused_flag(self) -> None:
         if self._paused_told is None:

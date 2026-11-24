@@ -140,6 +140,8 @@ def tiles_across(source: tuple[int, int], viewport: tuple[int, int]) -> int:
 CLOSE_DRAIN_TIMEOUT_S = 10.0
 
 _FRAME_COUNTERS = ("frame-drop-count", "decoder-frame-drop-count", "vo-delayed-frame-count")
+_WHAT_HOLDS_A_VIDEO_STILL = ("pause", "core-idle", "paused-for-cache", "seeking", "eof-reached",
+                             "idle-active")
 
 # mpv_event_id in mpv's client.h.
 _MPV_EVENT_START_FILE = 6
@@ -612,6 +614,16 @@ class _MpvControl:
 
     def _ask_mpv_to_take_down(self, ident: int) -> None:
         self._ask("overlay-remove", str(ident))
+
+    @property
+    def what_mpv_says(self) -> str:
+        return " ".join(f"{name}={self._read_for_a_log(name)}" for name in _WHAT_HOLDS_A_VIDEO_STILL)
+
+    def _read_for_a_log(self, name: str) -> object:
+        try:
+            return self._mpv[name]
+        except (RuntimeError, AttributeError, SystemError):
+            return "unreadable"
 
     def frame_counts(self) -> MpvCounts:
         dropped, decoder_dropped, delayed = (self._counted[counter] for counter in _FRAME_COUNTERS)

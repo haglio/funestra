@@ -2329,3 +2329,68 @@ def test_the_status_says_when_the_position_was_read_on_the_clock_every_program_s
         channels=channels, playlist=read_playlist(channels.playlist), clock=lambda: 1234.5))
 
     assert funestra.status_fields()["read_at"] == "1234.500"
+
+
+class TestAVideoThatStandsStill:
+    def _playing(self, tmp_path):
+        now = [0.0]
+        funestra, engine = _funestra(tmp_path, [str(video) for video in _videos(tmp_path, "v0")],
+                                     hud=True, commands="",
+                                     setup_choices={"clock": lambda: now[0]})
+        (tmp_path / "paused.txt").write_text("0", encoding="utf-8")
+        _publish_hud(tmp_path)
+        engine.position_ms = 1_200.0
+        funestra.tick(viewport=WINDOW)
+        return funestra, engine, now
+
+    def test_held_by_a_scrubber_press_it_says_the_scrubber_holds_it(self, tmp_path, caplog):
+        funestra, engine, now = self._playing(tmp_path)
+        funestra.press(*_on_the_row(funestra, engine), viewport=WINDOW)
+        funestra.tick(viewport=WINDOW)
+
+        now[0] = 4.0
+        with caplog.at_level(logging.WARNING):
+            funestra.tick(viewport=WINDOW)
+
+        assert [record.getMessage() for record in caplog.records] == [
+            f"The video has stood still at {engine.position_ms:.0f} ms for 4 s while it should "
+            "play: the scrubber is held, which keeps it paused"]
+
+    def test_playing_it_says_what_mpv_says_of_it(self, tmp_path, caplog):
+        funestra, engine, now = self._playing(tmp_path)
+        engine.what_mpv_says = "pause=no core-idle=yes"
+
+        now[0] = 4.0
+        with caplog.at_level(logging.WARNING):
+            funestra.tick(viewport=WINDOW)
+
+        assert [record.getMessage() for record in caplog.records] == [
+            f"The video has stood still at {engine.position_ms:.0f} ms for 4 s while it should "
+            "play: mpv says pause=no core-idle=yes"]
+
+    def test_moving_again_it_says_after_how_long(self, tmp_path, caplog):
+        funestra, engine, now = self._playing(tmp_path)
+        now[0] = 4.0
+        funestra.tick(viewport=WINDOW)
+
+        now[0], engine.position_ms = 9.0, 1_250.0
+        caplog.clear()
+        with caplog.at_level(logging.INFO):
+            funestra.tick(viewport=WINDOW)
+
+        assert [record.getMessage() for record in caplog.records] == [
+            "The video moves again after standing still for 9 s"]
+
+    def test_paused_while_it_stands_still_it_never_says_it_moves_again(self, tmp_path, caplog):
+        funestra, _engine, now = self._playing(tmp_path)
+        now[0] = 4.0
+        funestra.tick(viewport=WINDOW)
+
+        (tmp_path / "paused.txt").write_text("1", encoding="utf-8")
+        now[0] = 5.0
+        caplog.clear()
+        with caplog.at_level(logging.INFO):
+            funestra.tick(viewport=WINDOW)
+
+        assert [record.getMessage() for record in caplog.records
+                if "moves again" in record.getMessage()] == []
