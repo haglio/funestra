@@ -319,15 +319,19 @@ class _MpvControl:
             return
         self._decoder_said_for = self._path
         width, height = self._source_dims
+        rate = (f"{self._frame_rate:.2f}" if self._frame_rate
+                else "an unknown number of")
         decoder = self._decoder
         if decoder == "no":
-            logger.warning("mpv decodes this %dx%d video on the processor, with no help from "
-                           "the graphics card", width, height)
+            logger.warning("mpv decodes this %dx%d video at %s frames a second on the "
+                           "processor, with no help from the graphics card", width, height, rate)
         elif decoder.endswith("-copy"):
-            logger.warning("mpv decodes this %dx%d video with %s, which copies each frame back "
-                           "from the graphics card", width, height, decoder)
+            logger.warning("mpv decodes this %dx%d video at %s frames a second with %s, which "
+                           "copies each frame back from the graphics card",
+                           width, height, rate, decoder)
         else:
-            logger.info("mpv decodes this %dx%d video with %s", width, height, decoder)
+            logger.info("mpv decodes this %dx%d video at %s frames a second with %s",
+                        width, height, rate, decoder)
 
     @property
     def source_dims(self) -> tuple[int, int]:

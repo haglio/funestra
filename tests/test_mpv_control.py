@@ -1441,8 +1441,10 @@ def _decoder_lines(caplog) -> list[tuple[str, str]]:
             if r.name == "funestra.mpv_engine" and "decod" in r.getMessage()]
 
 
-def _open_a_video(mpv: FakeMpv, path: str, decoder, source=PORTRAIT_SOURCE) -> None:
+def _open_a_video(mpv: FakeMpv, path: str, decoder, source=PORTRAIT_SOURCE,
+                  frames_a_second: float | None = 30.0) -> None:
     mpv.report("path", path)
+    mpv.report("container-fps", frames_a_second)
     mpv.report("current-tracks/video/image", False)
     mpv.report("hwdec-current", decoder)
     mpv.report("video-dec-params", source)
@@ -1458,9 +1460,31 @@ def test_each_video_opened_says_once_which_decoder_mpv_chose(caplog):
     _open_a_video(mpv, "made-up-two.mp4", "nvdec")
 
     assert _decoder_lines(caplog) == [
-        ("INFO", "mpv decodes this 1080x1920 video with nvdec"),
-        ("INFO", "mpv decodes this 1080x1920 video with nvdec"),
+        ("INFO", "mpv decodes this 1080x1920 video at 30.00 frames a second with nvdec"),
+        ("INFO", "mpv decodes this 1080x1920 video at 30.00 frames a second with nvdec"),
     ]
+
+
+def test_each_video_opened_says_its_size_its_frames_a_second_and_its_decoder(caplog):
+    caplog.set_level(logging.INFO, logger="funestra.mpv_engine")
+    mpv = FakeMpv()
+    Control(mpv)
+
+    _open_a_video(mpv, "made-up-one.mp4", "d3d11va", frames_a_second=59.94005994005994)
+
+    assert _decoder_lines(caplog) == [
+        ("INFO", "mpv decodes this 1080x1920 video at 59.94 frames a second with d3d11va")]
+
+
+def test_a_video_whose_frames_a_second_mpv_has_not_said_says_they_are_unknown(caplog):
+    caplog.set_level(logging.INFO, logger="funestra.mpv_engine")
+    mpv = FakeMpv()
+    Control(mpv)
+
+    _open_a_video(mpv, "made-up-one.mp4", "d3d11va", frames_a_second=None)
+
+    assert _decoder_lines(caplog) == [("INFO", "mpv decodes this 1080x1920 video at an unknown "
+                                               "number of frames a second with d3d11va")]
 
 
 @pytest.mark.parametrize("decoder", ["d3d11va-copy", "nvdec-copy", "no"])
@@ -1488,7 +1512,8 @@ def test_a_decoder_mpv_has_not_yet_named_is_said_once_mpv_names_it(caplog, unkno
     mpv.report("hwdec-current", "d3d11va")
 
     assert said_before_mpv_named_it == []
-    assert _decoder_lines(caplog) == [("INFO", "mpv decodes this 1080x1920 video with d3d11va")]
+    assert _decoder_lines(caplog) == [
+        ("INFO", "mpv decodes this 1080x1920 video at 30.00 frames a second with d3d11va")]
 
 
 def test_a_decoder_named_after_the_next_file_opened_is_not_said_of_the_one_before(caplog):
