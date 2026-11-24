@@ -9,6 +9,15 @@ The comment ratio below is `(radon raw Comments + Multi) / SLOC` over
 `funestra/` (`player_core/` until 2026-10-10, `funestra_core/` until 2026-10-11) and `tools/`, the measure `audit/findings/player_core.md` set its
 baseline with: **0.7692** over 3,661 SLOC, with 28 of 29 files above 0.25.
 
+## 2026-11-23 — An image steps through its fixes
+
+`NEXT_FIX` and `PREV_FIX` are new verbs, answered by `Playback.step_fix` and an
+engine's `step_fix`, which hand the steps to `KenBurns.step_fix`: the image on
+screen moves at once to the close-up on its next or previous fix, the whole
+image counting as one stop before the first, with the time it has on screen
+unchanged, locked or not. A locked image goes back to picking a stop at random
+the next time it comes round, and the steps count on from the stop it picked.
+
 ## 2026-11-23 — A Funestra hands mpv its overlays without waiting
 
 `funestra.overlay_hand_over` is new (`OverlayHandOver`, `Handed`), and so is

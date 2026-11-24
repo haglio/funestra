@@ -1401,6 +1401,19 @@ def test_a_locked_image_with_places_is_drawn_on_the_close_up_its_window_frames()
         Fit(WIDE, (832, 1216)).framing(FACE).placement())
 
 
+def test_an_image_stepped_to_its_fix_is_drawn_on_that_fixs_close_up_at_once():
+    mpv = FakeMpv()
+    control = Control(mpv, now=100.0, viewport=WIDE, deals=Deals(CREEP))
+    control.set_pace(4.0)
+    show_an_image(control, mpv, (832, 1216))
+    control.set_points_of_interest((FACE,))
+
+    control.step_fix(1)
+
+    assert drawn_at(control, mpv, 100.0) == pytest.approx(
+        Fit(WIDE, (832, 1216)).framing(FACE).placement())
+
+
 SM_CXSCREEN, SM_CYSCREEN = 0, 1
 
 
