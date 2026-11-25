@@ -57,13 +57,20 @@ _RIDDEN_OUT_BY_MPV = frozenset({
     "UDTA parsing failed retrying raw",
 })
 
+_RIDDEN_OUT_BY_MPV_WHATEVER_IT_MEASURED = ("Under-run: Device delay: ",)
+
+
+def _ridden_out_by_mpv(said: str) -> bool:
+    return (said in _RIDDEN_OUT_BY_MPV
+            or said.partition(": ")[2] in _RIDDEN_OUT_BY_MPV
+            or said.startswith(_RIDDEN_OUT_BY_MPV_WHATEVER_IT_MEASURED))
+
 
 def _log_mpv(level: str, prefix: str, text: str) -> None:
     said = text.strip()
     if not said:
         return
-    ridden_out = said in _RIDDEN_OUT_BY_MPV or said.partition(": ")[2] in _RIDDEN_OUT_BY_MPV
-    at = logging.INFO if ridden_out else _MPV_LEVELS.get(level, logging.WARNING)
+    at = logging.INFO if _ridden_out_by_mpv(said) else _MPV_LEVELS.get(level, logging.WARNING)
     logger.log(at, "mpv %s: %s", prefix, said)
 
 
