@@ -742,6 +742,14 @@ def test_an_audio_device_underrun_is_news_since_mpv_rides_it_out_by_itself(caplo
         (logging.INFO, "mpv cplayer: Audio device underrun detected.")]
 
 
+@pytest.mark.parametrize("delay", ["-300 ns", "1250 ns"])
+def test_the_windows_sound_output_s_own_underrun_is_news_whatever_delay_it_names(caplog, delay):
+    with caplog.at_level(1, logger=mpv_engine.logger.name):
+        mpv_engine._log_mpv("warn", "ao/wasapi", f"Under-run: Device delay: {delay}\n")
+
+    assert [r.levelno for r in caplog.records] == [logging.INFO]
+
+
 def test_mpv_s_note_that_audio_and_video_drifted_apart_is_news_since_it_pulls_them_together_by_itself(caplog):
     paragraph = (
         "\n\nAudio/Video desynchronisation detected! Possible reasons include too slow\n"
