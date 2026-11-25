@@ -1792,19 +1792,24 @@ class _AnMpvSayingWhatHoldsIt(FakeMpv):
         self.said = said
 
     def __getitem__(self, name: str) -> object:
-        if name not in self.said:
-            raise RuntimeError(name)
-        return self.said[name]
+        raise RuntimeError(f"{name} is no option, so python-mpv cannot read it as one")
+
+    def __getattr__(self, name: str) -> object:
+        said = self.__dict__.get("said", {})
+        if name.replace("_", "-") not in said:
+            raise AttributeError(name)
+        return said[name.replace("_", "-")]
 
 
 def test_what_mpv_says_of_a_still_video_is_each_reason_it_could_stand_still():
     control = Control(_AnMpvSayingWhatHoldsIt({
         "pause": False, "core-idle": True, "paused-for-cache": False, "seeking": True,
-        "eof-reached": False, "idle-active": False}))
+        "eof-reached": False, "idle-active": False, "audio-device": "auto",
+        "current-ao": "wasapi"}))
 
     assert control.what_mpv_says == (
         "pause=False core-idle=True paused-for-cache=False seeking=True eof-reached=False "
-        "idle-active=False")
+        "idle-active=False audio-device=auto current-ao=wasapi")
 
 
 def test_what_mpv_says_names_a_property_it_could_not_read():
