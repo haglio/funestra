@@ -67,6 +67,10 @@ class _PlaysFromDisk:
     def playable(path: Path) -> str:
         return str(path)
 
+    @staticmethod
+    def local_copy(path: Path) -> Path:
+        return path
+
     def prefetch(self, owner: str, wishes: Sequence[Wish]) -> None:
         pass
 
@@ -84,3 +88,7 @@ def open_the_sign_in_window(*, popen: Callable[..., object] = subprocess.Popen) 
 def the_library() -> PCloudLibrary | _PlaysFromDisk:
     library = from_settings(when_not_signed_in=open_the_sign_in_window)
     return PLAYS_FROM_DISK if library is None else library.__enter__()
+
+
+def on_this_disk(path: Path) -> Path:
+    return the_library().local_copy(path)

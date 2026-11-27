@@ -8,11 +8,13 @@ from app_support.haglio_settings import SETTINGS_ENV, THE_EXAMPLE
 from app_support.pcloud.fetching import Entry
 from app_support.pcloud.library import PLAY_FROM_PCLOUD
 
+from funestra import cloud_playback
 from funestra.cloud_playback import (
     PLAYS_FROM_DISK,
     UNTIMED_OPENING_BYTES,
     WHOLE_BELOW_BYTES,
     LookAhead,
+    on_this_disk,
     open_the_sign_in_window,
     opening_spans,
     the_library,
@@ -114,3 +116,15 @@ def test_the_sign_in_window_opens_as_a_program_of_its_own_with_no_console_window
     [(argv, how)] = started
     assert (argv[1:], how) == (["-m", "shared_ui.pcloud_sign_in"],
                                {"creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)})
+
+
+def test_a_flick_genau_reads_whole_is_read_from_where_the_library_keeps_it(monkeypatch: pytest.MonkeyPatch):
+    class _Library:
+        @staticmethod
+        def local_copy(path: Path) -> Path:
+            return Path("/cache") / path.name
+
+    monkeypatch.setattr(cloud_playback, "the_library", _Library)
+
+    assert (on_this_disk(Path("made-up flick.mp4")), PLAYS_FROM_DISK.local_copy(Path("made-up flick.mp4"))) == (
+        Path("/cache/made-up flick.mp4"), Path("made-up flick.mp4"))

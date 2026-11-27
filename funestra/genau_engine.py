@@ -11,6 +11,7 @@ from typing import Protocol
 from app_support.threading_utils import start_daemon_thread
 
 from .broker_feed import BrokerFeed, UdpListener, udp_reader
+from .cloud_playback import on_this_disk
 from .flag import Flag
 from .flick_advance import FlickAdvanceState
 from .flick_cache import DecodeRequestState, FlickCacheStore
@@ -126,8 +127,8 @@ class GenauHost:
 @dataclass(frozen=True)
 class EngineSeams:
     stop_event: threading.Event | None = None
-    decode: Callable[[Path], list] = load_flick_frames
-    frame_rate: Callable[[Path], float] = read_frames_per_second
+    decode: Callable[[Path], list] = lambda path: load_flick_frames(on_this_disk(path))
+    frame_rate: Callable[[Path], float] = lambda path: read_frames_per_second(on_this_disk(path))
     start_thread: Callable = start_daemon_thread
     clock: Callable[[], float] = time.monotonic
     sleep: Callable[[float], None] = time.sleep
