@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import functools
 import itertools
+import subprocess
+import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from typing import Protocol
@@ -72,7 +74,13 @@ class _PlaysFromDisk:
 PLAYS_FROM_DISK = _PlaysFromDisk()
 
 
+def open_the_sign_in_window(*, popen: Callable[..., object] = subprocess.Popen) -> None:
+    beside = Path(sys.executable).with_name("pythonw.exe")
+    windowless = beside if beside.is_file() else Path(sys.executable)
+    popen([str(windowless), "-m", "shared_ui.pcloud_sign_in"], creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+
+
 @functools.cache
 def the_library() -> PCloudLibrary | _PlaysFromDisk:
-    library = from_settings()
+    library = from_settings(when_not_signed_in=open_the_sign_in_window)
     return PLAYS_FROM_DISK if library is None else library.__enter__()

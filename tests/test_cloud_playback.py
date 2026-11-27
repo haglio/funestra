@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -12,6 +13,7 @@ from funestra.cloud_playback import (
     UNTIMED_OPENING_BYTES,
     WHOLE_BELOW_BYTES,
     LookAhead,
+    open_the_sign_in_window,
     opening_spans,
     the_library,
 )
@@ -102,3 +104,13 @@ def test_with_playing_from_pcloud_not_asked_for_files_play_from_where_they_are(m
 
 def test_looking_ahead_while_files_play_from_where_they_are_asks_for_nothing():
     LookAhead(PLAYS_FROM_DISK).see([(Path("made-up one.mp4"), None)])
+
+
+def test_the_sign_in_window_opens_as_a_program_of_its_own_with_no_console_window():
+    started: list[tuple[list[str], dict]] = []
+
+    open_the_sign_in_window(popen=lambda argv, **how: started.append((argv, how)))
+
+    [(argv, how)] = started
+    assert (argv[1:], how) == (["-m", "shared_ui.pcloud_sign_in"],
+                               {"creationflags": getattr(subprocess, "CREATE_NO_WINDOW", 0)})
