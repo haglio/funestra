@@ -84,6 +84,19 @@ class Lineup:
             return [self.on_screen] * count
         return [self._file_at(self._index + ahead) for ahead in range(1, count + 1)]
 
+    def neighbors(self, *, ahead: int, back: int) -> list[Path]:
+        near: list[Path] = []
+        forward = backward = 1
+        while forward <= ahead or backward <= back:
+            for _ in range(2):
+                if forward <= ahead:
+                    near.append(self._file_at(self._index + forward))
+                    forward += 1
+            if backward <= back:
+                near.append(self._file_at(self._index - backward))
+                backward += 1
+        return list(dict.fromkeys(video for video in near if video != self.showing))
+
     def roll(self) -> None:
         if not self.rolls_onto_itself:
             self._frame = None

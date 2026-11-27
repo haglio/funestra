@@ -228,3 +228,15 @@ class TestTakingANewList:
     def test_taking_nothing_is_refused(self):
         with pytest.raises(ValueError, match="empty"):
             Lineup([ONE]).take([])
+
+
+def test_the_neighbors_of_the_video_on_screen_come_two_ahead_for_each_one_behind_nearest_first():
+    videos = [Path(f"video {number}.mp4") for number in range(10)]
+    lineup = Lineup(videos)
+    lineup.stand_at(5)
+
+    assert lineup.neighbors(ahead=4, back=2) == [videos[6], videos[7], videos[4], videos[8], videos[9], videos[3]]
+
+
+def test_a_short_lineups_neighbors_name_each_other_video_once_and_never_the_one_on_screen():
+    assert Lineup([ONE, TWO, THREE]).neighbors(ahead=12, back=3) == [TWO, THREE]
