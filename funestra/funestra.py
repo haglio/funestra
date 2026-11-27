@@ -10,6 +10,7 @@ from typing import Protocol, runtime_checkable
 
 from app_support.osr2_slot import Osr2Sender
 
+from .cloud_playback import LookAhead, the_library
 from .control_registry import look_up
 from .drive_gate import DriveGate
 from .file_channel import consume_command_file
@@ -311,10 +312,12 @@ class Funestra:
 
     @classmethod
     def on_window(cls, wid: int, setup: FunestraSetup) -> Funestra:
+        library = the_library()
         return cls(
-            MpvEngine(wid, muted=setup.muted, loop_file=False, prefetch=True, audio=setup.audible),
+            MpvEngine(wid, muted=setup.muted, loop_file=False, prefetch=True, audio=setup.audible,
+                      playable=library.playable),
             setup._replace(tcode=osr2_line(setup.channels), off_the_loop=BehindTheLoop(),
-                           window=int(wid)))
+                           window=int(wid), look_ahead=LookAhead(library)))
 
     def _where_the_hud_asks(self, channels: Channels) -> Callable[[str], None]:
         if channels.dashboard_cmd is not None:

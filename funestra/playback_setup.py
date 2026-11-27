@@ -5,6 +5,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
+from .cloud_playback import LOOKS_AHEAD_FOR_NOTHING, LooksAhead
 from .off_the_loop import at_once
 from .play_points import PlayPoints
 
@@ -26,6 +27,7 @@ class PlaybackSetup:
     clock: Callable[[], float] = time.monotonic
     behind: Callable = at_once
     lap: Lap = unlapped
+    look_ahead: LooksAhead = LOOKS_AHEAD_FOR_NOTHING
 
 
 PLAIN_PLAYBACK = PlaybackSetup()

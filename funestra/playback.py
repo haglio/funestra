@@ -6,6 +6,7 @@ from pathlib import Path
 
 from shared_ui.orientation import PORTRAIT, orientation_of_size
 
+from .cloud_playback import LOOKED_AHEAD, LOOKED_BACK
 from .funscript import Funscript
 from .lineup import Lineup
 from .play_points import PlayPoints
@@ -43,6 +44,7 @@ class Playback:
         self._clock = setup.clock
         self._behind = setup.behind
         self._lap = setup.lap
+        self._look_ahead = setup.look_ahead
         self._rolled_at: float | None = None
         self._asked_load = self._asked_step = 0
         self._play_points = setup.play_points or PlayPoints(None)
@@ -435,6 +437,8 @@ class Playback:
         lap("playback telling the item's places")
 
     def _stage_next(self) -> None:
+        self._look_ahead.see([(video, self._place_to_open(video))
+                              for video in self._lineup.neighbors(ahead=LOOKED_AHEAD, back=LOOKED_BACK)])
         if self._holds:
             return
         listed = self._lineup.listed_after_the_roll

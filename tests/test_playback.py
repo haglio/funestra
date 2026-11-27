@@ -100,7 +100,24 @@ class TestPause:
         assert engine.paused is False
 
 
+class _Seen:
+    def __init__(self) -> None:
+        self.coming: list[list] = []
+
+    def see(self, coming) -> None:
+        self.coming.append(list(coming))
+
+
 class TestPrefetch:
+    def test_each_video_moved_onto_has_its_neighbors_wished_for_from_where_each_will_open(self, tmp_path):
+        seen = _Seen()
+        playback, _engine = _make_playback(tmp_path, entries=5, look_ahead=seen)
+        videos = playback.playlist
+
+        playback.step(1)
+
+        assert seen.coming[-1] == [(videos[2], None), (videos[3], None), (videos[0], None), (videos[4], None)]
+
     def test_init_stages_the_next_clip(self, tmp_path):
         _session, engine = _make_playback(tmp_path, entries=3)
 
@@ -1355,3 +1372,4 @@ class TestWhatRidesWithAVersion:
 
         assert playback.showing == video
         assert playback.name_on_screen == "v0"
+

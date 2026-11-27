@@ -21,6 +21,7 @@ from funestra_fakes import WorkerTheTestRuns, stamped_long_ago
 from host_controls_fakes import AHost, middle_of
 from PIL import Image
 
+from funestra.cloud_playback import PLAYS_FROM_DISK
 from funestra.flick_overlay import (
     BACKDROP_OVERLAY_ID,
     FIRST_TILE_OVERLAY_ID,
@@ -990,7 +991,8 @@ def test_on_a_window_the_way_of_playing_is_mpv_opened_on_that_window(tmp_path):
                 channels=channels,
                 playlist=read_playlist(channels.playlist)))
 
-    mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True, audio=True)
+    mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True, audio=True,
+                                playable=PLAYS_FROM_DISK.playable)
     funestra.close()
     assert funestra.playback.current_video == videos[0]
 
@@ -1652,7 +1654,8 @@ def test_on_a_window_the_way_of_playing_can_be_heard(tmp_path):
                 muted=False))
     funestra.close()
 
-    mpv.assert_called_once_with(4242, muted=False, loop_file=False, prefetch=True, audio=True)
+    mpv.assert_called_once_with(4242, muted=False, loop_file=False, prefetch=True, audio=True,
+                                playable=PLAYS_FROM_DISK.playable)
 
 
 def test_on_a_window_that_can_never_be_heard_the_way_of_playing_takes_no_sound(tmp_path):
@@ -1667,7 +1670,8 @@ def test_on_a_window_that_can_never_be_heard_the_way_of_playing_takes_no_sound(t
                 audible=False))
     funestra.close()
 
-    mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True, audio=False)
+    mpv.assert_called_once_with(4242, muted=True, loop_file=False, prefetch=True, audio=False,
+                                playable=PLAYS_FROM_DISK.playable)
 
 
 def test_a_window_told_to_fall_silent_mutes_its_engine_and_its_volume_control(tmp_path):

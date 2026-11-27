@@ -4,6 +4,7 @@ import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, NamedTuple
 
+from .cloud_playback import LOOKS_AHEAD_FOR_NOTHING, LooksAhead
 from .frame_record import DESKTOP_FRAME_MS
 from .off_the_loop import AtOnce, OffTheLoop
 from .play_points import PlayPoints
@@ -47,6 +48,7 @@ class FunestraSetup(NamedTuple):
     file_clock_ns: Callable[[], int] = time.time_ns
     off_the_loop: OffTheLoop = AtOnce()
     window: int | None = None
+    look_ahead: LooksAhead = LOOKS_AHEAD_FOR_NOTHING
 
     def playback_setup(self, start_paused: bool, lap: Lap) -> PlaybackSetup:
         return PlaybackSetup(
@@ -54,7 +56,7 @@ class FunestraSetup(NamedTuple):
             play_points=PlayPoints(self.channels.play_points, behind=self.off_the_loop.do),
             funscripts=funscripts_of(self.playlist),
             points_of_interest=points_of_interest_of(self.playlist), tcode=self.tcode,
-            behind=self.off_the_loop.do, lap=lap)
+            behind=self.off_the_loop.do, lap=lap, look_ahead=self.look_ahead)
 
     def volume_on(self, engine) -> AppVolume | VolumeControl:
         if self.sound_is_the_rooms:
