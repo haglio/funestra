@@ -23,8 +23,9 @@ class MpvRenderEngine(_MpvControl):
         loop_file: bool = True,
         prefetch: bool = False,
         audio: bool = True,
+        playable: Callable[[Path], str] = str,
     ) -> None:
-        super().__init__(looping=loop_file)
+        super().__init__(looping=loop_file, playable=playable)
         mpv = _import_mpv()
         options = _shared_options(muted=muted, loop_file=loop_file, prefetch=prefetch, audio=audio)
         # No window to own: libmpv renders on demand into the caller's FBO.
@@ -64,7 +65,7 @@ class MpvRenderEngine(_MpvControl):
 
     def load(self, path: Path, start_ms: float | None = None) -> None:
         # mpv may hand over one last frame of the old file after the switch was asked for.
-        self._drawn_file.asked_for(str(path))
+        self._drawn_file.asked_for(self._playable(path))
         super().load(path, start_ms)
 
     def wake_on_updates(self, wake: Callable[[], None]) -> None:

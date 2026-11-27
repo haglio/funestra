@@ -10,7 +10,7 @@ import math
 import os
 import threading
 import time
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from pathlib import Path
 
 import numpy as np
@@ -209,7 +209,9 @@ def _terminate_outside_the_callers_apartment(handle) -> None:
 class _MpvControl:
     _mpv: object
 
-    def __init__(self, moves: Moves | None = None, *, looping: bool = False) -> None:
+    def __init__(self, moves: Moves | None = None, *, looping: bool = False,
+                 playable: Callable[[Path], str] = str) -> None:
+        self._playable = playable
         self._gate = CallGate()
         self._frame_rate = 0.0
         self._image_track: bool | None = None
@@ -400,15 +402,16 @@ class _MpvControl:
     @mpv_call()
     def load(self, path: Path, start_ms: float | None = None) -> None:
         self._staged = None
-        self._begin_the_new_clip(str(path))
-        self._ask("loadfile", url=str(path), **_opening_at(start_ms))
+        handed = self._playable(path)
+        self._begin_the_new_clip(handed)
+        self._ask("loadfile", url=handed, **_opening_at(start_ms))
         self._clear_the_playlist()
         self._between_files()
 
     @mpv_call()
     def swap_image(self, path: Path) -> None:
-        self._on_the_clock = str(path)
-        self._ask("loadfile", url=str(path))
+        self._on_the_clock = self._playable(path)
+        self._ask("loadfile", url=self._on_the_clock)
         self._clear_the_playlist()
         if self._staged is not None:
             self._ask("loadfile", url=self._staged, flags="append", **_opening_at(self._staged_at))
@@ -423,11 +426,12 @@ class _MpvControl:
 
     @mpv_call()
     def stage_next(self, path: Path, start_ms: float | None = None) -> None:
-        if (str(path), start_ms) == (self._staged, self._staged_at):
+        handed = self._playable(path)
+        if (handed, start_ms) == (self._staged, self._staged_at):
             return
         self._clear_the_playlist()
-        self._ask("loadfile", url=str(path), flags="append", **_opening_at(start_ms))
-        self._staged, self._staged_at = str(path), start_ms
+        self._ask("loadfile", url=handed, flags="append", **_opening_at(start_ms))
+        self._staged, self._staged_at = handed, start_ms
 
     @mpv_call()
     def clear_next(self) -> None:
@@ -565,7 +569,7 @@ class _MpvControl:
         return picked.label
 
     def radio_station(self, videos: Sequence[Path]) -> MpvStation | None:
-        return MpvStation.opened(videos, audio_device=self._audio_device)
+        return MpvStation.opened(videos, audio_device=self._audio_device, playable=self._playable)
 
     @mpv_call()
     def seek_ms(self, ms: float) -> None:
@@ -659,9 +663,9 @@ class _MpvControl:
 class MpvEngine(_MpvControl):
     def __init__(
         self, wid: int, *, muted: bool = False, loop_file: bool = True, prefetch: bool = False,
-        audio: bool = True,
+        audio: bool = True, playable: Callable[[Path], str] = str,
     ) -> None:
-        super().__init__(looping=loop_file)
+        super().__init__(looping=loop_file, playable=playable)
         mpv = _import_mpv()
         self._lost_gpu = LostGpu(self._build_a_new_video_output)
         options = _shared_options(muted=muted, loop_file=loop_file, prefetch=prefetch, audio=audio)
@@ -721,18 +725,19 @@ def _station_options(audio_device: str | None) -> dict:
 class MpvStation:
     # mpv reshuffles a looped list as it comes round, and gives up on one whose every video fails.
 
-    def __init__(self, handle, videos: Sequence[Path]) -> None:
+    def __init__(self, handle, videos: Sequence[Path], *, playable: Callable[[Path], str] = str) -> None:
         self._mpv = handle
         self._heard_at: int | None = None
         self._paused = False
         first, *rest = videos
-        handle.loadfile(str(first), "replace")
+        handle.loadfile(playable(first), "replace")
         for video in rest:
-            handle.loadfile(str(video), "append")
+            handle.loadfile(playable(video), "append")
 
     @classmethod
-    def opened(cls, videos: Sequence[Path], *, audio_device: str | None = None) -> MpvStation:
-        return cls(_import_mpv().MPV(**_station_options(audio_device)), videos)
+    def opened(cls, videos: Sequence[Path], *, audio_device: str | None = None,
+               playable: Callable[[Path], str] = str) -> MpvStation:
+        return cls(_import_mpv().MPV(**_station_options(audio_device)), videos, playable=playable)
 
     def tune(self, level: int | None) -> None:
         if level == self._heard_at:

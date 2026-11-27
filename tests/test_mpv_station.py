@@ -100,3 +100,10 @@ def test_a_closed_station_lets_mpv_go(monkeypatch):
     station.close()
 
     assert mpv.terminated == 1
+
+
+def test_a_station_plays_each_of_its_files_from_the_address_it_is_handed(monkeypatch):
+    _station, mpv = opened(monkeypatch, playable=lambda path: f"http://127.0.0.1:1/{path.name}")
+
+    assert mpv.loaded == [("http://127.0.0.1:1/alpha one.mp4", "replace"), ("http://127.0.0.1:1/alpha two.mp4", "append"),
+                          ("http://127.0.0.1:1/beta.mp4", "append")]

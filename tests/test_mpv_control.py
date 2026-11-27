@@ -169,8 +169,8 @@ CREEP = zoom_in(0.0, 0.0)
 class Control(_MpvControl):
 
     def __init__(self, mpv, now: float = 0.0, viewport: tuple[int, int] = (0, 0),
-                 deals: Deals | None = None, looping: bool = False) -> None:
-        super().__init__(deals or Deals(CREEP), looping=looping)
+                 deals: Deals | None = None, looping: bool = False, playable=str) -> None:
+        super().__init__(deals or Deals(CREEP), looping=looping, playable=playable)
         self.now = now
         self._viewport = viewport
         self._adopt(mpv)
@@ -257,6 +257,38 @@ def test_an_image_moves_on_to_the_staged_clip_once_its_pace_has_gone_by():
     pushed_at(control, 103.9)
     assert moved_on(mpv) == 0
     pushed_at(control, 104.05, 104.1, 104.2)
+    assert moved_on(mpv) == 1
+
+
+def _from_the_loopback(path: Path) -> str:
+    return f"http://127.0.0.1:1/{path.name}"
+
+
+def test_the_engine_hands_mpv_the_address_each_file_plays_from_whether_it_opens_stages_or_swaps_it():
+    mpv = FakeMpv()
+    control = Control(mpv, playable=_from_the_loopback)
+
+    control.load(Path("made-up-one.mp4"))
+    control.stage_next(Path("made-up-two.mp4"))
+    control.swap_image(Path("made-up-three.png"))
+
+    assert [call[1] for call in mpv.calls if call[0] in ("play", "loadfile")] == [
+        "http://127.0.0.1:1/made-up-one.mp4", "http://127.0.0.1:1/made-up-two.mp4",
+        "http://127.0.0.1:1/made-up-three.png", "http://127.0.0.1:1/made-up-two.mp4"]
+
+
+def test_an_image_played_from_its_address_still_moves_on_once_its_pace_has_gone_by_since_mpv_names_it_by_that_address():
+    mpv = FakeMpv()
+    control = Control(mpv, now=100.0, playable=_from_the_loopback)
+    control.set_pace(4.0)
+    control.load(Path("made-up-scene.png"))
+    mpv.report("path", _from_the_loopback(Path("made-up-scene.png")))
+    mpv.report("current-tracks/video/image", True)
+    mpv.report("video-out-params", {"dw": WIDE[0], "dh": WIDE[1]})
+    control.stage_next(Path("made-up-next.png"))
+
+    pushed_at(control, 104.05, 104.1, 104.2)
+
     assert moved_on(mpv) == 1
 
 
